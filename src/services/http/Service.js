@@ -1,0 +1,20 @@
+import BASE_URL from './const';
+
+const headers = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+};
+
+export const get = async (endpoint) => {
+  const res = await fetch(`${BASE_URL}${endpoint}`, { headers });
+  return res.json();
+};
+
+export const post = async (endpoint, body) => {
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  return res.json();
+};

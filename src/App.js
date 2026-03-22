@@ -1,23 +1,22 @@
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
+import { get } from './services/http/Service';
 import './App.css';
 
 function App() {
+  const [estado, setEstado] = useState('Conectando...');
+
+  useEffect(() => {
+    get('/ping')
+      .then(data => setEstado(data.message))
+      .catch(err => setEstado('Error: ' + err.message));
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container mt-5">
+      <h1>Sistema de Cotización</h1>
+      <div className="alert alert-info mt-3">
+        Estado del backend: <strong>{estado}</strong>
+      </div>
     </div>
   );
 }
