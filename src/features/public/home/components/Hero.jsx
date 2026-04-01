@@ -1,0 +1,380 @@
+import { useRef } from 'react';
+
+/* ── Datos ── */
+const CHIPS_LEFT = [
+  { text: 'React.js',   red: false },
+  { text: 'Laravel',    red: false },
+  { text: 'Firebase',   red: true  },
+  { text: 'Python',     red: false },
+  { text: 'PostgreSQL', red: false },
+  { text: 'Redis',      red: true  },
+];
+const CHIPS_RIGHT = [
+  { text: 'Flutter',   red: false },
+  { text: 'Node.js',   red: false },
+  { text: 'Kotlin',    red: true  },
+  { text: 'Docker',    red: false },
+  { text: 'GraphQL',   red: false },
+  { text: 'Vue.js',    red: false },
+];
+const CHIPS_TOP = [
+  { text: 'TypeScript', red: false },
+  { text: 'Rust',       red: false },
+];
+
+const STATS = [
+  { num: '1,240+', lbl: 'Desarrolladores' },
+  { num: '380+',   lbl: 'Proyectos'       },
+  { num: '95',     lbl: 'Contrataciones', red: true },
+  { num: '18+',    lbl: 'Tecnologías'    },
+];
+
+export default function Hero() {
+  const heroRef = useRef(null);
+
+  return (
+    <>
+      <style>{`
+        /* ══════════════════════════════════════
+           HERO — variables de la paleta oficial
+        ══════════════════════════════════════ */
+        .spk-hero {
+          min-height: calc(100vh - var(--nav-height));
+          background: var(--fondo);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+          padding: 60px 24px 90px;
+        }
+
+        /* Franja superior azul */
+        .spk-hero::before {
+          content: '';
+          position: absolute; top: 0; left: 0; right: 0;
+          height: 4px;
+          background: linear-gradient(90deg,
+            var(--azul-deep) 0%, var(--azul) 50%, var(--azul-mid) 100%
+          );
+          z-index: 2;
+        }
+
+        /* Blobs decorativos */
+        .spk-blob {
+          position: absolute; border-radius: 50%;
+          pointer-events: none;
+        }
+        .spk-blob-right {
+          top: -80px; right: -120px;
+          width: 500px; height: 500px;
+          background: radial-gradient(circle, rgba(0,119,183,.1) 0%, transparent 68%);
+        }
+        .spk-blob-left {
+          bottom: 40px; left: -100px;
+          width: 380px; height: 380px;
+          background: radial-gradient(circle, rgba(0,79,124,.07) 0%, transparent 65%);
+        }
+        .spk-blob-red {
+          bottom: -60px; right: 60px;
+          width: 280px; height: 280px;
+          background: radial-gradient(circle, rgba(232,85,85,.07) 0%, transparent 65%);
+        }
+
+        /* Cuadrícula de fondo */
+        .spk-hero-grid {
+          position: absolute; inset: 0;
+          background-image:
+            linear-gradient(rgba(0,119,183,.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,119,183,.05) 1px, transparent 1px);
+          background-size: 52px 52px;
+          pointer-events: none;
+        }
+
+        /* Línea decorativa */
+        .spk-deco-line {
+          position: absolute; bottom: 88px; left: 50%;
+          transform: translateX(-50%);
+          width: 240px; height: 1px;
+          background: linear-gradient(90deg, transparent, var(--gris-borde), transparent);
+        }
+
+        /* ══ CHIPS DE TECNOLOGÍA ══ */
+        .spk-chips-area {
+          position: absolute; inset: 0;
+          pointer-events: none; overflow: hidden;
+          /* Sin z-index explícito: el DOM order hace que spk-hero-inner
+             (position: relative, z-index: 1) quede siempre encima */
+        }
+        .spk-chip {
+          position: absolute;
+          background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 8px;
+          padding: 6px 12px;
+          font-size: 11px; font-weight: 600;
+          color: var(--gris-oscuro);
+          display: flex; align-items: center; gap: 5px;
+          box-shadow: 0 2px 10px rgba(0,0,0,.07);
+          font-family: var(--mono);
+          white-space: nowrap;
+          opacity: .72;
+        }
+        .spk-chip.chip-red {
+          background: var(--rojo-chip);
+          border-color: var(--rojo-borde);
+          color: var(--rojo-mid);
+        }
+        .spk-chip-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: var(--azul); flex-shrink: 0;
+        }
+        .spk-chip.chip-red .spk-chip-dot { background: var(--rojo-soft); }
+
+        /* posiciones — izquierda */
+        .cl-0 { top: 130px; left:  20px; transform: rotate(-4deg); }
+        .cl-1 { top: 200px; left: -10px; transform: rotate( 2deg); }
+        .cl-2 { top: 270px; left:  25px; transform: rotate(-3deg); }
+        .cl-3 { top: 345px; left:  -5px; transform: rotate( 4deg); }
+        .cl-4 { top: 415px; left:  30px; transform: rotate(-2deg); }
+        .cl-5 { top: 480px; left:  -8px; transform: rotate( 3deg); }
+
+        /* posiciones — derecha */
+        .cr-0 { top: 130px; right:  15px; transform: rotate( 4deg); }
+        .cr-1 { top: 200px; right: -10px; transform: rotate(-3deg); }
+        .cr-2 { top: 270px; right:  20px; transform: rotate( 2deg); }
+        .cr-3 { top: 345px; right:  -5px; transform: rotate(-4deg); }
+        .cr-4 { top: 415px; right:  25px; transform: rotate( 3deg); }
+        .cr-5 { top: 480px; right: -12px; transform: rotate(-2deg); }
+
+        /*
+          CHIPS_TOP — FIX: desplazados al margen exterior del badge.
+          El badge mide ≈ 380px centrado → ocupa de calc(50% - 190px)
+          a calc(50% + 190px). Los chips se posicionan MÁS ALLÁ de ese
+          rango para que no queden tapados por el fondo blanco del badge.
+        */
+        .ct-0 { top: 62px; left:  calc(50% - 360px); transform: rotate(-2deg); }
+        .ct-1 { top: 62px; left:  calc(50% + 240px); transform: rotate( 2deg); }
+
+        /* ══ CONTENIDO CENTRAL ══ */
+        .spk-hero-inner {
+          position: relative; z-index: 1;
+          max-width: 840px; width: 100%;
+          display: flex; flex-direction: column;
+          align-items: center;
+        }
+
+        /* badge institución */
+        .spk-badge {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: var(--blanco);
+          border: 1.5px solid var(--azul-mid);
+          border-radius: 20px;
+          padding: 5px 16px;
+          font-size: 11px; font-weight: 600;
+          color: var(--azul);
+          letter-spacing: .07em; text-transform: uppercase;
+          margin-bottom: 30px;
+          box-shadow: 0 2px 10px rgba(0,119,183,.1);
+          animation: fadeUp .5s .05s ease both;
+        }
+        .spk-badge-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: var(--rojo-soft);
+          animation: pulse 2s ease infinite;
+        }
+
+        /* título */
+        .spk-hero-title {
+          font-size: clamp(34px, 7vw, 72px);
+          font-weight: 800;
+          line-height: .94;
+          letter-spacing: -.03em;
+          margin-bottom: 26px;
+          animation: fadeUp .5s .12s ease both;
+        }
+        .spk-title-dark { color: var(--negro-texto); }
+        .spk-title-blue { color: var(--azul); }
+
+        /* divisor */
+        .spk-divider {
+          width: 48px; height: 3px;
+          background: linear-gradient(90deg, var(--azul), var(--azul-mid));
+          border-radius: 2px;
+          margin: 0 auto 24px;
+          animation: fadeUp .5s .18s ease both;
+        }
+
+        /* descripción */
+        .spk-hero-desc {
+          font-size: 15.5px; line-height: 1.8;
+          color: var(--gris-texto);
+          max-width: 500px; margin: 0 auto 36px;
+          animation: fadeUp .5s .23s ease both;
+        }
+        .spk-hero-desc strong { color: var(--negro-texto); font-weight: 600; }
+
+        /* ══ MINI STATS ══ */
+        .spk-stats {
+          display: flex; align-items: stretch;
+          margin-top: 36px;
+          background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 2px 12px rgba(0,0,0,.06);
+          animation: fadeUp .5s .36s ease both;
+        }
+        .spk-stat {
+          padding: 13px 22px; text-align: center;
+          border-right: 1px solid var(--gris-borde);
+          transition: background .15s; cursor: default;
+        }
+        .spk-stat:last-child { border-right: none; }
+        .spk-stat:hover { background: var(--azul-light); }
+        .spk-stat.stat-red:hover { background: var(--rojo-bg); }
+        .spk-stat-num {
+          font-size: 19px; font-weight: 700;
+          color: var(--azul); letter-spacing: -.02em; line-height: 1.1;
+        }
+        .spk-stat.stat-red .spk-stat-num { color: var(--rojo-mid); }
+        .spk-stat-lbl {
+          font-size: 10px; color: var(--gris-texto);
+          font-weight: 500; text-transform: uppercase;
+          letter-spacing: .06em; margin-top: 3px; white-space: nowrap;
+        }
+
+        /* ══ SCROLL HINT ══ */
+        .spk-scroll-hint {
+          position: absolute; bottom: 24px; left: 50%;
+          transform: translateX(-50%);
+          display: flex; flex-direction: column;
+          align-items: center; gap: 5px;
+          font-size: 10px; color: var(--gris-borde);
+          letter-spacing: .1em; text-transform: uppercase;
+          animation: fadeUp .5s .55s ease both;
+        }
+        .spk-scroll-line {
+          width: 1px; height: 26px;
+          background: linear-gradient(to bottom, transparent, var(--azul-mid));
+          animation: scrollPulse 2s infinite;
+        }
+
+        /* ══ COPYRIGHT ══ */
+        .spk-copyright {
+          position: absolute; bottom: 22px; right: 40px;
+          font-family: var(--mono);
+          font-size: 11px; font-weight: 500;
+          color: var(--gris-texto); letter-spacing: .06em;
+          display: flex; align-items: center; gap: 6px;
+          z-index: 2;
+          animation: fadeUp .5s .6s ease both;
+        }
+        .spk-copyright-bar {
+          width: 16px; height: 1.5px;
+          background: var(--rojo-soft); border-radius: 2px;
+        }
+        .spk-copyright strong { color: var(--azul); font-weight: 600; }
+
+        /* ══ RESPONSIVE ══ */
+        @media (max-width: 1100px) {
+          .spk-chips-area { display: none; }
+        }
+        @media (max-width: 768px) {
+          .spk-hero { padding: 40px 20px 80px; }
+          .spk-stats { flex-wrap: wrap; }
+          .spk-stat {
+            flex: 1 1 calc(50% - 1px);
+            border-bottom: 1px solid var(--gris-borde);
+          }
+          .spk-stat:nth-child(2) { border-right: none; }
+          .spk-stat:nth-child(3),
+          .spk-stat:nth-child(4) { border-bottom: none; }
+          .spk-copyright { right: 20px; }
+        }
+        @media (max-width: 520px) {
+          .spk-stats { flex-direction: column; }
+          .spk-stat { border-right: none !important; }
+          .spk-copyright { font-size: 10px; }
+        }
+      `}</style>
+
+      <section className="spk-hero" ref={heroRef}>
+
+        {/* Fondo */}
+        <div className="spk-hero-grid" />
+        <div className="spk-blob spk-blob-right" />
+        <div className="spk-blob spk-blob-left" />
+        <div className="spk-blob spk-blob-red" />
+        <div className="spk-deco-line" />
+
+        {/* Chips decorativos — solo visibles en pantallas ≥ 1100px */}
+        <div className="spk-chips-area" aria-hidden="true">
+          {CHIPS_TOP.map((c, i) => (
+            <div key={`t${i}`} className={`spk-chip ct-${i}${c.red ? ' chip-red' : ''}`}>
+              <span className="spk-chip-dot" />{c.text}
+            </div>
+          ))}
+          {CHIPS_LEFT.map((c, i) => (
+            <div key={`l${i}`} className={`spk-chip cl-${i}${c.red ? ' chip-red' : ''}`}>
+              <span className="spk-chip-dot" />{c.text}
+            </div>
+          ))}
+          {CHIPS_RIGHT.map((c, i) => (
+            <div key={`r${i}`} className={`spk-chip cr-${i}${c.red ? ' chip-red' : ''}`}>
+              <span className="spk-chip-dot" />{c.text}
+            </div>
+          ))}
+        </div>
+
+        {/* Contenido principal */}
+        <div className="spk-hero-inner">
+
+          {/* Badge institución */}
+          <div className="spk-badge">
+            <div className="spk-badge-dot" />
+            Universidad Mayor de San Simón · Cochabamba, Bolivia
+          </div>
+
+          {/* Título */}
+          <h1 className="spk-hero-title">
+            <span className="spk-title-blue">CreaFolio</span>{' '}
+            <span className="spk-title-dark">donde</span>
+            <br />
+            <span className="spk-title-dark">el talento es visible</span>
+          </h1>
+
+          {/* Divisor */}
+          <div className="spk-divider" />
+
+          {/* Descripción */}
+          <p className="spk-hero-desc">
+            <strong>CreaFolio</strong> es la vitrina digital para desarrolladores de software bolivianos.
+            Creá tu portafolio profesional, publicá tus proyectos reales y conectá directamente
+            con las empresas que buscan tu stack.
+          </p>
+
+          {/* Mini stats */}
+          <div className="spk-stats">
+            {STATS.map(({ num, lbl, red }) => (
+              <div key={lbl} className={`spk-stat${red ? ' stat-red' : ''}`}>
+                <div className="spk-stat-num">{num}</div>
+                <div className="spk-stat-lbl">{lbl}</div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* Scroll hint */}
+        <div className="spk-scroll-hint" aria-hidden="true">
+          <span>Scroll</span>
+          <div className="spk-scroll-line" />
+        </div>
+
+      </section>
+    </>
+  );
+}

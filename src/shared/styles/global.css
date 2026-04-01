@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════════
+   SPARKY HUB — Global Styles
+   Compatible con Bootstrap 5 (sin Tailwind)
+   Importar en App.js ANTES que Bootstrap
+═══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* Las variables CSS no entran en conflicto con Bootstrap */
+:root {
+  /* Paleta principal */
+  --azul:        #0077b7;
+  --azul-hover:  #005f95;
+  --azul-light:  #e8f4fb;
+  --azul-mid:    #b8ddf0;
+  --azul-glow:   rgba(0, 119, 183, 0.13);
+  --azul-deep:   #004f7c;
+
+  --blanco:      #ffffff;
+  --fondo:       #f2f2f2;
+  --gris-borde:  #d1d5db;
+  --gris-texto:  #6b7280;
+  --gris-oscuro: #374151;
+  --negro-texto: #111827;
+
+  /* Rojo — uso selectivo */
+  --rojo-soft:   #e85555;
+  --rojo-mid:    #c94040;
+  --rojo-bg:     rgba(232, 85, 85, 0.08);
+  --rojo-borde:  rgba(232, 85, 85, 0.22);
+  --rojo-chip:   #fdf0f0;
+
+  --font:  'Inter', sans-serif;
+  --mono:  'IBM Plex Mono', monospace;
+
+  --nav-height: 60px;
+
+  /* Sobreescribir variables de Bootstrap con la paleta de SPARKY */
+  --bs-primary:         #0077b7;
+  --bs-primary-rgb:     0, 119, 183;
+  --bs-body-font-family: 'Inter', sans-serif;
+  --bs-body-bg:         #f2f2f2;
+  --bs-border-color:    #d1d5db;
+}
+
+/* Reset mínimo — Bootstrap ya trae su propio reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--fondo);
+  color: var(--negro-texto);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ── Animaciones globales reutilizables ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.15); }
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.7; }
+}
+
+/* ── Utilidades de tipografía (complementan Bootstrap) ── */
+.font-mono { font-family: var(--mono) !important; }
+.text-azul  { color: var(--azul) !important; }
+.text-rojo  { color: var(--rojo-soft) !important; }
+.bg-fondo   { background: var(--fondo) !important; }
