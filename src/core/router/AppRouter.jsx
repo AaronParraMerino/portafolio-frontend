@@ -1,19 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from '../../features/public/home/pages/HomePage';
-
+import LoginPage from '../../features/auth/pages/LoginPage';
+import RegisterPage from '../../features/auth/pages/RegisterPage';
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        {/*
-          Futuras rutas:
-          <Route path="/explorar"        element={<ExplorarPage />} />
-          <Route path="/proyectos"       element={<ProyectosPage />} />
-          <Route path="/desarrolladores" element={<DevsPage />} />
-          <Route path="/dashboard"       element={<DashboardPage />} />
-          <Route path="/:username"       element={<PortafolioPage />} />
-        */}
+        
+         <Route path="/auth/login" element={<LoginPage />} /> 
+         <Route path="/auth/register" element={<RegisterPage />} /> 
+        
       </Routes>
     </BrowserRouter>
   );
