@@ -1,20 +1,11 @@
 import { useState } from 'react';
 import '../styles/profile.css';
 
-/* Separa "Nombre Apellido" en dos campos al abrir el modal */
-function splitNombre(nombreCompleto = '') {
-  const parts = nombreCompleto.trim().split(/\s+/);
-  if (parts.length === 1) return { nombre: parts[0], apellido: '' };
-  const apellido = parts.slice(1).join(' ');
-  return { nombre: parts[0], apellido };
-}
-
 export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }) {
-  const { nombre, apellido } = splitNombre(perfil?.nombre || '');
 
   const [form, setForm] = useState({
-    nombre: nombre || '',
-    apellido: apellido || '',
+    nombre: perfil?.nombre || '',
+    apellido: perfil?.apellido || '',
     profesion: perfil?.profesion || '',
     biografia: perfil?.biografia || '',
     correo: perfil?.correo || '',
@@ -29,11 +20,10 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    /* Reconstruye nombre completo antes de guardar */
-    const nombreCompleto = [form.nombre, form.apellido].filter(Boolean).join(' ');
     // Asegurar que todos los campos tengan valores válidos
     const datosLimpios = {
-      nombre: nombreCompleto || '',
+      nombre: form.nombre || '',
+      apellido: form.apellido || '',
       profesion: form.profesion || '',
       biografia: form.biografia || '',
       correo: form.correo || '',

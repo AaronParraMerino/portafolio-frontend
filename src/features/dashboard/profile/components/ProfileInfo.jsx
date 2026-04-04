@@ -17,6 +17,7 @@ const CAMPOS = [
   { key: 'correo',    label: 'Correo electrónico' },
   { key: 'pais',      label: 'País' },
   { key: 'ciudad',    label: 'Ciudad' },
+  { key: 'profesion', label: 'Profesión' },
   { key: 'telefono',  label: 'Teléfono' },
   { key: 'biografia', label: 'Acerca de mí' },
 ];
@@ -27,8 +28,7 @@ export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
   return (
     <div className="prf-card">
       <div className="prf-card-head">
-        <span className="prf-card-title">Datos personales</span>
-        <span className="prf-card-sub">Controla qué información es pública</span>
+        <span className="prf-card-title">Controla qué información es pública</span>
       </div>
 
       <div className="prf-lista">

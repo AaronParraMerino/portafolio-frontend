@@ -277,6 +277,159 @@
   stroke: currentColor; fill: none; stroke-width: 2;
 }
 
+/* ── Datos personales ──
+   Muestra los datos de contacto del usuario
+   directamente debajo del ProfileHeader,
+   con el nombre + profesión arriba y los campos
+   de contacto en un grid de inputs de solo lectura.
+   El ícono de lápiz abre el modal de edición. */
+.prf-datacard {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+ 
+/* ── Fila nombre + botón editar ── */
+.prf-datacard-namerow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+}
+ 
+.prf-datacard-namecol {
+  min-width: 0;
+  flex: 1;
+}
+ 
+.prf-datacard-nombre {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--negro-texto);
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+ 
+.prf-datacard-profesion {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--azul);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+ 
+/* Botón lápiz */
+.prf-datacard-editbtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  background: var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.prf-datacard-editbtn:hover {
+  border-color: var(--azul);
+  background: var(--azul-light);
+}
+.prf-datacard-editbtn svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--gris-texto);
+  transition: stroke .15s;
+}
+.prf-datacard-editbtn:hover svg {
+  stroke: var(--azul);
+}
+ 
+/* ── Separador ── */
+.prf-datacard-divider {
+  height: 1px;
+  background: var(--gris-borde);
+  margin: 0 20px;
+}
+ 
+/* ── Grid de campos ── */
+.prf-datacard-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 6px 0 4px;
+}
+ 
+.prf-datacard-field {
+  padding: 12px 20px;
+  border-right: 1px solid rgba(0,0,0,.05);
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+ 
+/* La fila de pais+ciudad comparte columnas medianas */
+/* Correo: col 1, País: col 2, Ciudad: col 3         */
+/* Teléfono: col 1, vacío: col 2-3                   */
+/* Biografía: fila completa                          */
+ 
+.prf-datacard-field:nth-child(3),   /* Ciudad — última de la primera fila */
+.prf-datacard-field:nth-child(4) {  /* Teléfono — última antes de bio */
+  border-right: none;
+}
+ 
+.prf-datacard-field--full {
+  grid-column: 1 / -1;
+  border-right: none;
+  border-bottom: none;
+}
+ 
+/* Teléfono solo ocupa 1 columna; las otras 2 quedan vacías → ocupa solo 1 col */
+.prf-datacard-field:nth-child(4) {
+  grid-column: 1;
+}
+ 
+.prf-datacard-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gris-texto);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 5px;
+}
+ 
+.prf-datacard-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--negro-texto);
+  background: var(--fondo);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-height: 32px;
+  word-break: break-word;
+  line-height: 1.4;
+}
+ 
+.prf-datacard-value--bio {
+  min-height: 60px;
+  color: var(--gris-oscuro);
+  font-size: 13px;
+  line-height: 1.6;
+}
+ 
+.prf-datacard-empty {
+  color: var(--gris-texto);
+  font-style: italic;
+  font-weight: 400;
+}
+
 /* ── Breakpoint intermedio: tablet / desktop angosto ──
    El layout sigue siendo "desktop" (avatar izquierda, texto derecha)
    pero el avatar y el banner escalan un poco hacia abajo. */
@@ -784,3 +937,48 @@
   .prf-fila { padding: 10px 14px; }
   .prf-fila-right { flex-direction: column; align-items: flex-end; gap: 4px; }
 }
+
+/* En mobile, el grid de campos pasa a 2 columnas para aprovechar mejor el espacio.
+   El campo de teléfono ocupa toda la fila (columna 1-2) y las otras 2 quedan vacías. */
+@media (max-width: 640px) {
+  .prf-datacard-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+ 
+  /* En móvil Correo ocupa toda la fila */
+  .prf-datacard-field:nth-child(1) {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+ 
+  /* País y Ciudad quedan en 2 columnas */
+  .prf-datacard-field:nth-child(2),
+  .prf-datacard-field:nth-child(3) {
+    border-right: revert;
+  }
+  .prf-datacard-field:nth-child(3) {
+    border-right: none;
+  }
+ 
+  /* Teléfono: columna completa en móvil */
+  .prf-datacard-field:nth-child(4) {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+ 
+  .prf-datacard-nombre { font-size: 16px; }
+}
+ 
+@media (max-width: 400px) {
+  .prf-datacard-fields { grid-template-columns: 1fr; }
+ 
+  .prf-datacard-field,
+  .prf-datacard-field:nth-child(1),
+  .prf-datacard-field:nth-child(2),
+  .prf-datacard-field:nth-child(3),
+  .prf-datacard-field:nth-child(4) {
+    grid-column: 1;
+    border-right: none;
+  }
+}
+ 

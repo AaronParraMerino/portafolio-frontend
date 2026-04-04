@@ -29,7 +29,7 @@ export default function ProfileHeader({ perfil, onEditar, onVistaPublica }) {
       <div className="prf-avatar-zone">
         <div className="prf-avatar">
           {perfil.avatarUrl
-            ? <img src={perfil.avatarUrl} alt={perfil.nombre} />
+            ? <img src={perfil.avatarUrl} alt={perfil.nombre && `${perfil.nombre} ${perfil.apellido}`} />
             : iniciales
           }
         </div>
@@ -44,7 +44,7 @@ export default function ProfileHeader({ perfil, onEditar, onVistaPublica }) {
       {/* ── Nombre + rol + acciones ── */}
       <div className="prf-info-row">
         <div className="prf-info">
-          <div className="prf-nombre">{perfil.nombre}</div>
+          <div className="prf-nombre">{perfil.nombre && `${perfil.nombre} ${perfil.apellido}`}</div>
         </div>
 
         <div className="prf-acciones">
