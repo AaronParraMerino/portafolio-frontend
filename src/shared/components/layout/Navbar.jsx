@@ -16,6 +16,7 @@ const NOTIFICACIONES = [
 ];
 
 export default function Navbar() {
+  const BASE_URL = process.env.REACT_APP_API_URL;
   const [scrolled,    setScrolled]    = useState(false);
   const [mobileOpen,  setMobileOpen]  = useState(false);
   const [notifOpen,   setNotifOpen]   = useState(false);
@@ -54,19 +55,28 @@ export default function Navbar() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const stored = localStorage.getItem('usuario');
+    const stored = sessionStorage.getItem('usuario');
     if (!stored) return;
     try {
       setUser(JSON.parse(stored));
     } catch (err) {
-      console.warn('Usuario inválido en localStorage', err);
+      console.warn('Usuario inválido en sessionStorage', err);
       setUser(null);
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('tokenPORT');
-    localStorage.removeItem('usuario');
+  const token = sessionStorage.getItem('tokenPORT'); 
+  const handleLogout = async () => {
+    try {
+      await fetch(`${BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error('Error al intentar cerrar sesión:', err);
+    }
+    sessionStorage.removeItem('tokenPORT');
+    sessionStorage.removeItem('usuario');
     window.location.href = '/';
   };
 
