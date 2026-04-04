@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 
-/* ── Datos — hrefs alineados con los IDs de sección del HTML ── */
+/* ── Links de navegación pública ── */
 const NAV_LINKS = [
-  { label: 'Inicio',          href: '#inicio'          },
+  { label: 'Inicio',          href: '/'          },
   { label: 'Cómo funciona',   href: '#como-funciona'   },
   { label: 'Proyectos',       href: '#proyectos'        },
   { label: 'Desarrolladores', href: '#desarrolladores'  },
+  { label: 'Dashboard',       href: '/dashboard'       },
 ];
 
 const NOTIFICACIONES = [
@@ -48,29 +49,23 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        /* ══════════════════════════════════════
-           NAVBAR — idéntico al HTML de referencia
-           + mejoras React (scroll, móvil, notif)
-        ══════════════════════════════════════ */
-
         .spk-nav {
           position: fixed; top: 0; left: 0; right: 0;
           z-index: 200;
           height: var(--nav-height, 60px);
           display: flex; align-items: center;
           padding: 0 40px;
-          padding-bottom: 3px; /* ← compensa el border-bottom: 3px */
+          padding-bottom: 3px;
           background: linear-gradient(90deg, var(--azul-deep) 0%, var(--azul) 100%);
           border-bottom: 3px solid rgba(255,255,255,.12);
           box-shadow: 0 2px 18px rgba(0,77,124,.25);
           transition: box-shadow .2s;
         }
-        /* sombra reforzada al hacer scroll — mejora React */
         .spk-nav.scrolled {
           box-shadow: 0 4px 28px rgba(0,77,124,.38);
         }
 
-        /* ── LOGO ── */
+        /* LOGO */
         .spk-nav-logo {
           display: flex; align-items: center;
           text-decoration: none; flex-shrink: 0;
@@ -81,34 +76,28 @@ export default function Navbar() {
           filter: brightness(0) invert(1);
           opacity: .92;
         }
-
-        /* separador vertical */
         .spk-nav-sep {
           width: 1px; height: 22px;
           background: rgba(255,255,255,.15);
-          margin: 0 18px 0 12px;
-          flex-shrink: 0;
+          margin: 0 18px 0 12px; flex-shrink: 0;
         }
-
-        /* tagline mono */
         .spk-nav-tagline {
           font-family: var(--mono);
           font-size: 10px; font-weight: 400;
           color: rgba(255,255,255,.35);
-          letter-spacing: .12em;
-          text-transform: uppercase;
+          letter-spacing: .12em; text-transform: uppercase;
           white-space: nowrap;
         }
 
-        /* ── LINKS DESKTOP ── */
+        /* LINKS DESKTOP */
         .spk-nav-links {
           display: flex; align-items: center;
           gap: 2px; list-style: none;
-          margin: 0; padding: 0;   /* ← reset browser defaults del <ul> */
+          margin: 0; padding: 0;
           margin-left: auto;
         }
         .spk-nav-links li {
-          display: flex; align-items: center; /* ← cada <li> también se centra */
+          display: flex; align-items: center;
         }
         .spk-nav-links a {
           font-size: 13px; font-weight: 500;
@@ -124,22 +113,20 @@ export default function Navbar() {
           background: rgba(255,255,255,.1);
         }
 
-        /* ── ZONA DERECHA ── */
+        /* DERECHA */
         .spk-nav-right {
           display: flex; align-items: center;
           gap: 8px; margin-left: 20px;
         }
 
-        /* ── CAMPANA ── */
+        /* CAMPANA */
         .spk-bell-wrap { position: relative; }
-
         .spk-bell {
           width: 34px; height: 34px; border-radius: 7px;
           border: 1px solid rgba(255,255,255,.18);
           background: rgba(255,255,255,.08);
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer; flex-shrink: 0;
-          transition: all .15s;
+          cursor: pointer; flex-shrink: 0; transition: all .15s;
         }
         .spk-bell:hover {
           background: rgba(255,255,255,.18);
@@ -147,8 +134,7 @@ export default function Navbar() {
         }
         .spk-bell svg {
           width: 15px; height: 15px;
-          stroke: rgba(255,255,255,.8);
-          fill: none; stroke-width: 1.9;
+          stroke: rgba(255,255,255,.8); fill: none; stroke-width: 1.9;
         }
         .spk-bell-dot {
           position: absolute; top: 6px; right: 6px;
@@ -158,7 +144,7 @@ export default function Navbar() {
           pointer-events: none;
         }
 
-        /* ── DROPDOWN NOTIFICACIONES — mejora React ── */
+        /* NOTIF DROPDOWN */
         .spk-notif-dropdown {
           position: absolute; top: calc(100% + 10px); right: 0;
           width: 284px;
@@ -181,8 +167,7 @@ export default function Navbar() {
           font-size: 10px; color: var(--azul);
           font-weight: 500; cursor: pointer;
           background: none; border: none;
-          font-family: var(--font);
-          padding: 0; transition: color .12s;
+          font-family: var(--font); padding: 0; transition: color .12s;
         }
         .spk-notif-clear:hover { color: var(--azul-hover); }
         .spk-notif-item {
@@ -195,25 +180,19 @@ export default function Navbar() {
         .spk-notif-item:hover { background: var(--azul-light); }
         .spk-notif-ico {
           width: 8px; height: 8px; border-radius: 50%;
-          flex-shrink: 0; margin-top: 4px;
-          background: var(--azul);
+          flex-shrink: 0; margin-top: 4px; background: var(--azul);
         }
         .spk-notif-ico.red { background: var(--rojo-soft); }
-        .spk-notif-text {
-          font-size: 12px; color: var(--gris-oscuro); line-height: 1.5;
-        }
+        .spk-notif-text { font-size: 12px; color: var(--gris-oscuro); line-height: 1.5; }
         .spk-notif-time {
           font-size: 10px; color: var(--gris-texto);
           font-family: var(--mono); margin-top: 2px;
         }
 
-        /* ── DIVISOR ── */
-        .spk-nav-divider {
-          width: 1px; height: 18px;
-          background: rgba(255,255,255,.15);
-        }
+        /* DIVISOR */
+        .spk-nav-divider { width: 1px; height: 18px; background: rgba(255,255,255,.15); }
 
-        /* ── BOTONES — igual que en HTML ── */
+        /* BOTÓN INICIAR SESIÓN */
         .spk-btn-login {
           font-family: var(--font);
           font-size: 13px; font-weight: 500;
@@ -228,6 +207,8 @@ export default function Navbar() {
           color: var(--blanco);
           background: rgba(255,255,255,.08);
         }
+
+        /* BOTÓN REGISTRARSE */
         .spk-btn-register {
           font-family: var(--font);
           font-size: 13px; font-weight: 600;
@@ -241,7 +222,7 @@ export default function Navbar() {
           border-color: var(--azul-light);
         }
 
-        /* ── HAMBURGUESA — mejora React ── */
+        /* HAMBURGUESA */
         .spk-hamburger {
           display: none;
           flex-direction: column; gap: 4px;
@@ -261,7 +242,7 @@ export default function Navbar() {
         .spk-hamburger.open span:nth-child(2) { opacity: 0; width: 0; }
         .spk-hamburger.open span:nth-child(3) { transform: rotate(-45deg) translateY(-6px); }
 
-        /* ── MENÚ MÓVIL — mejora React ── */
+        /* MENÚ MÓVIL */
         .spk-mobile-menu {
           position: fixed;
           top: var(--nav-height, 60px); left: 0; right: 0;
@@ -284,18 +265,17 @@ export default function Navbar() {
           transition: all .12s; display: block;
         }
         .spk-mobile-links a:hover {
-          color: var(--blanco);
-          background: rgba(255,255,255,.1);
+          color: var(--blanco); background: rgba(255,255,255,.1);
         }
         .spk-mobile-actions {
-          display: flex; gap: 8px;
+          display: flex; gap: 8px; flex-wrap: wrap;
           padding-top: 12px;
           border-top: 1px solid rgba(255,255,255,.1);
         }
         .spk-mobile-actions .spk-btn-login,
-        .spk-mobile-actions .spk-btn-register { flex: 1; }
+        .spk-mobile-actions .spk-btn-register { flex: 1; justify-content: center; }
 
-        /* ── KEYFRAMES ── */
+        /* KEYFRAMES */
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(-6px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -305,20 +285,18 @@ export default function Navbar() {
           to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── RESPONSIVE ── */
+        /* RESPONSIVE */
         @media (max-width: 900px) {
-          .spk-nav { padding: 0 24px; }
-          .spk-nav-tagline,
-          .spk-nav-sep { display: none; }
+          .spk-nav { padding: 0 24px; padding-bottom: 3px; }
+          .spk-nav-tagline, .spk-nav-sep { display: none; }
         }
         @media (max-width: 768px) {
-          .spk-nav-links,
-          .spk-nav-right { display: none; }
+          .spk-nav-links, .spk-nav-right { display: none; }
           .spk-hamburger { display: flex; }
         }
       `}</style>
 
-      {/* ── BARRA DE NAVEGACIÓN ── */}
+      {/* ── NAVBAR ── */}
       <nav className={`spk-nav${scrolled ? ' scrolled' : ''}`}>
 
         {/* Logo */}
@@ -340,7 +318,7 @@ export default function Navbar() {
         {/* Zona derecha desktop */}
         <div className="spk-nav-right">
 
-          {/* Campana + dropdown */}
+          {/* Campana */}
           <div className="spk-bell-wrap" ref={notifRef}>
             <button
               className="spk-bell"
@@ -357,10 +335,7 @@ export default function Navbar() {
               <div className="spk-notif-dropdown">
                 <div className="spk-notif-header">
                   Notificaciones
-                  <button
-                    className="spk-notif-clear"
-                    onClick={() => setNotifOpen(false)}
-                  >
+                  <button className="spk-notif-clear" onClick={() => setNotifOpen(false)}>
                     Marcar leídas
                   </button>
                 </div>
@@ -378,8 +353,23 @@ export default function Navbar() {
           </div>
 
           <div className="spk-nav-divider" />
-          <button className="spk-btn-login">Iniciar sesión</button>
-          <button className="spk-btn-register">Registrarse</button>
+
+          {/* Iniciar sesión */}
+          <button 
+            className="spk-btn-login"
+               onClick={() => window.location.href = "/auth/Login"}
+            >
+            Iniciar sesión
+           </button>
+
+          {/* Registrarse */}
+          <button 
+             className="spk-btn-register"
+             onClick={() => window.location.href = "/auth/Register"}
+             >
+             Registrarse
+            </button>
+
         </div>
 
         {/* Hamburguesa móvil */}
@@ -402,9 +392,27 @@ export default function Navbar() {
               </a>
             ))}
           </div>
+
           <div className="spk-mobile-actions">
-            <button className="spk-btn-login">Iniciar sesión</button>
-            <button className="spk-btn-register">Registrarse</button>
+            <button 
+              className="spk-btn-login"
+              onClick={() => {
+                setMobileOpen(false);
+                window.location.href = "/auth/Login";
+              }}
+            >
+              Iniciar sesión
+            </button>
+
+            <button 
+              className="spk-btn-register"
+              onClick={() => {
+                setMobileOpen(false);
+                window.location.href = "/auth/Register";
+              }}
+            >
+              Registrarse
+            </button>
           </div>
         </div>
       )}
