@@ -19,8 +19,6 @@ const CAMPOS = [
   { key: 'ciudad',    label: 'Ciudad' },
   { key: 'telefono',  label: 'Teléfono' },
   { key: 'biografia', label: 'Acerca de mí' },
-  { key: 'linkedin',  label: 'LinkedIn' },
-  { key: 'github',    label: 'GitHub' },
 ];
 
 const SIEMPRE_VISIBLE = ['nombre'];

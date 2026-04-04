@@ -45,17 +45,6 @@ export default function ProfileHeader({ perfil, onEditar, onVistaPublica }) {
       <div className="prf-info-row">
         <div className="prf-info">
           <div className="prf-nombre">{perfil.nombre}</div>
-          <div className="prf-rol">
-            {perfil.profesion} · {perfil.universidad}
-          </div>
-          {(perfil.ciudad || perfil.pais) && (
-            <div className="prf-ubicacion">
-              <svg viewBox="0 0 12 14">
-                <path d="M6 1a5 5 0 015 5c0 4-5 8-5 8S1 10 1 6a5 5 0 015-5z"/>
-              </svg>
-              {[perfil.ciudad, perfil.pais].filter(Boolean).join(', ')}
-            </div>
-          )}
         </div>
 
         <div className="prf-acciones">
@@ -74,32 +63,6 @@ export default function ProfileHeader({ perfil, onEditar, onVistaPublica }) {
           </button>
         </div>
       </div>
-
-      {/* ── Stats strip ── */}
-      <div className="prf-stats-strip">
-        <div className="prf-stat-item">
-          <div className="prf-stat-num">{perfil.stats.proyectos}</div>
-          <div className="prf-stat-lbl">Proyectos</div>
-        </div>
-        <div className="prf-stat-item">
-          <div className="prf-stat-num">{perfil.stats.habilidades}</div>
-          <div className="prf-stat-lbl">Habilidades</div>
-        </div>
-        <div className="prf-stat-item">
-          <div
-            className="prf-stat-num"
-            style={{
-              color: perfil.stats.completitud >= 80 ? '#059669'
-                   : perfil.stats.completitud >= 50 ? '#f59e0b'
-                   : 'var(--rojo-soft)',
-            }}
-          >
-            {perfil.stats.completitud}%
-          </div>
-          <div className="prf-stat-lbl">Completitud</div>
-        </div>
-      </div>
-
     </div>
   );
 }

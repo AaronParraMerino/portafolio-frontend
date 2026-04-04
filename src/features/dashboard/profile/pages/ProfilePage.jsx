@@ -2,7 +2,6 @@ import { useProfile }        from '../hooks/useProfile';
 import ProfileHeader          from '../components/ProfileHeader';
 import ProfileInfo            from '../components/ProfileInfo';
 import ProfileEdit            from '../components/ProfileEdit';
-import ProfileSkills          from '../components/ProfileSkills';
 import ProfileCompletitud     from '../components/ProfileCompletitud';
 import ProfileToast           from '../components/ProfileToast';
 import '../styles/profile.css';
@@ -56,7 +55,6 @@ export default function ProfilePage() {
         {/* Columna derecha: sidebar cards */}
         <div>
           <ProfileCompletitud perfil={perfil} />
-          <ProfileSkills habilidades={perfil.habilidades} />
         </div>
 
       </div>
