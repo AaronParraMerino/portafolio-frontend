@@ -23,7 +23,7 @@ export default function DashboardLayout() {
         /* Desktop: main empuja según ancho del sidebar */
         .dsh-main {
           margin-left: 240px;
-          margin-top: var(--nav-height, 60px);
+          margin-top: 0;
           min-height: calc(100vh - var(--nav-height, 60px));
           transition: margin-left .22s cubic-bezier(.4,0,.2,1);
         }
