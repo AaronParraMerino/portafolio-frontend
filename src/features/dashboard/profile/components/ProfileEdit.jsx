@@ -1,28 +1,17 @@
 import { useState } from 'react';
 import '../styles/profile.css';
 
-/* Separa "Nombre Apellido" en dos campos al abrir el modal */
-function splitNombre(nombreCompleto = '') {
-  const parts = nombreCompleto.trim().split(/\s+/);
-  if (parts.length === 1) return { nombre: parts[0], apellido: '' };
-  const apellido = parts.slice(1).join(' ');
-  return { nombre: parts[0], apellido };
-}
-
 export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }) {
-  const { nombre, apellido } = splitNombre(perfil.nombre);
 
   const [form, setForm] = useState({
-    nombre,
-    apellido,
-    profesion: perfil.profesion || '',
-    biografia: perfil.biografia || '',
-    correo:    perfil.correo    || '',
-    pais:      perfil.pais      || '',
-    ciudad:    perfil.ciudad    || '',
-    telefono:  perfil.telefono  || '',
-    linkedin:  perfil.linkedin  || '',
-    github:    perfil.github    || '',
+    nombre: perfil?.nombre || '',
+    apellido: perfil?.apellido || '',
+    profesion: perfil?.profesion || '',
+    biografia: perfil?.biografia || '',
+    correo: perfil?.correo || '',
+    pais: perfil?.pais || '',
+    ciudad: perfil?.ciudad || '',
+    telefono: perfil?.telefono || '',
   });
 
   const handleChange = (e) => {
@@ -31,10 +20,19 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    /* Reconstruye nombre completo antes de guardar */
-    const nombreCompleto = [form.nombre, form.apellido].filter(Boolean).join(' ');
+    // Asegurar que todos los campos tengan valores válidos
+    const datosLimpios = {
+      nombre: form.nombre || '',
+      apellido: form.apellido || '',
+      profesion: form.profesion || '',
+      biografia: form.biografia || '',
+      correo: form.correo || '',
+      pais: form.pais || '',
+      ciudad: form.ciudad || '',
+      telefono: form.telefono || '',
+    };
     // BACKEND: onGuardar llama PUT /api/profile con payload
-    onGuardar({ ...form, nombre: nombreCompleto });
+    onGuardar(datosLimpios);
   };
 
   /* Cierra al hacer click en el overlay */
@@ -65,7 +63,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
         </div>
 
         {/* ── Formulario ── */}
-        <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'contents' }} autoComplete="off">
           <div className="prf-modal-body">
 
             {/* Sección: Información básica */}
@@ -81,6 +79,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     onChange={handleChange}
                     required
                     placeholder="Tu nombre"
+                    autoComplete="given-name"
                   />
                 </div>
                 <div className="col-md-6">
@@ -91,6 +90,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     value={form.apellido}
                     onChange={handleChange}
                     placeholder="Tu apellido"
+                    autoComplete="family-name"
                   />
                 </div>
                 <div className="col-md-6">
@@ -101,6 +101,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     value={form.profesion}
                     onChange={handleChange}
                     placeholder="Ej: Dev Full Stack"
+                    autoComplete="organization-title"
                   />
                 </div>
                 <div className="col-12">
@@ -112,6 +113,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     onChange={handleChange}
                     rows={3}
                     placeholder="Cuéntanos sobre ti, tu experiencia y objetivos..."
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -130,6 +132,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     value={form.correo}
                     onChange={handleChange}
                     placeholder="ejemplo@correo.com"
+                    autoComplete="email"
                   />
                 </div>
                 <div className="col-md-3">
@@ -140,6 +143,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     value={form.pais}
                     onChange={handleChange}
                     placeholder="Bolivia"
+                    autoComplete="country-name"
                   />
                 </div>
                 <div className="col-md-3">
@@ -150,6 +154,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     value={form.ciudad}
                     onChange={handleChange}
                     placeholder="Cochabamba"
+                    autoComplete="address-level2"
                   />
                 </div>
                 <div className="col-md-6">
@@ -160,38 +165,11 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                     value={form.telefono}
                     onChange={handleChange}
                     placeholder="+591 70000000"
+                    autoComplete="tel"
                   />
                 </div>
               </div>
             </div>
-
-            {/* Sección: Redes */}
-            <div className="prf-form-section">
-              <span className="prf-section-label">Redes profesionales</span>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="prf-label">LinkedIn</label>
-                  <input
-                    className="form-control prf-input"
-                    name="linkedin"
-                    value={form.linkedin}
-                    onChange={handleChange}
-                    placeholder="https://linkedin.com/in/usuario"
-                  />
-                </div>
-                <div className="col-md-6">
-                  <label className="prf-label">GitHub</label>
-                  <input
-                    className="form-control prf-input"
-                    name="github"
-                    value={form.github}
-                    onChange={handleChange}
-                    placeholder="https://github.com/usuario"
-                  />
-                </div>
-              </div>
-            </div>
-
           </div>
 
           {/* ── Footer ── */}
