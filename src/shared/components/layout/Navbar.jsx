@@ -16,10 +16,13 @@ const NOTIFICACIONES = [
 ];
 
 export default function Navbar() {
-  const [scrolled,   setScrolled]   = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [notifOpen,  setNotifOpen]  = useState(false);
+  const [scrolled,    setScrolled]    = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const [notifOpen,   setNotifOpen]   = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [user,        setUser]        = useState(null);
   const notifRef = useRef(null);
+  const userRef  = useRef(null);
 
   /* sombra al hacer scroll */
   useEffect(() => {
@@ -41,10 +44,40 @@ export default function Navbar() {
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setNotifOpen(false);
       }
+      if (userRef.current && !userRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('usuario');
+    if (!stored) return;
+    try {
+      setUser(JSON.parse(stored));
+    } catch (err) {
+      console.warn('Usuario inválido en localStorage', err);
+      setUser(null);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('tokenPORT');
+    localStorage.removeItem('usuario');
+    window.location.href = '/';
+  };
+
+  const userName = user ? `${user.nombre || user.name || 'Usuario'} ${user.apellido || ''}`.trim() : '';
+  const initials = user
+    ? [user.nombre || user.name || 'U', user.apellido || user.lastName || '']
+        .map(name => String(name || ' ').trim().slice(0, 1).toUpperCase())
+        .join('')
+        .padEnd(2, 'U')
+    : 'U';
+  const userRole = user?.rol || user?.role || 'Mi perfil';
 
   return (
     <>
@@ -118,6 +151,109 @@ export default function Navbar() {
           display: flex; align-items: center;
           gap: 8px; margin-left: 20px;
         }
+
+        .spk-nav-user {
+          display: flex; align-items: center; gap: 9px;
+          padding: 6px 10px; border-radius: 10px;
+          border: 1px solid rgba(255,255,255,.18);
+          background: rgba(255,255,255,.08);
+          cursor: pointer;
+          position: relative;
+          transition: background .15s, border-color .15s;
+        }
+        .spk-nav-user:hover {
+          background: rgba(255,255,255,.16);
+        }
+        .spk-nav-user.open {
+          background: rgba(255,255,255,.18);
+          border-color: rgba(255,255,255,.3);
+        }
+
+        .spk-user-avatar {
+          width: 34px; height: 34px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,255,255,.5));
+          color: var(--azul-deep);
+          font-weight: 700; font-size: 13px;
+          border: 1.5px solid rgba(255,255,255,.3);
+          flex-shrink: 0;
+        }
+        .spk-user-info {
+          display: flex; flex-direction: column; align-items: flex-start;
+          line-height: 1.1;
+        }
+        .spk-user-toggle {
+          all: unset;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          width: 100%;
+          cursor: pointer;
+        }
+        .spk-user-name {
+          font-size: 12px; font-weight: 600;
+          color: rgba(255,255,255,.95);
+          white-space: nowrap;
+        }
+        .spk-user-role {
+          font-size: 10px; color: rgba(255,255,255,.55);
+          text-transform: uppercase; letter-spacing: .08em;
+          font-family: var(--mono);
+          white-space: nowrap;
+        }
+        .spk-user-chevron {
+          width: 12px; height: 12px;
+          stroke: rgba(255,255,255,.65); fill: none; stroke-width: 2;
+          transition: transform .2s;
+        }
+        .spk-nav-user.open .spk-user-chevron {
+          transform: rotate(180deg);
+        }
+
+        .spk-user-dropdown {
+          position: absolute; top: calc(100% + 10px); right: 0;
+          width: 240px; background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 12px; overflow: hidden;
+          box-shadow: 0 14px 44px rgba(0,0,0,.16);
+          z-index: 300;
+        }
+        .spk-dd-header {
+          padding: 14px 16px 12px;
+          border-bottom: 1px solid rgba(228,231,235,.95);
+          display: flex; align-items: center; gap: 10px;
+        }
+        .spk-dd-avatar {
+          width: 40px; height: 40px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(255,255,255,.95));
+          color: var(--azul-deep);
+          font-size: 14px; font-weight: 700;
+          flex-shrink: 0;
+          border: 1px solid rgba(56,189,248,.32);
+        }
+        .spk-dd-name {
+          font-size: 13px; font-weight: 700; color: var(--negro-texto);
+        }
+        .spk-dd-email {
+          font-size: 11px; color: var(--gris-texto); margin-top: 3px;
+        }
+        .spk-dd-item {
+          display: flex; align-items: center; gap: 10px;
+          width: 100%; padding: 12px 14px;
+          background: none; border: none; text-align: left;
+          color: var(--gris-oscuro); cursor: pointer;
+          font-size: 13px; transition: background .15s, color .15s;
+        }
+        .spk-dd-item:hover {
+          background: rgba(0,119,183,.05);
+          color: var(--azul-deep);
+        }
+        .spk-dd-item > span {
+          flex: 1;
+        }
+        .spk-dd-item.danger { color: var(--rojo-mid); }
+        .spk-dd-item.danger:hover { background: rgba(232,85,85,.1); }
 
         /* CAMPANA */
         .spk-bell-wrap { position: relative; }
@@ -354,21 +490,64 @@ export default function Navbar() {
 
           <div className="spk-nav-divider" />
 
-          {/* Iniciar sesión */}
-          <button 
-            className="spk-btn-login"
-               onClick={() => window.location.href = "/auth/Login"}
-            >
-            Iniciar sesión
-           </button>
+          {user ? (
+            <div className={`spk-nav-user${userMenuOpen ? ' open' : ''}`} ref={userRef}>
+              <button
+                className="spk-user-toggle"
+                type="button"
+                onClick={() => setUserMenuOpen(v => !v)}
+              >
+                <span className="spk-user-avatar">{initials}</span>
+                <span className="spk-user-info">
+                  <span className="spk-user-name">{userName}</span>
+                  <span className="spk-user-role">{userRole}</span>
+                </span>
+                <svg className="spk-user-chevron" viewBox="0 0 14 14">
+                  <path d="m3 5 4 4 4-4" />
+                </svg>
+              </button>
 
-          {/* Registrarse */}
-          <button 
-             className="spk-btn-register"
-             onClick={() => window.location.href = "/auth/Register"}
-             >
-             Registrarse
-            </button>
+              {userMenuOpen && (
+                <div className="spk-user-dropdown">
+                  <div className="spk-dd-header">
+                    <span className="spk-dd-avatar">{initials}</span>
+                    <div>
+                      <div className="spk-dd-name">{userName || 'Usuario'}</div>
+                      <div className="spk-dd-email">{user?.correo || user?.email || '---'}</div>
+                    </div>
+                  </div>
+
+                  <button className="spk-dd-item" type="button" onClick={() => { window.location.href = '/dashboard/profile'; }}>
+                    <span>Ver mi perfil</span>
+                  </button>
+                  <button className="spk-dd-item" type="button" onClick={() => { window.location.href = '/dashboard'; }}>
+                    <span>Ir al dashboard</span>
+                  </button>
+                  <button className="spk-dd-item" type="button" onClick={() => { window.location.href = '/dashboard/experience'; }}>
+                    <span>Mis proyectos</span>
+                  </button>
+                  <button className="spk-dd-item danger" type="button" onClick={handleLogout}>
+                    <span>Cerrar sesión</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button
+                className="spk-btn-login"
+                onClick={() => window.location.href = "/auth/login"}
+              >
+                Iniciar sesión
+              </button>
+              <button
+                className="spk-btn-register"
+                onClick={() => window.location.href = "/auth/register"}
+              >
+                Registrarse
+              </button>
+            </>
+          )}
 
         </div>
 
@@ -394,25 +573,50 @@ export default function Navbar() {
           </div>
 
           <div className="spk-mobile-actions">
-            <button 
-              className="spk-btn-login"
-              onClick={() => {
-                setMobileOpen(false);
-                window.location.href = "/auth/Login";
-              }}
-            >
-              Iniciar sesión
-            </button>
+            {user ? (
+              <>
+                <button
+                  className="spk-btn-login"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.location.href = '/dashboard/profile';
+                  }}
+                >
+                  Mi perfil
+                </button>
+                <button
+                  className="spk-btn-register"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  className="spk-btn-login"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.location.href = "/auth/login";
+                  }}
+                >
+                  Iniciar sesión
+                </button>
 
-            <button 
-              className="spk-btn-register"
-              onClick={() => {
-                setMobileOpen(false);
-                window.location.href = "/auth/Register";
-              }}
-            >
-              Registrarse
-            </button>
+                <button 
+                  className="spk-btn-register"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.location.href = "/auth/register";
+                  }}
+                >
+                  Registrarse
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
