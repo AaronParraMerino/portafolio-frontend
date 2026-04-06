@@ -1,14 +1,12 @@
 import { useState } from "react";
 import Navbar from "../../../shared/components/layout/Navbar"; 
-import { FaUserCircle, FaLock, FaEnvelope, FaPhone, FaCheckSquare, FaArrowLeft, FaTimes } from "react-icons/fa";
+import { FaUserCircle, FaLock, FaEnvelope, FaPhone, FaTimes } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-
 
 export default function RegisterForm() {
   const BASE_URL = process.env.REACT_APP_API_URL;
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   // Estados de inputs
   const [nombre, setNombre] = useState("");
@@ -60,7 +58,6 @@ export default function RegisterForm() {
     }
 
     setError("");
-    setLoading(true);
  // Api para registro del usuario
     try {
       const response = await fetch(`${BASE_URL}/auth/register`, {
@@ -81,19 +78,17 @@ export default function RegisterForm() {
  
       if (!response.ok) {
         setError(result.message || "Error al registrar usuario");
-        setLoading(false);
         return;
       }
  
       // Guardar token y datos del usuario desde la respuesta de la API
-      sessionStorage.setItem("tokenPORT", result.token);
-      sessionStorage.setItem("usuario", JSON.stringify(result.data));
+      localStorage.setItem("tokenPORT", result.token);
+      localStorage.setItem("usuario", JSON.stringify(result.data));
  
       // Redirigir al login
       window.location.href = "/";
     } catch (err) {
       setError("Error de conexión. Intente nuevamente.");
-      setLoading(false);
     } 
   };
 
@@ -210,9 +205,9 @@ export default function RegisterForm() {
             {/* Términos */}
             <p className="reg-terms">
               Al hacer clic en «Aceptar» Aceptas{" "}
-              <a href="#">las Condiciones de Uso</a>, la{" "}
-              <a href="#">Política de Privacidad</a> y la{" "}
-              <a href="#">Política de Cookies</a>
+              <button type="button" className="reg-terms-link" onClick={(e) => e.preventDefault()}>las Condiciones de Uso</button>, la{" "}
+              <button type="button" className="reg-terms-link" onClick={(e) => e.preventDefault()}>Política de Privacidad</button> y la{" "}
+              <button type="button" className="reg-terms-link" onClick={(e) => e.preventDefault()}>Política de Cookies</button>
             </p>
 
             {/* Botón Aceptar */}
@@ -484,6 +479,20 @@ export default function RegisterForm() {
         }
 
         .reg-terms a { color: #3b82f6; text-decoration: none; }
+
+        .reg-terms-link {
+          color: #3b82f6;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          font: inherit;
+          text-decoration: none;
+        }
+
+        .reg-terms-link:hover {
+          text-decoration: underline;
+        }
 
         .btn-accept {
           padding: 10px;
