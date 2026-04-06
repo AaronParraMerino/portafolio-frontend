@@ -369,8 +369,9 @@ export default function LoginForm() {
           }
 
           .modal-box {
+            position: relative; 
             background: white;
-            padding: 20px;
+            padding: 30px 25px 20px;
             border-radius: 10px;
             text-align: center;
           }
@@ -387,6 +388,21 @@ export default function LoginForm() {
             border: none;
             border-radius: 6px;
           }
+           .modal-close { 
+           position: absolute;
+           top: 10px;
+           right: 14px;
+           background: none;
+           border: none;
+           font-size: 18px;
+           cursor: pointer;
+           color: #333;
+           line-height: 1;
+           }
+
+           .modal-close:hover {
+            color: #000;
+           }
 
           @media (max-width: 600px) {
             .login-card {
