@@ -191,6 +191,23 @@ export default function Sidebar({ collapsed, onToggle }) {
   const location  = useLocation();
   const activeId  = getActiveId(location.pathname);
 
+  /* ── Cerrar sesión (misma lógica que Navbar) ── */
+  const BASE_URL = process.env.REACT_APP_API_URL;
+  const handleLogout = async () => {
+    const token = sessionStorage.getItem('tokenPORT');
+    try {
+      await fetch(`${BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error('Error al intentar cerrar sesión:', err);
+    }
+    sessionStorage.removeItem('tokenPORT');
+    sessionStorage.removeItem('usuario');
+    window.location.href = '/';
+  };
+
   /* ── estado del drawer móvil ── */
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -230,7 +247,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                 item.danger ? 'danger' : '',
               ].filter(Boolean).join(' ')}
               data-tip={item.label}
-              onClick={() => inDrawer ? handleNavClick(item.to) : navigate(item.to)}
+              onClick={() => item.id === 'logout' ? handleLogout() : (inDrawer ? handleNavClick(item.to) : navigate(item.to))}
             >
               <svg
                 className="dsh-nav-icon"

@@ -48,7 +48,7 @@ export function useProfile() {
       visibilidad: { ...prev.visibilidad, [campo]: !actual },
     }));
     try {
-      await updateVisibility(campo, !actual);
+      await updateVisibility({ [campo]: !actual });
     } catch {
       // Revertir si falla
       setPerfil(prev => ({
