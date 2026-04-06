@@ -9,7 +9,6 @@ export default function LoginForm() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!correo && !password) {
@@ -30,7 +29,6 @@ export default function LoginForm() {
     }
 
     setError("");
-    setLoading(true);
 
     try {
       const response = await fetch(`${BASE_URL}/auth/login`, {
@@ -52,7 +50,6 @@ export default function LoginForm() {
 
       if (!response.ok) {
         setError(result.message || "Correo o contraseña incorrectos");
-        setLoading(false);
         return;
       }
 
@@ -66,7 +63,6 @@ export default function LoginForm() {
     } catch (err) {
       console.error("Error real:", err.message);
       setError("Error de conexión. Intente nuevamente.");
-      setLoading(false);
     }
   };
   return (
@@ -122,9 +118,9 @@ export default function LoginForm() {
                 </span>
               </div>
 
-              <a href="#" className="forgot">
+              <button type="button" className="forgot" onClick={(e) => e.preventDefault()}>
                 ¿Olvidaste Contraseña?
-              </a>
+              </button>
 
               <button
                 className="btn-primary"
@@ -311,6 +307,15 @@ export default function LoginForm() {
             margin-top: 8px;
             font-size: 12px;
             color: #3b82f6;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font: inherit;
+          }
+
+          .forgot:hover {
+            text-decoration: underline;
           }
 
           .btn-primary {
