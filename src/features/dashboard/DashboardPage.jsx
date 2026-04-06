@@ -2,6 +2,7 @@
    DashboardPage.jsx — /dashboard (index)
    Vista de bienvenida / resumen general.
 ══════════════════════════════════════ */
+import { useState, useEffect } from 'react';
 
 const QUICK_STATS = [
   { num: '4',   lbl: 'Proyectos',      color: 'var(--azul)',      bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
@@ -101,6 +102,18 @@ const QUICK_LINKS = [
 ];
 
 export default function DashboardPage() {
+  const [nombreUsuario, setNombreUsuario] = useState('Desarrollador');
+  useEffect(() => {
+    const userStr = sessionStorage.getItem('usuario');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      // Busca 'nombre' o 'name' (dependiendo de cómo lo guardaste)
+      const nombreReal = user.nombre || user.name;
+      if (nombreReal) {
+        setNombreUsuario(nombreReal);
+      }
+    }
+  }, []);
   return (
     <>
       <style>{`
@@ -400,9 +413,11 @@ export default function DashboardPage() {
         <div className="dsh-welcome">
           <div className="dsh-welcome-text">
             <div className="dsh-welcome-label">CreaFolio</div>
-            <div className="dsh-welcome-title">¡Bienvenido, Juan!</div>
+            <div className="dsh-welcome-title">
+                ¡Bienvenido de vuelta, {nombreUsuario}! 
+            </div>
             <div className="dsh-welcome-sub">
-              Gestiona tu portafolio, actualiza tus proyectos y conecta con empresas.
+                Gestiona tu portafolio, actualiza tus proyectos y conecta con empresas. 
             </div>
           </div>
           <div className="dsh-welcome-badges">

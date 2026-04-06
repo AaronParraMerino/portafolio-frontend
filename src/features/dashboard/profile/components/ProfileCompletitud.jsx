@@ -8,16 +8,20 @@ const CircleIcon = () => (
 );
 
 export default function ProfileCompletitud({ perfil }) {
-  const pct = perfil.stats?.completitud ?? 0;
-
   const items = [
-    { label: 'Nombre y profesión', done: !!(perfil.nombre && perfil.profesion) },
+    { label: 'Nombre y Apellido', done: !!(perfil.nombre && perfil.apellido) },
     { label: 'Foto de perfil',     done: !!perfil.avatarUrl },
-    { label: 'Acerca de mí',       done: !!perfil.biografia },
+    { label: 'Foto de portada',     done: !!perfil.portadaUrl },
+    { label: 'Profesión',          done: !!perfil.profesion },
     { label: 'Correo de contacto', done: !!perfil.correo },
+    { label: 'Teléfono',           done: !!perfil.telefono },
+    { label: 'Acerca de mí',       done: !!perfil.biografia },
     { label: 'Ubicación',          done: !!(perfil.ciudad && perfil.pais) },
-    { label: 'Al menos 1 proyecto',done: (perfil.stats?.proyectos ?? 0) > 0 },
   ];
+
+  const doneCount = items.filter(item => item.done).length;
+  const pct = Math.round((doneCount / items.length) * 100);
+
 
   return (
     <div className="prf-card">
