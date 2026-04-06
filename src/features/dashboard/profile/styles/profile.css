@@ -38,9 +38,26 @@
 }
 
 /* ════════════════════════════════════════
+   CUSTOM PROPERTIES DEL HEADER
+   Centralizan todos los tamaños del banner/avatar
+   para que los cálculos sean siempre consistentes.
+════════════════════════════════════════ */
+.prf-header {
+  /* — Desktop por defecto — */
+  --banner-h:    200px;
+  --avatar-size: 180px;
+  --avatar-left: 70px;
+  /* cuánto del avatar queda POR DEBAJO del banner */
+  --avatar-below: calc(var(--avatar-size) / 2);
+  /* padding-top del info-row: deja el texto justo debajo del avatar */
+  --info-pad-top: calc(var(--avatar-below) - 20px);
+}
+
+/* ════════════════════════════════════════
    HEADER — Banner + avatar + info + botones
 ════════════════════════════════════════ */
 .prf-header {
+  position: relative;
   border-radius: 12px;
   overflow: hidden;
   background: var(--blanco);
@@ -52,7 +69,7 @@
 /* Banner */
 .prf-banner {
   position: relative;
-  height: 130px;
+  height: var(--banner-h);
   background: linear-gradient(120deg, var(--azul-deep) 0%, var(--azul) 60%, #38bdf8 100%);
   overflow: hidden;
 }
@@ -75,7 +92,7 @@
 /* botón cambiar banner */
 .prf-banner-edit {
   position: absolute;
-  bottom: 10px;
+  top: 12px;
   right: 12px;
   display: flex;
   align-items: center;
@@ -97,17 +114,21 @@
   stroke: currentColor; fill: none; stroke-width: 1.8;
 }
 
-/* Avatar zona */
+/* ── Avatar zona ──
+   El avatar se posiciona de forma que su centro coincide
+   exactamente con el borde inferior del banner (top = banner-h - avatar/2).
+   Así siempre queda mitad dentro del banner y mitad fuera,
+   independientemente del tamaño de pantalla. */
 .prf-avatar-zone {
-  position: relative;
-  display: inline-block;
-  margin-left: 28px;
-  margin-top: -40px;
-  z-index: 2;
+  position: absolute;
+  left: var(--avatar-left);
+  top: calc(var(--banner-h) - var(--avatar-size) / 1.4);
+  z-index: 3;
 }
+
 .prf-avatar {
-  width: 80px;
-  height: 80px;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
   border-radius: 50%;
   background: linear-gradient(135deg, var(--azul-deep), var(--azul));
   border: 3px solid var(--blanco);
@@ -115,12 +136,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: clamp(14px, 2vw, 22px);
   font-weight: 800;
   color: #fff;
   letter-spacing: -.02em;
   overflow: hidden;
   user-select: none;
+  transition: width .2s, height .2s;
 }
 .prf-avatar img {
   width: 100%;
@@ -148,23 +170,29 @@
   stroke: #fff; fill: none; stroke-width: 2;
 }
 
-/* Fila info + acciones */
+/* Fila info + acciones
+   En desktop: texto debajo del banner y el avatar.
+   El avatar flota encima visualmente (z-index:3) y el contenido queda alineado a la izquierda. */
 .prf-info-row {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 28px 20px;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: var(--info-pad-top) 28px 20px;
   flex-wrap: wrap;
+  min-height: 20px;
+  text-align: left;
 }
-.prf-info { min-width: 0; }
+.prf-info { min-width: 0; flex: 1; width: 100%; }
 .prf-nombre {
-  font-size: 20px;
+  font-size: clamp(18px, 2.4vw, 28px);
   font-weight: 800;
   color: var(--negro-texto);
   letter-spacing: -.02em;
   line-height: 1.2;
-  margin-bottom: 3px;
+  margin-bottom: 1px;
 }
 .prf-rol {
   font-family: var(--mono);
@@ -173,7 +201,7 @@
   color: var(--azul);
   letter-spacing: .08em;
   text-transform: uppercase;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
 }
 .prf-ubicacion {
   display: inline-flex;
@@ -188,13 +216,15 @@
   flex-shrink: 0;
 }
 
-/* Acciones */
+/* Acciones — posición absoluta dentro de prf-info-row */
 .prf-acciones {
+  position: absolute;
+  top: 14px;
+  right: 24px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  align-items: flex-start;
-  padding-top: 4px;
+  align-items: center;
 }
 .prf-btn-outline {
   display: inline-flex;
@@ -247,33 +277,232 @@
   stroke: currentColor; fill: none; stroke-width: 2;
 }
 
-/* Stats row debajo del nombre (opcional) */
-.prf-stats-strip {
+/* ── Datos personales ──
+   Muestra los datos de contacto del usuario
+   directamente debajo del ProfileHeader,
+   con el nombre + profesión arriba y los campos
+   de contacto en un grid de inputs de solo lectura.
+   El ícono de lápiz abre el modal de edición. */
+.prf-datacard {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+ 
+/* ── Fila nombre + botón editar ── */
+.prf-datacard-namerow {
   display: flex;
-  gap: 0;
-  border-top: 1px solid var(--gris-borde);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
 }
-.prf-stat-item {
+ 
+.prf-datacard-namecol {
+  min-width: 0;
   flex: 1;
-  text-align: center;
-  padding: 12px 8px;
-  border-right: 1px solid var(--gris-borde);
 }
-.prf-stat-item:last-child { border-right: none; }
-.prf-stat-num {
+ 
+.prf-datacard-nombre {
   font-size: 18px;
   font-weight: 800;
-  color: var(--azul);
+  color: var(--negro-texto);
   letter-spacing: -.02em;
-  line-height: 1;
+  line-height: 1.2;
+  margin-bottom: 2px;
 }
-.prf-stat-lbl {
-  font-size: 10px;
+ 
+.prf-datacard-profesion {
+  font-family: var(--mono);
+  font-size: 11px;
   font-weight: 500;
+  color: var(--azul);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+ 
+/* Botón lápiz */
+.prf-datacard-editbtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  background: var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.prf-datacard-editbtn:hover {
+  border-color: var(--azul);
+  background: var(--azul-light);
+}
+.prf-datacard-editbtn svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--gris-texto);
+  transition: stroke .15s;
+}
+.prf-datacard-editbtn:hover svg {
+  stroke: var(--azul);
+}
+ 
+/* ── Separador ── */
+.prf-datacard-divider {
+  height: 1px;
+  background: var(--gris-borde);
+  margin: 0 20px;
+}
+ 
+/* ── Grid de campos ── */
+.prf-datacard-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 6px 0 4px;
+}
+ 
+.prf-datacard-field {
+  padding: 12px 20px;
+  border-right: 1px solid rgba(0,0,0,.05);
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+ 
+/* La fila de pais+ciudad comparte columnas medianas */
+/* Correo: col 1, País: col 2, Ciudad: col 3         */
+/* Teléfono: col 1, vacío: col 2-3                   */
+/* Biografía: fila completa                          */
+ 
+.prf-datacard-field:nth-child(3),   /* Ciudad — última de la primera fila */
+.prf-datacard-field:nth-child(4) {  /* Teléfono — última antes de bio */
+  border-right: none;
+}
+ 
+.prf-datacard-field--full {
+  grid-column: 1 / -1;
+  border-right: none;
+  border-bottom: none;
+}
+ 
+/* Teléfono solo ocupa 1 columna; las otras 2 quedan vacías → ocupa solo 1 col */
+.prf-datacard-field:nth-child(4) {
+  grid-column: 1;
+}
+ 
+.prf-datacard-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--gris-texto);
   text-transform: uppercase;
   letter-spacing: .07em;
-  margin-top: 2px;
+  margin-bottom: 5px;
+}
+ 
+.prf-datacard-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--negro-texto);
+  background: var(--fondo);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-height: 32px;
+  word-break: break-word;
+  line-height: 1.4;
+}
+ 
+.prf-datacard-value--bio {
+  min-height: 60px;
+  color: var(--gris-oscuro);
+  font-size: 13px;
+  line-height: 1.6;
+}
+ 
+.prf-datacard-empty {
+  color: var(--gris-texto);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ── Breakpoint intermedio: tablet / desktop angosto ──
+   El layout sigue siendo "desktop" (avatar izquierda, texto derecha)
+   pero el avatar y el banner escalan un poco hacia abajo. */
+@media (max-width: 900px) {
+  .prf-header {
+    --banner-h:    160px;
+    --avatar-size: 115px;
+    --avatar-left: 28px;
+    --info-pad-top: calc(var(--avatar-below) + 2px);
+  }
+}
+
+/* ── Mobile: ≤ 640px ──
+   Avatar centrado, más grande que el banner para que sea
+   el elemento visual protagonista. Texto centrado debajo. */
+@media (max-width: 640px) {
+  .prf-header {
+    --banner-h:    120px;
+    --avatar-size: 110px;
+    --avatar-left: 0px;          /* no se usa (se centra con transform) */
+    --info-pad-left: 16px;       /* sobrescribe el cálculo de desktop */
+    --info-pad-top: calc(var(--avatar-size) / 2 - 12px);
+  }
+
+  /* Centrar el avatar horizontalmente */
+  .prf-avatar-zone {
+    left: 50%;
+    transform: translateX(-50%);
+    /* top sigue siendo calc(banner-h - avatar/2) via custom props */
+  }
+
+  /* Info centrada debajo del avatar */
+  .prf-info-row {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    padding-right: 16px;
+    gap: 4px;
+  }
+
+  .prf-info {
+    width: 100%;
+    text-align: center;
+  }
+
+  .prf-ubicacion {
+    justify-content: center;
+  }
+
+  /* Botones: salen del posicionamiento absoluto y se muestran
+     como bloque normal debajo del nombre/rol */
+  .prf-acciones {
+    position: static;
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .prf-page { padding: 14px; }
+}
+
+/* ── Mobile pequeño: ≤ 400px ──
+   Botones en columna para que no se corten */
+@media (max-width: 400px) {
+  .prf-header {
+    --avatar-size: 96px;
+    --info-pad-top: calc(var(--avatar-size) / 2 + 12px);
+  }
+
+  .prf-acciones { flex-direction: column; align-items: center; }
+  .prf-btn-outline,
+  .prf-btn-primary { width: 100%; justify-content: center; }
 }
 
 /* ════════════════════════════════════════
@@ -414,48 +643,6 @@
 }
 .prf-toggle.on  .prf-toggle-thumb { left: 16px; }
 .prf-toggle.off .prf-toggle-thumb { left: 2px; }
-
-/* ════════════════════════════════════════
-   HABILIDADES (sidebar card)
-════════════════════════════════════════ */
-.prf-skills-wrap { padding: 14px 20px 16px; }
-.prf-skill-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  margin: 3px;
-  border: 1px solid transparent;
-}
-.prf-skill-tecnica {
-  background: var(--azul-light);
-  color: var(--azul);
-  border-color: var(--azul-mid);
-}
-.prf-skill-blanda {
-  background: rgba(245,158,11,.1);
-  color: #b45309;
-  border-color: rgba(245,158,11,.3);
-}
-.prf-skill-dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.prf-skill-tecnica .prf-skill-dot { background: var(--azul); }
-.prf-skill-blanda  .prf-skill-dot { background: #f59e0b; }
-
-/* nivel badge pequeño dentro del chip */
-.prf-nivel {
-  font-size: 9px;
-  font-weight: 500;
-  opacity: .65;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
 
 /* ════════════════════════════════════════
    COMPLETITUD (sidebar card)
@@ -735,26 +922,13 @@
 }
 
 /* ════════════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE — Grid sidebar
 ════════════════════════════════════════ */
 @media (max-width: 900px) {
   .prf-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-  .prf-page { padding: 14px; }
-
-  .prf-banner { height: 100px; }
-  .prf-avatar-zone { margin-left: 16px; margin-top: -32px; }
-  .prf-avatar { width: 64px; height: 64px; font-size: 19px; }
-
-  .prf-info-row { padding: 10px 16px 16px; gap: 12px; }
-  .prf-nombre { font-size: 17px; }
-  .prf-acciones { width: 100%; justify-content: flex-start; }
-
-  .prf-stats-strip { flex-wrap: wrap; }
-  .prf-stat-item { min-width: 50%; border-right: none; border-bottom: 1px solid var(--gris-borde); }
-
   .prf-modal { border-radius: 10px; max-height: calc(100dvh - 24px); }
   .prf-modal-head { padding: 14px 16px 12px; }
   .prf-modal-body { padding: 16px; }
@@ -764,8 +938,47 @@
   .prf-fila-right { flex-direction: column; align-items: flex-end; gap: 4px; }
 }
 
-@media (max-width: 400px) {
-  .prf-acciones { flex-direction: column; }
-  .prf-btn-outline,
-  .prf-btn-primary { width: 100%; justify-content: center; }
+/* En mobile, el grid de campos pasa a 2 columnas para aprovechar mejor el espacio.
+   El campo de teléfono ocupa toda la fila (columna 1-2) y las otras 2 quedan vacías. */
+@media (max-width: 640px) {
+  .prf-datacard-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+ 
+  /* En móvil Correo ocupa toda la fila */
+  .prf-datacard-field:nth-child(1) {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+ 
+  /* País y Ciudad quedan en 2 columnas */
+  .prf-datacard-field:nth-child(2),
+  .prf-datacard-field:nth-child(3) {
+    border-right: revert;
+  }
+  .prf-datacard-field:nth-child(3) {
+    border-right: none;
+  }
+ 
+  /* Teléfono: columna completa en móvil */
+  .prf-datacard-field:nth-child(4) {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+ 
+  .prf-datacard-nombre { font-size: 16px; }
 }
+ 
+@media (max-width: 400px) {
+  .prf-datacard-fields { grid-template-columns: 1fr; }
+ 
+  .prf-datacard-field,
+  .prf-datacard-field:nth-child(1),
+  .prf-datacard-field:nth-child(2),
+  .prf-datacard-field:nth-child(3),
+  .prf-datacard-field:nth-child(4) {
+    grid-column: 1;
+    border-right: none;
+  }
+}
+ 

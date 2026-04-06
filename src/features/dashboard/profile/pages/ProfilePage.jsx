@@ -1,8 +1,8 @@
 import { useProfile }        from '../hooks/useProfile';
 import ProfileHeader          from '../components/ProfileHeader';
+import ProfileDataCard        from '../components/ProfileDataCard';
 import ProfileInfo            from '../components/ProfileInfo';
 import ProfileEdit            from '../components/ProfileEdit';
-import ProfileSkills          from '../components/ProfileSkills';
 import ProfileCompletitud     from '../components/ProfileCompletitud';
 import ProfileToast           from '../components/ProfileToast';
 import '../styles/profile.css';
@@ -13,7 +13,6 @@ export default function ProfilePage() {
     setEditando, guardarPerfil, toggleVisibilidad, toast,
   } = useProfile();
 
-  /* ── Loading ── */
   if (loading) {
     return (
       <div className="prf-loading">
@@ -23,7 +22,6 @@ export default function ProfilePage() {
     );
   }
 
-  /* ── Error ── */
   if (!perfil) {
     return (
       <div className="prf-error">
@@ -35,17 +33,25 @@ export default function ProfilePage() {
   return (
     <div className="prf-page">
 
-      {/* ── Header: banner + avatar + nombre + stats ── */}
+      {/* ── Header: banner + avatar + stats strip ── */}
       <ProfileHeader
         perfil={perfil}
         onEditar={() => setEditando(true)}
         onVistaPublica={() => window.open(`/u/${perfil.id}`, '_blank')}
       />
 
+      {/* ── Nombre + profesión + datos de contacto ──
+           Aparece directamente debajo del header,
+           fuera del grid para que ocupe todo el ancho */}
+      <ProfileDataCard
+        perfil={perfil}
+        onEditar={() => setEditando(true)}
+      />
+
       {/* ── Grid principal ── */}
       <div className="prf-grid">
 
-        {/* Columna izquierda: datos + visibilidad */}
+        {/* Columna izquierda: visibilidad de campos */}
         <div>
           <ProfileInfo
             perfil={perfil}
@@ -53,21 +59,18 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Columna derecha: sidebar cards */}
+        {/* Columna derecha: completitud */}
         <div>
           <ProfileCompletitud perfil={perfil} />
-          <ProfileSkills habilidades={perfil.habilidades} />
         </div>
 
       </div>
 
-      {/* ── Modal de edición (se abre encima, no reemplaza nada) ── */}
+      {/* ── Modal de edición ── */}
       {editando && (
         <ProfileEdit
           perfil={perfil}
-          onGuardar={(data) => {
-            guardarPerfil(data);
-          }}
+          onGuardar={(data) => guardarPerfil(data)}
           onCancelar={() => setEditando(false)}
           guardando={guardando}
         />
