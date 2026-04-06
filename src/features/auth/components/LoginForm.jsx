@@ -54,8 +54,8 @@ export default function LoginForm() {
       }
 
       //  Guardar token y datos del usuario en localStorage
-      sessionStorage.setItem("tokenPORT", result.token);
-      sessionStorage.setItem("usuario", JSON.stringify(result.data));
+      localStorage.setItem("tokenPORT", result.token);
+      localStorage.setItem("usuario", JSON.stringify(result.data));
 
       // Redirigir al inicio (ajusta la ruta según tu app)
       window.location.href = "/";
