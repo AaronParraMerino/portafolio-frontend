@@ -82,8 +82,8 @@ export default function RegisterForm() {
       }
  
       // Guardar token y datos del usuario desde la respuesta de la API
-      localStorage.setItem("tokenPORT", result.token);
-      localStorage.setItem("usuario", JSON.stringify(result.data));
+      sessionStorage.setItem("tokenPORT", result.token);
+      sessionStorage.setItem("usuario", JSON.stringify(result.data));
  
       // Redirigir al login
       window.location.href = "/";
