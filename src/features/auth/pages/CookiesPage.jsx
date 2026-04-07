@@ -1,1 +1,5 @@
-//  Esta en proceso de contrsuccion
+import PoliticaCookies from '../components/PoliticasC';
+
+export default function CookiesPage() {
+  return <PoliticaCookies />;
+  }

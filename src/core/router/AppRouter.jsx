@@ -7,6 +7,8 @@ import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
 import DashboardPage from '../../features/dashboard/DashboardPage';
 import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
+import CookiesPage from '../../features/auth/pages/CookiesPage';
+import PrivacidadPage from '../../features/auth/pages/PrivacidadPage';
 
 export default function AppRouter() {
   return (
@@ -28,7 +30,8 @@ export default function AppRouter() {
         {/* ── SIN Navbar y Footer ── */}
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/register" element={<RegisterPage />} />
-
+        <Route path="/auth/cookies" element={<CookiesPage />} />
+        <Route path="/auth/privacidad" element={<PrivacidadPage />} />
       </Routes>
     </BrowserRouter>
   );

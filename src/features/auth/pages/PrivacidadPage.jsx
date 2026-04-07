@@ -1,1 +1,5 @@
-//  Esta en proceso de contrsuccion
+import PoliticaPrivacidad from '../components/PoliticasP';
+
+export default function PrivacidadPage() {
+  return <PoliticaPrivacidad />;
+  }
