@@ -8,9 +8,10 @@ export default function PoliticaPrivacidad({ onClose }) {
     if (onClose) onClose();
   };
 
+  // ✅ CAMBIO: ya no redirige, solo cierra el modal
   const handleAccept = () => {
     setVisible(false);
-    window.location.href = "/auth/Register";
+    if (onClose) onClose();
   };
 
   if (!visible) return null;
@@ -18,17 +19,12 @@ export default function PoliticaPrivacidad({ onClose }) {
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
-
-        {/* Header barra */}
         <div style={styles.headerBar}>
           <span style={styles.headerBarTitle}>Política de Privacidad</span>
-          <button onClick={handleAccept} style={styles.closeBtn} aria-label="Cerrar">×</button>
+          <button onClick={handleClose} style={styles.closeBtn} aria-label="Cerrar">×</button>
         </div>
 
-        {/* Body con scroll */}
         <div style={styles.body}>
-
-          {/* Título principal */}
           <div style={styles.titleRow}>
             <span style={styles.shieldIcon}>🛡️</span>
             <h1 style={styles.mainTitle}>POLÍTICA DE PRIVACIDAD</h1>
@@ -36,7 +32,6 @@ export default function PoliticaPrivacidad({ onClose }) {
 
           <p style={styles.date}>Fecha de entrada en vigor: 23 de marzo de 2026</p>
 
-          {/* Sección: Tu privacidad es lo primero */}
           <h2 style={styles.sectionTitle}>Tu privacidad es lo primero</h2>
           <p style={styles.p}>
             El objetivo del sistema es permitir a los usuarios crear y gestionar un portafolio digital de proyectos
@@ -54,7 +49,6 @@ export default function PoliticaPrivacidad({ onClose }) {
             dentro del sistema.
           </p>
 
-          {/* 1. Introducción */}
           <h2 style={styles.sectionTitle}>1. Introducción:</h2>
           <p style={styles.p}>
             Somos una plataforma en línea orientada a profesionales que permite crear y gestionar portafolios
@@ -77,11 +71,9 @@ export default function PoliticaPrivacidad({ onClose }) {
             («Visitantes»), dependiendo de la configuración de visibilidad definida por cada usuario.
           </p>
 
-          {/* 2. Datos que recopilamos */}
           <h2 style={styles.sectionTitle}>2. Datos que recopilamos:</h2>
           <p style={styles.p}>
-            Nos proporcionas datos para crear y gestionar tu cuenta dentro del sistema generador de portafolios
-            digitales.
+            Nos proporcionas datos para crear y gestionar tu cuenta dentro del sistema generador de portafolios digitales.
           </p>
 
           <div style={styles.itemBlock}>
@@ -96,8 +88,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}>👤</span>
             <div>
-              <strong>Perfil Profesional:</strong> Puedes crear y completar tu perfil profesional dentro del
-              sistema. Este perfil puede incluir información como:
+              <strong>Perfil Profesional:</strong> Puedes crear y completar tu perfil profesional dentro del sistema. Este perfil puede incluir información como:
               <ul style={styles.ul}>
                 <li>Profesión y biografía</li>
                 <li>Experiencia académica y laboral</li>
@@ -105,23 +96,19 @@ export default function PoliticaPrivacidad({ onClose }) {
                 <li>Logros y capacidades desarrolladas</li>
               </ul>
               No es obligatorio completar todos los campos; sin embargo, un perfil más completo permite una mejor
-              organización y presentación de tu portafolio digital. Tú decides qué información incluir y cuál
-              hacer visible para otros usuarios o visitantes.
+              organización y presentación de tu portafolio digital.
             </div>
           </div>
 
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}>📁</span>
             <div>
-              <strong>Gestión de Proyectos:</strong> Recopilamos la información que proporcionas al gestionar tu
-              portafolio, como:
+              <strong>Gestión de Proyectos:</strong> Recopilamos la información que proporcionas al gestionar tu portafolio, como:
               <ul style={styles.ul}>
                 <li>Proyectos de software en los que has participado</li>
                 <li>Descripción de proyectos y evidencias digitales</li>
                 <li>Enlaces relacionados (por ejemplo, repositorios o demostraciones)</li>
               </ul>
-              Esta información es fundamental para el funcionamiento del sistema, ya que permite estructurar tu
-              portafolio de manera organizada.
             </div>
           </div>
 
@@ -129,12 +116,10 @@ export default function PoliticaPrivacidad({ onClose }) {
             <span style={styles.itemIcon}>🔗</span>
             <div>
               <strong>Integración con Redes Profesionales:</strong> Puedes agregar enlaces a perfiles externos,
-              como redes profesionales o repositorios de código. Estos datos se utilizan únicamente para
-              complementar tu portafolio y mejorar la presentación de tu perfil.
+              como redes profesionales o repositorios de código.
             </div>
           </div>
 
-          {/* Iconos sociales */}
           <div style={styles.socialRow}>
             <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" style={styles.socialLink} title="Facebook">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="#1877F2"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.99 3.66 9.12 8.44 9.88v-6.99H7.9v-2.89h2.54V9.84c0-2.51 1.49-3.89 3.77-3.89 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99C18.34 21.12 22 17 22 12z"/></svg>
@@ -151,25 +136,19 @@ export default function PoliticaPrivacidad({ onClose }) {
             <span style={styles.itemIcon}>📢</span>
             <div>
               <strong>Publicación de Información:</strong> El sistema te permite seleccionar qué información deseas
-              publicar. Recopilamos los datos que decides hacer visibles dentro de tu portafolio, los cuales pueden
-              ser accesibles para otros usuarios o visitantes según tu configuración.
+              publicar dentro de tu portafolio.
             </div>
           </div>
 
           <p style={styles.p}>
             No es obligatorio proporcionar toda la información; sin embargo, la ausencia de ciertos datos puede
-            limitar la funcionalidad del sistema y la calidad de tu portafolio profesional.
+            limitar la funcionalidad del sistema.
           </p>
 
-          {/* 3. Información de Contacto */}
           <h2 style={styles.sectionTitle}>3. Información de Contacto:</h2>
           <p style={styles.p}>
             Puedes contactarnos o utilizar las opciones disponibles dentro del sistema para resolver cualquier
             duda, consulta o inconveniente relacionado con esta Política de privacidad.
-          </p>
-          <p style={styles.p}>
-            Si tienes alguna pregunta o queja sobre el uso de tu información, puedes comunicarte con el equipo
-            responsable del sistema a través de los medios habilitados en la plataforma como ser:
           </p>
 
           <div style={styles.contactBlock}>
@@ -186,13 +165,8 @@ export default function PoliticaPrivacidad({ onClose }) {
               </a>
             </div>
           </div>
-
-          <p style={styles.p}>
-            Se recomienda realizar el contacto inicial por estos canales para una atención más rápida y directa.
-          </p>
         </div>
 
-        {/* Footer */}
         <div style={styles.footer}>
           <button onClick={handleAccept} style={styles.btnPrimary}>Aceptar</button>
         </div>
@@ -202,183 +176,26 @@ export default function PoliticaPrivacidad({ onClose }) {
 }
 
 const styles = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 9999,
-    padding: "1rem",
-  },
-  modal: {
-    background: "#fff",
-    borderRadius: "12px",
-    border: "0.5px solid #ddd",
-    width: "100%",
-    maxWidth: "680px",
-    maxHeight: "88vh",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-    fontFamily: "'Georgia', serif",
-  },
-  headerBar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "10px 16px",
-    borderBottom: "0.5px solid #e0e0e0",
-    background: "#fafafa",
-  },
-  headerBarTitle: {
-    fontSize: "13px",
-    color: "#666",
-    fontFamily: "sans-serif",
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    fontSize: "20px",
-    cursor: "pointer",
-    color: "#888",
-    padding: "0 4px",
-    lineHeight: 1,
-  },
-  body: {
-    overflowY: "auto",
-    padding: "24px 28px",
-    flex: 1,
-  },
-  titleRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    marginBottom: "8px",
-    justifyContent: "center",
-  },
-  shieldIcon: {
-    fontSize: "30px",
-  },
-  mainTitle: {
-    fontSize: "22px",
-    fontWeight: "bold",
-    margin: 0,
-    letterSpacing: "1px",
-    color: "#1a1a2e",
-    fontFamily: "'Georgia', serif",
-  },
-  date: {
-    fontSize: "12px",
-    color: "#777",
-    margin: "0 0 16px",
-    fontFamily: "sans-serif",
-  },
-  sectionTitle: {
-    fontSize: "14px",
-    fontWeight: "bold",
-    color: "#111",
-    margin: "18px 0 6px",
-    fontFamily: "sans-serif",
-  },
-  p: {
-    fontSize: "13px",
-    color: "#333",
-    lineHeight: 1.7,
-    margin: "0 0 8px",
-    fontFamily: "sans-serif",
-  },
-  itemBlock: {
-    display: "flex",
-    gap: "10px",
-    margin: "10px 0",
-    fontSize: "13px",
-    color: "#333",
-    lineHeight: 1.7,
-    fontFamily: "sans-serif",
-    alignItems: "flex-start",
-  },
-  itemIcon: {
-    fontSize: "16px",
-    marginTop: "2px",
-    flexShrink: 0,
-  },
-  ul: {
-    margin: "6px 0 6px 18px",
-    padding: 0,
-    fontSize: "13px",
-    color: "#333",
-    lineHeight: 1.7,
-  },
-  socialRow: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "28px",
-    margin: "16px 0",
-  },
-  socialIcon: {
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-  },
-  socialLink: {
-    display: "flex",
-    alignItems: "center",
-    cursor: "pointer",
-    transition: "opacity 0.2s",
-    opacity: 1,
-  },
-  contactBlock: {
-    margin: "8px 0 12px 8px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    fontFamily: "sans-serif",
-  },
-  contactItem: {
-    display: "flex",
-    gap: "8px",
-    fontSize: "13px",
-    color: "#333",
-    alignItems: "center",
-  },
-  link: {
-    color: "#185FA5",
-    textDecoration: "none",
-  },
-  contactLink: {
-    color: "#185FA5",
-    textDecoration: "none",
-    fontSize: "13px",
-    fontFamily: "sans-serif",
-  },
-  footer: {
-    padding: "12px 24px",
-    borderTop: "0.5px solid #e0e0e0",
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "8px",
-    background: "#fafafa",
-  },
-  btnSecondary: {
-    padding: "8px 20px",
-    fontSize: "13px",
-    borderRadius: "8px",
-    border: "0.5px solid #ccc",
-    background: "#f0f0f0",
-    color: "#555",
-    cursor: "pointer",
-    fontFamily: "sans-serif",
-  },
-  btnPrimary: {
-    padding: "8px 20px",
-    fontSize: "13px",
-    borderRadius: "8px",
-    border: "0.5px solid #185FA5",
-    background: "#185FA5",
-    color: "#fff",
-    cursor: "pointer",
-    fontFamily: "sans-serif",
-  },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "1rem" },
+  modal: { background: "#fff", borderRadius: "12px", border: "0.5px solid #ddd", width: "100%", maxWidth: "680px", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Georgia', serif" },
+  headerBar: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "0.5px solid #e0e0e0", background: "#fafafa" },
+  headerBarTitle: { fontSize: "13px", color: "#666", fontFamily: "sans-serif" },
+  closeBtn: { background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#888", padding: "0 4px", lineHeight: 1 },
+  body: { overflowY: "auto", padding: "24px 28px", flex: 1 },
+  titleRow: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", justifyContent: "center" },
+  shieldIcon: { fontSize: "30px" },
+  mainTitle: { fontSize: "22px", fontWeight: "bold", margin: 0, letterSpacing: "1px", color: "#1a1a2e", fontFamily: "'Georgia', serif" },
+  date: { fontSize: "12px", color: "#777", margin: "0 0 16px", fontFamily: "sans-serif" },
+  sectionTitle: { fontSize: "14px", fontWeight: "bold", color: "#111", margin: "18px 0 6px", fontFamily: "sans-serif" },
+  p: { fontSize: "13px", color: "#333", lineHeight: 1.7, margin: "0 0 8px", fontFamily: "sans-serif" },
+  itemBlock: { display: "flex", gap: "10px", margin: "10px 0", fontSize: "13px", color: "#333", lineHeight: 1.7, fontFamily: "sans-serif", alignItems: "flex-start" },
+  itemIcon: { fontSize: "16px", marginTop: "2px", flexShrink: 0 },
+  ul: { margin: "6px 0 6px 18px", padding: 0, fontSize: "13px", color: "#333", lineHeight: 1.7 },
+  socialRow: { display: "flex", justifyContent: "center", gap: "28px", margin: "16px 0" },
+  socialLink: { display: "flex", alignItems: "center", cursor: "pointer", transition: "opacity 0.2s", opacity: 1 },
+  contactBlock: { margin: "8px 0 12px 8px", display: "flex", flexDirection: "column", gap: "6px", fontFamily: "sans-serif" },
+  contactItem: { display: "flex", gap: "8px", fontSize: "13px", color: "#333", alignItems: "center" },
+  contactLink: { color: "#185FA5", textDecoration: "none", fontSize: "13px", fontFamily: "sans-serif" },
+  footer: { padding: "12px 24px", borderTop: "0.5px solid #e0e0e0", display: "flex", justifyContent: "flex-end", gap: "8px", background: "#fafafa" },
+  btnPrimary: { padding: "8px 20px", fontSize: "13px", borderRadius: "8px", border: "0.5px solid #185FA5", background: "#185FA5", color: "#fff", cursor: "pointer", fontFamily: "sans-serif" },
 };

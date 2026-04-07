@@ -2,13 +2,16 @@ import { useState } from "react";
 import Navbar from "../../../shared/components/layout/Navbar"; 
 import { FaUserCircle, FaLock, FaEnvelope, FaPhone, FaTimes } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-import { useNavigate } from "react-router-dom";
+import PoliticaPrivacidad from "./PoliticasP";
+import PoliticaCookies from "./PoliticasC";
+
 
 export default function RegisterForm() {
   const BASE_URL = process.env.REACT_APP_API_URL;
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const navigate = useNavigate();
+  const [showModalPrivacidad, setShowModalPrivacidad] = useState(false);
+  const [showModalCookies, setShowModalCookies] = useState(false);
 
   // Estados de inputs
   const [nombre, setNombre] = useState("");
@@ -207,12 +210,12 @@ export default function RegisterForm() {
             {/* Términos */}
             <p className="reg-terms">
               Al hacer clic en «Aceptar» Aceptas{" "}
-              <button type="button" className="reg-terms-link" onClick={() => navigate("/auth/privacidad")}>
-              Política  de Privacidad
+              <button type="button" className="reg-terms-link" onClick={() => setShowModalPrivacidad(true)}>
+              Política de Privacidad
               </button>
               {" "}y la{" "}
-              <button type="button" className="reg-terms-link" onClick={() => navigate("/auth/cookies")}>
-                Política de Cookies
+              <button type="button" className="reg-terms-link" onClick={() => setShowModalCookies(true)}>
+              Política de Cookies
               </button>
             </p>
 
@@ -240,6 +243,15 @@ export default function RegisterForm() {
         </div>
 
       </div>
+         
+         {/* ── Modales de políticas (el formulario nunca se desmonta) ── */}
+        {showModalPrivacidad && (
+          <PoliticaPrivacidad onClose={() => setShowModalPrivacidad(false)} />
+        )}
+        {showModalCookies && (
+          <PoliticaCookies onClose={() => setShowModalCookies(false)} />
+        )}
+
 
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
