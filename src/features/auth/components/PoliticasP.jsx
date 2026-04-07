@@ -77,7 +77,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           </p>
 
           <div style={styles.itemBlock}>
-            <span style={styles.itemIcon}>✅</span>
+            <span style={styles.itemIcon}></span>
             <div>
               <strong>Registro:</strong> Para crear una cuenta, debes proporcionarnos información básica como tu
               nombre, correo electrónico y una contraseña. Estos datos permiten identificarte dentro del sistema y
@@ -86,7 +86,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           </div>
 
           <div style={styles.itemBlock}>
-            <span style={styles.itemIcon}>👤</span>
+            <span style={styles.itemIcon}></span>
             <div>
               <strong>Perfil Profesional:</strong> Puedes crear y completar tu perfil profesional dentro del sistema. Este perfil puede incluir información como:
               <ul style={styles.ul}>
@@ -101,7 +101,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           </div>
 
           <div style={styles.itemBlock}>
-            <span style={styles.itemIcon}>📁</span>
+            <span style={styles.itemIcon}></span>
             <div>
               <strong>Gestión de Proyectos:</strong> Recopilamos la información que proporcionas al gestionar tu portafolio, como:
               <ul style={styles.ul}>
@@ -113,7 +113,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           </div>
 
           <div style={styles.itemBlock}>
-            <span style={styles.itemIcon}>🔗</span>
+            <span style={styles.itemIcon}></span>
             <div>
               <strong>Integración con Redes Profesionales:</strong> Puedes agregar enlaces a perfiles externos,
               como redes profesionales o repositorios de código.
@@ -133,7 +133,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           </div>
 
           <div style={styles.itemBlock}>
-            <span style={styles.itemIcon}>📢</span>
+            <span style={styles.itemIcon}></span>
             <div>
               <strong>Publicación de Información:</strong> El sistema te permite seleccionar qué información deseas
               publicar dentro de tu portafolio.
@@ -153,13 +153,13 @@ export default function PoliticaPrivacidad({ onClose }) {
 
           <div style={styles.contactBlock}>
             <div style={styles.contactItem}>
-              <span>✉️</span>
-              <a href="mailto:sparkyhub.team@gmail.com" style={styles.contactLink}>
-                Correo Electrónico: sparkyhub.team@gmail.com
+              <span></span>
+              <a href="https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1&to=sparkyhub.team@gmail.com" target="_blank" rel="noopener noreferrer" style={styles.contactLink}>
+                Correo Electronico: sparkyhub.team@gmail.com
               </a>
             </div>
             <div style={styles.contactItem}>
-              <span>📞</span>
+              <span></span>
               <a href="https://wa.me/59160726822" target="_blank" rel="noopener noreferrer" style={styles.contactLink}>
                 Número de teléfono: 60726822
               </a>

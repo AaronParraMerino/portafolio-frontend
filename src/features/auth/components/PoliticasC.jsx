@@ -51,7 +51,7 @@ export default function PoliticaCookies({ onClose }) {
             <h1 style={styles.title}>POLITICA DE COOKIES</h1>
           </div>
 
-          <p style={styles.date}>Fecha de entrada en vigor: 2026</p>
+          <p style={styles.date}>Fecha de entrada en vigor: 23 de marzo de 2026</p>
 
           <p style={styles.paragraph}>
             En nuestro sistema de portafolios de proyectos de software, creemos que es fundamental ser transparentes
