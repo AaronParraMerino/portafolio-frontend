@@ -118,7 +118,7 @@ export default function LoginForm() {
                 </span>
               </div>
 
-              <button type="button" className="forgot" onClick={(e) => e.preventDefault()}>
+              <button type="button" className="forgot" onClick={() => window.location.href = "/auth/Contraseña"}>
                 ¿Olvidaste Contraseña?
               </button>
 

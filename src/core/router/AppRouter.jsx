@@ -9,6 +9,7 @@ import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
 import CookiesPage from '../../features/auth/pages/CookiesPage';
 import PrivacidadPage from '../../features/auth/pages/PrivacidadPage';
+import ContraseñaPage from '../../features/auth/pages/ContraseñaPage';
 
 export default function AppRouter() {
   return (
@@ -32,6 +33,7 @@ export default function AppRouter() {
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/auth/cookies" element={<CookiesPage />} />
         <Route path="/auth/privacidad" element={<PrivacidadPage />} />
+        <Route path="/auth/contraseña" element={<ContraseñaPage />} />
       </Routes>
     </BrowserRouter>
   );
