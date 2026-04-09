@@ -123,18 +123,6 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
             <div className="prf-form-section">
               <span className="prf-section-label">Contacto</span>
               <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="prf-label">Correo electrónico</label>
-                  <input
-                    className="form-control prf-input"
-                    type="email"
-                    name="correo"
-                    value={form.correo}
-                    onChange={handleChange}
-                    placeholder="ejemplo@correo.com"
-                    autoComplete="email"
-                  />
-                </div>
                 <div className="col-md-3">
                   <label className="prf-label">País</label>
                   <input

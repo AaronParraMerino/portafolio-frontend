@@ -982,3 +982,176 @@
   }
 }
  
+/* ════════════════════════════════════════
+   AGREGADO: Botones de imagen (banner + avatar)
+   y zona de upload en modales.
+   Agregar al FINAL de profile.css
+════════════════════════════════════════ */
+
+/* ── Grupo de botones sobre el banner ── */
+.prf-img-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+/* Botón eliminar banner — sobre el banner */
+.prf-img-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: rgba(220, 38, 38, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.prf-img-delete-btn:hover {
+  background: rgba(185, 28, 28, 0.92);
+}
+.prf-img-delete-btn svg {
+  width: 13px;
+  height: 13px;
+  stroke: #fff;
+}
+
+/* Botón eliminar avatar — debajo del lápiz, a la derecha */
+.prf-avatar-delete-btn {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;                   /* lápiz a la derecha, basura a la izquierda */
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--rojo-soft);
+  border: 2px solid var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+  z-index: 4;
+}
+.prf-avatar-delete-btn:hover {
+  background: var(--rojo-mid);
+}
+.prf-avatar-delete-btn svg {
+  width: 10px;
+  height: 10px;
+  stroke: #fff;
+}
+
+/* ── Zona de drag & drop (upload modal) ── */
+.prf-upload-zone {
+  width: 100%;
+  min-height: 160px;
+  border: 2px dashed var(--gris-borde);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+  background: var(--fondo);
+  overflow: hidden;
+  position: relative;
+}
+.prf-upload-zone:hover,
+.prf-upload-zone.drag {
+  border-color: var(--azul);
+  background: var(--azul-light);
+}
+.prf-upload-zone.has-preview {
+  cursor: default;
+  min-height: 200px;
+}
+
+/* Placeholder (sin imagen) */
+.prf-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  pointer-events: none;
+}
+.prf-upload-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--azul-light);
+  border: 1.5px solid var(--azul-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.prf-upload-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--azul);
+}
+.prf-upload-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--negro-texto);
+}
+.prf-upload-subtext {
+  font-size: 11px;
+  color: var(--gris-texto);
+}
+
+/* Con preview */
+.prf-upload-preview-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.prf-upload-preview {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 12px rgba(0,0,0,.1);
+}
+.prf-upload-preview.round {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+/* Botón × para quitar la preview */
+.prf-upload-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.5);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+}
+.prf-upload-remove:hover { background: rgba(0,0,0,.75); }
+.prf-upload-remove svg {
+  width: 10px;
+  height: 10px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2.2;
+}
