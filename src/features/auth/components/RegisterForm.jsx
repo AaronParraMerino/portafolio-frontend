@@ -4,9 +4,11 @@ import { FaUserCircle, FaLock, FaEnvelope, FaPhone, FaTimes } from "react-icons/
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import PoliticaPrivacidad from "./PoliticasP";
 import PoliticaCookies from "./PoliticasC";
+import { GoogleLogin } from "@react-oauth/google";
 
 
 export default function RegisterForm() {
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const BASE_URL = process.env.REACT_APP_API_URL;
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -23,6 +25,39 @@ export default function RegisterForm() {
 
   // Estado de error
   const [error, setError] = useState("");
+
+  const handleGoogleLogin = async (credentialResponse) => {
+  const idToken = credentialResponse?.credential;
+
+    if (!idToken) {
+      setError("No se pudo obtener el token de Google");
+    return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/auth/google`, {
+          method: "POST",
+          headers: {
+          "Content-Type": "application/json",
+      },
+          body: JSON.stringify({
+              id_token: idToken,
+          }),
+      });
+  const result = await response.json();
+
+  if (!response.ok) {
+      setError(result.message || "No se pudo iniciar sesión con Google");
+        return;
+  }
+
+    sessionStorage.setItem("tokenPORT", result.token);
+    sessionStorage.setItem("usuario", JSON.stringify(result.data));
+    window.location.href = "/";
+  } catch (err) {
+      setError("Error de conexión. Intente nuevamente.");
+  }
+};
 
   const handleClose = () => {
     window.location.href = '/auth/login';
@@ -220,13 +255,30 @@ export default function RegisterForm() {
             </p>
 
             {/* Botón Aceptar */}
-            <button className="btn-accept" type="submit">ACEPTAR</button>
+            <button 
+            className="btn-accept" 
+            type="submit">
+              ACEPTAR
+            </button>
 
             {/* Google */}
-            <button className="btn-google" type="button">
-              <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" alt="google" />
-              Continuar con Google
-            </button>
+            {googleClientId ? (
+              <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => setError("La autenticación con Google fue cancelada o falló")}
+              text="continue_with"
+              shape="rectangular"
+              width="100%"
+            /> 
+            ) : (
+          <button
+            className="btn-google"
+            type="button"
+            onClick={() => setError("Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google")}
+          >
+            Continuar con Google
+          </button> )}
+                
 
           </form>
 
