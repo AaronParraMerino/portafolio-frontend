@@ -1,0 +1,1384 @@
+/* ═══════════════════════════════════════════════════════
+   PROFILE — Estilos unificados
+   src/features/dashboard/profile/styles/profile.css
+   Depende de: global.css (variables) + Bootstrap 5
+   Sin Tailwind. Sin CSS Modules extra para este módulo.
+═══════════════════════════════════════════════════════ */
+
+/* ── PAGE WRAPPER ── */
+.prf-page {
+  padding: 24px 28px;
+  min-height: calc(100vh - var(--nav-height, 60px));
+}
+
+/* ── LOADING / ERROR ── */
+.prf-loading,
+.prf-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 220px;
+  font-size: 14px;
+  color: var(--gris-texto);
+}
+
+/* ── SPINNER (reutilizable) ── */
+.prf-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--azul-mid);
+  border-top-color: var(--azul);
+  border-radius: 50%;
+  animation: prf-spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes prf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ════════════════════════════════════════
+   CUSTOM PROPERTIES DEL HEADER
+   Centralizan todos los tamaños del banner/avatar
+   para que los cálculos sean siempre consistentes.
+════════════════════════════════════════ */
+.prf-header {
+  /* — Desktop por defecto — */
+  --banner-h:    200px;
+  --avatar-size: 180px;
+  --avatar-left: 70px;
+  /* cuánto del avatar queda POR DEBAJO del banner */
+  --avatar-below: calc(var(--avatar-size) / 2);
+  /* padding-top del info-row: deja el texto justo debajo del avatar */
+  --info-pad-top: calc(var(--avatar-below) - 20px);
+}
+
+/* ════════════════════════════════════════
+   HEADER — Banner + avatar + info + botones
+════════════════════════════════════════ */
+.prf-header {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  margin-bottom: 22px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+
+/* Banner */
+.prf-banner {
+  position: relative;
+  height: var(--banner-h);
+  background: linear-gradient(120deg, var(--azul-deep) 0%, var(--azul) 60%, #38bdf8 100%);
+  overflow: hidden;
+}
+/* cuadrícula decorativa igual que el welcome del dashboard */
+.prf-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+/* Si hay imagen de fondo */
+.prf-banner.has-img {
+  background-size: cover;
+  background-position: center;
+}
+/* botón cambiar banner */
+.prf-banner-edit {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background .15s;
+}
+.prf-banner-edit:hover { background: rgba(0,0,0,.55); }
+.prf-banner-edit svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 1.8;
+}
+
+/* ── Avatar zona ──
+   El avatar se posiciona de forma que su centro coincide
+   exactamente con el borde inferior del banner (top = banner-h - avatar/2).
+   Así siempre queda mitad dentro del banner y mitad fuera,
+   independientemente del tamaño de pantalla. */
+.prf-avatar-zone {
+  position: absolute;
+  left: var(--avatar-left);
+  top: calc(var(--banner-h) - var(--avatar-size) / 1.4);
+  z-index: 3;
+}
+
+.prf-avatar {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--azul-deep), var(--azul));
+  border: 3px solid var(--blanco);
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 2vw, 22px);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.02em;
+  overflow: hidden;
+  user-select: none;
+  transition: width .2s, height .2s;
+}
+.prf-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.prf-avatar-btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--azul);
+  border: 2px solid var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+}
+.prf-avatar-btn:hover { background: var(--azul-hover); }
+.prf-avatar-btn svg {
+  width: 10px; height: 10px;
+  stroke: #fff; fill: none; stroke-width: 2;
+}
+
+/* Fila info + acciones
+   En desktop: texto debajo del banner y el avatar.
+   El avatar flota encima visualmente (z-index:3) y el contenido queda alineado a la izquierda. */
+.prf-info-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: var(--info-pad-top) 28px 20px;
+  flex-wrap: wrap;
+  min-height: 20px;
+  text-align: left;
+}
+.prf-info { min-width: 0; flex: 1; width: 100%; }
+.prf-nombre {
+  font-size: clamp(18px, 2.4vw, 28px);
+  font-weight: 800;
+  color: var(--negro-texto);
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  margin-bottom: 1px;
+}
+.prf-rol {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--azul);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.prf-ubicacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--gris-texto);
+}
+.prf-ubicacion svg {
+  width: 11px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 1.6;
+  flex-shrink: 0;
+}
+
+/* Acciones — posición absoluta dentro de prf-info-row */
+.prf-acciones {
+  position: absolute;
+  top: 14px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.prf-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  background: var(--blanco);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gris-oscuro);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.prf-btn-outline:hover {
+  border-color: var(--azul);
+  color: var(--azul);
+  background: var(--azul-light);
+}
+.prf-btn-outline svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 1.8;
+}
+.prf-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: none;
+  background: var(--azul);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.prf-btn-primary:hover {
+  background: var(--azul-hover);
+  box-shadow: 0 3px 10px rgba(0,119,183,.3);
+  transform: translateY(-1px);
+}
+.prf-btn-primary svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+}
+
+/* ── Datos personales ──
+   Muestra los datos de contacto del usuario
+   directamente debajo del ProfileHeader,
+   con el nombre + profesión arriba y los campos
+   de contacto en un grid de inputs de solo lectura.
+   El ícono de lápiz abre el modal de edición. */
+.prf-datacard {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+ 
+/* ── Fila nombre + botón editar ── */
+.prf-datacard-namerow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+}
+ 
+.prf-datacard-namecol {
+  min-width: 0;
+  flex: 1;
+}
+ 
+.prf-datacard-nombre {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--negro-texto);
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+ 
+.prf-datacard-profesion {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--azul);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+ 
+/* Botón lápiz */
+.prf-datacard-editbtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  background: var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.prf-datacard-editbtn:hover {
+  border-color: var(--azul);
+  background: var(--azul-light);
+}
+.prf-datacard-editbtn svg {
+  width: 13px;
+  height: 13px;
+  stroke: var(--gris-texto);
+  transition: stroke .15s;
+}
+.prf-datacard-editbtn:hover svg {
+  stroke: var(--azul);
+}
+ 
+/* ── Separador ── */
+.prf-datacard-divider {
+  height: 1px;
+  background: var(--gris-borde);
+  margin: 0 20px;
+}
+ 
+/* ── Grid de campos ── */
+.prf-datacard-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 6px 0 4px;
+}
+ 
+.prf-datacard-field {
+  padding: 12px 20px;
+  border-right: 1px solid rgba(0,0,0,.05);
+  border-bottom: 1px solid rgba(0,0,0,.05);
+}
+ 
+/* La fila de pais+ciudad comparte columnas medianas */
+/* Correo: col 1, País: col 2, Ciudad: col 3         */
+/* Teléfono: col 1, vacío: col 2-3                   */
+/* Biografía: fila completa                          */
+ 
+.prf-datacard-field:nth-child(3),   /* Ciudad — última de la primera fila */
+.prf-datacard-field:nth-child(4) {  /* Teléfono — última antes de bio */
+  border-right: none;
+}
+ 
+.prf-datacard-field--full {
+  grid-column: 1 / -1;
+  border-right: none;
+  border-bottom: none;
+}
+ 
+/* Teléfono solo ocupa 1 columna; las otras 2 quedan vacías → ocupa solo 1 col */
+.prf-datacard-field:nth-child(4) {
+  grid-column: 1;
+}
+ 
+.prf-datacard-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gris-texto);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 5px;
+}
+ 
+.prf-datacard-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--negro-texto);
+  background: var(--fondo);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 6px;
+  padding: 6px 10px;
+  min-height: 32px;
+  word-break: break-word;
+  line-height: 1.4;
+}
+ 
+.prf-datacard-value--bio {
+  min-height: 60px;
+  color: var(--gris-oscuro);
+  font-size: 13px;
+  line-height: 1.6;
+}
+ 
+.prf-datacard-empty {
+  color: var(--gris-texto);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ── Breakpoint intermedio: tablet / desktop angosto ──
+   El layout sigue siendo "desktop" (avatar izquierda, texto derecha)
+   pero el avatar y el banner escalan un poco hacia abajo. */
+@media (max-width: 900px) {
+  .prf-header {
+    --banner-h:    160px;
+    --avatar-size: 115px;
+    --avatar-left: 28px;
+    --info-pad-top: calc(var(--avatar-below) + 2px);
+  }
+}
+
+/* ── Mobile: ≤ 640px ──
+   Avatar centrado, más grande que el banner para que sea
+   el elemento visual protagonista. Texto centrado debajo. */
+@media (max-width: 640px) {
+  .prf-header {
+    --banner-h:    120px;
+    --avatar-size: 110px;
+    --avatar-left: 0px;          /* no se usa (se centra con transform) */
+    --info-pad-left: 16px;       /* sobrescribe el cálculo de desktop */
+    --info-pad-top: calc(var(--avatar-size) / 2 - 12px);
+  }
+
+  /* Centrar el avatar horizontalmente */
+  .prf-avatar-zone {
+    left: 50%;
+    transform: translateX(-50%);
+    /* top sigue siendo calc(banner-h - avatar/2) via custom props */
+  }
+
+  /* Info centrada debajo del avatar */
+  .prf-info-row {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    padding-right: 16px;
+    gap: 4px;
+  }
+
+  .prf-info {
+    width: 100%;
+    text-align: center;
+  }
+
+  .prf-ubicacion {
+    justify-content: center;
+  }
+
+  /* Botones: salen del posicionamiento absoluto y se muestran
+     como bloque normal debajo del nombre/rol */
+  .prf-acciones {
+    position: static;
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .prf-page { padding: 14px; }
+}
+
+/* ── Mobile pequeño: ≤ 400px ──
+   Botones en columna para que no se corten */
+@media (max-width: 400px) {
+  .prf-header {
+    --avatar-size: 96px;
+    --info-pad-top: calc(var(--avatar-size) / 2 + 12px);
+  }
+
+  .prf-acciones { flex-direction: column; align-items: center; }
+  .prf-btn-outline,
+  .prf-btn-primary { width: 100%; justify-content: center; }
+}
+
+/* ════════════════════════════════════════
+   GRID PRINCIPAL (Info + sidebar)
+════════════════════════════════════════ */
+.prf-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ════════════════════════════════════════
+   CARD genérica (reutilizada en Info + secciones)
+════════════════════════════════════════ */
+.prf-card {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  margin-bottom: 16px;
+}
+.prf-card:last-child { margin-bottom: 0; }
+
+.prf-card-head {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--gris-borde);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.prf-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--negro-texto);
+  letter-spacing: -.01em;
+}
+.prf-card-sub {
+  font-size: 11px;
+  color: var(--gris-texto);
+}
+
+/* ════════════════════════════════════════
+   INFO — Datos personales (tabla con visibilidad)
+════════════════════════════════════════ */
+.prf-lista { padding: 4px 0; }
+
+.prf-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid rgba(0,0,0,.05);
+  transition: background .1s;
+}
+.prf-fila:last-child { border-bottom: none; }
+.prf-fila:hover { background: var(--fondo); }
+
+.prf-fila-left { min-width: 0; flex: 1; }
+.prf-campo-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gris-texto);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  display: block;
+  margin-bottom: 1px;
+}
+.prf-campo-valor {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--negro-texto);
+  word-break: break-word;
+}
+.prf-campo-valor.empty { color: var(--gris-texto); font-style: italic; }
+
+.prf-fila-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Pills de visibilidad */
+.prf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.prf-pill svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+.prf-pill-siempre {
+  background: var(--azul-light);
+  color: var(--azul);
+  border: 1px solid var(--azul-mid);
+}
+.prf-pill-visible {
+  background: rgba(16,185,129,.1);
+  color: #059669;
+  border: 1px solid rgba(16,185,129,.25);
+}
+.prf-pill-oculto {
+  background: var(--fondo);
+  color: var(--gris-texto);
+  border: 1px solid var(--gris-borde);
+}
+
+/* Toggle switch */
+.prf-toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.prf-toggle.on  { background: var(--azul); }
+.prf-toggle.off { background: var(--gris-borde); }
+.prf-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  transition: left .2s cubic-bezier(.4,0,.2,1);
+}
+.prf-toggle.on  .prf-toggle-thumb { left: 16px; }
+.prf-toggle.off .prf-toggle-thumb { left: 2px; }
+
+/* ════════════════════════════════════════
+   COMPLETITUD (sidebar card)
+════════════════════════════════════════ */
+.prf-completitud { padding: 16px 20px; }
+.prf-comp-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--gris-texto);
+  margin-bottom: 6px;
+  font-family: var(--mono);
+}
+.prf-comp-labels strong { color: #f59e0b; }
+.prf-comp-bar {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--gris-borde);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.prf-comp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.prf-comp-items { display: flex; flex-direction: column; gap: 6px; }
+.prf-comp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--gris-texto);
+}
+.prf-comp-item.done { color: #059669; }
+.prf-comp-item svg {
+  width: 13px; height: 13px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════
+   MODAL DE EDICIÓN
+════════════════════════════════════════ */
+.prf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(3px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: prf-fadeIn .18s ease;
+}
+@keyframes prf-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.prf-modal {
+  background: var(--blanco);
+  border-radius: 14px;
+  border: 1.5px solid var(--gris-borde);
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  width: 100%;
+  max-width: 600px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  animation: prf-slideUp .22s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+@keyframes prf-slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.prf-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--gris-borde);
+  flex-shrink: 0;
+}
+.prf-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--negro-texto);
+  letter-spacing: -.01em;
+}
+.prf-modal-sub {
+  font-size: 11px;
+  color: var(--gris-texto);
+  margin-top: 1px;
+}
+.prf-modal-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  background: var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .12s;
+  flex-shrink: 0;
+}
+.prf-modal-close:hover {
+  border-color: var(--rojo-soft);
+  background: var(--rojo-bg);
+}
+.prf-modal-close svg {
+  width: 12px; height: 12px;
+  stroke: var(--gris-texto); fill: none; stroke-width: 2.2;
+}
+.prf-modal-close:hover svg { stroke: var(--rojo-soft); }
+
+.prf-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Sección dentro del modal */
+.prf-form-section { margin-bottom: 20px; }
+.prf-form-section:last-child { margin-bottom: 0; }
+.prf-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gris-texto);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prf-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gris-borde);
+}
+
+.prf-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gris-oscuro);
+  margin-bottom: 4px;
+  display: block;
+}
+.prf-input {
+  font-family: var(--font) !important;
+  font-size: 13px !important;
+  border: 1.5px solid var(--gris-borde) !important;
+  border-radius: 7px !important;
+  color: var(--negro-texto) !important;
+  background: var(--blanco) !important;
+  transition: border-color .15s, box-shadow .15s !important;
+  padding: 8px 12px !important;
+}
+.prf-input:focus {
+  outline: none !important;
+  border-color: var(--azul) !important;
+  box-shadow: 0 0 0 3px var(--azul-glow) !important;
+}
+.prf-input::placeholder { color: #9ca3af !important; }
+
+.prf-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--gris-borde);
+  flex-shrink: 0;
+}
+
+/* btn cancelar dentro del modal */
+.prf-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  background: var(--blanco);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gris-oscuro);
+  cursor: pointer;
+  transition: all .15s;
+}
+.prf-btn-cancel:hover {
+  border-color: var(--rojo-soft);
+  color: var(--rojo-soft);
+  background: var(--rojo-bg);
+}
+.prf-btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 7px;
+  border: none;
+  background: var(--azul);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all .15s;
+}
+.prf-btn-save:hover {
+  background: var(--azul-hover);
+  box-shadow: 0 4px 12px rgba(0,119,183,.3);
+  transform: translateY(-1px);
+}
+.prf-btn-save:disabled,
+.prf-btn-cancel:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.prf-btn-save svg,
+.prf-btn-cancel svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 2.2;
+}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+.prf-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  box-shadow: 0 6px 24px rgba(0,0,0,.14);
+  white-space: nowrap;
+  animation: prf-toastIn .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes prf-toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.prf-toast svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; fill: none; stroke-width: 2.2;
+  flex-shrink: 0;
+}
+.prf-toast.ok {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid rgba(16,185,129,.25);
+}
+.prf-toast.error {
+  background: var(--rojo-chip);
+  color: var(--rojo-mid);
+  border: 1px solid var(--rojo-borde);
+}
+
+/* ════════════════════════════════════════
+   RESPONSIVE — Grid sidebar
+════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .prf-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .prf-modal { border-radius: 10px; max-height: calc(100dvh - 24px); }
+  .prf-modal-head { padding: 14px 16px 12px; }
+  .prf-modal-body { padding: 16px; }
+  .prf-modal-foot { padding: 12px 16px; }
+
+  .prf-fila { padding: 10px 14px; }
+  .prf-fila-right { flex-direction: column; align-items: flex-end; gap: 4px; }
+}
+
+/* En mobile, el grid de campos pasa a 2 columnas para aprovechar mejor el espacio.
+   El campo de teléfono ocupa toda la fila (columna 1-2) y las otras 2 quedan vacías. */
+@media (max-width: 640px) {
+  .prf-datacard-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+ 
+  /* En móvil Correo ocupa toda la fila */
+  .prf-datacard-field:nth-child(1) {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+ 
+  /* País y Ciudad quedan en 2 columnas */
+  .prf-datacard-field:nth-child(2),
+  .prf-datacard-field:nth-child(3) {
+    border-right: revert;
+  }
+  .prf-datacard-field:nth-child(3) {
+    border-right: none;
+  }
+ 
+  /* Teléfono: columna completa en móvil */
+  .prf-datacard-field:nth-child(4) {
+    grid-column: 1 / -1;
+    border-right: none;
+  }
+ 
+  .prf-datacard-nombre { font-size: 16px; }
+}
+ 
+@media (max-width: 400px) {
+  .prf-datacard-fields { grid-template-columns: 1fr; }
+ 
+  .prf-datacard-field,
+  .prf-datacard-field:nth-child(1),
+  .prf-datacard-field:nth-child(2),
+  .prf-datacard-field:nth-child(3),
+  .prf-datacard-field:nth-child(4) {
+    grid-column: 1;
+    border-right: none;
+  }
+}
+ 
+/* ════════════════════════════════════════
+   AGREGADO: Botones de imagen (banner + avatar)
+   y zona de upload en modales.
+   Agregar al FINAL de profile.css
+════════════════════════════════════════ */
+
+/* ── Grupo de botones sobre el banner ── */
+.prf-img-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+/* Botón eliminar banner — sobre el banner */
+.prf-img-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: rgba(220, 38, 38, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.prf-img-delete-btn:hover {
+  background: rgba(185, 28, 28, 0.92);
+}
+.prf-img-delete-btn svg {
+  width: 13px;
+  height: 13px;
+  stroke: #fff;
+}
+
+/* Botón eliminar avatar — debajo del lápiz, a la derecha */
+.prf-avatar-delete-btn {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;                   /* lápiz a la derecha, basura a la izquierda */
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--rojo-soft);
+  border: 2px solid var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+  z-index: 4;
+}
+.prf-avatar-delete-btn:hover {
+  background: var(--rojo-mid);
+}
+.prf-avatar-delete-btn svg {
+  width: 10px;
+  height: 10px;
+  stroke: #fff;
+}
+
+/* ── Zona de drag & drop (upload modal) ── */
+.prf-upload-zone {
+  width: 100%;
+  min-height: 160px;
+  border: 2px dashed var(--gris-borde);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+  background: var(--fondo);
+  overflow: hidden;
+  position: relative;
+}
+.prf-upload-zone:hover,
+.prf-upload-zone.drag {
+  border-color: var(--azul);
+  background: var(--azul-light);
+}
+.prf-upload-zone.has-preview {
+  cursor: default;
+  min-height: 200px;
+}
+
+/* Placeholder (sin imagen) */
+.prf-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  pointer-events: none;
+}
+.prf-upload-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--azul-light);
+  border: 1.5px solid var(--azul-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.prf-upload-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--azul);
+}
+.prf-upload-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--negro-texto);
+}
+.prf-upload-subtext {
+  font-size: 11px;
+  color: var(--gris-texto);
+}
+
+/* Con preview */
+.prf-upload-preview-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.prf-upload-preview {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 12px rgba(0,0,0,.1);
+}
+.prf-upload-preview.round {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+/* Botón × para quitar la preview */
+.prf-upload-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.5);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+}
+.prf-upload-remove:hover { background: rgba(0,0,0,.75); }
+.prf-upload-remove svg {
+  width: 10px;
+  height: 10px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2.2;
+}
+
+/* ════════════════════════════════════════
+   VALIDACIONES — Agregar al final de profile.css
+   Depende de: global.css (--azul, --rojo-soft, --rojo-bg, --rojo-borde, --gris-borde, etc.)
+════════════════════════════════════════ */
+
+/* ── Campo requerido: asterisco rojo ── */
+.prf-required-star {
+  color: var(--rojo-soft);
+  margin-left: 2px;
+  font-weight: 700;
+}
+
+/* ── Input en estado de error ── */
+.prf-input-error {
+  border-color: var(--rojo-soft) !important;
+  background: var(--rojo-bg, #fff5f5) !important;
+  color: var(--negro-texto);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08) !important;
+}
+.prf-input-error:focus {
+  border-color: var(--rojo-soft) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+  outline: none;
+}
+
+/* ── Mensaje de error por campo ── */
+.prf-field-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--rojo-soft);
+  font-family: var(--font);
+  line-height: 1.4;
+  animation: prf-err-in .18s ease;
+}
+@keyframes prf-err-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hint debajo del campo (solo lectura, no error) ── */
+.prf-field-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--gris-texto);
+  font-family: var(--font);
+  line-height: 1.4;
+}
+
+/* ── Contador de caracteres en etiqueta ── */
+.prf-char-count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 500;
+  font-family: var(--mono);
+  float: right;
+  transition: color .2s;
+}
+
+/* ── Banner de error global (intento de guardar con errores) ── */
+.prf-global-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 20px;
+  padding: 9px 14px;
+  background: var(--rojo-bg, #fff5f5);
+  border: 1px solid var(--rojo-borde, rgba(220,38,38,.2));
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rojo-soft);
+  font-family: var(--font);
+  animation: prf-err-in .2s ease;
+}
+
+/* ════════════════════════════════════════
+   DROPDOWN DE PAÍS
+════════════════════════════════════════ */
+
+/* Botón trigger del dropdown (usa form-control prf-input base) */
+.prf-country-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  padding-right: 10px !important;
+  min-height: 38px;
+  background: var(--blanco) !important;
+}
+.prf-country-btn:hover {
+  border-color: var(--azul) !important;
+}
+
+/* Panel del dropdown */
+.prf-country-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 500;
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 9px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.12);
+  overflow: hidden;
+  animation: prf-dd-in .15s cubic-bezier(.4,0,.2,1);
+}
+@keyframes prf-dd-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Buscador dentro del dropdown */
+.prf-country-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--gris-borde);
+}
+.prf-country-search {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--negro-texto);
+  width: 100%;
+}
+.prf-country-search::placeholder { color: var(--gris-texto); }
+
+/* Lista de opciones */
+.prf-country-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gris-borde) transparent;
+}
+.prf-country-list::-webkit-scrollbar { width: 4px; }
+.prf-country-list::-webkit-scrollbar-thumb { background: var(--gris-borde); border-radius: 2px; }
+
+.prf-country-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: var(--font);
+  color: var(--negro-texto);
+  cursor: pointer;
+  transition: background .1s;
+}
+.prf-country-item:hover {
+  background: var(--azul-light, #eff6ff);
+}
+.prf-country-item.selected {
+  background: var(--azul-light, #eff6ff);
+  font-weight: 600;
+  color: var(--azul);
+}
+.prf-country-empty {
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--gris-texto);
+  font-family: var(--font);
+  text-align: center;
+}
+
+/* ════════════════════════════════════════
+   INPUT DE TELÉFONO CON CÓDIGO DE PAÍS
+════════════════════════════════════════ */
+
+/* Contenedor que agrupa badge + input */
+.prf-tel-wrap {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--blanco);
+  transition: border-color .15s, box-shadow .15s;
+}
+.prf-tel-wrap:focus-within {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0,119,183,.1);
+}
+.prf-input-error-wrap {
+  border-color: var(--rojo-soft) !important;
+  background: var(--rojo-bg, #fff5f5) !important;
+  box-shadow: 0 0 0 3px rgba(220,38,38,.08) !important;
+}
+
+/* Badge del código a la izquierda */
+.prf-tel-code {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  background: var(--fondo, #f8fafc);
+  border-right: 1.5px solid var(--gris-borde);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 68px;
+}
+
+/* Input numérico */
+.prf-tel-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13.5px;
+  color: var(--negro-texto);
+  padding: 8px 10px;
+  width: 100%;
+  min-width: 0;
+}
+.prf-tel-input::placeholder { color: var(--gris-texto); }

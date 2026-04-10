@@ -1,24 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { get } from './services/http/Service';
-import './App.css';
+// 1. Primero los estilos propios (variables CSS)
+import './shared/styles/global.css';
 
-function App() {
-  const [estado, setEstado] = useState('Conectando...');
+// 2. Luego Bootstrap (las variables de Bootstrap serán sobreescritas por las nuestras)
+import 'bootstrap/dist/css/bootstrap.min.css';
 
-  useEffect(() => {
-    get('/ping')
-      .then(data => setEstado(data.message))
-      .catch(err => setEstado('Error: ' + err.message));
-  }, []);
+import AppRouter from './core/router/AppRouter';
 
-  return (
-    <div className="container mt-5">
-      <h1>Sistema de Cotización</h1>
-      <div className="alert alert-info mt-3">
-        Estado del backend: <strong>{estado}</strong>
-      </div>
-    </div>
-  );
+export default function App() {
+  return <AppRouter />;
 }
-
-export default App;
