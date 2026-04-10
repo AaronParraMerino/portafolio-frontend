@@ -473,7 +473,7 @@ export default function Navbar() {
 
         {/* Logo */}
         <a href="/" className="spk-nav-logo">
-          <img src="img/logo.png" width="130" height="38" alt="CreaFolio" />
+          <img src="/img/logo.png" width="130" height="38" alt="CreaFolio" />
         </a>
         <div className="spk-nav-sep" />
         <span className="spk-nav-tagline">CreaFolio</span>

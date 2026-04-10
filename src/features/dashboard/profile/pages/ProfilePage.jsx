@@ -8,10 +8,7 @@ import ProfileToast           from '../components/ProfileToast';
 import '../styles/profile.css';
 
 export default function ProfilePage() {
-  const {
-    perfil, loading, guardando, editando,
-    setEditando, guardarPerfil, toggleVisibilidad, toast,
-  } = useProfile();
+  const { perfil, loading, guardando, editando, setEditando, guardarPerfil, toggleVisibilidad, toast, subirImagen, eliminarImagen } = useProfile();
 
   if (loading) {
     return (
@@ -38,6 +35,10 @@ export default function ProfilePage() {
         perfil={perfil}
         onEditar={() => setEditando(true)}
         onVistaPublica={() => window.open(`/u/${perfil.id}`, '_blank')}
+        onSubirAvatar={(archivo) => subirImagen('avatar', archivo)}
+        onEliminarAvatar={() => eliminarImagen('avatar')}
+        onSubirBanner={(archivo) => subirImagen('banner', archivo)}
+        onEliminarBanner={() => eliminarImagen('banner')}
       />
 
       {/* ── Nombre + profesión + datos de contacto ──
