@@ -1,14 +1,14 @@
 // ═══════════════════════════════════════════
 // PROFILE SERVICE
 // ═══════════════════════════════════════════
-const API_URL = "http://localhost:8000/api";
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 // ── Helper: obtener usuario y token ──
 function getSessionUser() {
   const storedUser = sessionStorage.getItem('usuario');
   if (!storedUser) throw new Error("No hay usuario en sesión");
 
-  const user = JSON.parse(storedUser);
+  const user   = JSON.parse(storedUser);
   const userId = user.id || user.id_usuario || user.idUsuario;
   if (!userId) throw new Error("No se encontró el ID del usuario en sesión");
 
@@ -21,35 +21,27 @@ function getSessionUser() {
 }
 
 // ── Helper: parsear respuesta de forma segura ──
-// Si el backend devuelve HTML (página de error o index.html de React),
-// lo detectamos por el Content-Type antes de intentar parsear.
 async function safeJson(res) {
   const contentType = res.headers.get('content-type') || '';
 
-  // Si el servidor devuelve HTML, no intentar parsear como JSON
   if (contentType.includes('text/html')) {
     const preview = await res.text();
-    console.error('[profileService] El backend devolvió HTML en vez de JSON.');
-    console.error('[profileService] Primeros 200 chars:', preview.slice(0, 200));
-    console.error('[profileService] URL:', res.url, '| Status:', res.status);
+    console.error('[profileService] Backend devolvió HTML. URL:', res.url, '| Status:', res.status);
+    console.error('[profileService] Preview:', preview.slice(0, 150));
     throw new Error(
-      `El servidor devolvió HTML en lugar de JSON (status ${res.status}). ` +
+      `El servidor devolvió HTML en lugar de JSON (${res.status}). ` +
       `Verificar que la ruta existe en Laravel y que el controlador devuelve response()->json().`
     );
   }
 
   const text = await res.text();
-
-  if (!text || text.trim() === '') {
-    // Respuesta vacía — se trata como éxito silencioso
-    return {};
-  }
+  if (!text || text.trim() === '') return {};
 
   try {
     return JSON.parse(text);
   } catch {
-    console.error('[profileService] JSON inválido recibido:', text.slice(0, 200));
-    throw new Error(`Respuesta no parseable del servidor (status ${res.status}).`);
+    console.error('[profileService] JSON inválido:', text.slice(0, 150));
+    throw new Error(`Respuesta no parseable del servidor (${res.status}).`);
   }
 }
 
@@ -73,9 +65,7 @@ async function apiFetch(url, options = {}) {
   return safeJson(res);
 }
 
-// ── GET perfil del usuario autenticado ──
-// El backend YA devuelve foto_perfil y foto_fondo desde getProfile()
-// luego del fix en ProfileService.php
+// ── GET perfil — una sola llamada, el backend ya devuelve foto_perfil y foto_fondo ──
 export async function getProfile() {
   const { userId } = getSessionUser();
   return apiFetch(`${API_URL}/profile/${userId}`, {
@@ -93,7 +83,7 @@ export async function updateProfile(datos) {
   });
 }
 
-// ── PATCH actualizar visibilidad de campos ──
+// ── PATCH actualizar visibilidad ──
 export async function updateVisibility(data) {
   const { userId } = getSessionUser();
   return apiFetch(`${API_URL}/profile/${userId}/visibility`, {
@@ -103,18 +93,15 @@ export async function updateVisibility(data) {
   });
 }
 
-// ── POST subir imagen (avatar o banner) ──
-// Lógica:
-//   1. Intentar POST /image/update (actualizar imagen existente)
-//   2. Si el backend responde 404 → el perfil no tiene imagen aún → POST /image (crear)
-//   3. Si el backend responde HTML con status 200 → la ruta no existe en Laravel
-//      → Solución: verificar que ProfileController@updateImage devuelve response()->json()
+// ── POST subir imagen ──
+// 1. Intenta /image/update (ya tiene imagen)
+// 2. Si 404/422 → /image (primera vez, sin imagen previa)
 export async function uploadImage(tipoOriginal, archivo) {
   const { userId, token } = getSessionUser();
   const tipoBackend = tipoOriginal === 'avatar' ? 'profile' : tipoOriginal;
 
   const formData = new FormData();
-  formData.append('imagen', archivo);
+  formData.append('file', archivo);
   formData.append('tipo', tipoBackend);
 
   const tryUpload = (url) =>
@@ -124,12 +111,9 @@ export async function uploadImage(tipoOriginal, archivo) {
       body: formData,
     });
 
-  // Intentar UPDATE primero
   let res = await tryUpload(`${API_URL}/profile/${userId}/image/update`);
 
-  // Si no existe registro de imagen → intentar CREATE
   if (res.status === 404 || res.status === 422) {
-    console.log('[uploadImage] No existe imagen previa, intentando crear...');
     res = await tryUpload(`${API_URL}/profile/${userId}/image`);
     if (!res.ok) {
       const err = await safeJson(res).catch(() => ({}));
@@ -141,7 +125,7 @@ export async function uploadImage(tipoOriginal, archivo) {
   }
 
   const resultado = await safeJson(res);
-  console.log('[uploadImage] Respuesta backend:', resultado);
+  console.log('[uploadImage] Respuesta:', resultado);
   return resultado;
 }
 

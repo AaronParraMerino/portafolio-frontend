@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════
-// HOOK: useProfile
+// useProfile
 // ═══════════════════════════════════════════
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   getProfile,
   updateProfile,
@@ -10,18 +10,15 @@ import {
   deleteImage,
 } from '../services/profileService';
 
-const BASE_URL_STORAGE = "http://localhost:8000/storage/";
+const BASE_URL_STORAGE = (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage') + '/';
 
-// Normaliza la respuesta del backend en un objeto con avatarUrl y bannerUrl
 function mapearPerfil(data) {
   if (!data) return null;
-
   const formatUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     return `${BASE_URL_STORAGE}${path}`;
   };
-
   return {
     ...data,
     avatarUrl: formatUrl(data.foto_perfil),
@@ -36,32 +33,39 @@ export function useProfile() {
   const [editando, setEditando]   = useState(false);
   const [toast, setToast]         = useState(null);
 
-  // ── Carga / recarga del perfil ──
-  const cargarPerfil = useCallback(async () => {
-    try {
-      const data = await getProfile();
-      setPerfil(mapearPerfil(data));
-    } catch (err) {
-      console.error('[useProfile] Error cargando perfil:', err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Ref para evitar doble llamada en React StrictMode (desarrollo)
+  const cargado = useRef(false);
 
-  useEffect(() => { cargarPerfil(); }, [cargarPerfil]);
+  // ── Carga inicial — solo una vez ──
+  useEffect(() => {
+    if (cargado.current) return;
+    cargado.current = true;
+
+    getProfile()
+      .then(data => setPerfil(mapearPerfil(data)))
+      .catch(err => console.error('[useProfile] Error cargando perfil:', err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   // ── Toast helper ──
-  const mostrarToast = useCallback((msg, tipo = 'ok') => {
+  const mostrarToast = (msg, tipo = 'ok') => {
     setToast({ msg, tipo });
     setTimeout(() => setToast(null), 3000);
-  }, []);
+  };
 
   // ── Guardar cambios del perfil ──
+  // El PUT devuelve el perfil actualizado → lo usamos directamente, sin re-fetch
   const guardarPerfil = async (datos) => {
     setGuardando(true);
     try {
-      await updateProfile(datos);
-      await cargarPerfil();
+      const actualizado = await updateProfile(datos);
+      // Preservamos avatarUrl y bannerUrl que ya tenemos en estado
+      // (el PUT no toca imágenes, así que no cambian)
+      setPerfil(prev => ({
+        ...mapearPerfil(actualizado),
+        avatarUrl: prev.avatarUrl,
+        bannerUrl: prev.bannerUrl,
+      }));
       setEditando(false);
       mostrarToast('Perfil actualizado correctamente');
     } catch (err) {
@@ -75,6 +79,7 @@ export function useProfile() {
   // ── Toggle visibilidad de campos ──
   const toggleVisibilidad = async (campo) => {
     const actual = perfil?.visibilidad?.[campo];
+    // Optimistic update — sin esperar al backend
     setPerfil(prev => ({
       ...prev,
       visibilidad: { ...prev.visibilidad, [campo]: !actual },
@@ -83,6 +88,7 @@ export function useProfile() {
       await updateVisibility({ [campo]: !actual });
     } catch (err) {
       console.error('[useProfile] Error visibilidad:', err.message);
+      // Revertir si falla
       setPerfil(prev => ({
         ...prev,
         visibilidad: { ...prev.visibilidad, [campo]: actual },
@@ -92,14 +98,12 @@ export function useProfile() {
   };
 
   // ── Subir imagen (avatar o banner) ──
+  // El backend devuelve { status, message, url } → usamos url directamente, sin re-fetch
   const subirImagen = async (tipo, archivo) => {
     try {
       const resultado = await uploadImage(tipo, archivo);
-
-      // El backend devuelve { status, message, url }
-      // 'url' es la URL pública de Supabase Storage
-      const payload = resultado?.data || resultado || {};
-      const urlCruda = payload.url || payload.foto_perfil || payload.foto_fondo || null;
+      const payload   = resultado?.data || resultado || {};
+      const urlCruda  = payload.url || payload.foto_perfil || payload.foto_fondo || null;
 
       if (urlCruda) {
         const urlFinal = urlCruda.startsWith('http')
@@ -114,9 +118,17 @@ export function useProfile() {
           ),
         }));
       } else {
-        // El backend no devolvió URL → re-fetch completo
-        console.warn('[useProfile] Backend no devolvió URL. Haciendo re-fetch...');
-        await cargarPerfil();
+        // Fallback: solo si el backend no devolvió URL hacemos re-fetch
+        console.warn('[useProfile] Backend no devolvió URL, haciendo re-fetch...');
+        const data = await getProfile();
+        setPerfil(prev => ({
+          ...mapearPerfil(data),
+          // Preservar lo que ya tenemos del tipo que NO cambió
+          ...(tipo === 'avatar'
+            ? { bannerUrl: prev.bannerUrl }
+            : { avatarUrl: prev.avatarUrl }
+          ),
+        }));
       }
 
       mostrarToast(tipo === 'avatar' ? 'Foto de perfil actualizada' : 'Banner actualizado');
@@ -128,6 +140,7 @@ export function useProfile() {
   };
 
   // ── Eliminar imagen ──
+  // Solo actualiza estado local — sin re-fetch
   const eliminarImagen = async (tipo) => {
     try {
       await deleteImage(tipo);
@@ -146,6 +159,16 @@ export function useProfile() {
     }
   };
 
+  // recargarPerfil: para uso manual si se necesita forzar sincronización
+  const recargarPerfil = async () => {
+    try {
+      const data = await getProfile();
+      setPerfil(mapearPerfil(data));
+    } catch (err) {
+      console.error('[useProfile] Error recargando perfil:', err.message);
+    }
+  };
+
   return {
     perfil,
     loading,
@@ -157,6 +180,6 @@ export function useProfile() {
     toast,
     subirImagen,
     eliminarImagen,
-    recargarPerfil: cargarPerfil,
+    recargarPerfil,
   };
 }

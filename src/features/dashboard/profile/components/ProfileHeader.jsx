@@ -45,7 +45,7 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
               {tipo === 'banner' ? 'Cambiar banner' : 'Cambiar foto de perfil'}
             </div>
             <div className="prf-modal-sub">
-              Seleccioná o arrastrá una imagen. JPG, PNG o JPGE — máx. 5 MB.
+              Seleccioná o arrastrá una imagen. JPG, PNG o JPEG — máx. 5 MB.
             </div>
           </div>
           <button className="prf-modal-close" onClick={onClose} disabled={cargando}>
@@ -217,18 +217,12 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
 }
 
 /* ══════════════════════════════════════════════
-   PROFILE HEADER — componente principal
-   Solo se agregaron: botones de basura, modales de
-   upload y confirm-delete. El resto es idéntico.
+   PROFILE HEADER
 ══════════════════════════════════════════════ */
 export default function ProfileHeader({
   perfil,
   onEditar,
   onVistaPublica,
-  /* ── NUEVAS PROPS para imagen ──
-     El componente padre (ProfilePage) debe proveer
-     estas funciones conectadas al servicio/hook.
-     Si no se pasan, los botones de imagen quedan deshabilitados. */
   onSubirBanner,
   onEliminarBanner,
   onSubirAvatar,
@@ -243,12 +237,6 @@ export default function ProfileHeader({
 
   /* Estado local de modales */
   const [modal, setModal] = useState(null);
-  // modal puede ser:
-  //   null                         → ninguno
-  //   { tipo: 'upload-banner' }
-  //   { tipo: 'upload-avatar' }
-  //   { tipo: 'delete-banner' }
-  //   { tipo: 'delete-avatar' }
 
   const [cargando, setCargando] = useState(false);
 
