@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
+import { Link } from "react-router-dom";
 import Navbar from "../../../shared/components/layout/Navbar";
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -154,9 +155,9 @@ export default function LoginForm() {
                 </span>
               </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}> 
-              <button type="button" className="forgot" onClick={(e) => e.preventDefault()}>
+              <Link to="/auth/forgot-password" className="forgot">
                 ¿Olvidaste Contraseña?
-              </button>
+              </Link>
 
               <button
                 className="btn-primary"

@@ -9,6 +9,9 @@ import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
 import CookiesPage from '../../features/auth/pages/CookiesPage';
 import PrivacidadPage from '../../features/auth/pages/PrivacidadPage';
+import Contraseña from '../../features/auth/components/Contraseña';
+import Codigo from '../../features/auth/components/Codigo';
+import CambiarContra from '../../features/auth/components/CambiarContra';
 
 export default function AppRouter() {
   return (
@@ -32,6 +35,9 @@ export default function AppRouter() {
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/auth/cookies" element={<CookiesPage />} />
         <Route path="/auth/privacidad" element={<PrivacidadPage />} />
+        <Route path="/auth/forgot-password" element={<Contraseña />} />
+        <Route path="/auth/codigo" element={<Codigo />} />
+        <Route path="/auth/cambiar-contraseña" element={<CambiarContra />} />
       </Routes>
     </BrowserRouter>
   );
