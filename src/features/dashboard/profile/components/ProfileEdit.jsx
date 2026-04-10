@@ -65,6 +65,7 @@ function validateField(name, value, form) {
       return '';
 
     case 'ciudad':
+      if (/\d/.test(value)) return 'No se permiten números, solo letras.';
       if (value && INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos.';
       if (value.length > 60) return 'Máximo 60 caracteres.';
       return '';
