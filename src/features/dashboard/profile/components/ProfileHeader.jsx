@@ -222,7 +222,6 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
 export default function ProfileHeader({
   perfil,
   onEditar,
-  onVistaPublica,
   onSubirBanner,
   onEliminarBanner,
   onSubirAvatar,
@@ -358,13 +357,6 @@ export default function ProfileHeader({
                 <path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/>
               </svg>
               Editar perfil
-            </button>
-            <button className="prf-btn-outline" onClick={onVistaPublica}>
-              <svg viewBox="0 0 14 14">
-                <path d="M1 7S3.5 2 7 2s6 5 6 5-2.5 5-6 5-6-5-6-5z"/>
-                <circle cx="7" cy="7" r="2"/>
-              </svg>
-              Vista pública
             </button>
           </div>
         </div>
