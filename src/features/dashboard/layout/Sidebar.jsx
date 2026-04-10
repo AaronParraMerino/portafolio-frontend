@@ -94,32 +94,15 @@ const NAV_SECTIONS = [
           </svg>
         ),
       },
-    ],
-  },
-  {
-    label: 'Publicación',
-    items: [
       {
         id: 'preview',
-        label: 'Vista Previa',
+        label: 'Vista Portafolio',
         to: '/dashboard/preview',
-        badge: '2',
         badgeVariant: 'amber',
         icon: (
           <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
             <path d="M.5 7.5S3 2 7.5 2 14.5 7.5 14.5 7.5 12 13 7.5 13 .5 7.5.5 7.5z" />
             <circle cx="7.5" cy="7.5" r="2.5" />
-          </svg>
-        ),
-      },
-      {
-        id: 'public',
-        label: 'Vista Pública',
-        to: '/dashboard/public',
-        tag: 'v2',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <polygon points="7.5,1.5 9.5,5.8 14.3,6.4 10.9,9.5 11.9,14.2 7.5,11.8 3.1,14.2 4.1,9.5 0.7,6.4 5.5,5.8" />
           </svg>
         ),
       },
