@@ -13,13 +13,13 @@ import Contraseña from '../../features/auth/components/Contraseña';
 import Codigo from '../../features/auth/components/Codigo';
 import CambiarContra from '../../features/auth/components/CambiarContra';
 
-export default function AppRouter({ isBackendAvailable = true }) {
+export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
 
         {/* ── CON Navbar y Footer ── */}
-        <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
+        <Route element={<MainLayout />}>
           <Route index element={<HomePage />} />
             <Route path="dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardPage />} />

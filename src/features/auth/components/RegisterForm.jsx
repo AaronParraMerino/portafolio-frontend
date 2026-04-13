@@ -5,6 +5,7 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import PoliticaPrivacidad from "./PoliticasP";
 import PoliticaCookies from "./PoliticasC";
 import { GoogleLogin } from "@react-oauth/google";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 
 
 export default function RegisterForm() {
@@ -35,13 +36,17 @@ export default function RegisterForm() {
     }
 
     try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
       const response = await fetch(`${BASE_URL}/auth/google`, {
           method: "POST",
+        credentials: "include",
           headers: {
           "Content-Type": "application/json",
       },
           body: JSON.stringify({
               id_token: idToken,
+          session_token: baseSessionToken,
           }),
       });
   const result = await response.json();
@@ -269,6 +274,8 @@ export default function RegisterForm() {
               text="continue_with"
               shape="rectangular"
               width="100%"
+              auto_select={false}
+              useOneTap={false}
             /> 
             ) : (
           <button

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -17,10 +18,12 @@ export default function RecuperacionAcceso() {
 
     try {
       setCargando(true);
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
       const res = await fetch(`${API}/recuperacion/solicitar`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ correo: email }),
+        body: JSON.stringify({ correo: email, session_token: baseSessionToken }),
       });
 
       const data = await res.json();

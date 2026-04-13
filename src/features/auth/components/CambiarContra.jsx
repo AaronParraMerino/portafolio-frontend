@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -35,14 +36,17 @@ export default function CambiarContrasena() {
 
     try {
       setCargando(true);
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
       const res = await fetch(`${API}/recuperacion/restablecer`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           correo,
           codigo,
           password: nueva,
           password_confirmation: confirmar,
+          session_token: baseSessionToken,
         }),
       });
 
