@@ -26,6 +26,27 @@ export default function RegisterForm() {
 
   // Estado de error
   const [error, setError] = useState("");
+  const [errorApellido, setErrorApellido] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
+
+   const handleNombre = (e) => {
+    const valor = e.target.value;
+    const limpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, "");
+    setNombre(limpio);
+    if (valor !== limpio) {
+      setErrorNombre("No se permiten números ni caracteres especiales.");
+      setTimeout(() => setErrorNombre(""), 2500);
+    }
+  };
+   const handleApellido = (e) => {
+    const valor = e.target.value;
+    const limpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, "");
+    setApellido(limpio);
+    if (valor !== limpio) {
+      setErrorApellido("No se permiten números ni caracteres especiales.");
+      setTimeout(() => setErrorApellido(""), 2500);
+    }
+  };
 
   const handleGoogleLogin = async (credentialResponse) => {
   const idToken = credentialResponse?.credential;
@@ -173,24 +194,30 @@ export default function RegisterForm() {
               {/* TODO TU FORM IGUAL (NO TOCADO) */}
 
             {/* Nombre */}
+            <div className="reg-field-wrapper">
             <div className="reg-field">
               <label><FaUserCircle className="reg-icon" /> Nombre</label>
               <input type="text"
               value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={handleNombre} 
                 maxLength={30} 
                 />
             </div>
+            {errorNombre && <p className="reg-field-error">{errorNombre}</p>}
+            </div>
 
             {/* Apellido */}
+             <div className="reg-field-wrapper">
             <div className="reg-field">
               <label><FaUserCircle className="reg-icon" /> Apellido</label>
               <input type="text" 
               value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                onChange={handleApellido}
                 maxLength={30} 
               />
             </div>
+             {errorApellido && <p className="reg-field-error">{errorApellido}</p>}
+             </div>
 
             {/* Correo */}
             <div className="reg-field">
@@ -466,6 +493,17 @@ export default function RegisterForm() {
             gap: 8px;
             width: 100%;
           }
+            .reg-field-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+            .reg-field-error {
+            font-size: 11px;
+            color: #dc2626;
+            padding-left: 108px;
+            animation: fadeIn .15s ease;
+          }
  
           .reg-field label {
             display: flex;
@@ -702,6 +740,7 @@ export default function RegisterForm() {
             .btn-accept { padding: 8px; }
             .btn-google { padding: 7px; }
             .btn-google img { width: 13px; }
+            .reg-field-error { padding-left: 88px; }
           }
       `}</style>
     </div>
