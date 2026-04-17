@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import '../styles/profile.css';
-import ConfirmModal from './ConfirmModal';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
 const EyeOpen = () => (
   <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -113,22 +113,21 @@ export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
       </div>
 
       {/* Panel de confirmación de visibilidad */}
-      {confirm && (
-        <ConfirmModal
-          title={confirm.nextVisible ? `¿Hacer visible ${confirm.label}?` : `¿Ocultar ${confirm.label}?`}
-          message={
-            confirm.nextVisible
-              ? `${confirm.label} será visible para cualquier persona que visite tu perfil público.`
-              : `${confirm.label} quedará oculto y no será visible en tu perfil público.`
-          }
-          confirmLabel={confirm.nextVisible ? 'Sí, hacer visible' : 'Sí, ocultar'}
-          variant={confirm.nextVisible ? 'blue' : 'blue'}
-          icon="check"
-          loading={false}
-          onConfirm={handleConfirmar}
-          onClose={() => setConfirm(null)}
-        />
-      )}
+      <ConfirmModal
+        open={!!confirm}
+        title={confirm?.nextVisible ? `¿Hacer visible ${confirm.label}?` : `¿Ocultar ${confirm?.label}?`}
+        message={
+          confirm?.nextVisible
+            ? `${confirm.label} será visible para cualquier persona que visite tu perfil público.`
+            : `${confirm?.label} quedará oculto y no será visible en tu perfil público.`
+        }
+        confirmLabel={confirm?.nextVisible ? 'Sí, hacer visible' : 'Sí, ocultar'}
+        variant="blue"
+        icon="check"
+        loading={false}
+        onConfirm={handleConfirmar}
+        onClose={() => setConfirm(null)}
+      />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import '../styles/profile.css';
-import ConfirmModal from './ConfirmModal';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
 /* ══════════════════════════════════════════════
    MODAL: Subir imagen (banner o avatar)
@@ -120,18 +120,19 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
       </div>
 
       {/* Panel de confirmación antes de subir imagen */}
-      {confirmando && (
-        <ConfirmModal
-          title={`¿Guardar ${tipo === "banner" ? "el banner" : "la foto de perfil"}?`}
-          message={`Estás por subir una nueva imagen como ${tipo === "banner" ? "banner de tu perfil" : "foto de perfil"}. La imagen anterior se reemplazará.`}
-          confirmLabel="Sí, guardar"
-          variant="blue"
-          icon="check"
-          loading={cargando}
-          onConfirm={handleConfirmarSubida}
-          onClose={() => !cargando && setConfirmando(false)}
-        />
-      )}
+      <ConfirmModal
+        open={!!confirmando}
+        title={`¿Guardar ${tipo === "banner" ? "el banner" : "la foto de perfil"}?`}
+        message={`Estás por subir una nueva imagen como ${
+          tipo === "banner" ? "banner de tu perfil" : "foto de perfil"
+        }. La imagen anterior se reemplazará.`}
+        confirmLabel="Sí, guardar"
+        variant="blue"
+        icon="check"
+        loading={cargando}
+        onConfirm={handleConfirmarSubida}
+        onClose={() => !cargando && setConfirmando(false)}
+      />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import '../styles/profile.css';
-import ConfirmModal from './ConfirmModal';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
 /* ══════════════════════════════════════════════
    DATOS: Países con bandera, código y regex tel
@@ -344,18 +344,17 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
         </div>
       </div>
 
-      {confirmPending && (
-        <ConfirmModal
-          title="¿Guardar cambios?"
-          message="Estás por actualizar tu información de perfil. Los cambios se reflejarán en tu vista pública de inmediato."
-          confirmLabel="Sí, guardar"
-          variant="blue"
-          icon="check"
-          loading={guardando}
-          onConfirm={handleConfirmar}
-          onClose={() => !guardando && setConfirmPending(null)}
-        />
-      )}
+      <ConfirmModal
+        open={!!confirmPending}
+        title="¿Guardar cambios?"
+        message="Estás por actualizar tu información de perfil. Los cambios se reflejarán en tu vista pública de inmediato."
+        confirmLabel="Sí, guardar"
+        variant="blue"
+        icon="check"
+        loading={guardando}
+        onConfirm={handleConfirmar}
+        onClose={() => !guardando && setConfirmPending(null)}
+      />
     </>
   );
 }
