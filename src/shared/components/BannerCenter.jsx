@@ -104,7 +104,6 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
   const panelRef = useRef(null);
   const previousVisibleIdsRef = useRef([]);
   const animationTimeoutsRef = useRef([]);
-  const initialPromotionTriggeredRef = useRef(false);
 
   const scheduleAnimationTimeout = useCallback((cb, ms) => {
     const timeoutId = setTimeout(cb, ms);
@@ -230,33 +229,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
   const activeItem = items[0] ?? null;
   const titleItems = items.slice(1);
 
-  useEffect(() => {
-    if (!activeItem || initialPromotionTriggeredRef.current) {
-      return;
-    }
-
-    initialPromotionTriggeredRef.current = true;
-
-    setPromotingPhase((prev) => ({
-      ...prev,
-      [activeItem.id]: 'from-title',
-    }));
-
-    scheduleAnimationTimeout(() => {
-      setPromotingPhase((prev) => ({
-        ...prev,
-        [activeItem.id]: 'to-main',
-      }));
-    }, 40);
-
-    scheduleAnimationTimeout(() => {
-      setPromotingPhase((prev) => {
-        const next = { ...prev };
-        delete next[activeItem.id];
-        return next;
-      });
-    }, PROMOTE_ANIMATION_MS);
-  }, [activeItem, scheduleAnimationTimeout]);
+  // El primer banner se muestra expandido directamente, sin animación de entrada.
 
   useEffect(() => {
     const currentVisibleIds = items.slice(0, 3).map((item) => item.id);
