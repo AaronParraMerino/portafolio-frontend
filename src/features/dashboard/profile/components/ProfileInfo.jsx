@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import '../styles/profile.css';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
 const EyeOpen = () => (
   <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -12,7 +14,6 @@ const EyeClosed = () => (
   </svg>
 );
 
-// Ícono pequeño por campo — igual que en DataCard, para coherencia visual
 const ICONS = {
   correo:    () => <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="1" y="3" width="12" height="8" rx="1.5"/><path d="M1 3l6 5 6-5"/></svg>,
   pais:      () => <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5c-2 2-2 9 0 11M7 1.5c2 2 2 9 0 11M1.5 7h11"/></svg>,
@@ -34,72 +35,99 @@ const CAMPOS = [
 const SIEMPRE_VISIBLE = ['nombre'];
 
 export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
+  /* NUEVO: estado del panel de confirmación de visibilidad */
+  const [confirm, setConfirm] = useState(null); // null | { key, label, nextVisible }
+
+  /* En vez de llamar onToggleVisibilidad directo → abrir confirmación */
+  const handleToggleClick = (key, label, currentlyVisible) => {
+    setConfirm({ key, label, nextVisible: !currentlyVisible });
+  };
+
+  /* Al confirmar en el panel */
+  const handleConfirmar = () => {
+    if (confirm) {
+      onToggleVisibilidad(confirm.key);
+      setConfirm(null);
+    }
+  };
+
   return (
-    <div className="prf-card">
-      <div className="prf-card-head">
-        <span className="prf-card-title">Controla qué información es pública</span>
-      </div>
+    <>
+      <div className="prf-card">
+        <div className="prf-card-head">
+          <span className="prf-card-title">Controla qué información es pública</span>
+        </div>
 
-      <div className="prf-lista">
-        {CAMPOS.map(({ key, label }) => {
-          const valor   = perfil[key] || null;
-          const visible = perfil.visibilidad?.[key] ?? true;
-          const siempre = SIEMPRE_VISIBLE.includes(key);
-          const Icon    = ICONS[key];
+        <div className="prf-lista">
+          {CAMPOS.map(({ key, label }) => {
+            const valor   = perfil[key] || null;
+            const visible = perfil.visibilidad?.[key] ?? true;
+            const siempre = SIEMPRE_VISIBLE.includes(key);
+            const Icon    = ICONS[key];
 
-          return (
-            <div key={key} className="prf-fila">
-              <div className="prf-fila-left" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-
-                {/* Ícono con fondo azul suave — da aire y rompe el gris */}
-                <span style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  background: 'var(--azul-light)',
-                  border: '1px solid var(--azul-mid)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  color: 'var(--azul)',
-                }}>
-                  {Icon && <span style={{ width: 13, height: 13, display: 'flex' }}><Icon /></span>}
-                </span>
-
-                <div>
-                  <span className="prf-campo-label">{label}</span>
-                  <span className={`prf-campo-valor${!valor ? ' empty' : ''}`}>
-                    {valor || 'Sin completar'}
+            return (
+              <div key={key} className="prf-fila">
+                <div className="prf-fila-left" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{
+                    width: 28, height: 28, borderRadius: 7,
+                    background: 'var(--azul-light)', border: '1px solid var(--azul-mid)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, color: 'var(--azul)',
+                  }}>
+                    {Icon && <span style={{ width: 13, height: 13, display: 'flex' }}><Icon /></span>}
                   </span>
+                  <div>
+                    <span className="prf-campo-label">{label}</span>
+                    <span className={`prf-campo-valor${!valor ? ' empty' : ''}`}>
+                      {valor || 'Sin completar'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="prf-fila-right">
+                  {siempre ? (
+                    <span className="prf-pill prf-pill-siempre">
+                      <EyeOpen /> Siempre visible
+                    </span>
+                  ) : (
+                    <>
+                      <span className={`prf-pill ${visible ? 'prf-pill-visible' : 'prf-pill-oculto'}`}>
+                        {visible ? <><EyeOpen /> Visible</> : <><EyeClosed /> Oculto</>}
+                      </span>
+                      {/* Toggle → abre panel de confirmación */}
+                      <button
+                        className={`prf-toggle ${visible ? 'on' : 'off'}`}
+                        onClick={() => handleToggleClick(key, label, visible)}
+                        title={visible ? 'Ocultar' : 'Mostrar'}
+                        aria-label={visible ? `Ocultar ${label}` : `Mostrar ${label}`}
+                      >
+                        <span className="prf-toggle-thumb" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-
-              <div className="prf-fila-right">
-                {siempre ? (
-                  <span className="prf-pill prf-pill-siempre">
-                    <EyeOpen /> Siempre visible
-                  </span>
-                ) : (
-                  <>
-                    <span className={`prf-pill ${visible ? 'prf-pill-visible' : 'prf-pill-oculto'}`}>
-                      {visible ? <><EyeOpen /> Visible</> : <><EyeClosed /> Oculto</>}
-                    </span>
-                    <button
-                      className={`prf-toggle ${visible ? 'on' : 'off'}`}
-                      onClick={() => onToggleVisibilidad(key)}
-                      title={visible ? 'Ocultar' : 'Mostrar'}
-                      aria-label={visible ? `Ocultar ${label}` : `Mostrar ${label}`}
-                    >
-                      <span className="prf-toggle-thumb" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* Panel de confirmación de visibilidad */}
+      <ConfirmModal
+        open={!!confirm}
+        title={confirm?.nextVisible ? `¿Hacer visible ${confirm.label}?` : `¿Ocultar ${confirm?.label}?`}
+        message={
+          confirm?.nextVisible
+            ? `${confirm.label} será visible para cualquier persona que visite tu perfil público.`
+            : `${confirm?.label} quedará oculto y no será visible en tu perfil público.`
+        }
+        confirmLabel={confirm?.nextVisible ? 'Sí, hacer visible' : 'Sí, ocultar'}
+        variant="blue"
+        icon="check"
+        loading={false}
+        onConfirm={handleConfirmar}
+        onClose={() => setConfirm(null)}
+      />
+    </>
   );
 }
