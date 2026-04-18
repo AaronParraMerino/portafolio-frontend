@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════
 // useProfile
 // ═══════════════════════════════════════════
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   getProfile,
   updateProfile,
@@ -10,7 +10,11 @@ import {
   deleteImage,
 } from '../services/profileService';
 
-const BASE_URL_STORAGE = (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage') + '/';
+const BASE_URL_STORAGE =
+  (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage') + '/';
+
+// ── Clave de caché en sessionStorage ──
+const CACHE_KEY = 'perfil_cache';
 
 function mapearPerfil(data) {
   if (!data) return null;
@@ -26,25 +30,70 @@ function mapearPerfil(data) {
   };
 }
 
+// ── Leer / escribir caché ──
+function leerCache() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function escribirCache(perfil) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(perfil));
+  } catch {
+    // sessionStorage lleno o deshabilitado: no es crítico
+  }
+}
+
+function limpiarCache() {
+  sessionStorage.removeItem(CACHE_KEY);
+}
+
+// ── Guard de carga global (sobrevive re-renders del componente) ──
+// Se almacena fuera del hook para que React StrictMode
+// no lo resetee al desmontar/remontar en desarrollo.
+let _cargaIniciada = false;
+
 export function useProfile() {
-  const [perfil, setPerfil]       = useState(null);
-  const [loading, setLoading]     = useState(true);
+  // Inicializar con caché si existe → pantalla instantánea
+  const [perfil,    setPerfil]    = useState(() => leerCache());
+  const [loading,   setLoading]   = useState(!leerCache()); // false si hay caché
   const [guardando, setGuardando] = useState(false);
-  const [editando, setEditando]   = useState(false);
-  const [toast, setToast]         = useState(null);
+  const [editando,  setEditando]  = useState(false);
+  const [toast,     setToast]     = useState(null);
 
-  // Ref para evitar doble llamada en React StrictMode (desarrollo)
-  const cargado = useRef(false);
+  // Ref para el debounce de visibilidad
+  const visDebounce = useRef({});
 
-  // ── Carga inicial — solo una vez ──
+  // ── Carga inicial ──
   useEffect(() => {
-    if (cargado.current) return;
-    cargado.current = true;
+    // OPTIMIZACIÓN 2: guard a nivel módulo — ni StrictMode ni
+    // re-renders pueden volver a lanzar la petición.
+    if (_cargaIniciada) return;
+    _cargaIniciada = true;
+
+    // Si había caché, hacemos la fetch en background (stale-while-revalidate):
+    // el usuario ya ve datos, y cuando llegue la respuesta simplemente
+    // actualizamos el estado sin mostrar spinner.
+    const tieneCachePrevio = Boolean(leerCache());
 
     getProfile()
-      .then(data => setPerfil(mapearPerfil(data)))
-      .catch(err => console.error('[useProfile] Error cargando perfil:', err.message))
-      .finally(() => setLoading(false));
+      .then(data => {
+        const mapeado = mapearPerfil(data);
+        setPerfil(mapeado);
+        escribirCache(mapeado);            // actualizar caché
+      })
+      .catch(err => {
+        console.error('[useProfile] Error cargando perfil:', err.message);
+        // Si teníamos caché, el usuario sigue viendo datos aunque falle la red
+      })
+      .finally(() => {
+        if (!tieneCachePrevio) setLoading(false);
+        else setLoading(false); // siempre apagar el spinner
+      });
   }, []);
 
   // ── Toast helper ──
@@ -54,18 +103,17 @@ export function useProfile() {
   };
 
   // ── Guardar cambios del perfil ──
-  // El PUT devuelve el perfil actualizado → lo usamos directamente, sin re-fetch
   const guardarPerfil = async (datos) => {
     setGuardando(true);
     try {
       const actualizado = await updateProfile(datos);
-      // Preservamos avatarUrl y bannerUrl que ya tenemos en estado
-      // (el PUT no toca imágenes, así que no cambian)
-      setPerfil(prev => ({
+      const mapeado = {
         ...mapearPerfil(actualizado),
-        avatarUrl: prev.avatarUrl,
-        bannerUrl: prev.bannerUrl,
-      }));
+        avatarUrl: perfil?.avatarUrl,
+        bannerUrl: perfil?.bannerUrl,
+      };
+      setPerfil(mapeado);
+      escribirCache(mapeado);
       setEditando(false);
       mostrarToast('Perfil actualizado correctamente');
     } catch (err) {
@@ -76,32 +124,60 @@ export function useProfile() {
     }
   };
 
-  // ── Toggle visibilidad de campos ──
-  const toggleVisibilidad = async (campo) => {
+  // ── Toggle visibilidad con debounce ──
+  // OPTIMIZACIÓN 4: si el usuario cambia el mismo campo dos veces
+  // en menos de 400ms, cancela el primer PATCH y solo envía el último.
+  const toggleVisibilidad = useCallback(async (campo) => {
     const actual = perfil?.visibilidad?.[campo];
-    // Optimistic update — sin esperar al backend
-    setPerfil(prev => ({
-      ...prev,
-      visibilidad: { ...prev.visibilidad, [campo]: !actual },
-    }));
-    try {
-      await updateVisibility({ [campo]: !actual });
-    } catch (err) {
-      console.error('[useProfile] Error visibilidad:', err.message);
-      // Revertir si falla
-      setPerfil(prev => ({
-        ...prev,
-        visibilidad: { ...prev.visibilidad, [campo]: actual },
-      }));
-      mostrarToast('Error al cambiar visibilidad', 'error');
-    }
-  };
+    const nuevoValor = !actual;
 
-  // ── Subir imagen (avatar o banner) ──
-  // El backend devuelve { status, message, url } → usamos url directamente, sin re-fetch
+    // Actualización optimista inmediata
+    setPerfil(prev => {
+      const nuevo = {
+        ...prev,
+        visibilidad: { ...prev.visibilidad, [campo]: nuevoValor },
+      };
+      escribirCache(nuevo);
+      return nuevo;
+    });
+
+    // Cancelar timeout anterior para este campo si existe
+    if (visDebounce.current[campo]) {
+      clearTimeout(visDebounce.current[campo]);
+    }
+
+    visDebounce.current[campo] = setTimeout(async () => {
+      try {
+        await updateVisibility({ [campo]: nuevoValor });
+      } catch (err) {
+        console.error('[useProfile] Error visibilidad:', err.message);
+        // Revertir
+        setPerfil(prev => {
+          const revertido = {
+            ...prev,
+            visibilidad: { ...prev.visibilidad, [campo]: actual },
+          };
+          escribirCache(revertido);
+          return revertido;
+        });
+        mostrarToast('Error al cambiar visibilidad', 'error');
+      }
+    }, 400);
+  }, [perfil]);
+
+  // ── Subir imagen ──
+  // OPTIMIZACIÓN 3: pasamos el método correcto según si ya existe imagen.
+  // Así el backend recibe una sola request, no dos.
   const subirImagen = async (tipo, archivo) => {
+    // Determinar si ya existe imagen del tipo solicitado
+    const yaExiste = tipo === 'avatar'
+      ? Boolean(perfil?.foto_perfil)
+      : Boolean(perfil?.foto_fondo);
+
+    const method = yaExiste ? 'update' : 'create';
+
     try {
-      const resultado = await uploadImage(tipo, archivo);
+      const resultado = await uploadImage(tipo, archivo, method);
       const payload   = resultado?.data || resultado || {};
       const urlCruda  = payload.url || payload.foto_perfil || payload.foto_fondo || null;
 
@@ -110,25 +186,33 @@ export function useProfile() {
           ? urlCruda
           : `${BASE_URL_STORAGE}${urlCruda}`;
 
-        setPerfil(prev => ({
-          ...prev,
-          ...(tipo === 'avatar'
-            ? { avatarUrl: urlFinal, foto_perfil: urlCruda }
-            : { bannerUrl: urlFinal, foto_fondo: urlCruda }
-          ),
-        }));
+        setPerfil(prev => {
+          const nuevo = {
+            ...prev,
+            ...(tipo === 'avatar'
+              ? { avatarUrl: urlFinal, foto_perfil: urlCruda }
+              : { bannerUrl: urlFinal, foto_fondo: urlCruda }
+            ),
+          };
+          escribirCache(nuevo);
+          return nuevo;
+        });
       } else {
-        // Fallback: solo si el backend no devolvió URL hacemos re-fetch
+        // Fallback solo si el backend no devuelve URL (raro)
         console.warn('[useProfile] Backend no devolvió URL, haciendo re-fetch...');
         const data = await getProfile();
-        setPerfil(prev => ({
-          ...mapearPerfil(data),
-          // Preservar lo que ya tenemos del tipo que NO cambió
-          ...(tipo === 'avatar'
-            ? { bannerUrl: prev.bannerUrl }
-            : { avatarUrl: prev.avatarUrl }
-          ),
-        }));
+        const mapeado = mapearPerfil(data);
+        setPerfil(prev => {
+          const nuevo = {
+            ...mapeado,
+            ...(tipo === 'avatar'
+              ? { bannerUrl: prev.bannerUrl }
+              : { avatarUrl: prev.avatarUrl }
+            ),
+          };
+          escribirCache(nuevo);
+          return nuevo;
+        });
       }
 
       mostrarToast(tipo === 'avatar' ? 'Foto de perfil actualizada' : 'Banner actualizado');
@@ -140,17 +224,20 @@ export function useProfile() {
   };
 
   // ── Eliminar imagen ──
-  // Solo actualiza estado local — sin re-fetch
   const eliminarImagen = async (tipo) => {
     try {
       await deleteImage(tipo);
-      setPerfil(prev => ({
-        ...prev,
-        ...(tipo === 'avatar'
-          ? { avatarUrl: null, foto_perfil: null }
-          : { bannerUrl: null, foto_fondo: null }
-        ),
-      }));
+      setPerfil(prev => {
+        const nuevo = {
+          ...prev,
+          ...(tipo === 'avatar'
+            ? { avatarUrl: null, foto_perfil: null }
+            : { bannerUrl: null, foto_fondo: null }
+          ),
+        };
+        escribirCache(nuevo);
+        return nuevo;
+      });
       mostrarToast(tipo === 'avatar' ? 'Foto de perfil eliminada' : 'Banner eliminado');
     } catch (err) {
       console.error('[useProfile] Error eliminando imagen:', err.message);
@@ -159,14 +246,23 @@ export function useProfile() {
     }
   };
 
-  // recargarPerfil: para uso manual si se necesita forzar sincronización
+  // ── Recargar perfil manualmente (fuerza re-fetch y actualiza caché) ──
   const recargarPerfil = async () => {
     try {
       const data = await getProfile();
-      setPerfil(mapearPerfil(data));
+      const mapeado = mapearPerfil(data);
+      setPerfil(mapeado);
+      escribirCache(mapeado);
     } catch (err) {
       console.error('[useProfile] Error recargando perfil:', err.message);
     }
+  };
+
+  // ── Limpiar caché al cerrar sesión ──
+  // Exportar para que el logout lo llame
+  const limpiarCachePerfil = () => {
+    limpiarCache();
+    _cargaIniciada = false; // permite recargar al hacer login de nuevo
   };
 
   return {
@@ -181,5 +277,6 @@ export function useProfile() {
     subirImagen,
     eliminarImagen,
     recargarPerfil,
+    limpiarCachePerfil,
   };
 }

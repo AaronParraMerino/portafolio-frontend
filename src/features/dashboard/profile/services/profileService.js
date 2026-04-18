@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// PROFILE SERVICE
+// PROFILE SERVICE — optimizado
 // ═══════════════════════════════════════════
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -65,7 +65,7 @@ async function apiFetch(url, options = {}) {
   return safeJson(res);
 }
 
-// ── GET perfil — una sola llamada, el backend ya devuelve foto_perfil y foto_fondo ──
+// ── GET perfil ──
 export async function getProfile() {
   const { userId } = getSessionUser();
   return apiFetch(`${API_URL}/profile/${userId}`, {
@@ -94,9 +94,9 @@ export async function updateVisibility(data) {
 }
 
 // ── POST subir imagen ──
-// 1. Intenta /image/update (ya tiene imagen)
-// 2. Si 404/422 → /image (primera vez, sin imagen previa)
-export async function uploadImage(tipoOriginal, archivo) {
+// OPTIMIZACIÓN: recibe el método correcto desde useProfile (no más doble fetch).
+// useProfile sabe si ya existe imagen → pasa method = 'update' | 'create'.
+export async function uploadImage(tipoOriginal, archivo, method = 'update') {
   const { userId, token } = getSessionUser();
   const tipoBackend = tipoOriginal === 'avatar' ? 'profile' : tipoOriginal;
 
@@ -104,24 +104,19 @@ export async function uploadImage(tipoOriginal, archivo) {
   formData.append('file', archivo);
   formData.append('tipo', tipoBackend);
 
-  const tryUpload = (url) =>
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData,
-    });
+  const url = method === 'update'
+    ? `${API_URL}/profile/${userId}/image/update`
+    : `${API_URL}/profile/${userId}/image`;
 
-  let res = await tryUpload(`${API_URL}/profile/${userId}/image/update`);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData,
+  });
 
-  if (res.status === 404 || res.status === 422) {
-    res = await tryUpload(`${API_URL}/profile/${userId}/image`);
-    if (!res.ok) {
-      const err = await safeJson(res).catch(() => ({}));
-      throw new Error(err.message || `Fallo al crear imagen (${res.status})`);
-    }
-  } else if (!res.ok) {
+  if (!res.ok) {
     const err = await safeJson(res).catch(() => ({}));
-    throw new Error(err.message || `Fallo al actualizar imagen (${res.status})`);
+    throw new Error(err.message || `Fallo al subir imagen (${res.status})`);
   }
 
   const resultado = await safeJson(res);

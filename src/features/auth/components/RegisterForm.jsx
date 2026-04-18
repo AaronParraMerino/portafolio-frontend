@@ -5,6 +5,7 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import PoliticaPrivacidad from "./PoliticasP";
 import PoliticaCookies from "./PoliticasC";
 import { GoogleLogin } from "@react-oauth/google";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 
 
 export default function RegisterForm() {
@@ -25,6 +26,27 @@ export default function RegisterForm() {
 
   // Estado de error
   const [error, setError] = useState("");
+  const [errorApellido, setErrorApellido] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
+
+   const handleNombre = (e) => {
+    const valor = e.target.value;
+    const limpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, "");
+    setNombre(limpio);
+    if (valor !== limpio) {
+      setErrorNombre("No se permiten números ni caracteres especiales.");
+      setTimeout(() => setErrorNombre(""), 2500);
+    }
+  };
+   const handleApellido = (e) => {
+    const valor = e.target.value;
+    const limpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, "");
+    setApellido(limpio);
+    if (valor !== limpio) {
+      setErrorApellido("No se permiten números ni caracteres especiales.");
+      setTimeout(() => setErrorApellido(""), 2500);
+    }
+  };
 
   const handleGoogleLogin = async (credentialResponse) => {
   const idToken = credentialResponse?.credential;
@@ -35,13 +57,17 @@ export default function RegisterForm() {
     }
 
     try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
       const response = await fetch(`${BASE_URL}/auth/google`, {
           method: "POST",
+        credentials: "include",
           headers: {
           "Content-Type": "application/json",
       },
           body: JSON.stringify({
               id_token: idToken,
+          session_token: baseSessionToken,
           }),
       });
   const result = await response.json();
@@ -168,24 +194,30 @@ export default function RegisterForm() {
               {/* TODO TU FORM IGUAL (NO TOCADO) */}
 
             {/* Nombre */}
+            <div className="reg-field-wrapper">
             <div className="reg-field">
               <label><FaUserCircle className="reg-icon" /> Nombre</label>
               <input type="text"
               value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={handleNombre} 
                 maxLength={30} 
                 />
             </div>
+            {errorNombre && <p className="reg-field-error">{errorNombre}</p>}
+            </div>
 
             {/* Apellido */}
+             <div className="reg-field-wrapper">
             <div className="reg-field">
               <label><FaUserCircle className="reg-icon" /> Apellido</label>
               <input type="text" 
               value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                onChange={handleApellido}
                 maxLength={30} 
               />
             </div>
+             {errorApellido && <p className="reg-field-error">{errorApellido}</p>}
+             </div>
 
             {/* Correo */}
             <div className="reg-field">
@@ -269,6 +301,8 @@ export default function RegisterForm() {
               text="continue_with"
               shape="rectangular"
               width="100%"
+              auto_select={false}
+              useOneTap={false}
             /> 
             ) : (
           <button
@@ -458,6 +492,17 @@ export default function RegisterForm() {
             align-items: center;
             gap: 8px;
             width: 100%;
+          }
+            .reg-field-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+            .reg-field-error {
+            font-size: 11px;
+            color: #dc2626;
+            padding-left: 108px;
+            animation: fadeIn .15s ease;
           }
  
           .reg-field label {
@@ -695,6 +740,7 @@ export default function RegisterForm() {
             .btn-accept { padding: 8px; }
             .btn-google { padding: 7px; }
             .btn-google img { width: 13px; }
+            .reg-field-error { padding-left: 88px; }
           }
       `}</style>
     </div>
