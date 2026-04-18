@@ -4,6 +4,7 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import Navbar from "../../../shared/components/layout/Navbar";
 import { GoogleLogin } from "@react-oauth/google";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 
 
 
@@ -24,13 +25,17 @@ export default function LoginForm() {
     }
 
     try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
       const response = await fetch(`${BASE_URL}/auth/google`, {
           method: "POST",
+        credentials: "include",
           headers: {
           "Content-Type": "application/json",
       },
           body: JSON.stringify({
               id_token: idToken,
+          session_token: baseSessionToken,
           }),
       });
   const result = await response.json();
@@ -68,14 +73,18 @@ export default function LoginForm() {
     setError("");
 
     try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           correo: correo.trim(),
           password: password.trim(),
+          session_token: baseSessionToken,
         }),
       });
 
@@ -176,6 +185,8 @@ export default function LoginForm() {
                 text="continue_with"
                 shape="rectangular"
                 width="100%"
+                auto_select={false}
+                useOneTap={false}
                 /> 
               ) : (
                 <button

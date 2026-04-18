@@ -50,12 +50,7 @@ const SOCIALS = [
   },
 ];
 
-export default function Footer({ isBackendAvailable = true }) {
-  const platformStatusClass = isBackendAvailable
-    ? 'spk-footer-active spk-footer-active-online'
-    : 'spk-footer-active spk-footer-active-offline';
-  const platformStatusText = 'Estado del sitio';
-
+export default function Footer() {
   return (
     <>
       <style>{`
@@ -374,30 +369,18 @@ export default function Footer({ isBackendAvailable = true }) {
         /* badge activo */
         .spk-footer-active {
           display: inline-flex; align-items: center; gap: 5px;
+          background: rgba(16,185,129,.1);
+          border: 1px solid rgba(16,185,129,.22);
           border-radius: 20px;
           padding: 3px 10px;
           font-size: 10px; font-weight: 600;
-          letter-spacing: .05em; text-transform: uppercase;
-        }
-        .spk-footer-active-online {
-          background: rgba(16,185,129,.1);
-          border: 1px solid rgba(16,185,129,.22);
           color: #34d399;
-        }
-        .spk-footer-active-offline {
-          background: rgba(239,68,68,.12);
-          border: 1px solid rgba(239,68,68,.25);
-          color: #f87171;
+          letter-spacing: .05em; text-transform: uppercase;
         }
         .spk-footer-active-dot {
           width: 5px; height: 5px; border-radius: 50%;
-          animation: fPulse 2s ease infinite;
-        }
-        .spk-footer-active-online .spk-footer-active-dot {
           background: #34d399;
-        }
-        .spk-footer-active-offline .spk-footer-active-dot {
-          background: #f87171;
+          animation: fPulse 2s ease infinite;
         }
 
         .spk-footer-version {
@@ -539,9 +522,9 @@ export default function Footer({ isBackendAvailable = true }) {
         {/* BOTTOM BAR */}
         <div className="spk-footer-bottom">
           <div className="spk-footer-bottom-left">
-            <div className={platformStatusClass}>
+            <div className="spk-footer-active">
               <div className="spk-footer-active-dot" />
-              {platformStatusText}
+              Plataforma activa
             </div>
             <span className="spk-footer-version">v1.0.0 · 2026</span>
           </div>
