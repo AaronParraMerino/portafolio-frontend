@@ -1144,3 +1144,120 @@
   padding: 0; transition: color .12s;
 }
 .prj-tech-clear-all:hover { color: var(--rojo-mid); }
+
+
+/* ════════════════════════════════════════
+   ACTUALIZACIONES — SPRINT 2
+════════════════════════════════════════ */
+
+/* ── Placeholder azul (sin imagen) ── */
+.prj-cover-placeholder-blue {
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--azul-deep) 0%, var(--azul) 60%, #38bdf8 100%);
+  position: relative;
+  overflow: hidden;
+}
+/* Cuadrícula decorativa igual que el banner del perfil */
+.prj-cover-placeholder-blue::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+.prj-cover-placeholder-blue svg {
+  width: 36px; height: 36px;
+  position: relative; z-index: 1;
+}
+.prj-cover-placeholder-blue span {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  text-align: center;
+  padding: 0 16px;
+  position: relative; z-index: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;  
+  -webkit-box-orient: vertical;
+}
+
+/* ── Botón agregar: solo + en móvil ── */
+.prj-btn-add-label {
+  display: inline;
+}
+@media (max-width: 640px) {
+  .prj-btn-add-label { display: none; }
+  .prj-btn-add { padding: 9px 12px; }
+}
+
+/* ── Buscador: botón X para limpiar ── */
+.prj-search-clear {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--gris-borde);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .12s;
+  flex-shrink: 0;
+}
+.prj-search-clear:hover { background: var(--gris-oscuro); }
+.prj-search-clear:hover svg { stroke: #fff !important; }
+.prj-search-clear svg { width: 9px; height: 9px; }
+
+/* Quitar el ⌘K que ya no se usa */
+.prj-search-kbd { display: none; }
+
+/* ── Link YouTube en cards ── */
+.prj-card-link-yt { color: #dc2626; }
+.prj-card-link-yt:hover { color: #b91c1c; }
+
+/* ── Error de tecnología duplicada ── */
+.prj-tech-dup-error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: var(--rojo-bg);
+  border-bottom: 1px solid var(--rojo-borde);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rojo-soft);
+  font-family: var(--font);
+  animation: prj-errIn .18s ease;
+}
+
+/* ── Hint debajo del campo de video ── */
+.prj-field-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--gris-texto);
+  font-family: var(--font);
+  line-height: 1.4;
+}
+
+/* ── Loading state del page ── */
+.prj-page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--nav-height, 60px));
+}
+.prj-spinner-lg {
+  width: 28px; height: 28px;
+  border-width: 3px;
+  border-color: var(--azul-mid);
+  border-top-color: var(--azul);
+}

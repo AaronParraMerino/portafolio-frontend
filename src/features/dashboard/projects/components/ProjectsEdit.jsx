@@ -1,22 +1,40 @@
 import { useState, useRef } from 'react';
 import '../styles/projects.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
-import TechCheckboxPicker from './TechCheckboxPicker';
+import ProjectsTechPicker from './ProjectsTechPicker';
 import { ESTADOS_PROYECTO, TIPOS_PROYECTO } from '../model/projectsModel';
 
 /* ════════════════════════════════════════
-   Validaciones
+   ProjectsEdit — Modal crear / editar
+   src/features/dashboard/projects/components/ProjectsEdit.jsx
+
+   Props:
+   ─ proyecto   object | null   (null = nuevo)
+   ─ onGuardar  fn(datos, archivo)
+   ─ onCancelar fn()
+   ─ guardando  bool
 ════════════════════════════════════════ */
+
+/* ── Validaciones ── */
 function validate(form) {
   const e = {};
-  if (!form.titulo.trim()) e.titulo = 'El título es obligatorio.';
-  else if (form.titulo.trim().length < 3) e.titulo = 'Mínimo 3 caracteres.';
-  else if (form.titulo.length > 100) e.titulo = 'Máximo 100 caracteres.';
-  if (form.descripcion.length > 600) e.descripcion = `Máximo 600 caracteres (${form.descripcion.length}/600).`;
+  if (!form.titulo.trim())
+    e.titulo = 'El título es obligatorio.';
+  else if (form.titulo.trim().length < 3)
+    e.titulo = 'Mínimo 3 caracteres.';
+  else if (form.titulo.length > 100)
+    e.titulo = 'Máximo 100 caracteres.';
+  if (form.descripcion.length > 600)
+    e.descripcion = `Máximo 600 caracteres (${form.descripcion.length}/600).`;
   if (form.url_repositorio && !/^https?:\/\/.+/.test(form.url_repositorio))
     e.url_repositorio = 'Debe ser una URL válida (https://...)';
   if (form.url_demo && !/^https?:\/\/.+/.test(form.url_demo))
     e.url_demo = 'Debe ser una URL válida (https://...)';
+  if (form.url_video) {
+    const ytPattern = /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/;
+    if (!ytPattern.test(form.url_video))
+      e.url_video = 'Solo se aceptan enlaces de YouTube (youtube.com/watch?v= o youtu.be/).';
+  }
   if (!form.en_curso && form.fecha_inicio && form.fecha_fin && form.fecha_fin < form.fecha_inicio)
     e.fecha_fin = 'La fecha de fin no puede ser anterior al inicio.';
   return e;
@@ -32,13 +50,10 @@ function FieldError({ msg }) {
   );
 }
 
-/* ════════════════════════════════════════
-   Sub-componente: zona de upload imagen
-════════════════════════════════════════ */
-function ImageUploadZone({ preview, onFile, onRemove, cargando }) {
+/* ── Zona de upload imagen ── */
+function ProjectsImageUpload({ preview, onFile, onRemove, cargando }) {
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
-
   const handleFile = (f) => { if (f?.type.startsWith('image/')) onFile(f); };
 
   return (
@@ -52,7 +67,8 @@ function ImageUploadZone({ preview, onFile, onRemove, cargando }) {
       {preview ? (
         <div className="prj-upload-preview-wrap">
           <img src={preview} alt="Portada" className="prj-upload-preview" />
-          <button type="button" className="prj-upload-remove" onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Quitar">
+          <button type="button" className="prj-upload-remove"
+            onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Quitar imagen">
             <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
           </button>
         </div>
@@ -71,19 +87,13 @@ function ImageUploadZone({ preview, onFile, onRemove, cargando }) {
       )}
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp"
         className="d-none" disabled={cargando}
-        onChange={(e) => handleFile(e.target.files?.[0])}
-      />
+        onChange={(e) => handleFile(e.target.files?.[0])} />
     </div>
   );
 }
 
 /* ════════════════════════════════════════
-   ProjectsEdit — Modal crear / editar
-   Props:
-   ─ proyecto   object | null   (null = nuevo)
-   ─ onGuardar  fn(datos, archivo)
-   ─ onCancelar fn()
-   ─ guardando  bool
+   COMPONENTE PRINCIPAL
 ════════════════════════════════════════ */
 export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardando }) {
   const esNuevo = !proyecto;
@@ -93,6 +103,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     descripcion:     proyecto?.descripcion     || '',
     url_repositorio: proyecto?.url_repositorio || '',
     url_demo:        proyecto?.url_demo        || '',
+    url_video:       proyecto?.url_video       || '',
     estado:          proyecto?.estado          || 'borrador',
     tipo:            proyecto?.tipo            || '',
     fecha_inicio:    proyecto?.fecha_inicio    || '',
@@ -101,26 +112,27 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     es_publico:      proyecto?.es_publico      ?? true,
     etiquetas:       proyecto?.etiquetas       || [],
   });
+
   const [preview,         setPreview]         = useState(proyecto?.imagenUrl || proyecto?.imagen_portada || null);
   const [archivoImagen,   setArchivoImagen]   = useState(null);
   const [touched,         setTouched]         = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [confirmPending,  setConfirmPending]  = useState(null);
 
-  const errors   = validate(form);
+  const errors    = validate(form);
   const hasErrors = Object.keys(errors).length > 0;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
-  const handleBlur = (e) => setTouched(prev => ({ ...prev, [e.target.name]: true }));
+  const handleBlur  = (e) => setTouched(prev => ({ ...prev, [e.target.name]: true }));
   const showErr = (f) => (touched[f] || submitAttempted) && errors[f];
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitAttempted(true);
-    setTouched({ titulo: true, descripcion: true, url_repositorio: true, url_demo: true, fecha_fin: true });
+    setTouched({ titulo: true, descripcion: true, url_repositorio: true, url_demo: true, url_video: true, fecha_fin: true });
     if (hasErrors) return;
     setConfirmPending({ ...form, _archivo: archivoImagen });
   };
@@ -141,7 +153,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
       >
         <div className="prj-modal" role="dialog" aria-modal="true">
 
-          {/* Cabecera */}
+          {/* ── Cabecera ── */}
           <div className="prj-modal-head">
             <div>
               <div className="prj-modal-title">{esNuevo ? 'Nuevo proyecto' : 'Editar proyecto'}</div>
@@ -156,8 +168,10 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
           {/* Banner error global */}
           {submitAttempted && hasErrors && (
-            <div style={{ display:'flex', alignItems:'center', gap:8, margin:'0 22px 0', padding:'9px 14px', background:'var(--rojo-bg)', border:'1px solid var(--rojo-borde)', borderRadius:7, fontSize:12.5, fontWeight:600, color:'var(--rojo-soft)' }}>
-              <svg viewBox="0 0 14 14" style={{ width:14, height:14, stroke:'currentColor', fill:'none', strokeWidth:2, flexShrink:0 }}><path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10v.5"/></svg>
+            <div style={{ display:'flex', alignItems:'center', gap:8, margin:'0 22px', padding:'9px 14px', background:'var(--rojo-bg)', border:'1px solid var(--rojo-borde)', borderRadius:7, fontSize:12.5, fontWeight:600, color:'var(--rojo-soft)' }}>
+              <svg viewBox="0 0 14 14" style={{ width:14, height:14, stroke:'currentColor', fill:'none', strokeWidth:2, flexShrink:0 }}>
+                <path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10v.5"/>
+              </svg>
               Revisa los campos marcados antes de guardar.
             </div>
           )}
@@ -168,7 +182,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               {/* ── Imagen de portada ── */}
               <div className="prj-form-section">
                 <span className="prj-section-label">Imagen de portada</span>
-                <ImageUploadZone
+                <ProjectsImageUpload
                   preview={preview}
                   onFile={(f) => { setArchivoImagen(f); setPreview(URL.createObjectURL(f)); }}
                   onRemove={() => { setArchivoImagen(null); setPreview(null); }}
@@ -216,7 +230,6 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     <FieldError msg={showErr('descripcion')} />
                   </div>
 
-                  {/* Estado + Tipo */}
                   <div className="col-md-6">
                     <label className="prj-label">Estado</label>
                     <select className="prj-select" name="estado" value={form.estado} onChange={handleChange}>
@@ -246,7 +259,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               <div className="prj-form-section">
                 <span className="prj-section-label">Tecnologías / Stack</span>
                 <label className="prj-label">Seleccionar tecnologías</label>
-                <TechCheckboxPicker
+                <ProjectsTechPicker
                   selected={form.etiquetas}
                   onChange={(tags) => setForm(prev => ({ ...prev, etiquetas: tags }))}
                 />
@@ -254,10 +267,16 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
               {/* ── Links ── */}
               <div className="prj-form-section">
-                <span className="prj-section-label">Links</span>
+                <span className="prj-section-label">Enlaces</span>
                 <div className="row g-3">
+
                   <div className="col-12">
-                    <label className="prj-label">URL del repositorio</label>
+                    <label className="prj-label">
+                      <svg viewBox="0 0 14 14" style={{ width:12, height:12, stroke:'currentColor', fill:'none', strokeWidth:1.7, display:'inline', marginRight:5 }}>
+                        <circle cx="7" cy="7" r="6"/><path d="M7 1a8.5 8.5 0 010 12M1 7h12"/>
+                      </svg>
+                      URL del repositorio
+                    </label>
                     <input
                       className={`prj-input${showErr('url_repositorio') ? ' prj-input-error' : ''}`}
                       name="url_repositorio" value={form.url_repositorio}
@@ -266,8 +285,14 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     />
                     <FieldError msg={showErr('url_repositorio')} />
                   </div>
+
                   <div className="col-12">
-                    <label className="prj-label">URL de demo / sitio web</label>
+                    <label className="prj-label">
+                      <svg viewBox="0 0 14 14" style={{ width:12, height:12, stroke:'currentColor', fill:'none', strokeWidth:1.7, display:'inline', marginRight:5 }}>
+                        <path d="M2 2h10v10M2 12l10-10"/>
+                      </svg>
+                      URL del sitio web
+                    </label>
                     <input
                       className={`prj-input${showErr('url_demo') ? ' prj-input-error' : ''}`}
                       name="url_demo" value={form.url_demo}
@@ -276,6 +301,28 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     />
                     <FieldError msg={showErr('url_demo')} />
                   </div>
+
+                  <div className="col-12">
+                    <label className="prj-label">
+                      {/* Ícono de YouTube */}
+                      <svg viewBox="0 0 14 10" style={{ width:14, height:10, display:'inline', marginRight:5, verticalAlign:'middle' }}>
+                        <rect x=".5" y=".5" width="13" height="9" rx="2" fill="#FF0000" stroke="none"/>
+                        <path d="M5.5 2.5l4 2.5-4 2.5V2.5z" fill="#fff" stroke="none"/>
+                      </svg>
+                      URL del video demo (YouTube)
+                    </label>
+                    <input
+                      className={`prj-input${showErr('url_video') ? ' prj-input-error' : ''}`}
+                      name="url_video" value={form.url_video}
+                      onChange={handleChange} onBlur={handleBlur}
+                      placeholder="https://youtube.com/watch?v=... o https://youtu.be/..."
+                    />
+                    {!showErr('url_video') && (
+                      <div className="prj-field-hint">Solo se aceptan enlaces de YouTube</div>
+                    )}
+                    <FieldError msg={showErr('url_video')} />
+                  </div>
+
                 </div>
               </div>
 
@@ -309,13 +356,16 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
             </div>
 
-            {/* Footer */}
+            {/* ── Footer ── */}
             <div className="prj-modal-foot">
-              <button type="button" className="prj-btn-cancel" onClick={onCancelar} disabled={guardando}>Cancelar</button>
+              <button type="button" className="prj-btn-cancel" onClick={onCancelar} disabled={guardando}>
+                Cancelar
+              </button>
               <button type="submit" className="prj-btn-save" disabled={guardando}>
                 {guardando
                   ? <><span className="prj-spinner" /> Guardando...</>
-                  : <><svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>{esNuevo ? 'Agregar proyecto' : 'Guardar cambios'}</>
+                  : <><svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
+                    {esNuevo ? 'Agregar proyecto' : 'Guardar cambios'}</>
                 }
               </button>
             </div>

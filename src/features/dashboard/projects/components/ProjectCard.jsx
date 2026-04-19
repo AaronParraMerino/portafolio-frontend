@@ -1,10 +1,16 @@
-import DotsMenu from './DotsMenu';
+import ProjectsDotsMenu from './ProjectsDotsMenu';
 import '../styles/projects.css';
 import { TIPOS_PROYECTO } from '../model/projectsModel';
 
 /* ════════════════════════════════════════
    ProjectCard
    src/features/dashboard/projects/components/ProjectCard.jsx
+
+   Props:
+   ─ proyecto     object
+   ─ onEditar     fn(proyecto)
+   ─ onToggleVis  fn(proyecto)
+   ─ onEliminar   fn(proyecto)
 ════════════════════════════════════════ */
 
 function getStatusClass(estado) {
@@ -14,47 +20,47 @@ function getStatusLabel(p) {
   if (p.estadoLabel) return p.estadoLabel;
   return { publicado: 'Publicado', desarrollo: 'En desarrollo', borrador: 'Borrador', archivado: 'Archivado' }[p.estado] || p.estado;
 }
-function getTipoLabel(tipo) {
-  return TIPOS_PROYECTO.find(t => t.value === tipo)?.label || null;
-}
 
 export default function ProjectCard({ proyecto, onEditar, onToggleVis, onEliminar }) {
   const statusClass = getStatusClass(proyecto.estado);
   const statusLabel = getStatusLabel(proyecto);
-  const tipoLabel   = getTipoLabel(proyecto.tipo);
+  const tipoObj     = TIPOS_PROYECTO.find(t => t.value === proyecto.tipo);
+
+  const imgSrc = proyecto.imagenUrl || proyecto.imagen_portada || null;
 
   return (
     <div className={`prj-card${!proyecto.es_publico ? ' hidden-card' : ''}`}>
 
       {/* ── Cover ── */}
       <div className="prj-card-cover">
-        {proyecto.imagenUrl || proyecto.imagen_portada ? (
-          <img
-            className="prj-cover-img"
-            src={proyecto.imagenUrl || proyecto.imagen_portada}
-            alt={proyecto.titulo}
-            loading="lazy"
-          />
+        {imgSrc ? (
+          <img className="prj-cover-img" src={imgSrc} alt={proyecto.titulo} loading="lazy" />
         ) : (
-          <div className="prj-cover-placeholder">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-            <span>Sin imagen de portada</span>
+          /* Placeholder azul con ícono y texto en blanco */
+          <div className="prj-cover-placeholder-blue">
+            <svg viewBox="0 0 40 40" fill="none" stroke="rgba(255,255,255,.6)" strokeWidth="1.4">
+              <rect x="4" y="8" width="32" height="24" rx="3"/>
+              <path d="M4 14h32M14 8v6"/>
+              <circle cx="20" cy="26" r="4"/>
+              <path d="M12 34c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+            </svg>
+            <span>{proyecto.titulo}</span>
           </div>
         )}
-        <div className="prj-cover-overlay" />
+        {imgSrc && <div className="prj-cover-overlay" />}
 
-        {/* Badges (estado + tipo si existe) */}
+        {/* Badges */}
         <div className="prj-cover-badges">
           {proyecto.badges?.map(b => (
             <span key={b.label} className={`prj-badge prj-badge-${b.variant}`}>{b.label}</span>
           ))}
-          {tipoLabel && !proyecto.badges?.find(b => b.label === tipoLabel) && (
-            <span className="prj-badge prj-badge-purple">{tipoLabel}</span>
+          {tipoObj && !proyecto.badges?.find(b => b.label === tipoObj.label) && (
+            <span className="prj-badge prj-badge-purple">{tipoObj.label}</span>
           )}
         </div>
 
         {/* Menú 3 puntos */}
-        <DotsMenu
+        <ProjectsDotsMenu
           proyecto={proyecto}
           onEditar={onEditar}
           onToggleVis={onToggleVis}
@@ -94,6 +100,12 @@ export default function ProjectCard({ proyecto, onEditar, onToggleVis, onElimina
           {proyecto.url_demo && (
             <a href={proyecto.url_demo} className="prj-card-link" target="_blank" rel="noreferrer">
               <svg viewBox="0 0 11 11"><path d="M2 2h7v7M2 9l7-7"/></svg>
+              Sitio web
+            </a>
+          )}
+          {proyecto.url_video && (
+            <a href={proyecto.url_video} className="prj-card-link prj-card-link-yt" target="_blank" rel="noreferrer">
+              <svg viewBox="0 0 11 11"><rect x="1" y="2" width="9" height="7" rx="1.5"/><path d="M4.5 4.5l3 1.5-3 1.5z" fill="currentColor" stroke="none"/></svg>
               Demo
             </a>
           )}

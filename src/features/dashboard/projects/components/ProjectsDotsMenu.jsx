@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import '../styles/projects.css';
 
 /* ════════════════════════════════════════
-   DotsMenu — Menú de 3 puntos por card
-   src/features/dashboard/projects/components/DotsMenu.jsx
+   ProjectsDotsMenu — Menú de 3 puntos por card
+   src/features/dashboard/projects/components/ProjectsDotsMenu.jsx
 
    Props:
    ─ proyecto     object
@@ -11,7 +11,7 @@ import '../styles/projects.css';
    ─ onToggleVis  fn(proyecto)
    ─ onEliminar   fn(proyecto)
 ════════════════════════════════════════ */
-export default function DotsMenu({ proyecto, onEditar, onToggleVis, onEliminar }) {
+export default function ProjectsDotsMenu({ proyecto, onEditar, onToggleVis, onEliminar }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -29,6 +29,8 @@ export default function DotsMenu({ proyecto, onEditar, onToggleVis, onEliminar }
         className="prj-dots-btn"
         type="button"
         title="Opciones"
+        aria-label="Opciones del proyecto"
+        aria-expanded={open}
         onClick={() => setOpen(v => !v)}
       >
         <svg viewBox="0 0 4 16" fill="rgba(255,255,255,.85)" stroke="none">
@@ -40,12 +42,12 @@ export default function DotsMenu({ proyecto, onEditar, onToggleVis, onEliminar }
 
       {open && (
         <div className="prj-dots-menu" role="menu">
-          <button className="prj-menu-item" type="button" onClick={action(onEditar)}>
+          <button className="prj-menu-item" type="button" role="menuitem" onClick={action(onEditar)}>
             <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
             Editar
           </button>
 
-          <button className="prj-menu-item" type="button" onClick={action(onToggleVis)}>
+          <button className="prj-menu-item" type="button" role="menuitem" onClick={action(onToggleVis)}>
             {proyecto.es_publico ? (
               <>
                 <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -66,7 +68,7 @@ export default function DotsMenu({ proyecto, onEditar, onToggleVis, onEliminar }
 
           <div className="prj-menu-divider" />
 
-          <button className="prj-menu-item danger" type="button" onClick={action(onEliminar)}>
+          <button className="prj-menu-item danger" type="button" role="menuitem" onClick={action(onEliminar)}>
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M1 3.5h12M5 3.5V2a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1.5M3 3.5v8a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0011 11.5v-8M5.5 6v4M8.5 6v4"/>
             </svg>
