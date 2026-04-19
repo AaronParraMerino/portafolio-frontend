@@ -12,6 +12,7 @@ import PrivacidadPage from '../../features/auth/pages/PrivacidadPage';
 import Contraseña from '../../features/auth/components/Contraseña';
 import Codigo from '../../features/auth/components/Codigo';
 import CambiarContra from '../../features/auth/components/CambiarContra';
+import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -25,6 +26,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
               <Route index element={<DashboardPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="experience" element={<ExperiencePage />} />
+              <Route path="projects" element={<ProjectsPage />} />
             </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
