@@ -40,17 +40,17 @@ export default function RecuperacionAcceso() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#f0f4f8", fontFamily: "sans-serif" }}>
-      <div style={{ backgroundColor: "#fff", borderRadius: "12px", padding: "40px 36px", width: "100%", maxWidth: "400px", boxShadow: "0 2px 16px rgba(0,0,0,0.08)" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: "600", color: "#3b82f6", marginBottom: "10px", textAlign: "center" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--fondo)", fontFamily: "var(--font)" }}>
+      <div style={{ backgroundColor: "var(--blanco)", borderRadius: "12px", padding: "40px 36px", width: "100%", maxWidth: "400px", boxShadow: "0 2px 16px rgba(0,0,0,0.08)" }}>
+        <h1 style={{ fontSize: "22px", fontWeight: "600", color: "var(--azul)", marginBottom: "10px", textAlign: "center" }}>
           Recuperación de Contraseña
         </h1>
 
-        <p style={{ fontSize: "14px", color: "#555", marginBottom: "24px", lineHeight: "1.5" }}>
+        <p style={{ fontSize: "14px", color: "var(--gris-texto)", marginBottom: "24px", lineHeight: "1.5" }}>
           Te enviaremos un código al correo para recuperar tu cuenta.
         </p>
 
-        <label htmlFor="email" style={{ fontSize: "13px", fontWeight: "500", color: "#333", display: "block", marginBottom: "6px" }}>
+        <label htmlFor="email" style={{ fontSize: "13px", fontWeight: "500", color: "var(--gris-oscuro)", display: "block", marginBottom: "6px" }}>
           Correo Electrónico
         </label>
 
@@ -60,16 +60,16 @@ export default function RecuperacionAcceso() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="ejemplo@gmail.com"
-          style={{ width: "100%", padding: "10px 12px", fontSize: "14px", border: "1.5px solid #cdd3da", borderRadius: "8px", outline: "none", boxSizing: "border-box", marginBottom: "20px" }}
+          style={{ width: "100%", padding: "10px 12px", fontSize: "14px", border: "1.5px solid var(--gris-borde)", borderRadius: "8px", outline: "none", boxSizing: "border-box", marginBottom: "20px", fontFamily: "var(--font)" }}
         />
 
-        {msg ? <p style={{ color: "#16a34a", fontSize: "13px" }}>{msg}</p> : null}
-        {error ? <p style={{ color: "#dc2626", fontSize: "13px" }}>{error}</p> : null}
+        {msg ? <p style={{ color: "var(--verde)", fontSize: "13px" }}>{msg}</p> : null}
+        {error ? <p style={{ color: "var(--rojo-soft)", fontSize: "13px" }}>{error}</p> : null}
 
         <button
           onClick={handleSubmit}
           disabled={!email || cargando}
-          style={{ width: "100%", padding: "12px", backgroundColor: email && !cargando ? "#4c6ef5" : "#a5b4fc", color: "#fff", border: "none", borderRadius: "8px", fontSize: "15px", fontWeight: "500", cursor: email && !cargando ? "pointer" : "not-allowed" }}
+          style={{ width: "100%", padding: "12px", backgroundColor: email && !cargando ? "var(--azul)" : "var(--azul-mid)", color: "var(--blanco)", border: "none", borderRadius: "8px", fontSize: "15px", fontWeight: "500", cursor: email && !cargando ? "pointer" : "not-allowed", fontFamily: "var(--font)" }}
         >
           {cargando ? "Enviando..." : "Enviar código"}
         </button>
@@ -77,7 +77,7 @@ export default function RecuperacionAcceso() {
         <button
           type="button"
           onClick={() => navigate("/auth/Login")}
-          style={{ fontSize: "13px", color: "#4c6ef5", background: "none", border: "none", cursor: "pointer", padding: 0, display: "block", margin: "16px auto 0" }}
+          style={{ fontSize: "13px", color: "var(--azul)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "block", margin: "16px auto 0", fontFamily: "var(--font)" }}
         >
           Volver al inicio de sesión
         </button>

@@ -22,32 +22,29 @@ const formatearFecha = (fechaStr) => {
 
 export default function ExperiencePage() {
   const [experiencias, setExperiencias] = useState([]);
-  const [modalMode, setModalMode] = useState(null);
-  const [selectedExp, setSelectedExp] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [modalMode, setModalMode]       = useState(null);
+  const [selectedExp, setSelectedExp]   = useState(null);
+  const [toast, setToast]               = useState(null);
+  const [loading, setLoading]           = useState(true);
 
   const [confirmData, setConfirmData] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
+    isOpen:   false,
+    title:    "",
+    subtitle: "",
+    message:  "",
+    confirmLabel: "Confirmar",
     onConfirm: null,
-    variant: "blue",
-    icon: "check",
+    variant:  "blue",
+    icon:     "check",
   });
 
   const showToast = (msg, tipo = "ok") => {
     setToast({ msg, tipo });
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
+    setTimeout(() => setToast(null), 3000);
   };
 
   const closeConfirm = () =>
-    setConfirmData((prev) => ({
-      ...prev,
-      isOpen: false,
-    }));
+    setConfirmData((prev) => ({ ...prev, isOpen: false }));
 
   const loadExperiencias = useCallback(async () => {
     try {
@@ -69,28 +66,20 @@ export default function ExperiencePage() {
     try {
       if (modalMode === "edit" && selectedExp) {
         const updated = await updateExperiencia(selectedExp.id, data);
-
         setExperiencias((prev) =>
           prev.map((exp) => (exp.id === selectedExp.id ? updated : exp))
         );
-
         showToast("Experiencia actualizada correctamente");
       } else {
         const created = await createExperiencia(data);
-
         setExperiencias((prev) => [created, ...prev]);
-
         showToast("Experiencia guardada con éxito");
       }
-
       setModalMode(null);
       setSelectedExp(null);
     } catch (error) {
       const errorMsg =
-        error.response?.data?.message ||
-        error.message ||
-        "Error en la operación";
-
+        error.response?.data?.message || error.message || "Error en la operación";
       showToast(errorMsg, "error");
     }
   };
@@ -98,9 +87,7 @@ export default function ExperiencePage() {
   const executeDelete = async (id) => {
     try {
       await deleteExperiencia(id);
-
       setExperiencias((prev) => prev.filter((e) => e.id !== id));
-
       showToast("Registro eliminado", "ok");
     } catch (error) {
       showToast(error.message || "No se pudo eliminar", "error");
@@ -108,14 +95,21 @@ export default function ExperiencePage() {
   };
 
   const handleSaveRequest = (data) => {
+    const isEdit = !!selectedExp;
+
     setConfirmData({
       isOpen: true,
-      title: selectedExp ? "Confirmar Edición" : "Confirmar Registro",
-      message: `¿Estás seguro de que deseas ${
-        selectedExp ? "actualizar" : "guardar"
-      } esta información?`,
-      variant: "blue",
-      icon: "check",
+      // Editar → azul (cambio de información).  Crear → verde (acción positiva nueva).
+      variant:      isEdit ? "blue"              : "green",
+      icon:         "check",
+      title:        isEdit ? "Actualizar experiencia" : "Guardar experiencia",
+      subtitle:     isEdit
+        ? "Se sobreescribirán los datos actuales."
+        : "Se añadirá al listado de experiencias.",
+      message: isEdit
+        ? `¿Confirmas los cambios realizados en "${data.puesto}" en ${data.empresa}?`
+        : `¿Deseas guardar "${data.puesto}" en ${data.empresa} como nueva experiencia?`,
+      confirmLabel: isEdit ? "Sí, actualizar" : "Sí, guardar",
       onConfirm: () => {
         executeSave(data);
         closeConfirm();
@@ -124,12 +118,17 @@ export default function ExperiencePage() {
   };
 
   const handleDeleteRequest = (id) => {
+    const exp = experiencias.find((e) => e.id === id);
     setConfirmData({
       isOpen: true,
-      title: "¿Eliminar Experiencia?",
-      message: "Esta acción no se puede deshacer. ¿Deseas continuar?",
-      variant: "red",
-      icon: "warning",
+      variant:      "red",
+      icon:         "warning",
+      title:        "Eliminar experiencia",
+      subtitle:     "Esta acción no se puede deshacer.",
+      message:      exp
+        ? `Estás por eliminar "${exp.puesto}" en ${exp.empresa}. ¿Deseas continuar?`
+        : "Esta acción es permanente. ¿Deseas continuar?",
+      confirmLabel: "Sí, eliminar",
       onConfirm: () => {
         executeDelete(id);
         closeConfirm();
@@ -141,55 +140,54 @@ export default function ExperiencePage() {
     <>
       <style>{`
         .custom-breadcrumb-bar {
-          background-color: #111827;
+          background-color: var(--negro-texto);
           padding: 1.2rem 2.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
           border-bottom: 4px solid var(--azul);
+          font-family: var(--font);
         }
-
         .bc-text {
-          color: #6b7280;
+          color: var(--gris-texto);
           font-size: 0.85rem;
           margin: 0;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 1px;
+          font-family: var(--font);
         }
-
         .bc-active {
-          color: #ffffff;
+          color: var(--blanco);
           font-weight: 800;
           font-size: 1.4rem;
           margin: 0;
+          font-family: var(--font);
         }
-
         .exp-card {
           transition: all 0.3s ease;
           border-left: 5px solid var(--azul) !important;
           border-radius: 4px !important;
-          background-color: #ffffff !important;
-          border: 1px solid #e2e8f0 !important;
+          background-color: var(--blanco) !important;
+          border: 1px solid var(--gris-borde) !important;
+          font-family: var(--font);
         }
-
         .exp-card:hover {
           transform: translateY(-5px);
           box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
-
         .badge-laboral {
-          background-color: #fff7ed !important;
-          color: #ea580c !important;
-          border: 1px solid #fdba74 !important;
+          background-color: var(--amarillo-chip) !important;
+          color: var(--amarillo-hover) !important;
+          border: 1px solid var(--amarillo-borde) !important;
+          font-family: var(--font);
         }
-
         .badge-academica {
-          background-color: #f3e8ff !important;
-          color: #6b21a8 !important;
-          border: 1px solid #b878fd !important;
+          background-color: var(--violeta-chip) !important;
+          color: var(--violeta-hover) !important;
+          border: 1px solid var(--violeta-borde) !important;
+          font-family: var(--font);
         }
-
         @media (max-width: 768px) {
           .custom-breadcrumb-bar {
             flex-direction: column;
@@ -199,37 +197,31 @@ export default function ExperiencePage() {
         }
       `}</style>
 
+      {/* Barra superior */}
       <div className="custom-breadcrumb-bar shadow">
         <div>
           <p className="bc-text">Portafolio</p>
           <h2 className="bc-active">EXPERIENCIA</h2>
         </div>
-
         <button
           className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
-          style={{
-            backgroundColor: "var(--azul)",
-            border: "none",
-            borderRadius: "6px",
-          }}
-          onClick={() => {
-            setModalMode("add");
-            setSelectedExp(null);
-          }}
+          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
+          onClick={() => { setModalMode("add"); setSelectedExp(null); }}
         >
           ➕ Agregar Nueva
         </button>
       </div>
 
+      {/* Lista de experiencias */}
       <div
         className="container-fluid p-4"
-        style={{ minHeight: "100vh", background: "#f1f5f9" }}
+        style={{ minHeight: "100vh", background: "var(--fondo)", fontFamily: "var(--font)" }}
       >
         <div className="row justify-content-center">
           <div className="col-12 col-xl-11">
             {loading ? (
               <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status"></div>
+                <div className="spinner-border text-primary" role="status" />
                 <h5 className="text-muted mt-3">Cargando tus datos...</h5>
               </div>
             ) : experiencias.length === 0 ? (
@@ -251,41 +243,29 @@ export default function ExperiencePage() {
                         >
                           {exp.tipo_experiencia.toUpperCase()}
                         </span>
-
                         <button
                           className="btn btn-light btn-sm rounded-circle shadow-sm"
-                          onClick={() => {
-                            setSelectedExp(exp);
-                            setModalMode("view");
-                          }}
+                          onClick={() => { setSelectedExp(exp); setModalMode("view"); }}
                         >
                           👁️
                         </button>
                       </div>
 
                       <h5 className="fw-bold mb-1">{exp.puesto}</h5>
-
-                      <p className="text-primary small mb-3 fw-bold">
-                        {exp.empresa}
-                      </p>
+                      <p className="text-primary small mb-3 fw-bold">{exp.empresa}</p>
 
                       <div className="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
                         <small className="text-muted fw-bold">
                           {formatearFecha(exp.fecha_inicio)} —{" "}
                           {exp.actual ? "Actual" : formatearFecha(exp.fecha_fin)}
                         </small>
-
                         <div className="d-flex gap-2">
                           <button
-                            onClick={() => {
-                              setSelectedExp(exp);
-                              setModalMode("edit");
-                            }}
+                            onClick={() => { setSelectedExp(exp); setModalMode("edit"); }}
                             className="btn btn-sm btn-outline-primary"
                           >
                             ✏️
                           </button>
-
                           <button
                             onClick={() => handleDeleteRequest(exp.id)}
                             className="btn btn-sm btn-outline-danger"
@@ -303,11 +283,13 @@ export default function ExperiencePage() {
         </div>
       </div>
 
+      {/* ConfirmModal unificado */}
       <ConfirmModal
         open={confirmData.isOpen}
         title={confirmData.title}
+        subtitle={confirmData.subtitle}
         message={confirmData.message}
-        confirmLabel="Confirmar"
+        confirmLabel={confirmData.confirmLabel}
         cancelLabel="Cancelar"
         variant={confirmData.variant}
         icon={confirmData.icon}
@@ -315,6 +297,7 @@ export default function ExperiencePage() {
         onClose={closeConfirm}
       />
 
+      {/* Modales de formulario y detalle */}
       {(modalMode === "add" || modalMode === "edit") && (
         <ExperienceForm
           onSave={handleSaveRequest}
@@ -322,7 +305,6 @@ export default function ExperiencePage() {
           editData={selectedExp}
         />
       )}
-
       {modalMode === "view" && (
         <ExperienceDetailModal
           exp={selectedExp}
