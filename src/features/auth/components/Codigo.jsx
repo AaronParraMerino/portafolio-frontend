@@ -63,7 +63,7 @@ export default function ModalIngresarCodigo() {
           style={styles.input}
         />
 
-        {error ? <p style={{ color: "#dc2626", fontSize: "13px", marginTop: "10px" }}>{error}</p> : null}
+        {error ? <p style={{ color: "var(--rojo-soft)", fontSize: "13px", marginTop: "10px", fontFamily: "var(--font)" }}>{error}</p> : null}
 
         <button style={styles.btnEnviar} onClick={handleEnviar} disabled={cargando}>
           {cargando ? "Validando..." : "Enviar código"}
@@ -81,20 +81,21 @@ const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    backgroundColor: "#f0f4f8",
+    backgroundColor: "var(--fondo)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
   },
   modal: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "var(--blanco)",
     borderRadius: "12px",
     padding: "2rem 1.75rem",
     width: "100%",
     maxWidth: "380px",
     position: "relative",
     boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+    fontFamily: "var(--font)",
   },
   closeBtn: {
     position: "absolute",
@@ -104,24 +105,24 @@ const styles = {
     border: "none",
     fontSize: "18px",
     cursor: "pointer",
-    color: "#6b7280",
+    color: "var(--gris-texto)",
   },
   titulo: {
     fontSize: "20px",
     fontWeight: "600",
-    color: "#1a56db",
+    color: "var(--azul)",
     margin: "0 0 8px",
     textAlign: "center",
   },
   descripcion: {
     fontSize: "14px",
-    color: "#6b7280",
+    color: "var(--gris-texto)",
     margin: "0 0 1.5rem",
     lineHeight: "1.5",
   },
   label: {
     fontSize: "13px",
-    color: "#374151",
+    color: "var(--gris-oscuro)",
     display: "block",
     marginBottom: "6px",
     fontWeight: "500",
@@ -134,32 +135,35 @@ const styles = {
     textAlign: "center",
     padding: "10px 14px",
     borderRadius: "8px",
-    border: "1px solid #d1d5db",
+    border: "1.5px solid var(--gris-borde)",
     outline: "none",
-    color: "#111827",
+    color: "var(--negro-texto)",
+    fontFamily: "var(--mono)",
   },
   btnEnviar: {
     marginTop: "1.25rem",
     width: "100%",
     padding: "11px",
-    backgroundColor: "#1a56db",
-    color: "#ffffff",
+    backgroundColor: "var(--azul)",
+    color: "var(--blanco)",
     border: "none",
     borderRadius: "8px",
     fontSize: "15px",
     fontWeight: "500",
     cursor: "pointer",
+    fontFamily: "var(--font)",
   },
   btnSalir: {
     marginTop: "0.75rem",
     width: "100%",
     padding: "11px",
-    backgroundColor: "#ef4444",
-    color: "#ffffff",
+    backgroundColor: "var(--rojo-soft)",
+    color: "var(--blanco)",
     border: "none",
     borderRadius: "8px",
     fontSize: "15px",
     fontWeight: "500",
     cursor: "pointer",
+    fontFamily: "var(--font)",
   },
 };
