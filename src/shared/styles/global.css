@@ -16,7 +16,7 @@
   --azul-deep:   #004f7c;
 
   --blanco:      #ffffff;
-  --fondo:       #f2f2f2;
+  --fondo:       #f0ede8;
   --gris-borde:  #d1d5db;
   --gris-texto:  #6b7280;
   --gris-oscuro: #374151;
@@ -28,6 +28,27 @@
   --rojo-bg:     rgba(232, 85, 85, 0.08);
   --rojo-borde:  rgba(232, 85, 85, 0.22);
   --rojo-chip:   #fdf0f0;
+
+  /* Verde — éxito, confirmaciones */
+  --verde:       #34d399;
+  --verde-hover: #28b882;
+  --verde-bg:    rgba(52, 211, 153, 0.08);
+  --verde-borde: rgba(52, 211, 153, 0.25);
+  --verde-chip:  #f0fdf7;
+
+  /* Amarillo — advertencias */
+  --amarillo:        #fbbf24;
+  --amarillo-hover:  #e0a813;
+  --amarillo-bg:     rgba(251, 191, 36, 0.08);
+  --amarillo-borde:  rgba(251, 191, 36, 0.30);
+  --amarillo-chip:   #fffbeb;
+
+  /* Violeta — informativo, badges */
+  --violeta:       #c4b5fd;
+  --violeta-hover: #a896e8;
+  --violeta-bg:    rgba(196, 181, 253, 0.12);
+  --violeta-borde: rgba(196, 181, 253, 0.35);
+  --violeta-chip:  #f5f3ff;
 
   --font:  'Inter', sans-serif;
   --mono:  'IBM Plex Mono', monospace;

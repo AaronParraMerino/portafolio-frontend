@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-// QA: Header eliminado para limpiar el warning no-unused-vars
 import ExperienceForm from "../components/ExperienceForm";
 import ExperienceDetailModal from "../components/ExperienceDetailModal";
 import ExperienceToast from "../components/ExperienceToast";
+import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import {
   getExperiencias,
   createExperiencia,
@@ -10,57 +10,41 @@ import {
   deleteExperiencia,
 } from "../services/experienceService";
 
-// Componente local para la Ventanita de Confirmación
-const ConfirmModal = ({
-  isOpen,
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  type = "primary",
-}) => {
-  if (!isOpen) return null;
-  const btnClass = type === "danger" ? "btn-danger" : "btn-primary";
-  return (
-    <div className="confirm-overlay">
-      <div className="confirm-card">
-        <div className="confirm-icon">{type === "danger" ? "⚠️" : "❓"}</div>
-        <h5 className="confirm-title">{title}</h5>
-        <p className="confirm-text">{message}</p>
-        <div className="confirm-buttons">
-          <button className="btn-confirm-cancel" onClick={onCancel}>
-            Cancelar
-          </button>
-          <button className={`btn ${btnClass} px-4`} onClick={onConfirm}>
-            Confirmar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+const formatearFecha = (fechaStr) => {
+  if (!fechaStr) return "";
+  const [year, month] = fechaStr.split("-");
+  const meses = [
+    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+  ];
+  return `${meses[parseInt(month) - 1]} ${year}`;
 };
 
 export default function ExperiencePage() {
   const [experiencias, setExperiencias] = useState([]);
-  const [modalMode, setModalMode] = useState(null);
-  const [selectedExp, setSelectedExp] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [modalMode, setModalMode]       = useState(null);
+  const [selectedExp, setSelectedExp]   = useState(null);
+  const [toast, setToast]               = useState(null);
+  const [loading, setLoading]           = useState(true);
 
   const [confirmData, setConfirmData] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
+    isOpen:   false,
+    title:    "",
+    subtitle: "",
+    message:  "",
+    confirmLabel: "Confirmar",
     onConfirm: null,
-    type: "primary",
+    variant:  "blue",
+    icon:     "check",
   });
-
-  // QA: breadcrumb eliminado para limpiar el warning no-unused-vars
 
   const showToast = (msg, tipo = "ok") => {
     setToast({ msg, tipo });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const closeConfirm = () =>
+    setConfirmData((prev) => ({ ...prev, isOpen: false }));
 
   const loadExperiencias = useCallback(async () => {
     try {
@@ -78,25 +62,12 @@ export default function ExperiencePage() {
     loadExperiencias();
   }, [loadExperiencias]);
 
-  const handleSaveRequest = (data) => {
-    setConfirmData({
-      isOpen: true,
-      title: selectedExp ? "Confirmar Edición" : "Confirmar Registro",
-      message: `¿Estás seguro de que deseas ${selectedExp ? "actualizar" : "guardar"} esta información?`,
-      type: "primary",
-      onConfirm: () => {
-        executeSave(data);
-        closeConfirm();
-      },
-    });
-  };
-
   const executeSave = async (data) => {
     try {
       if (modalMode === "edit" && selectedExp) {
         const updated = await updateExperiencia(selectedExp.id, data);
         setExperiencias((prev) =>
-          prev.map((exp) => (exp.id === selectedExp.id ? updated : exp)),
+          prev.map((exp) => (exp.id === selectedExp.id ? updated : exp))
         );
         showToast("Experiencia actualizada correctamente");
       } else {
@@ -108,24 +79,9 @@ export default function ExperiencePage() {
       setSelectedExp(null);
     } catch (error) {
       const errorMsg =
-        error.response?.data?.message ||
-        error.message ||
-        "Error en la operación";
+        error.response?.data?.message || error.message || "Error en la operación";
       showToast(errorMsg, "error");
     }
-  };
-
-  const handleDeleteRequest = (id) => {
-    setConfirmData({
-      isOpen: true,
-      title: "¿Eliminar Experiencia?",
-      message: "Esta acción no se puede deshacer. ¿Deseas continuar?",
-      type: "danger",
-      onConfirm: () => {
-        executeDelete(id);
-        closeConfirm();
-      },
-    });
   };
 
   const executeDelete = async (id) => {
@@ -138,83 +94,110 @@ export default function ExperiencePage() {
     }
   };
 
-  const closeConfirm = () => setConfirmData({ ...confirmData, isOpen: false });
-  
-  const formatearFecha = (fechaStr) => {
-  if (!fechaStr) return '';
-  const [year, month] = fechaStr.split('-');
-  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return `${meses[parseInt(month) - 1]} ${year}`;
-};
+  const handleSaveRequest = (data) => {
+    const isEdit = !!selectedExp;
+
+    setConfirmData({
+      isOpen: true,
+      // Editar → azul (cambio de información).  Crear → verde (acción positiva nueva).
+      variant:      isEdit ? "blue"              : "green",
+      icon:         "check",
+      title:        isEdit ? "Actualizar experiencia" : "Guardar experiencia",
+      subtitle:     isEdit
+        ? "Se sobreescribirán los datos actuales."
+        : "Se añadirá al listado de experiencias.",
+      message: isEdit
+        ? `¿Confirmas los cambios realizados en "${data.puesto}" en ${data.empresa}?`
+        : `¿Deseas guardar "${data.puesto}" en ${data.empresa} como nueva experiencia?`,
+      confirmLabel: isEdit ? "Sí, actualizar" : "Sí, guardar",
+      onConfirm: () => {
+        executeSave(data);
+        closeConfirm();
+      },
+    });
+  };
+
+  const handleDeleteRequest = (id) => {
+    const exp = experiencias.find((e) => e.id === id);
+    setConfirmData({
+      isOpen: true,
+      variant:      "red",
+      icon:         "warning",
+      title:        "Eliminar experiencia",
+      subtitle:     "Esta acción no se puede deshacer.",
+      message:      exp
+        ? `Estás por eliminar "${exp.puesto}" en ${exp.empresa}. ¿Deseas continuar?`
+        : "Esta acción es permanente. ¿Deseas continuar?",
+      confirmLabel: "Sí, eliminar",
+      onConfirm: () => {
+        executeDelete(id);
+        closeConfirm();
+      },
+    });
+  };
 
   return (
     <>
       <style>{`
-        /* Estilos de la Barra Superior */
         .custom-breadcrumb-bar {
-          background-color: #111827;
+          background-color: var(--negro-texto);
           padding: 1.2rem 2.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
           border-bottom: 4px solid var(--azul);
+          font-family: var(--font);
         }
-        .bc-text { color: #6b7280; font-size: 0.85rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .bc-active { color: #ffffff; font-weight: 800; font-size: 1.4rem; margin: 0; }
-        
-        /* Estilos de la Ventana de Confirmación (Arreglo del cuadro transparente) */
-        .confirm-overlay {
-          position: fixed;
-          top: 0; left: 0; width: 100%; height: 100%;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex; justify-content: center; align-items: center;
-          z-index: 2000;
-          backdrop-filter: blur(2px);
-        }
-        .confirm-card {
-          background: white;
-          padding: 2rem;
-          border-radius: 8px;
-          width: 90%;
-          max-width: 400px;
-          text-align: center;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-        }
-        .confirm-icon { font-size: 3rem; margin-bottom: 1rem; }
-        .confirm-title { font-weight: 800; color: #1f2937; margin-bottom: 0.5rem; }
-        .confirm-text { color: #6b7280; font-size: 0.95rem; margin-bottom: 1.5rem; }
-        .confirm-buttons { display: flex; gap: 10px; justify-content: center; }
-        .btn-confirm-cancel {
-          background: #f3f4f6;
-          border: 1px solid #d1d5db;
-          padding: 0.5rem 1.5rem;
-          border-radius: 6px;
+        .bc-text {
+          color: var(--gris-texto);
+          font-size: 0.85rem;
+          margin: 0;
           font-weight: 600;
-          transition: 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-family: var(--font);
         }
-        .btn-confirm-cancel:hover { background: #e5e7eb; }
-
-        /* Estilos de las Tarjetas */
+        .bc-active {
+          color: var(--blanco);
+          font-weight: 800;
+          font-size: 1.4rem;
+          margin: 0;
+          font-family: var(--font);
+        }
         .exp-card {
           transition: all 0.3s ease;
           border-left: 5px solid var(--azul) !important;
           border-radius: 4px !important;
-          background-color: #ffffff !important;
-          border: 1px solid #e2e8f0 !important;
+          background-color: var(--blanco) !important;
+          border: 1px solid var(--gris-borde) !important;
+          font-family: var(--font);
         }
         .exp-card:hover {
           transform: translateY(-5px);
           box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
-
-        .badge-laboral { background-color: #fff7ed !important; color: #ea580c !important; border: 1px solid #fdba74 !important; }
-        .badge-academica { background-color: #f3e8ff !important; color: #6b21a8 !important; border: 1px solid #b878fd !important; }
-
+        .badge-laboral {
+          background-color: var(--amarillo-chip) !important;
+          color: var(--amarillo-hover) !important;
+          border: 1px solid var(--amarillo-borde) !important;
+          font-family: var(--font);
+        }
+        .badge-academica {
+          background-color: var(--violeta-chip) !important;
+          color: var(--violeta-hover) !important;
+          border: 1px solid var(--violeta-borde) !important;
+          font-family: var(--font);
+        }
         @media (max-width: 768px) {
-          .custom-breadcrumb-bar { flex-direction: column; gap: 15px; text-align: center; }
+          .custom-breadcrumb-bar {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+          }
         }
       `}</style>
 
+      {/* Barra superior */}
       <div className="custom-breadcrumb-bar shadow">
         <div>
           <p className="bc-text">Portafolio</p>
@@ -222,32 +205,23 @@ export default function ExperiencePage() {
         </div>
         <button
           className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
-          style={{
-            backgroundColor: "var(--azul)",
-            border: "none",
-            borderRadius: "6px",
-          }}
-          onClick={() => {
-            setModalMode("add");
-            setSelectedExp(null);
-          }}
+          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
+          onClick={() => { setModalMode("add"); setSelectedExp(null); }}
         >
           ➕ Agregar Nueva
         </button>
       </div>
 
+      {/* Lista de experiencias */}
       <div
         className="container-fluid p-4"
-        style={{ minHeight: "100vh", background: "#f1f5f9" }}
+        style={{ minHeight: "100vh", background: "var(--fondo)", fontFamily: "var(--font)" }}
       >
         <div className="row justify-content-center">
           <div className="col-12 col-xl-11">
             {loading ? (
               <div className="text-center py-5">
-                <div
-                  className="spinner-border text-primary"
-                  role="status"
-                ></div>
+                <div className="spinner-border text-primary" role="status" />
                 <h5 className="text-muted mt-3">Cargando tus datos...</h5>
               </div>
             ) : experiencias.length === 0 ? (
@@ -261,39 +235,33 @@ export default function ExperiencePage() {
                     <div className="card h-100 exp-card p-3 border-0">
                       <div className="d-flex justify-content-between mb-3">
                         <span
-                          className={`badge px-3 py-2 ${exp.tipo_experiencia === "Laboral" ? "badge-laboral" : "badge-academica"}`}
+                          className={`badge px-3 py-2 ${
+                            exp.tipo_experiencia === "Laboral"
+                              ? "badge-laboral"
+                              : "badge-academica"
+                          }`}
                         >
                           {exp.tipo_experiencia.toUpperCase()}
                         </span>
                         <button
                           className="btn btn-light btn-sm rounded-circle shadow-sm"
-                          onClick={() => {
-                            setSelectedExp(exp);
-                            setModalMode("view");
-                          }}
+                          onClick={() => { setSelectedExp(exp); setModalMode("view"); }}
                         >
                           👁️
                         </button>
                       </div>
 
                       <h5 className="fw-bold mb-1">{exp.puesto}</h5>
-                      <p className="text-primary small mb-3 fw-bold">
-                        {exp.empresa}
-                      </p>
+                      <p className="text-primary small mb-3 fw-bold">{exp.empresa}</p>
 
                       <div className="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
                         <small className="text-muted fw-bold">
                           {formatearFecha(exp.fecha_inicio)} —{" "}
-                          {exp.actual
-                            ? "Actual"
-                            : formatearFecha(exp.fecha_fin)}
+                          {exp.actual ? "Actual" : formatearFecha(exp.fecha_fin)}
                         </small>
                         <div className="d-flex gap-2">
                           <button
-                            onClick={() => {
-                              setSelectedExp(exp);
-                              setModalMode("edit");
-                            }}
+                            onClick={() => { setSelectedExp(exp); setModalMode("edit"); }}
                             className="btn btn-sm btn-outline-primary"
                           >
                             ✏️
@@ -315,15 +283,21 @@ export default function ExperiencePage() {
         </div>
       </div>
 
+      {/* ConfirmModal unificado */}
       <ConfirmModal
-        isOpen={confirmData.isOpen}
+        open={confirmData.isOpen}
         title={confirmData.title}
+        subtitle={confirmData.subtitle}
         message={confirmData.message}
-        type={confirmData.type}
+        confirmLabel={confirmData.confirmLabel}
+        cancelLabel="Cancelar"
+        variant={confirmData.variant}
+        icon={confirmData.icon}
         onConfirm={confirmData.onConfirm}
-        onCancel={closeConfirm}
+        onClose={closeConfirm}
       />
 
+      {/* Modales de formulario y detalle */}
       {(modalMode === "add" || modalMode === "edit") && (
         <ExperienceForm
           onSave={handleSaveRequest}
@@ -331,7 +305,6 @@ export default function ExperiencePage() {
           editData={selectedExp}
         />
       )}
-
       {modalMode === "view" && (
         <ExperienceDetailModal
           exp={selectedExp}

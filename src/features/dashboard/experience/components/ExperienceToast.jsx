@@ -26,9 +26,10 @@ export default function ExperienceToast({ toast }) {
         justifyContent: 'center', // Centra el contenido interno
         boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
         borderRadius: '50px', // Estilo "Pill" más moderno y centrado
-        backgroundColor: toast.tipo === 'error' ? '#fee2e2' : '#ecfdf5', // Colores de fondo suaves
-        border: `2px solid ${toast.tipo === 'error' ? '#ef4444' : '#10b981'}`,
-        color: toast.tipo === 'error' ? '#991b1b' : '#065f46',
+        backgroundColor: toast.tipo === 'error' ? 'var(--rojo-chip)' : 'var(--verde-chip)',
+        border: `2px solid ${toast.tipo === 'error' ? 'var(--rojo-soft)' : 'var(--verde)'}`,
+        color: toast.tipo === 'error' ? 'var(--rojo-mid)' : 'var(--verde-hover)',
+        fontFamily: 'var(--font)',
         animation: 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
       }}
     >

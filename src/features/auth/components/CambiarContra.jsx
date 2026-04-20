@@ -66,11 +66,11 @@ export default function CambiarContrasena() {
   const handleLoginRedirect = () => navigate("/auth/login");
 
   return (
-    <div style={{ minHeight: "420px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f0f4f8", borderRadius: "16px", padding: "24px" }}>
-      <div style={{ background: "#FFFFFF", borderRadius: "16px", padding: "32px 28px", width: "100%", maxWidth: "400px", boxSizing: "border-box", position: "relative" }}>
+    <div style={{ minHeight: "420px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--fondo)", borderRadius: "16px", padding: "24px" }}>
+      <div style={{ background: "var(--blanco)", borderRadius: "16px", padding: "32px 28px", width: "100%", maxWidth: "400px", boxSizing: "border-box", position: "relative" }}>
         <button
           onClick={handleLoginRedirect}
-          style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer", color: "#9CA3AF", fontSize: "20px" }}
+          style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer", color: "var(--gris-texto)", fontSize: "20px" }}
         >
           ×
         </button>
@@ -84,7 +84,7 @@ export default function CambiarContrasena() {
               value={nueva}
               onChange={(e) => setNueva(e.target.value)}
               placeholder="Nueva contraseña"
-              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #d1d5db", marginBottom: "10px" }}
+              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1.5px solid var(--gris-borde)", marginBottom: "10px", fontFamily: "var(--font)", fontSize: "14px", outline: "none" }}
             />
 
             <input
@@ -92,30 +92,30 @@ export default function CambiarContrasena() {
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
               placeholder="Confirmar contraseña"
-              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #d1d5db", marginBottom: "10px" }}
+              style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1.5px solid var(--gris-borde)", marginBottom: "10px", fontFamily: "var(--font)", fontSize: "14px", outline: "none" }}
             />
 
-            <p style={{ fontSize: "12px", color: "#6b7280" }}>
+            <p style={{ fontSize: "12px", color: "var(--gris-texto)", fontFamily: "var(--font)" }}>
               Requisitos: mínimo 6 caracteres, una mayúscula y un número.
             </p>
 
-            {error ? <p style={{ color: "#dc2626", fontSize: "13px" }}>{error}</p> : null}
+            {error ? <p style={{ color: "var(--rojo-soft)", fontSize: "13px", fontFamily: "var(--font)" }}>{error}</p> : null}
 
             <button
               onClick={handleSubmit}
               disabled={cargando}
-              style={{ width: "100%", padding: "12px", background: "#4F6FE8", color: "#fff", border: "none", borderRadius: "8px", marginTop: "8px", cursor: "pointer" }}
+              style={{ width: "100%", padding: "12px", background: "var(--azul)", color: "var(--blanco)", border: "none", borderRadius: "8px", marginTop: "8px", cursor: "pointer", fontFamily: "var(--font)", fontWeight: "600" }}
             >
               {cargando ? "Actualizando..." : "Actualizar contraseña"}
             </button>
           </>
         ) : (
-          <div style={{ textAlign: "center" }}>
-            <h2>Contraseña actualizada</h2>
-            <p>Tu contraseña fue cambiada exitosamente.</p>
+          <div style={{ textAlign: "center", fontFamily: "var(--font)" }}>
+            <h2 style={{ color: "var(--azul)", marginBottom: "10px" }}>Contraseña actualizada</h2>
+            <p style={{ color: "var(--gris-texto)", marginBottom: "20px" }}>Tu contraseña fue cambiada exitosamente.</p>
             <button
               onClick={handleLoginRedirect}
-              style={{ padding: "11px 32px", background: "#4F6FE8", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+              style={{ padding: "11px 32px", background: "var(--azul)", color: "var(--blanco)", border: "none", borderRadius: "8px", cursor: "pointer", fontFamily: "var(--font)", fontWeight: "600" }}
             >
               Ir al login
             </button>
