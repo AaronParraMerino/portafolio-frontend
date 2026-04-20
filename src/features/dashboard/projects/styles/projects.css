@@ -482,7 +482,7 @@
   /* 3 líneas máx */
   display: -webkit-box;
   -webkit-line-clamp: 3;
-  line-clamp: 3;  
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1186,7 +1186,7 @@
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;  
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -1260,4 +1260,223 @@
   border-width: 3px;
   border-color: var(--azul-mid);
   border-top-color: var(--azul);
+}
+
+/* ════════════════════════════════════════
+   TECH PICKER — Sección agregar nueva tecnología
+   Corrige la visibilidad del área de agregar custom
+════════════════════════════════════════ */
+
+/* Contenedor que envuelve el error / el "ya existe" / el botón agregar */
+.prj-tech-new-section {
+  border-bottom: 1px solid var(--gris-borde);
+  padding: 0;
+}
+
+/* Estado: error de duplicado */
+.prj-tech-dup-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 10px 12px;
+  background: var(--rojo-bg);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--rojo-soft);
+  font-family: var(--font);
+  line-height: 1.5;
+  animation: prj-errIn .18s ease;
+}
+
+/* Estado: ya existe exacto (OK verde informativo) */
+.prj-tech-exists-ok {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(16,185,129,.07);
+  font-size: 12px;
+  font-weight: 500;
+  color: #059669;
+  font-family: var(--font);
+}
+
+/* Estado: no existe → panel para agregar */
+.prj-tech-add-custom {
+  padding: 10px 12px;
+  background: var(--azul-light);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Fila "Se guardará como: [chip]" */
+.prj-tech-add-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.prj-tech-add-preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--azul-deep);
+  opacity: .7;
+  white-space: nowrap;
+}
+
+/* Botón principal de agregar */
+.prj-tech-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1.5px solid var(--azul);
+  background: var(--blanco);
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--azul);
+  cursor: pointer;
+  transition: all .12s;
+  align-self: flex-start;
+}
+.prj-tech-add-btn:hover {
+  background: var(--azul);
+  color: #fff;
+}
+.prj-tech-add-btn svg {
+  width: 11px; height: 11px;
+  stroke: currentColor; fill: none; stroke-width: 2.2;
+}
+
+/* Hint debajo del botón */
+.prj-tech-add-hint {
+  font-size: 10.5px;
+  color: var(--azul-deep);
+  opacity: .55;
+  font-family: var(--font);
+  font-style: italic;
+}
+
+/* Badge CUSTOM en las tecnologías personalizadas */
+.prj-tech-custom-badge {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--azul);
+  background: var(--azul-light);
+  border: 1px solid var(--azul-mid);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  letter-spacing: .05em;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════
+   TECH PICKER — Refactor modal separado
+════════════════════════════════════════ */
+
+/* Cabecera del panel: buscador + botón Nueva en la misma fila */
+.prj-tech-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 10px 12px;
+  border-bottom: 1px solid var(--gris-borde);
+  background: var(--blanco);
+}
+
+/* El buscador ocupa todo el espacio restante */
+.prj-tech-panel-head .prj-tech-search-wrap {
+  flex: 1;
+  border: none;
+  padding: 0;
+  gap: 6px;
+}
+
+/* Botón "+ Nueva" en la misma fila que el buscador */
+.prj-tech-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--azul-mid);
+  background: var(--azul-light);
+  font-family: var(--font);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--azul);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all .12s;
+}
+.prj-tech-new-btn:hover {
+  background: var(--azul);
+  color: #fff;
+  border-color: var(--azul);
+}
+.prj-tech-new-btn svg {
+  width: 10px; height: 10px;
+  stroke: currentColor; fill: none; stroke-width: 2.2;
+}
+
+/* Mensaje "no encontramos X" con link inline */
+.prj-tech-no-results {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: rgba(245,158,11,.07);
+  border-bottom: 1px solid rgba(245,158,11,.15);
+  font-size: 12.5px;
+  color: var(--gris-oscuro);
+  font-family: var(--font);
+  line-height: 1.5;
+}
+.prj-tech-no-results-link {
+  background: none;
+  border: none;
+  color: var(--azul);
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: color .12s;
+}
+.prj-tech-no-results-link:hover { color: var(--azul-hover); }
+
+/* Preview "Se guardará como: [chip]" dentro del modal */
+.prj-tech-modal-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.prj-tech-modal-preview span:first-child {
+  font-size: 11px;
+  color: var(--gris-texto);
+  font-weight: 500;
+}
+
+/* Badge CUSTOM en la lista de checkboxes */
+.prj-tech-custom-badge {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--azul);
+  background: var(--azul-light);
+  border: 1px solid var(--azul-mid);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  letter-spacing: .05em;
+  flex-shrink: 0;
 }

@@ -93,10 +93,6 @@ export const CATALOGO_TECNOLOGIAS = [
   { id: 'jsp',          nombre: 'JSP',            categoria: 'Herramienta' },
 ];
 
-// Helper: normaliza un nombre para generar su id (evita duplicados)
-export function normalizarId(nombre) {
-  return nombre.toLowerCase().replace(/[\s.+#\/]/g, '').replace(/[^a-z0-9]/g, '');
-}
 
 // ── Mock de proyectos ──
 export const MOCK_PROYECTOS = [
@@ -183,3 +179,21 @@ export const MOCK_PROYECTOS = [
 ];
 
 export const MOCK_VISIBILIDAD_GLOBAL = true;
+// ─────────────────────────────────────────────────────
+// normalizarId — normaliza un nombre de tecnología para
+// detectar duplicados de forma case-insensitive y
+// sin importar espacios, puntos, guiones o símbolos.
+//
+// Ejemplos:
+//   "React Native"  → "reactnative"
+//   "Node.js"       → "nodejs"
+//   "C++"           → "c"
+//   "PHP 8"         → "php8"
+//   "REACT NATIVE"  → "reactnative"   (igual que el primero)
+// ─────────────────────────────────────────────────────
+export function normalizarId(nombre) {
+  return nombre
+    .toLowerCase()
+    .replace(/[ .\-+#/]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}

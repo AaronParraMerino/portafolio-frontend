@@ -115,6 +115,8 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
   const [preview,         setPreview]         = useState(proyecto?.imagenUrl || proyecto?.imagen_portada || null);
   const [archivoImagen,   setArchivoImagen]   = useState(null);
+  // Tecnologías personalizadas agregadas en esta sesión — persisten mientras el modal esté abierto
+  const [catalogoExtra,   setCatalogoExtra]   = useState([]);
   const [touched,         setTouched]         = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [confirmPending,  setConfirmPending]  = useState(null);
@@ -262,6 +264,8 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                 <ProjectsTechPicker
                   selected={form.etiquetas}
                   onChange={(tags) => setForm(prev => ({ ...prev, etiquetas: tags }))}
+                  catalogoExtra={catalogoExtra}
+                  onAgregarExtra={(tech) => setCatalogoExtra(prev => [...prev, tech])}
                 />
               </div>
 
