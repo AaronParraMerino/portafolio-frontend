@@ -1,15 +1,57 @@
 import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
+import { Link } from "react-router-dom";
 import Navbar from "../../../shared/components/layout/Navbar";
+import { GoogleLogin } from "@react-oauth/google";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
+import ConfirmModal from "../../../shared/ui/ConfirmModal";
+
 
 export default function LoginForm() {
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const BASE_URL = process.env.REACT_APP_API_URL;
   const [showPassword, setShowPassword] = useState(false);
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const handleGoogleLogin = async (credentialResponse) => {
+  const idToken = credentialResponse?.credential;
+
+    if (!idToken) {
+      setError("No se pudo obtener el token de Google");
+    return;
+    }
+
+    try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
+      const response = await fetch(`${BASE_URL}/auth/google`, {
+          method: "POST",
+        credentials: "include",
+          headers: {
+          "Content-Type": "application/json",
+      },
+          body: JSON.stringify({
+              id_token: idToken,
+          session_token: baseSessionToken,
+          }),
+      });
+  const result = await response.json();
+
+  if (!response.ok) {
+      setError(result.message || "No se pudo iniciar sesión con Google");
+        return;
+  }
+
+    sessionStorage.setItem("tokenPORT", result.token);
+    sessionStorage.setItem("usuario", JSON.stringify(result.data));
+    window.location.href = "/";
+  } catch (err) {
+      setError("Error de conexión. Intente nuevamente.");
+  }
+};
   const handleLogin = async () => {
     if (!correo && !password) {
       return setError("Por favor llene todos los campos");
@@ -31,14 +73,18 @@ export default function LoginForm() {
     setError("");
 
     try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           correo: correo.trim(),
           password: password.trim(),
+          session_token: baseSessionToken,
         }),
       });
 
@@ -117,10 +163,10 @@ export default function LoginForm() {
                   {showPassword ? <HiEyeOff size={20} /> : <HiEye size={20} />}
                 </span>
               </div>
-
-              <button type="button" className="forgot" onClick={(e) => e.preventDefault()}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}> 
+              <Link to="/auth/forgot-password" className="forgot">
                 ¿Olvidaste Contraseña?
-              </button>
+              </Link>
 
               <button
                 className="btn-primary"
@@ -130,13 +176,28 @@ export default function LoginForm() {
                 Iniciar Sesión
               </button>
 
-              <button className="btn-google" type="button">
-                <img
-                  src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
-                  alt="google"
-                />
+
+
+              {googleClientId ? (
+                <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={() => setError("La autenticación con Google fue cancelada o falló")}
+                text="continue_with"
+                shape="rectangular"
+                width="100%"
+                auto_select={false}
+                useOneTap={false}
+                /> 
+              ) : (
+                <button
+                className="btn-google"
+                type="button"
+                onClick={() => setError("Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google")}
+                >
                 Continuar con Google
-              </button>
+                </button> )
+              }
+              </div> 
 
               <p className="register">
                 ¿No tienes una cuenta?{" "}
@@ -153,26 +214,17 @@ export default function LoginForm() {
         </div>
 
         {/* MODAL ERROR */}
-        {error && (
-          <div className="modal-overlay">
-            <div className="modal-box">
-              <button
-                className="modal-close"
-                onClick={() => setError("")}
-              >
-                ✖
-              </button>
-              <h3 className="modal-title">¡Error!</h3>
-              <p>{error}</p>
-              <button
-                className="modal-btn"
-                onClick={() => setError("")}
-              >
-                ACEPTAR
-              </button>
-            </div>
-          </div>
-        )}
+        <ConfirmModal
+          open={!!error}
+          title="¡Error!"
+          message={error}
+          confirmLabel="Aceptar"
+          cancelLabel="Cerrar"
+          variant="red"
+          icon="warning"
+          onConfirm={() => setError("")}
+          onClose={() => setError("")}
+        />
 
         <style>{`
           * {
@@ -182,13 +234,14 @@ export default function LoginForm() {
           }
 
           .login-container {
-            min-height: calc(100vh - 60px);
-            margin-top: 90px;
+            min-height: calc(100vh - var(--nav-height));
+            margin-top: var(--nav-height);
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #f0f2f5;
+            background: var(--fondo);
             padding: 20px;
+            font-family: var(--font);
           }
 
           .login-card {
@@ -201,7 +254,7 @@ export default function LoginForm() {
 
           .login-left {
             width: 42%;
-            background: linear-gradient(120deg, #004f7c, #0077b7, #38bdf8);
+            background: linear-gradient(120deg, var(--azul-deep), var(--azul), #38bdf8);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -209,7 +262,7 @@ export default function LoginForm() {
           }
 
           .login-left h2 {
-            color: white;
+            color: var(--blanco);
             font-size: 32px;
           }
 
@@ -220,7 +273,7 @@ export default function LoginForm() {
 
           .login-right {
             flex: 1;
-            background: white;
+            background: var(--blanco);
             padding: 36px;
             display: flex;
             flex-direction: column;
@@ -229,7 +282,7 @@ export default function LoginForm() {
 
           .login-title {
             font-size: 24px;
-            color: #0077b7;
+            color: var(--azul);
             margin-bottom: 10px;
           }
 
@@ -241,26 +294,30 @@ export default function LoginForm() {
             width: 100%;
             display: flex;
             flex-direction: column;
+            font-family: var(--font);
           }
 
           label {
             margin-top: 10px;
             font-size: 13px;
+            color: var(--gris-oscuro);
+            font-family: var(--font);
           }
 
           input {
             padding: 12px 14px;
             margin-top: 5px;
-            border: 1.5px solid #ddd;
+            border: 1.5px solid var(--gris-borde);
             border-radius: 10px;
             font-size: 14px;
+            font-family: var(--font);
             outline: none;
             transition: 0.2s;
           }
 
           input:focus {
-            border-color: #0077b7;
-            box-shadow: 0 0 0 2px rgba(0,119,183,0.15);
+            border-color: var(--azul);
+            box-shadow: 0 0 0 2px var(--azul-glow);
           }
 
           /* PASSWORD */
@@ -282,14 +339,14 @@ export default function LoginForm() {
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
-            color: #666;
+            color: var(--gris-texto);
             z-index: 2;
-            background: white;
+            background: var(--blanco);
             padding-left: 5px;
           }
 
           .eye:hover {
-            color: #0077b7;
+            color: var(--azul);
           }
 
           /*  ELIMINAR ICONOS DEL NAVEGADOR */
@@ -306,7 +363,7 @@ export default function LoginForm() {
           .forgot {
             margin-top: 8px;
             font-size: 12px;
-            color: #3b82f6;
+            color: var(--azul);
             background: none;
             border: none;
             cursor: pointer;
@@ -316,27 +373,42 @@ export default function LoginForm() {
 
           .forgot:hover {
             text-decoration: underline;
+            color: var(--azul-hover);
           }
 
           .btn-primary {
             margin-top: 14px;
             padding: 11px;
-            background: #3b82f6;
-            color: white;
+            background: var(--azul);
+            color: var(--blanco);
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            font-family: var(--font);
+            font-weight: 600;
+            transition: background 0.2s;
+          }
+
+          .btn-primary:hover {
+            background: var(--azul-hover);
           }
 
           .btn-google {
             margin-top: 10px;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--gris-borde);
             border-radius: 8px;
             display: flex;
             justify-content: center;
             gap: 8px;
             cursor: pointer;
+            font-family: var(--font);
+            background: var(--blanco);
+            transition: background 0.2s;
+          }
+
+          .btn-google:hover {
+            background: var(--azul-light);
           }
 
           .btn-google img {
@@ -347,62 +419,20 @@ export default function LoginForm() {
             margin-top: 12px;
             font-size: 12px;
             text-align: center;
+            color: var(--gris-texto);
+            font-family: var(--font);
           }
 
           .register span {
-            color: #3b82f6;
+            color: var(--azul);
             cursor: pointer;
             font-weight: bold;
           }
 
-          /* MODAL */
-          .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+          .register span:hover {
+            color: var(--azul-hover);
+            text-decoration: underline;
           }
-
-          .modal-box {
-            position: relative; 
-            background: white;
-            padding: 30px 25px 20px;
-            border-radius: 10px;
-            text-align: center;
-          }
-
-          .modal-title {
-            color: red;
-          }
-
-          .modal-btn {
-            margin-top: 10px;
-            padding: 10px;
-            background: green;
-            color: white;
-            border: none;
-            border-radius: 6px;
-          }
-           .modal-close { 
-           position: absolute;
-           top: 10px;
-           right: 14px;
-           background: none;
-           border: none;
-           font-size: 18px;
-           cursor: pointer;
-           color: #333;
-           line-height: 1;
-           }
-
-           .modal-close:hover {
-            color: #000;
-           }
 
           @media (max-width: 600px) {
             .login-card {

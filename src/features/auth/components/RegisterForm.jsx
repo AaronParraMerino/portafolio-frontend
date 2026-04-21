@@ -4,9 +4,12 @@ import { FaUserCircle, FaLock, FaEnvelope, FaPhone, FaTimes } from "react-icons/
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import PoliticaPrivacidad from "./PoliticasP";
 import PoliticaCookies from "./PoliticasC";
-
+import { GoogleLogin } from "@react-oauth/google";
+import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
+import ConfirmModal from "../../../shared/ui/ConfirmModal";
 
 export default function RegisterForm() {
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const BASE_URL = process.env.REACT_APP_API_URL;
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -23,6 +26,64 @@ export default function RegisterForm() {
 
   // Estado de error
   const [error, setError] = useState("");
+  const [errorApellido, setErrorApellido] = useState("");
+  const [errorNombre, setErrorNombre] = useState("");
+
+   const handleNombre = (e) => {
+    const valor = e.target.value;
+    const limpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, "");
+    setNombre(limpio);
+    if (valor !== limpio) {
+      setErrorNombre("No se permiten números ni caracteres especiales.");
+      setTimeout(() => setErrorNombre(""), 2500);
+    }
+  };
+   const handleApellido = (e) => {
+    const valor = e.target.value;
+    const limpio = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, "");
+    setApellido(limpio);
+    if (valor !== limpio) {
+      setErrorApellido("No se permiten números ni caracteres especiales.");
+      setTimeout(() => setErrorApellido(""), 2500);
+    }
+  };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+  const idToken = credentialResponse?.credential;
+
+    if (!idToken) {
+      setError("No se pudo obtener el token de Google");
+    return;
+    }
+
+    try {
+      const baseSessionToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+
+      const response = await fetch(`${BASE_URL}/auth/google`, {
+          method: "POST",
+        credentials: "include",
+          headers: {
+          "Content-Type": "application/json",
+      },
+          body: JSON.stringify({
+              id_token: idToken,
+          session_token: baseSessionToken,
+          }),
+      });
+  const result = await response.json();
+
+  if (!response.ok) {
+      setError(result.message || "No se pudo iniciar sesión con Google");
+        return;
+  }
+
+    sessionStorage.setItem("tokenPORT", result.token);
+    sessionStorage.setItem("usuario", JSON.stringify(result.data));
+    window.location.href = "/";
+  } catch (err) {
+      setError("Error de conexión. Intente nuevamente.");
+  }
+};
 
   const handleClose = () => {
     window.location.href = '/auth/login';
@@ -114,43 +175,45 @@ export default function RegisterForm() {
 
             <h2 className="reg-title">REGISTRARSE</h2>
 
-            {error && (
-              <div className="modal-overlay">
-                <div className="modal-box">
-                  <button className="modal-close" onClick={() => setError("")}>
-                    <FaTimes />
-                  </button>
-                  <h3 className="modal-title">¡Error!</h3>
-                  <p className="modal-message">{error}</p>
-                  <button className="modal-btn" onClick={() => setError("")}>
-                    ACEPTAR
-                  </button>
-                </div>
-              </div>
-            )}
+            <ConfirmModal
+              open={!!error}
+              title="¡Error!"
+              message={error}
+              confirmLabel="Aceptar"
+              variant="red"
+              icon="warning"
+              onConfirm={() => setError("")}
+              onClose={() => setError("")}
+            />
 
             <form className="reg-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
               {/* TODO TU FORM IGUAL (NO TOCADO) */}
 
             {/* Nombre */}
+            <div className="reg-field-wrapper">
             <div className="reg-field">
               <label><FaUserCircle className="reg-icon" /> Nombre</label>
               <input type="text"
               value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={handleNombre} 
                 maxLength={30} 
                 />
             </div>
+            {errorNombre && <p className="reg-field-error">{errorNombre}</p>}
+            </div>
 
             {/* Apellido */}
+             <div className="reg-field-wrapper">
             <div className="reg-field">
               <label><FaUserCircle className="reg-icon" /> Apellido</label>
               <input type="text" 
               value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                onChange={handleApellido}
                 maxLength={30} 
               />
             </div>
+             {errorApellido && <p className="reg-field-error">{errorApellido}</p>}
+             </div>
 
             {/* Correo */}
             <div className="reg-field">
@@ -220,13 +283,32 @@ export default function RegisterForm() {
             </p>
 
             {/* Botón Aceptar */}
-            <button className="btn-accept" type="submit">ACEPTAR</button>
+            <button 
+            className="btn-accept" 
+            type="submit">
+              ACEPTAR
+            </button>
 
             {/* Google */}
-            <button className="btn-google" type="button">
-              <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" alt="google" />
-              Continuar con Google
-            </button>
+            {googleClientId ? (
+              <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => setError("La autenticación con Google fue cancelada o falló")}
+              text="continue_with"
+              shape="rectangular"
+              width="100%"
+              auto_select={false}
+              useOneTap={false}
+            /> 
+            ) : (
+          <button
+            className="btn-google"
+            type="button"
+            onClick={() => setError("Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google")}
+          >
+            Continuar con Google
+          </button> )}
+                
 
           </form>
 
@@ -271,20 +353,20 @@ export default function RegisterForm() {
           .modal-message,
           .modal-btn {
             font-size: 13px;
-            font-family: inherit;
+            font-family: var(--font);
           }
  
           .reg-container {
-            min-height: 100vh;
+            min-height: calc(100vh - var(--nav-height));
             display: flex;
-            margin-top: 80px;
+            margin-top: var(--nav-height);
             justify-content: center;
             align-items: center;
-            background: #f0f2f5;
+            background: var(--fondo);
             padding: 16px;
           }
  
-          /* 🔴 OVERLAY */
+          /* OVERLAY */
           .modal-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -296,9 +378,9 @@ export default function RegisterForm() {
             z-index: 999;
           }
  
-          /* 🔴 CAJA */
+          /* CAJA */
           .modal-box {
-            background: white;
+            background: var(--blanco);
             width: 320px;
             border-radius: 10px;
             padding: 20px 20px 24px;
@@ -315,33 +397,34 @@ export default function RegisterForm() {
             background: transparent;
             cursor: pointer;
             font-size: 13px;
-            color: #777;
+            color: var(--gris-texto);
           }
  
           .modal-title {
-            color: #e53935;
+            color: var(--rojo-soft);
             font-size: 22px;
             font-weight: bold;
             margin-bottom: 10px;
           }
  
           .modal-message {
-            color: #333;
+            color: var(--gris-oscuro);
             margin-bottom: 20px;
           }
  
           .modal-btn {
-            background: #4caf50;
-            color: white;
+            background: var(--azul);
+            color: var(--blanco);
             border: none;
             padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             width: 100%;
+            transition: background .2s;
           }
  
-          .modal-btn:hover { background: #43a047; }
+          .modal-btn:hover { background: var(--azul-hover); }
  
           @keyframes fadeIn {
             from { transform: scale(0.9); opacity: 0; }
@@ -354,10 +437,10 @@ export default function RegisterForm() {
             width: 100%;
             max-width: 860px;
             min-height: 560px;
-            border: 1.5px solid #ccc;
+            border: 1.5px solid var(--gris-borde);
             border-radius: 10px;
             overflow: hidden;
-            background: white;
+            background: var(--blanco);
             box-shadow: 0 8px 32px rgba(0,0,0,0.12);
             position: relative;
           }
@@ -368,7 +451,7 @@ export default function RegisterForm() {
             background: transparent;
             border: none;
             cursor: pointer;
-            color: #555;
+            color: var(--gris-texto);
             z-index: 10;
             display: flex;
             align-items: center;
@@ -376,7 +459,7 @@ export default function RegisterForm() {
             transition: color .2s;
           }
  
-          .btn-close:hover { color: #e53935; }
+          .btn-close:hover { color: var(--rojo-soft); }
  
           .reg-left {
             flex: 1;
@@ -392,7 +475,7 @@ export default function RegisterForm() {
             font-weight: 800;
             text-align: center;
             margin-bottom: 16px;
-            color: #0077b7;
+            color: var(--azul);
           }
  
           .reg-form {
@@ -407,32 +490,47 @@ export default function RegisterForm() {
             gap: 8px;
             width: 100%;
           }
+            .reg-field-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+            .reg-field-error {
+            font-size: 11px;
+            color: var(--rojo-soft);
+            padding-left: 108px;
+            animation: fadeIn .15s ease;
+          }
  
           .reg-field label {
             display: flex;
             align-items: center;
             gap: 5px;
-            color: #333;
+            color: var(--gris-oscuro);
             width: 100px;
             min-width: 100px;
             font-weight: 500;
             flex-shrink: 0;
           }
  
-          .reg-icon { color: #555; flex-shrink: 0; }
+          .reg-icon { color: var(--gris-texto); flex-shrink: 0; }
  
           .reg-field input {
             flex: 1;
             width: 100%;
             min-width: 0;
             padding: 7px 10px;
-            border: 1.5px solid #aaa;
+            border: 1.5px solid var(--gris-borde);
             border-radius: 4px;
             outline: none;
             transition: border .2s;
+            font-family: var(--font);
           }
  
-          .reg-field input:focus { border-color: #3b82f6; }
+          .reg-field input:focus {
+            border-color: var(--azul);
+            box-shadow: 0 0 0 2px var(--azul-glow);
+          }
  
           .input-eye {
             flex: 1;
@@ -443,9 +541,15 @@ export default function RegisterForm() {
           .input-eye input {
             width: 100%;
             padding: 7px 34px 7px 10px;
-            border: 1.5px solid #aaa;
+            border: 1.5px solid var(--gris-borde);
             border-radius: 4px;
             outline: none;
+            font-family: var(--font);
+          }
+
+          .input-eye input:focus {
+            border-color: var(--azul);
+            box-shadow: 0 0 0 2px var(--azul-glow);
           }
  
           .input-eye span {
@@ -454,8 +558,10 @@ export default function RegisterForm() {
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
-            color: #888;
+            color: var(--gris-texto);
           }
+
+          .input-eye span:hover { color: var(--azul); }
  
           input[type="password"]::-ms-reveal,
           input[type="password"]::-ms-clear,
@@ -470,7 +576,7 @@ export default function RegisterForm() {
             gap: 8px;
             margin-top: 2px;
             padding-left: 4px;
-            color: #333;
+            color: var(--gris-oscuro);
           }
  
           .reg-check input[type="checkbox"] {
@@ -480,19 +586,20 @@ export default function RegisterForm() {
             flex: none;
             padding: 0;
             border: none;
+            accent-color: var(--verde);
           }
  
           .reg-terms {
-            color: #555;
+            color: var(--gris-texto);
             text-align: center;
             line-height: 1.6;
             margin-top: 4px;
           }
  
-          .reg-terms a { color: #3b82f6; text-decoration: none; }
+          .reg-terms a { color: var(--azul); text-decoration: none; }
  
           .reg-terms-link {
-            color: #3b82f6;
+            color: var(--azul);
             background: none;
             border: none;
             cursor: pointer;
@@ -501,12 +608,12 @@ export default function RegisterForm() {
             text-decoration: none;
           }
  
-          .reg-terms-link:hover { text-decoration: underline; }
+          .reg-terms-link:hover { text-decoration: underline; color: var(--azul-hover); }
  
           .btn-accept {
             padding: 10px;
-            background: #4caf50;
-            color: white;
+            background: var(--verde);
+            color: var(--blanco);
             border: none;
             border-radius: 6px;
             font-weight: 700;
@@ -514,14 +621,15 @@ export default function RegisterForm() {
             letter-spacing: .05em;
             transition: background .2s;
             width: 100%;
+            font-family: var(--font);
           }
  
-          .btn-accept:hover { background: #43a047; }
+          .btn-accept:hover { background: var(--verde-hover); }
  
           .btn-google {
             padding: 9px;
-            background: white;
-            border: 1.5px solid #ccc;
+            background: var(--blanco);
+            border: 1.5px solid var(--gris-borde);
             border-radius: 6px;
             display: flex;
             align-items: center;
@@ -531,16 +639,17 @@ export default function RegisterForm() {
             font-weight: 500;
             transition: background .2s;
             width: 100%;
+            font-family: var(--font);
           }
  
-          .btn-google:hover { background: #f5f5f5; }
+          .btn-google:hover { background: var(--azul-light); }
           .btn-google img { width: 16px; }
  
           /* ── Panel derecho azul ── */
           .reg-right {
             width: 220px;
             min-width: 220px;
-            background: linear-gradient(120deg, #004f7c 0%, #0077b7 60%, #38bdf8 100%);
+            background: linear-gradient(120deg, var(--azul-deep) 0%, var(--azul) 60%, #38bdf8 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -552,7 +661,7 @@ export default function RegisterForm() {
           }
  
           .reg-right h2 {
-            color: white;
+            color: var(--blanco);
             font-size: 20px;
             font-weight: 800;
             line-height: 1.3;
@@ -566,19 +675,20 @@ export default function RegisterForm() {
           .btn-login {
             padding: 10px 24px;
             background: transparent;
-            color: white;
-            border: 2px solid white;
+            color: var(--blanco);
+            border: 2px solid var(--blanco);
             border-radius: 25px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all .2s;
             white-space: nowrap;
+            font-family: var(--font);
           }
  
           .btn-login:hover {
-            background: white;
-            color: #7b8fe0;
+            background: var(--blanco);
+            color: var(--azul);
           }
  
           /* ── Responsive celular ── */
@@ -601,7 +711,7 @@ export default function RegisterForm() {
             .reg-container {
               padding: 10px;
               align-items: flex-start;
-              padding-top: 20px;
+              padding-top: 16px;
             }
  
             .reg-card {
@@ -643,6 +753,7 @@ export default function RegisterForm() {
             .btn-accept { padding: 8px; }
             .btn-google { padding: 7px; }
             .btn-google img { width: 13px; }
+            .reg-field-error { padding-left: 88px; }
           }
       `}</style>
     </div>

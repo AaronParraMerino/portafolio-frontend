@@ -1,12 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import ConfirmModal from '../../../shared/ui/ConfirmModal';
 
 /* ══════════════════════════════════════
    Sidebar.jsx
    Props: collapsed (bool), onToggle (fn)
-   Desktop: sidebar fijo a la izquierda
-   Mobile (<768px): oculto + FAB bottom-right
-     abre un drawer desde la izquierda
 ══════════════════════════════════════ */
 
 const NAV_SECTIONS = [
@@ -14,29 +12,12 @@ const NAV_SECTIONS = [
     label: 'General',
     items: [
       {
-        id: 'dashboard',
-        label: 'Dashboard',
-        to: '/dashboard',
-        exact: true,
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <rect x="1.5" y="1.5" width="5" height="5" rx="1" />
-            <rect x="8.5" y="1.5" width="5" height="5" rx="1" />
-            <rect x="1.5" y="8.5" width="5" height="5" rx="1" />
-            <rect x="8.5" y="8.5" width="5" height="5" rx="1" />
-          </svg>
-        ),
+        id: 'dashboard', label: 'Dashboard', to: '/dashboard', exact: true,
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="1.5" y="1.5" width="5" height="5" rx="1" /><rect x="8.5" y="1.5" width="5" height="5" rx="1" /><rect x="1.5" y="8.5" width="5" height="5" rx="1" /><rect x="8.5" y="8.5" width="5" height="5" rx="1" /></svg>),
       },
       {
-        id: 'profile',
-        label: 'Mi Perfil',
-        to: '/dashboard/profile',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <circle cx="7.5" cy="5" r="3" />
-            <path d="M1.5 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-          </svg>
-        ),
+        id: 'profile', label: 'Mi Perfil', to: '/dashboard/profile',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="5" r="3" /><path d="M1.5 14c0-3.3 2.7-6 6-6s6 2.7 6 6" /></svg>),
       },
     ],
   },
@@ -44,84 +25,24 @@ const NAV_SECTIONS = [
     label: 'Portafolio',
     items: [
       {
-        id: 'projects',
-        label: 'Mis Proyectos',
-        to: '/dashboard/projects',
-        badge: '4',
-        badgeVariant: 'blue',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <rect x="2" y="3" width="11" height="10" rx="1.5" />
-            <path d="M5 3V2M10 3V2M2 6.5h11" />
-          </svg>
-        ),
+        id: 'projects', label: 'Mis Proyectos', to: '/dashboard/projects', badge: '4', badgeVariant: 'blue',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V2M10 3V2M2 6.5h11" /></svg>),
       },
       {
-        id: 'skills',
-        label: 'Habilidades',
-        to: '/dashboard/skills',
-        badge: '8',
-        badgeVariant: 'gray',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4l-1.1-1.1a1 1 0 00-1.4 0L9 2.5 12.5 6l1-1z" />
-          </svg>
-        ),
+        id: 'skills', label: 'Habilidades', to: '/dashboard/skills', badge: '8', badgeVariant: 'gray',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4l-1.1-1.1a1 1 0 00-1.4 0L9 2.5 12.5 6l1-1z" /></svg>),
       },
       {
-        id: 'experience',
-        label: 'Experiencia',
-        to: '/dashboard/experience',
-        badge: '3',
-        badgeVariant: 'amber',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <rect x="2" y="3" width="11" height="10" rx="1.5" />
-            <path d="M5 3V1.5M10 3V1.5M2 6.5h11" />
-          </svg>
-        ),
+        id: 'experience', label: 'Experiencia', to: '/dashboard/experience', badge: '3', badgeVariant: 'amber',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V1.5M10 3V1.5M2 6.5h11" /></svg>),
       },
       {
-        id: 'networks',
-        label: 'Redes Profesionales',
-        to: '/dashboard/networks',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <circle cx="7.5" cy="3" r="1.5" />
-            <circle cx="2.5" cy="12" r="1.5" />
-            <circle cx="12.5" cy="12" r="1.5" />
-            <path d="M7.5 4.5v3M7.5 7.5L2.5 10.5M7.5 7.5l5 3" />
-          </svg>
-        ),
-      },
-    ],
-  },
-  {
-    label: 'Publicación',
-    items: [
-      {
-        id: 'preview',
-        label: 'Vista Previa',
-        to: '/dashboard/preview',
-        badge: '2',
-        badgeVariant: 'amber',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M.5 7.5S3 2 7.5 2 14.5 7.5 14.5 7.5 12 13 7.5 13 .5 7.5.5 7.5z" />
-            <circle cx="7.5" cy="7.5" r="2.5" />
-          </svg>
-        ),
+        id: 'networks', label: 'Redes Profesionales', to: '/dashboard/networks',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="3" r="1.5" /><circle cx="2.5" cy="12" r="1.5" /><circle cx="12.5" cy="12" r="1.5" /><path d="M7.5 4.5v3M7.5 7.5L2.5 10.5M7.5 7.5l5 3" /></svg>),
       },
       {
-        id: 'public',
-        label: 'Vista Pública',
-        to: '/dashboard/public',
-        tag: 'v2',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <polygon points="7.5,1.5 9.5,5.8 14.3,6.4 10.9,9.5 11.9,14.2 7.5,11.8 3.1,14.2 4.1,9.5 0.7,6.4 5.5,5.8" />
-          </svg>
-        ),
+        id: 'preview', label: 'Vista Portafolio', to: '/dashboard/preview', badgeVariant: 'amber',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M.5 7.5S3 2 7.5 2 14.5 7.5 14.5 7.5 12 13 7.5 13 .5 7.5.5 7.5z" /><circle cx="7.5" cy="7.5" r="2.5" /></svg>),
       },
     ],
   },
@@ -129,71 +50,51 @@ const NAV_SECTIONS = [
     label: 'Cuenta',
     items: [
       {
-        id: 'settings',
-        label: 'Configuración',
-        to: '/dashboard/settings',
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <circle cx="7.5" cy="7.5" r="2" />
-            <path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M2.9 2.9l1.4 1.4M10.7 10.7l1.4 1.4M2.9 12.1l1.4-1.4M10.7 4.3l1.4-1.4" />
-          </svg>
-        ),
+        id: 'settings', label: 'Configuración', to: '/dashboard/settings',
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="7.5" r="2" /><path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M2.9 2.9l1.4 1.4M10.7 10.7l1.4 1.4M2.9 12.1l1.4-1.4M10.7 4.3l1.4-1.4" /></svg>),
       },
       {
-        id: 'logout',
-        label: 'Cerrar sesión',
-        to: '/',
-        danger: true,
-        icon: (
-          <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M5.5 13H3a1 1 0 01-1-1V3a1 1 0 011-1h2.5M10 10.5l3.5-3-3.5-3M13.5 7.5H5.5" />
-          </svg>
-        ),
+        id: 'logout', label: 'Cerrar sesión', to: '/', danger: true,
+        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5.5 13H3a1 1 0 01-1-1V3a1 1 0 011-1h2.5M10 10.5l3.5-3-3.5-3M13.5 7.5H5.5" /></svg>),
       },
     ],
   },
 ];
 
-/* ── determina qué ítem está activo según la URL ── */
 function getActiveId(pathname) {
-  let match = null;
-  let matchLen = 0;
+  let match = null, matchLen = 0;
   for (const section of NAV_SECTIONS) {
     for (const item of section.items) {
       if (item.exact) {
-        if (pathname === item.to && item.to.length > matchLen) {
-          match = item.id;
-          matchLen = item.to.length;
-        }
+        if (pathname === item.to && item.to.length > matchLen) { match = item.id; matchLen = item.to.length; }
       } else {
-        if (
-          (pathname === item.to || pathname.startsWith(item.to + '/')) &&
-          item.to.length > matchLen
-        ) {
-          match = item.id;
-          matchLen = item.to.length;
-        }
+        if ((pathname === item.to || pathname.startsWith(item.to + '/')) && item.to.length > matchLen) { match = item.id; matchLen = item.to.length; }
       }
     }
   }
   return match || 'dashboard';
 }
 
-/* ── Badge ── */
 const BADGE_STYLES = {
-  blue:  { background: 'var(--azul)',             color: '#fff' },
-  gray:  { background: 'rgba(255,255,255,.1)',    color: 'rgba(255,255,255,.4)' },
-  amber: { background: 'rgba(245,158,11,.2)',     color: '#fbbf24' },
+  blue:  { background: 'var(--azul)',          color: '#fff' },
+  gray:  { background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.4)' },
+  amber: { background: 'rgba(245,158,11,.2)',  color: '#fbbf24' },
 };
 
 export default function Sidebar({ collapsed, onToggle }) {
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const activeId  = getActiveId(location.pathname);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeId = getActiveId(location.pathname);
 
-  /* ── Cerrar sesión (misma lógica que Navbar) ── */
   const BASE_URL = process.env.REACT_APP_API_URL;
-  const handleLogout = async () => {
+
+  /* NUEVO: estado del modal de confirmación */
+  const [logoutModal, setLogoutModal] = useState(false);
+  const [loggingOut,  setLoggingOut]  = useState(false);
+
+  /* Ejecuta el logout real (solo llamado desde el modal) */
+  const doLogout = async () => {
+    setLoggingOut(true);
     const token = sessionStorage.getItem('tokenPORT');
     try {
       await fetch(`${BASE_URL}/auth/logout`, {
@@ -205,78 +106,57 @@ export default function Sidebar({ collapsed, onToggle }) {
     }
     sessionStorage.removeItem('tokenPORT');
     sessionStorage.removeItem('usuario');
+    sessionStorage.removeItem('perfil_cache');
     window.location.href = '/';
   };
 
-  /* ── estado del drawer móvil ── */
+  /* Abre el modal en vez de cerrar sesión directamente */
+  const handleLogoutClick = () => {
+    setMobileOpen(false);
+    setLogoutModal(true);
+  };
+
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  /* cierra el drawer al cambiar de ruta */
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  /* bloquea el scroll del body cuando el drawer está abierto */
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const handleNavClick = (to) => {
-    navigate(to);
-    setMobileOpen(false);
-  };
+  const handleNavClick = (to) => { navigate(to); setMobileOpen(false); };
 
-  /* ── contenido del nav (reutilizado en desktop y drawer) ── */
   const NavContent = ({ inDrawer = false }) => (
     <>
       {NAV_SECTIONS.map((section, si) => (
-        <div
-          className="dsh-nav-section"
-          key={section.label}
-          style={{ paddingTop: si === 0 ? 18 : undefined }}
-        >
+        <div className="dsh-nav-section" key={section.label} style={{ paddingTop: si === 0 ? 18 : undefined }}>
           <div className="dsh-nav-section-label">{section.label}</div>
-
           {section.items.map((item) => (
             <button
               key={item.id}
-              className={[
-                'dsh-nav-item',
-                activeId === item.id ? 'active' : '',
-                item.danger ? 'danger' : '',
-              ].filter(Boolean).join(' ')}
+              className={['dsh-nav-item', activeId === item.id ? 'active' : '', item.danger ? 'danger' : ''].filter(Boolean).join(' ')}
               data-tip={item.label}
-              onClick={() => item.id === 'logout' ? handleLogout() : (inDrawer ? handleNavClick(item.to) : navigate(item.to))}
+              onClick={() => {
+                if (item.id === 'logout') {
+                  handleLogoutClick();
+                } else {
+                  inDrawer ? handleNavClick(item.to) : navigate(item.to);
+                }
+              }}
             >
-              <svg
-                className="dsh-nav-icon"
-                viewBox="0 0 15 15"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-              >
+              <svg className="dsh-nav-icon" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
                 {item.icon.props.children}
               </svg>
-
               <span className="dsh-nav-text">{item.label}</span>
-
               {item.badge && (
-                <span
-                  className="dsh-nav-badge"
-                  style={BADGE_STYLES[item.badgeVariant]}
-                >
-                  {item.badge}
-                </span>
+                <span className="dsh-nav-badge" style={BADGE_STYLES[item.badgeVariant]}>{item.badge}</span>
               )}
-              {item.tag && (
-                <span className="dsh-nav-vtag">{item.tag}</span>
-              )}
+              {item.tag && <span className="dsh-nav-vtag">{item.tag}</span>}
             </button>
           ))}
         </div>
       ))}
-
       <div className="dsh-sidebar-footer">
         <div className="dsh-progress-label">
           <span>Completitud del perfil</span>
@@ -527,21 +407,13 @@ export default function Sidebar({ collapsed, onToggle }) {
         className="dsh-sidebar-toggle"
         style={{ left: collapsed ? 'calc(64px - 13px)' : 'calc(240px - 13px)' }}
       >
-        <svg
-          viewBox="0 0 10 8"
-          style={{ transform: collapsed ? 'rotate(180deg)' : 'none' }}
-        >
+        <svg viewBox="0 0 10 8" style={{ transform: collapsed ? 'rotate(180deg)' : 'none' }}>
           <path d="M1 1l4 3-4 3M6 4h3.5" />
         </svg>
       </button>
 
       {/* ── MOBILE: overlay + drawer ── */}
-      <div
-        className={`dsh-drawer-overlay${mobileOpen ? ' open' : ''}`}
-        onClick={() => setMobileOpen(false)}
-        aria-hidden="true"
-      />
-
+      <div className={`dsh-drawer-overlay${mobileOpen ? ' open' : ''}`} onClick={() => setMobileOpen(false)} aria-hidden="true" />
       <nav className={`dsh-drawer${mobileOpen ? ' open' : ''}`} aria-label="Menú principal">
         <NavContent inDrawer={true} />
       </nav>
@@ -549,29 +421,32 @@ export default function Sidebar({ collapsed, onToggle }) {
       {/* ── FAB móvil ── */}
       <button
         className={`dsh-fab${mobileOpen ? ' open' : ''}`}
-        onClick={() => setMobileOpen((v) => !v)}
+        onClick={() => setMobileOpen(v => !v)}
         aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
         title={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
       >
-        {/* ícono: grid (cerrado) → X (abierto) via rotación */}
         <svg viewBox="0 0 24 24">
           {mobileOpen ? (
-            /* X */
-            <>
-              <line x1="5" y1="5" x2="19" y2="19" />
-              <line x1="19" y1="5" x2="5" y2="19" />
-            </>
+            <><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></>
           ) : (
-            /* grid 2×2 */
-            <>
-              <rect x="3"  y="3"  width="7" height="7" rx="1.5" />
-              <rect x="14" y="3"  width="7" height="7" rx="1.5" />
-              <rect x="3"  y="14" width="7" height="7" rx="1.5" />
-              <rect x="14" y="14" width="7" height="7" rx="1.5" />
-            </>
+            <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>
           )}
         </svg>
       </button>
+
+      {/* ── Modal de confirmación de cierre de sesión ── */}
+      <ConfirmModal
+        open={logoutModal}
+        title="¿Cerrar sesión?"
+        message="Tu sesión se cerrará y tendrás que volver a iniciar sesión para acceder a tu portafolio."
+        confirmLabel="Sí, cerrar sesión"
+        cancelLabel="Cancelar"
+        variant="red"
+        icon="logout"
+        loading={loggingOut}
+        onConfirm={doLogout}
+        onClose={() => !loggingOut && setLogoutModal(false)}
+      />
     </>
   );
 }
