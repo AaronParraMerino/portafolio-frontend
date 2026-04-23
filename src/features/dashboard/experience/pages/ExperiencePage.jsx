@@ -22,20 +22,20 @@ const formatearFecha = (fechaStr) => {
 
 export default function ExperiencePage() {
   const [experiencias, setExperiencias] = useState([]);
-  const [modalMode, setModalMode]       = useState(null);
-  const [selectedExp, setSelectedExp]   = useState(null);
-  const [toast, setToast]               = useState(null);
-  const [loading, setLoading]           = useState(true);
+  const [modalMode, setModalMode] = useState(null);
+  const [selectedExp, setSelectedExp] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [confirmData, setConfirmData] = useState({
-    isOpen:   false,
-    title:    "",
+    isOpen: false,
+    title: "",
     subtitle: "",
-    message:  "",
+    message: "",
     confirmLabel: "Confirmar",
     onConfirm: null,
-    variant:  "blue",
-    icon:     "check",
+    variant: "blue",
+    icon: "check",
   });
 
   const showToast = (msg, tipo = "ok") => {
@@ -96,19 +96,15 @@ export default function ExperiencePage() {
 
   const handleSaveRequest = (data) => {
     const isEdit = !!selectedExp;
-
     setConfirmData({
       isOpen: true,
-      // Editar → azul (cambio de información).  Crear → verde (acción positiva nueva).
-      variant:      isEdit ? "blue"              : "green",
-      icon:         "check",
-      title:        isEdit ? "Actualizar experiencia" : "Guardar experiencia",
-      subtitle:     isEdit
-        ? "Se sobreescribirán los datos actuales."
-        : "Se añadirá al listado de experiencias.",
-      message: isEdit
-        ? `¿Confirmas los cambios realizados en "${data.puesto}" en ${data.empresa}?`
-        : `¿Deseas guardar "${data.puesto}" en ${data.empresa} como nueva experiencia?`,
+      variant: isEdit ? "blue" : "green",
+      icon: "check",
+      title: isEdit ? "Actualizar experiencia" : "Guardar experiencia",
+      subtitle: isEdit ? "Se sobreescribirán los datos actuales." : "Se añadirá al listado de experiencias.",
+      message: isEdit 
+        ? `¿Confirmas los cambios en "${data.puesto}"?` 
+        : `¿Deseas guardar "${data.puesto}"?`,
       confirmLabel: isEdit ? "Sí, actualizar" : "Sí, guardar",
       onConfirm: () => {
         executeSave(data);
@@ -121,13 +117,11 @@ export default function ExperiencePage() {
     const exp = experiencias.find((e) => e.id === id);
     setConfirmData({
       isOpen: true,
-      variant:      "red",
-      icon:         "warning",
-      title:        "Eliminar experiencia",
-      subtitle:     "Esta acción no se puede deshacer.",
-      message:      exp
-        ? `Estás por eliminar "${exp.puesto}" en ${exp.empresa}. ¿Deseas continuar?`
-        : "Esta acción es permanente. ¿Deseas continuar?",
+      variant: "red",
+      icon: "warning",
+      title: "Eliminar experiencia",
+      subtitle: "Esta acción no se puede deshacer.",
+      message: `Estás por eliminar "${exp?.puesto}". ¿Deseas continuar?`,
       confirmLabel: "Sí, eliminar",
       onConfirm: () => {
         executeDelete(id);
@@ -139,6 +133,7 @@ export default function ExperiencePage() {
   return (
     <>
       <style>{`
+        /* BARRA NEGRA MANTENIDA */
         .custom-breadcrumb-bar {
           background-color: var(--negro-texto);
           padding: 1.2rem 2.5rem;
@@ -148,84 +143,87 @@ export default function ExperiencePage() {
           border-bottom: 4px solid var(--azul);
           font-family: var(--font);
         }
-        .bc-text {
-          color: var(--gris-texto);
-          font-size: 0.85rem;
-          margin: 0;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          font-family: var(--font);
-        }
-        .bc-active {
-          color: var(--blanco);
-          font-weight: 800;
-          font-size: 1.4rem;
-          margin: 0;
-          font-family: var(--font);
-        }
+        .bc-text { color: var(--gris-texto); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        .bc-active { color: var(--blanco); font-weight: 800; font-size: 1.4rem; margin: 0; }
+
         .exp-card {
           transition: all 0.3s ease;
           border-left: 5px solid var(--azul) !important;
-          border-radius: 4px !important;
-          background-color: var(--blanco) !important;
-          border: 1px solid var(--gris-borde) !important;
-          font-family: var(--font);
+          border-radius: 12px !important; /* Más redondeado estilo Dashboard */
+          background: white !important;
+          border: 1px solid #e5e7eb !important;
         }
-        .exp-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        .exp-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+
+        /* BADGES MANTENIDOS */
+        .badge-laboral { background: var(--amarillo-chip) !important; color: var(--amarillo-hover) !important; border: 1px solid var(--amarillo-borde) !important; }
+        .badge-academica { background: var(--violeta-chip) !important; color: var(--violeta-hover) !important; border: 1px solid var(--violeta-borde) !important; }
+
+        /* ESTILO BOTONES DASHBOARD (Glassmorphism suave) */
+        .btn-action-dash {
+          width: 34px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid transparent;
+          transition: all 0.2s;
+          font-size: 1.1rem;
         }
-        .badge-laboral {
-          background-color: var(--amarillo-chip) !important;
-          color: var(--amarillo-hover) !important;
-          border: 1px solid var(--amarillo-borde) !important;
-          font-family: var(--font);
+        .btn-view { 
+          border-radius: 50%; /* CIRCULAR para visualizar */
+          background: var(--azul-light); 
+          color: var(--azul); 
+          border-color: rgba(59, 130, 246, 0.2); 
         }
-        .badge-academica {
-          background-color: var(--violeta-chip) !important;
-          color: var(--violeta-hover) !important;
-          border: 1px solid var(--violeta-borde) !important;
-          font-family: var(--font);
+        .btn-edit { 
+          border-radius: 8px; /* CUADRADO SUAVE para editar */
+          background: #fff7ed; 
+          color: #f59e0b; 
+          border-color: rgba(245, 158, 11, 0.2); 
         }
-        @media (max-width: 768px) {
-          .custom-breadcrumb-bar {
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
-          }
+        .btn-delete { 
+          border-radius: 8px; /* CUADRADO SUAVE para borrar */
+          background: var(--rojo-bg); 
+          color: var(--rojo-mid); 
+          border-color: rgba(239, 68, 68, 0.2); 
         }
+        .btn-action-dash:hover { transform: scale(1.1); filter: brightness(0.9); }
+
+        .visibility-tag {
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 8px;
+          border-radius: 20px;
+          text-transform: uppercase;
+        }
+        .tag-public { background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; }
+        .tag-private { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
       `}</style>
 
-      {/* Barra superior */}
       <div className="custom-breadcrumb-bar shadow">
         <div>
-          <p className="bc-text">Portafolio</p>
+          <p className="bc-text m-0">Portafolio</p>
           <h2 className="bc-active">EXPERIENCIA</h2>
         </div>
         <button
           className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
+          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "8px" }}
           onClick={() => { setModalMode("add"); setSelectedExp(null); }}
         >
           ➕ Agregar Nueva
         </button>
       </div>
 
-      {/* Lista de experiencias */}
-      <div
-        className="container-fluid p-4"
-        style={{ minHeight: "100vh", background: "var(--fondo)", fontFamily: "var(--font)" }}
-      >
+      <div className="container-fluid p-4" style={{ minHeight: "100vh", background: "#f8fafc" }}>
         <div className="row justify-content-center">
           <div className="col-12 col-xl-11">
             {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-primary" role="status" />
-                <h5 className="text-muted mt-3">Cargando tus datos...</h5>
               </div>
             ) : experiencias.length === 0 ? (
-              <div className="text-center py-5 bg-white rounded shadow-sm">
+              <div className="text-center py-5 bg-white rounded shadow-sm border">
                 <h5 className="text-muted">No hay experiencias registradas.</h5>
               </div>
             ) : (
@@ -233,42 +231,47 @@ export default function ExperiencePage() {
                 {experiencias.map((exp) => (
                   <div key={exp.id} className="col-12 col-md-6 col-lg-4">
                     <div className="card h-100 exp-card p-3 border-0">
-                      <div className="d-flex justify-content-between mb-3">
-                        <span
-                          className={`badge px-3 py-2 ${
-                            exp.tipo_experiencia === "Laboral"
-                              ? "badge-laboral"
-                              : "badge-academica"
-                          }`}
-                        >
-                          {exp.tipo_experiencia.toUpperCase()}
-                        </span>
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="d-flex flex-column gap-2">
+                          <span className={`badge px-3 py-2 ${exp.tipo_experiencia === "Laboral" ? "badge-laboral" : "badge-academica"}`}>
+                            {exp.tipo_experiencia.toUpperCase()}
+                          </span>
+                          {/* INDICADOR DE PÚBLICO/PRIVADO */}
+                          <span className={`visibility-tag ${exp.es_publico ? 'tag-public' : 'tag-private'}`}>
+                            {exp.es_publico ? '● Público' : '○ Privado'}
+                          </span>
+                        </div>
+                        
+                        {/* BOTÓN VISUALIZAR (CIRCULAR) */}
                         <button
-                          className="btn btn-light btn-sm rounded-circle shadow-sm"
+                          className="btn-action-dash btn-view shadow-sm"
+                          title="Ver detalles"
                           onClick={() => { setSelectedExp(exp); setModalMode("view"); }}
                         >
                           👁️
                         </button>
                       </div>
 
-                      <h5 className="fw-bold mb-1">{exp.puesto}</h5>
+                      <h5 className="fw-bold mb-1" style={{ color: '#1e293b' }}>{exp.puesto}</h5>
                       <p className="text-primary small mb-3 fw-bold">{exp.empresa}</p>
 
                       <div className="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
-                        <small className="text-muted fw-bold">
-                          {formatearFecha(exp.fecha_inicio)} —{" "}
-                          {exp.actual ? "Actual" : formatearFecha(exp.fecha_fin)}
+                        <small className="text-muted fw-bold" style={{ fontSize: '11px' }}>
+                          📅 {formatearFecha(exp.fecha_inicio)} — {exp.actual ? "Actual" : formatearFecha(exp.fecha_fin)}
                         </small>
                         <div className="d-flex gap-2">
+                          {/* BOTONES EDITAR Y BORRAR (CUADRADOS SUAVES) */}
                           <button
                             onClick={() => { setSelectedExp(exp); setModalMode("edit"); }}
-                            className="btn btn-sm btn-outline-primary"
+                            className="btn-action-dash btn-edit"
+                            title="Editar"
                           >
                             ✏️
                           </button>
                           <button
                             onClick={() => handleDeleteRequest(exp.id)}
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn-action-dash btn-delete"
+                            title="Eliminar"
                           >
                             🗑️
                           </button>
@@ -283,7 +286,6 @@ export default function ExperiencePage() {
         </div>
       </div>
 
-      {/* ConfirmModal unificado */}
       <ConfirmModal
         open={confirmData.isOpen}
         title={confirmData.title}
@@ -297,7 +299,6 @@ export default function ExperiencePage() {
         onClose={closeConfirm}
       />
 
-      {/* Modales de formulario y detalle */}
       {(modalMode === "add" || modalMode === "edit") && (
         <ExperienceForm
           onSave={handleSaveRequest}
@@ -305,6 +306,7 @@ export default function ExperiencePage() {
           editData={selectedExp}
         />
       )}
+
       {modalMode === "view" && (
         <ExperienceDetailModal
           exp={selectedExp}
