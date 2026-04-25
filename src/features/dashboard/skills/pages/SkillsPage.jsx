@@ -1,33 +1,29 @@
 import React, { useState, useEffect, useCallback } from "react";
 import SkillForm from "../components/SkillForm";
-import { 
-  getUserSkills, 
-  addUserSkill, 
-  updateUserSkill, 
+import {
+  getUserSkills,
+  addUserSkill,
+  updateUserSkill,
   deleteUserSkill,
-  createCatalogSkill 
+  createCatalogSkill,
 } from "../services/skillService";
 import ExperienceToast from "../../experience/components/ExperienceToast";
-// Importamos el modal compartido sugerido por tu compañero
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalMode, setModalMode] = useState(null); // 'add' o 'edit'
+  const [modalMode, setModalMode] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
-  
-  // Estado para el Toast (Notificaciones)
   const [toast, setToast] = useState(null);
-  
-  // Estado para el ConfirmModal compartido
+
   const [confirmConfig, setConfirmConfig] = useState({
     open: false,
     title: "",
     message: "",
     variant: "blue",
     icon: "check",
-    onConfirm: () => {}
+    onConfirm: () => {},
   });
 
   const showToast = (msg, tipo = "ok") => {
@@ -47,32 +43,82 @@ export default function SkillsPage() {
     }
   }, []);
 
-  useEffect(() => { loadSkills(); }, [loadSkills]);
+  useEffect(() => {
+    loadSkills();
+  }, [loadSkills]);
 
   const handleSaveRequest = async (formData) => {
     try {
       let skillIdFromCatalog = formData.catalogo_habilidad_id;
 
-      // Si es una habilidad nueva (no está en el catálogo), se crea primero
       if (!skillIdFromCatalog) {
         const newCatalogSkill = await createCatalogSkill(
-          formData.nombre_habilidad, 
+          formData.nombre_habilidad,
           formData.tipo,
-          formData.descripcion_nueva // Usamos la descripción del form
+          formData.descripcion_nueva || ""
         );
         skillIdFromCatalog = newCatalogSkill.id;
       }
 
       if (modalMode === "edit") {
-        await updateUserSkill(selectedSkill.id, formData.nivel, formData.es_publico);
-        showToast("Habilidad actualizada con éxito", "ok");
+        console.log('🔄 EDIT MODE: enviando a updateUserSkill:', {
+          id: selectedSkill.id,
+          nivel: formData.nivel,
+          es_visible: formData.es_visible,
+          tipo: typeof formData.es_visible,
+        });
+
+        const updated = await updateUserSkill(
+          selectedSkill.id,
+          formData.nivel,
+          formData.es_visible
+        );
+
+        console.log('✅ Respuesta del backend:', updated);
+
+        /**
+         * FIX 3: Comparamos ambos ids como Number para evitar fallos string vs number.
+         * Si el back devuelve un id distinto al esperado, caemos en fallback:
+         * actualizamos igualmente con los campos del formData para que la UI
+         * refleje el cambio aunque el id tuviera alguna inconsistencia.
+         */
+        setSkills((prev) => {
+          const selectedId = Number(selectedSkill.id);
+          const updatedId = Number(updated?.id);
+
+          console.log('🔍 Comparando IDs:', { selectedId, updatedId, match: selectedId === updatedId });
+
+          // Caso normal: el back devolvió el objeto actualizado con id correcto
+          if (updatedId && updatedId === selectedId) {
+            console.log('✓ Usando respuesta del backend directamente');
+            return prev.map((s) => (Number(s.id) === selectedId ? updated : s));
+          }
+
+          // Fallback: actualizamos manualmente con los campos que conocemos
+          // Esto cubre el caso en que el back devuelva estructura inesperada
+          console.log('⚠️ Usando fallback con formData');
+          return prev.map((s) => {
+            if (Number(s.id) !== selectedId) return s;
+            return {
+              ...s,
+              nivel: formData.nivel,
+              es_visible: Boolean(formData.es_visible),
+            };
+          });
+        });
+
+        showToast("Habilidad actualizada", "ok");
       } else {
-        await addUserSkill(skillIdFromCatalog, formData.nivel, formData.es_publico);
-        showToast("Habilidad añadida a tu perfil", "ok");
+        const created = await addUserSkill(
+          skillIdFromCatalog,
+          formData.nivel,
+          formData.es_visible
+        );
+        setSkills((prev) => [created, ...prev]);
+        showToast("Habilidad añadida", "ok");
       }
 
       setModalMode(null);
-      loadSkills();
     } catch (err) {
       showToast(err.message, "error");
     }
@@ -82,24 +128,24 @@ export default function SkillsPage() {
     setConfirmConfig({
       open: true,
       title: "¿Eliminar Habilidad?",
-      message: "Esta acción quitará la habilidad de tu perfil público y privado. ¿Deseas continuar?",
+      message: "Esta acción quitará la habilidad de tu perfil. ¿Deseas continuar?",
       variant: "red",
       icon: "warning",
       onConfirm: async () => {
         try {
           await deleteUserSkill(id);
+          setSkills((prev) => prev.filter((s) => Number(s.id) !== Number(id)));
           showToast("Habilidad eliminada", "ok");
-          loadSkills();
         } catch (err) {
           showToast("Error al eliminar", "error");
         }
-        setConfirmConfig(prev => ({ ...prev, open: false }));
-      }
+        setConfirmConfig((prev) => ({ ...prev, open: false }));
+      },
     });
   };
 
-  const tecnicas = skills.filter(s => s.tipo === 'tecnica');
-  const blandas = skills.filter(s => s.tipo === 'blanda');
+  const tecnicas = skills.filter((s) => s.tipo === "tecnica");
+  const blandas = skills.filter((s) => s.tipo === "blanda");
 
   return (
     <>
@@ -117,14 +163,14 @@ export default function SkillsPage() {
         
         .skill-long-card {
           background: white;
-          border-radius: 8px;
+          border-radius: 16px;
           border: 1px solid #e2e8f0;
-          border-left: 5px solid var(--azul);
+          border-left: 6px solid var(--azul);
           padding: 1.2rem;
           margin-bottom: 1rem;
-          transition: 0.2s;
+          transition: all 0.2s ease;
         }
-        .skill-long-card:hover { transform: translateX(5px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .skill-long-card:hover { transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         .section-divider {
           font-weight: 800; color: #1e293b; text-transform: uppercase;
@@ -132,26 +178,44 @@ export default function SkillsPage() {
         }
         .section-divider::after { content: ""; flex: 1; height: 1px; background: #cbd5e1; }
 
-        .level-square-badge {
-          padding: 4px 10px;
-          font-size: 0.72rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          border-radius: 0px !important; /* Cuadrado sin puntas */
+        .level-circle-badge {
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
           color: white;
-          display: inline-block;
-          letter-spacing: 0.5px;
+          font-weight: 800;
+          font-size: 0.7rem;
+          text-transform: uppercase;
         }
 
-        .btn-action-outline {
-          border: 1.5px solid #e2e8f0;
-          background: white;
+        .visibility-tag {
+          font-size: 0.7rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 2px 8px;
+          border-radius: 4px;
+        }
+        .tag-public { color: #16a34a; background: #f0fdf4; }
+        .tag-private { color: #64748b; background: #f8fafc; }
+
+        .btn-action-dash {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #cbd5e1;
+          background: #ffffff;
           transition: all 0.2s;
+          color: #475569;
+          border-radius: 8px;
         }
-        .btn-action-outline:hover {
-          background: #f8fafc;
-          border-color: #cbd5e1;
-        }
+        .btn-edit:hover { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
+        .btn-delete:hover { color: #dc2626; border-color: #dc2626; background: #fef2f2; }
       `}</style>
 
       <div className="custom-breadcrumb-bar shadow">
@@ -160,41 +224,50 @@ export default function SkillsPage() {
           <h2 className="bc-active">HABILIDADES</h2>
         </div>
         <button
-          className="btn btn-primary px-4 py-2 fw-bold"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
-          onClick={() => { setSelectedSkill(null); setModalMode("add"); }}
+          className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
+          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "8px" }}
+          onClick={() => {
+            setSelectedSkill(null);
+            setModalMode("add");
+          }}
         >
           ➕ Agregar Habilidad
         </button>
       </div>
 
-      <div className="container-fluid p-4" style={{ minHeight: "100vh", background: "#f1f5f9" }}>
+      <div className="container-fluid p-4" style={{ minHeight: "100vh", background: "#f8fafc" }}>
         <div className="row justify-content-center">
           <div className="col-12 col-xl-10">
             {loading ? (
-              <div className="text-center py-5"><div className="spinner-border text-primary"></div></div>
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary"></div>
+              </div>
             ) : (
               <>
                 <h5 className="section-divider">🛠️ Habilidades Técnicas</h5>
-                {tecnicas.length === 0 ? <p className="text-muted small">No hay registros.</p> : (
-                  tecnicas.map(s => (
-                    <SkillLongRow 
-                      key={s.id} 
-                      skill={s} 
-                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }} 
-                      onDelete={handleDeleteRequest} 
+                {tecnicas.length === 0 ? (
+                  <p className="text-muted small ms-2">No has registrado habilidades técnicas aún.</p>
+                ) : (
+                  tecnicas.map((s) => (
+                    <SkillLongRow
+                      key={s.id}
+                      skill={s}
+                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }}
+                      onDelete={handleDeleteRequest}
                     />
                   ))
                 )}
 
                 <h5 className="section-divider">🧠 Habilidades Blandas</h5>
-                {blandas.length === 0 ? <p className="text-muted small">No hay registros.</p> : (
-                  blandas.map(s => (
-                    <SkillLongRow 
-                      key={s.id} 
-                      skill={s} 
-                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }} 
-                      onDelete={handleDeleteRequest} 
+                {blandas.length === 0 ? (
+                  <p className="text-muted small ms-2">No hay registros de habilidades blandas.</p>
+                ) : (
+                  blandas.map((s) => (
+                    <SkillLongRow
+                      key={s.id}
+                      skill={s}
+                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }}
+                      onDelete={handleDeleteRequest}
                     />
                   ))
                 )}
@@ -204,92 +277,84 @@ export default function SkillsPage() {
         </div>
       </div>
 
-      {/* Modal de Confirmación Compartido */}
-      <ConfirmModal 
+      <ConfirmModal
         {...confirmConfig}
-        onClose={() => setConfirmConfig(prev => ({ ...prev, open: false }))}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, open: false }))}
       />
 
-      {/* Formulario Modal */}
       {modalMode && (
-        <SkillForm 
-          onSave={handleSaveRequest} 
-          onCancel={() => setModalMode(null)} 
-          editData={selectedSkill} 
+        <SkillForm
+          onSave={handleSaveRequest}
+          onCancel={() => setModalMode(null)}
+          editData={selectedSkill}
         />
       )}
 
-      {/* Toast de Experiencia para notificaciones */}
       <ExperienceToast toast={toast} />
     </>
   );
 }
 
 function SkillLongRow({ skill, onEdit, onDelete }) {
-  const levels = { 
-    basico: { p: 30, c: "#64748b" }, 
-    intermedio: { p: 60, c: "#16a34a" }, 
-    avanzado: { p: 85, c: "#2563eb" }, 
-    experto: { p: 100, c: "#7c3aed" } 
+  const levels = {
+    basico: { p: 30, c: "#64748b", n: "BAS" },
+    intermedio: { p: 60, c: "#16a34a", n: "INT" },
+    avanzado: { p: 85, c: "#2563eb", n: "AVZ" },
+    experto: { p: 100, c: "#7c3aed", n: "EXP" },
   };
-  const current = levels[skill.nivel] || { p: 0, c: "#ccc" };
+  const current = levels[skill.nivel] || { p: 0, c: "#ccc", n: "---" };
 
   return (
     <div className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3">
-      {/* Nombre y Descripción extraída del Service */}
-      <div style={{ minWidth: "220px", flex: "1 0 200px" }}>
-        <div className="d-flex align-items-center gap-2 mb-1">
-          <h6 className="fw-bold mb-0" style={{ color: "#1e293b", fontSize: '1.05rem' }}>{skill.nombre}</h6>
-          <span className={`badge ${skill.es_publico ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`} style={{ fontSize: '9px' }}>
-            {skill.es_publico ? 'PÚBLICO' : 'PRIVADO'}
-          </span>
+      {/* INFO PRINCIPAL */}
+      <div className="d-flex align-items-center gap-3" style={{ minWidth: "250px", flex: "1" }}>
+        <div className="level-circle-badge" style={{ backgroundColor: current.c }}>
+          {current.n}
         </div>
-        <p className="text-muted mb-0" style={{ fontSize: '0.82rem', lineHeight: '1.2' }}>
-          {skill.descripcion || "Sin descripción disponible."}
-        </p>
+        <div>
+          <div className="d-flex align-items-center gap-2 mb-1">
+            <h6 className="fw-bold mb-0" style={{ color: "#1e293b" }}>
+              {skill.nombre}
+            </h6>
+            <span className={`visibility-tag ${skill.es_visible ? "tag-public" : "tag-private"}`}>
+              {skill.es_visible ? "● Público" : "○ Privado"}
+            </span>
+          </div>
+          <p className="text-muted mb-0 small">
+            {skill.descripcion || "Sin descripción adicional."}
+          </p>
+        </div>
       </div>
 
-      {/* Barra de Progreso y Nivel Cuadrado */}
-      <div className="flex-grow-1 mx-md-4" style={{ minWidth: "280px" }}>
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <div className="d-flex align-items-center gap-2">
-            <div className="level-square-badge" style={{ backgroundColor: current.c }}>
-              {skill.nivel}
-            </div>
-            <span className="small fw-bold" style={{ color: "#475569" }}>{current.p}%</span>
-          </div>
-          <span className="small text-muted fw-bold" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Dominio</span>
+      {/* BARRA DE PROGRESO */}
+      <div className="flex-grow-1 mx-md-4" style={{ minWidth: "200px", maxWidth: "400px" }}>
+        <div className="d-flex justify-content-between align-items-center mb-1">
+          <span className="text-muted fw-bold" style={{ fontSize: "10px" }}>DOMINIO</span>
+          <span className="small fw-bold" style={{ color: "#475569" }}>{current.p}%</span>
         </div>
-        <div className="progress" style={{ height: "8px", backgroundColor: "#e2e8f0", borderRadius: "20px" }}>
-          <div 
-            className="progress-bar" 
-            style={{ 
-                width: `${current.p}%`, 
-                backgroundColor: current.c, 
-                borderRadius: "20px",
-                transition: 'width 1s ease'
+        <div className="progress" style={{ height: "8px", backgroundColor: "#e2e8f0", borderRadius: "10px" }}>
+          <div
+            className="progress-bar"
+            style={{
+              width: `${current.p}%`,
+              backgroundColor: current.c,
+              borderRadius: "10px",
+              transition: "width 1s ease",
             }}
           ></div>
         </div>
       </div>
 
-      {/* Botones con Bordes Visibles */}
+      {/* ACCIONES */}
       <div className="d-flex gap-2">
-        <button 
-          onClick={() => onEdit(skill)} 
-          className="btn btn-sm btn-action-outline text-primary shadow-sm" 
-          title="Editar habilidad"
-        >
-          ✏️ <span className="d-none d-xxl-inline ms-1">Editar</span>
+        <button onClick={() => onEdit(skill)} className="btn-action-dash btn-edit" title="Editar">
+          ✎
         </button>
-        <button 
-          onClick={() => onDelete(skill.id)} 
-          className="btn btn-sm btn-action-outline text-danger shadow-sm" 
-          title="Eliminar habilidad"
-        >
-          🗑️ <span className="d-none d-xxl-inline ms-1">Borrar</span>
+        <button onClick={() => onDelete(skill.id)} className="btn-action-dash btn-delete" title="Eliminar">
+          🗑️
         </button>
       </div>
     </div>
   );
 }
+

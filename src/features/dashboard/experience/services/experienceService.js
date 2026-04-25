@@ -36,7 +36,7 @@ const toFrontModel = (exp) => ({
   // IMPORTANTE: Tu back devuelve cadenas 'true'/'false', convertimos a booleano real
   actual: exp.es_actual === 'true' || exp.es_actual === true || exp.es_actual === 1,
   descripcion: exp.descripcion ?? '',
-  es_publico: exp.es_publico === 'true' || exp.es_publico === true || exp.es_publico === 1,
+  es_publico: !!exp.es_publico,
 });
 
 // --- TRADUCCIÓN: De React hacia tu Laravel ---
@@ -50,7 +50,7 @@ const toBackModel = (formData) => ({
   // Si es actual, mandamos null. Tu Back PHP también limpia esto, así que doble seguridad
   fecha_fin: formData.actual ? null : (formData.fecha_fin || null),
   es_actual: formData.actual, // Mandamos true/false (tu Back PHP usa filter_var)
-  es_publico: true,
+  es_publico: formData.es_publico ? 1 : 0,
 });
 
 export const getExperiencias = async () => {

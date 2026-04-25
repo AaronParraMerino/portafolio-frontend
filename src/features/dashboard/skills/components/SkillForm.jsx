@@ -8,7 +8,7 @@ export default function SkillForm({ onSave, onCancel, editData }) {
     catalogo_habilidad_id: "",
     nombre_habilidad: "",
     nivel: "basico",
-    es_publico: true,
+    es_visible: true, // CAMBIO: es_publico -> es_visible
   });
 
   const [catalog, setCatalog] = useState([]);
@@ -19,16 +19,27 @@ export default function SkillForm({ onSave, onCancel, editData }) {
 
   useEffect(() => {
     const loadCatalog = async () => {
-      const data = await getCatalogSkills();
-      setCatalog(data);
+      try {
+        const data = await getCatalogSkills();
+        setCatalog(data);
+      } catch (err) {
+        console.error("Error cargando catálogo", err);
+      }
     };
     loadCatalog();
     
     if (editData) {
-      // Mapeamos los datos para asegurar que 'nombre' pase a 'nombre_habilidad'
+      /**
+       * CAMBIO 3.1: Sincronización Inicial Robusta.
+       * Usamos 'es_visible' para mapear desde el objeto de edición.
+       */
       setFormData({
-        ...editData,
-        nombre_habilidad: editData.nombre || editData.nombre_habilidad
+        tipo: editData.tipo || "tecnica",
+        catalogo_habilidad_id: editData.catalogo_habilidad_id || "",
+        nombre_habilidad: editData.nombre || editData.nombre_habilidad || "",
+        nivel: editData.nivel || "basico",
+        // MEJORA: Forzamos booleano para que el switch de React reconozca 0/1 como false/true
+        es_visible: Boolean(editData.es_visible), // CAMBIO: es_publico -> es_visible
       });
     }
   }, [editData]);
@@ -86,14 +97,16 @@ export default function SkillForm({ onSave, onCancel, editData }) {
       <div className="prf-modal-overlay" style={{ position: 'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1100, display:'flex', justifyContent:'center', alignItems:'center', backdropFilter: 'blur(2px)' }}>
         <div className="prf-modal-content p-0 shadow-lg" style={{ width: "90%", maxWidth: "500px", borderRadius: "12px", backgroundColor: "white", overflow: 'hidden' }}>
           
+          {/* Header estilo Dashboard */}
           <div className="p-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: "#111827", borderBottom: "4px solid var(--azul)" }}>
             <span className="fw-bold text-white" style={{ fontSize: '1.1rem' }}>
               {editData ? "✏️ Editar Habilidad" : "➕ Registrar Habilidad"}
             </span>
-            <button className="btn-close btn-close-white" onClick={onCancel}></button>
+            <button className="btn-close btn-close-white" onClick={onCancel} aria-label="Close"></button>
           </div>
 
           <form onSubmit={handleSubmit} className="p-4">
+            {/* Selector de Tipo (Solo en modo creación) */}
             {!editData && (
               <div className="mb-4">
                 <label className="form-label fw-bold small text-muted text-uppercase">Tipo de Habilidad</label>
@@ -106,16 +119,17 @@ export default function SkillForm({ onSave, onCancel, editData }) {
               </div>
             )}
 
+            {/* Búsqueda / Nombre */}
             <div className="mb-4 position-relative">
               <label className="form-label fw-bold">Nombre de Habilidad *</label>
               <div className="input-group">
                 <input 
                   type="text" 
                   className={`form-control ${errors.habilidad ? 'is-invalid' : ''}`}
-                  placeholder="Buscar..."
+                  placeholder="Escribe para buscar..."
                   value={formData.nombre_habilidad}
                   onChange={handleSearch}
-                  disabled={!!editData} // Usamos disabled en lugar de readOnly para claridad visual
+                  disabled={!!editData} 
                 />
                 {!editData && (
                   <button type="button" className="btn btn-light border fw-bold text-primary" onClick={() => setShowCatalogModal(true)}>
@@ -136,6 +150,7 @@ export default function SkillForm({ onSave, onCancel, editData }) {
               )}
             </div>
 
+            {/* Selector de Niveles Ovalados */}
             <div className="mb-4">
               <label className="form-label fw-bold small">Nivel de dominio</label>
               <div className="row g-2">
@@ -144,7 +159,7 @@ export default function SkillForm({ onSave, onCancel, editData }) {
                     <div 
                       onClick={() => setFormData({...formData, nivel: lvl})}
                       style={{
-                        cursor: 'pointer', padding: '10px', borderRadius: '25px', // Cambio a ovalado
+                        cursor: 'pointer', padding: '10px', borderRadius: '25px',
                         textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', textTransform: 'capitalize', transition: '0.2s',
                         border: formData.nivel === lvl ? `2px solid ${levelStyles[lvl].color}` : '1px solid #e2e8f0',
                         backgroundColor: formData.nivel === lvl ? levelStyles[lvl].bg : 'white',
@@ -158,15 +173,29 @@ export default function SkillForm({ onSave, onCancel, editData }) {
               </div>
             </div>
 
-            <div className="form-check form-switch mb-4">
-              <input className="form-check-input" type="checkbox" id="v-switch" checked={formData.es_publico} onChange={(e) => setFormData({...formData, es_publico: e.target.checked})} />
-              <label className="form-check-label fw-bold text-muted small" htmlFor="v-switch">Mostrar en perfil público</label>
+            {/* Switch de Visibilidad Vinculado */}
+            <div className="form-check form-switch mb-4 p-3 border rounded" style={{ backgroundColor: '#f8fafc' }}>
+              <div className="d-flex justify-content-between align-items-center">
+                <label className="form-check-label fw-bold text-muted small" htmlFor="v-switch">
+                  {formData.es_visible ? '● PUBLICAR EN PERFIL' : '○ GUARDAR COMO PRIVADO'}
+                </label>
+                <input 
+                  className="form-check-input" 
+                  type="checkbox" 
+                  role="switch"
+                  id="v-switch" 
+                  checked={formData.es_visible} 
+                  onChange={(e) => setFormData({...formData, es_visible: e.target.checked})} 
+                  style={{ cursor: 'pointer', width: '2.5em' }}
+                />
+              </div>
             </div>
 
+            {/* Footer Buttons */}
             <div className="d-flex gap-2 justify-content-end pt-3 border-top">
               <button type="button" className="btn btn-light border px-4 fw-bold" onClick={onCancel} disabled={isSubmitting}>Cancelar</button>
-              <button type="submit" className="btn btn-primary px-4 fw-bold shadow-sm" disabled={isSubmitting}>
-                {isSubmitting ? "Guardando..." : "Guardar Habilidad"}
+              <button type="submit" className="btn btn-primary px-4 fw-bold shadow-sm" disabled={isSubmitting} style={{ backgroundColor: 'var(--azul)', border: 'none' }}>
+                {isSubmitting ? "Guardando..." : "Guardar Cambios"}
               </button>
             </div>
           </form>

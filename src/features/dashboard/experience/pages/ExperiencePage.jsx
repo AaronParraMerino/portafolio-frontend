@@ -67,7 +67,7 @@ export default function ExperiencePage() {
       if (modalMode === "edit" && selectedExp) {
         const updated = await updateExperiencia(selectedExp.id, data);
         setExperiencias((prev) =>
-          prev.map((exp) => (exp.id === selectedExp.id ? updated : exp))
+          prev.map((exp) => (exp.id === selectedExp.id ? { ...exp, ...updated } : exp))
         );
         showToast("Experiencia actualizada correctamente");
       } else {
