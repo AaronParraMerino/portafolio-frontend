@@ -22,7 +22,7 @@ const getUserId = () => {
  * Configura las cabeceras con el token correcto de tu Session Storage.
  */
 const getHeaders = () => {
-  const token = sessionStorage.getItem('folio_session_token');
+  const token = sessionStorage.getItem('tokenPORT');
   
   const headers = {
     'Accept': 'application/json',

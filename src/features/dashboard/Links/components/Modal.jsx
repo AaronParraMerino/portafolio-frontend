@@ -29,6 +29,14 @@ const isValidUrl = url => {
   catch { return false; }
 };
 
+// ── Helper: normaliza la URL garantizando protocolo ──────────────────
+const normalizeUrl = url => {
+  const trimmed = url.trim();
+  return trimmed.startsWith("http://") || trimmed.startsWith("https://")
+    ? trimmed
+    : `https://${trimmed}`;
+};
+
 function Modal({ onClose, onAdd }) {
   const [titulo, setTitulo] = useState("");
   const [link,   setLink]   = useState("");
@@ -75,12 +83,12 @@ function Modal({ onClose, onAdd }) {
   const submit = () => {
     if (!validate()) return;
     onAdd({
-      nombre:       titulo.trim(),
-      url:          link.trim().replace(/^https?:\/\/(www\.)?/, ""),
-      descripcion:  desc.trim(),
+      nombre:        titulo.trim(),
+      url:           normalizeUrl(link), // ← FIX: guarda URL completa con protocolo
+      descripcion:   desc.trim(),
       plataformaKey: plat?.key || null,
-      conectado:    status === "ok",
-      visible:      true,
+      conectado:     status === "ok",
+      visible:       true,
     });
     onClose();
   };
