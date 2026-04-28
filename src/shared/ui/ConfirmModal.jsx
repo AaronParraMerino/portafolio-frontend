@@ -2,6 +2,7 @@
    ConfirmModal — v2  (azul · rojo · verde · amarillo · violeta)
 ══════════════════════════════════════════════════════════ */
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /* ── Mapa de variantes ─────────────────────────────────── */
 const VARIANT = {
@@ -289,7 +290,7 @@ export default function ConfirmModal({
     e.currentTarget.style.transform  = 'none';
   };
 
-  return (
+  return createPortal(
     <>
       <style>{BASE_STYLES}</style>
       <div
@@ -353,7 +354,8 @@ export default function ConfirmModal({
 
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 

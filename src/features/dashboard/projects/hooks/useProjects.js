@@ -48,7 +48,7 @@ let _cargaIniciada = false;
 
 // ── MODO MOCK: mientras no haya backend ──
 // Cambia a false cuando el backend esté listo
-const USAR_MOCK = true;
+const USAR_MOCK = false;
 
 export function useProjects() {
   const cache = leerCache();
