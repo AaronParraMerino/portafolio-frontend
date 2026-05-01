@@ -3,6 +3,7 @@
    Vista de bienvenida / resumen general.
 ══════════════════════════════════════ */
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const QUICK_STATS = [
   { num: '4',   lbl: 'Proyectos',      color: 'var(--azul)',      bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
@@ -70,6 +71,21 @@ const QUICK_LINKS = [
         <path d="M7 4V2M13 4V2M3 9h14M7 13h2M7 16h6" />
       </svg>
     ),
+  },
+  {
+  id: 'enlaces',
+  label: 'Redes Profesionales',
+  desc: 'Gestiona tus enlaces de LinkedIn, GitHub y otras redes',
+  to: '/dashboard/enlaces',   // ← la ruta donde montaste EnlacePage
+  badge: 'Nuevo',
+  badgeColor: 'var(--azul)',
+  badgeBg: 'var(--azul-light)',
+  icon: (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <path d="M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+      <path d="M13 10l4-4M7 10l-4 4M10 7V3M10 17v-4" />
+    </svg>
+  ),
   },
   {
     id: 'preview',
@@ -465,7 +481,7 @@ export default function DashboardPage() {
 
         <div className="dsh-links-grid">
           {QUICK_LINKS.map((item) => (
-            <a key={item.id} href={item.to} className="dsh-link-card">
+            <Link key={item.id} to={item.to} className="dsh-link-card">
               <div className="dsh-link-card-top">
                 <div className="dsh-link-icon">{item.icon}</div>
                 <svg className="dsh-link-arrow" viewBox="0 0 14 14">
@@ -489,7 +505,7 @@ export default function DashboardPage() {
                   </span>
                 )}
               </div>
-            </a>
+            </Link>
           ))}
         </div>
 
