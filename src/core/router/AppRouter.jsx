@@ -12,6 +12,8 @@ import PrivacidadPage from '../../features/auth/pages/PrivacidadPage';
 import Contraseña from '../../features/auth/components/Contraseña';
 import Codigo from '../../features/auth/components/Codigo';
 import CambiarContra from '../../features/auth/components/CambiarContra';
+import SkillsPage from '../../features/dashboard/skills/pages/SkillsPage';
+import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
@@ -26,6 +28,8 @@ export default function AppRouter({ isBackendAvailable = true }) {
               <Route index element={<DashboardPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="experience" element={<ExperiencePage />} />
+              <Route path="skills" element={<SkillsPage />} />
+              <Route path="enlaces" element={<EnlacePage />} />
               <Route path="projects" element={<ProjectsPage />} />
             </Route>
 
