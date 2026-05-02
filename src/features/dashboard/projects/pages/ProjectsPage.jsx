@@ -2,12 +2,11 @@ import { useState } from 'react';
 import '../styles/projects.css';
 import { useProjects } from '../hooks/useProjects';
 import ProjectsHeader      from '../components/ProjectsHeader';
-import ProjectsVisBanner   from '../components/ProjectsVisBanner';
 import ProjectsFilters     from '../components/ProjectsFilters';
 import ProjectsGrid        from '../components/ProjectsGrid';
 import ProjectsEdit        from '../components/ProjectsEdit';
 import ProjectsToast       from '../components/ProjectsToast';
-import ConfirmModal        from '../../../../shared/ui/ConfirmModal';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
 /* ════════════════════════════════════════
    ProjectsPage
@@ -19,14 +18,12 @@ import ConfirmModal        from '../../../../shared/ui/ConfirmModal';
 ════════════════════════════════════════ */
 export default function ProjectsPage() {
   const {
-    proyectos, visGlobal, loading, guardando, toast,
+    proyectos, loading, guardando, toast,
     crearNuevo, editarExistente, eliminar,
-    toggleVisibilidad, toggleVisibilidadGlobal,
   } = useProjects();
 
   // ── Estado UI puro ──
   const [editando,   setEditando]   = useState(null);
-  const [confirmVis, setConfirmVis] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
@@ -83,11 +80,6 @@ export default function ProjectsPage() {
 
       <div className="prj-content">
 
-        <ProjectsVisBanner
-          visible={visGlobal}
-          onToggle={toggleVisibilidadGlobal}
-        />
-
         <ProjectsFilters
           busqueda={busqueda}   onBusqueda={setBusqueda}
           filtro={filtro}       onFiltro={setFiltro}
@@ -99,7 +91,6 @@ export default function ProjectsPage() {
           proyectos={proyectosFiltrados}
           busqueda={busqueda}
           onEditar={(p)     => setEditando(p)}
-          onToggleVis={(p)  => setConfirmVis(p)}
           onEliminar={(p)   => setConfirmDel(p)}
           onAgregar={() => setEditando('nuevo')}
         />
@@ -116,20 +107,6 @@ export default function ProjectsPage() {
           guardando={guardando}
         />
       )}
-
-      <ConfirmModal
-        open={!!confirmVis}
-        title={confirmVis?.es_publico ? '¿Ocultar proyecto?' : '¿Publicar proyecto?'}
-        message={confirmVis?.es_publico
-          ? `"${confirmVis?.titulo}" quedará privado y no aparecerá en tu portafolio público.`
-          : `"${confirmVis?.titulo}" será visible en tu portafolio público.`
-        }
-        confirmLabel={confirmVis?.es_publico ? 'Sí, ocultar' : 'Sí, publicar'}
-        variant="blue"
-        icon="check"
-        onConfirm={() => { toggleVisibilidad(confirmVis.id); setConfirmVis(null); }}
-        onClose={() => setConfirmVis(null)}
-      />
 
       <ConfirmModal
         open={!!confirmDel}

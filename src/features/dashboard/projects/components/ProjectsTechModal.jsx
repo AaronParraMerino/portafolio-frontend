@@ -34,97 +34,124 @@ const CATEGORIAS_DISPONIBLES = [
 ];
 
 const ACROS = new Set([
-  'api','php','sql','html','css','xml','jwt','sdk','cli',
-  'ui','ux','ios','aws','gcp','cdn','dns','orm','mvc',
-  'spa','pwa','pdf','csv','json','yaml','toml','ci','cd',
-  'http','https','rest','grpc','tcp','ip','oop','tdd',
-  'bdd','ddd','sso','oauth','saml','ldap','cms','crm',
-  'erp','pos','qr','ar','vr','ai','ml','nlp','llm',
-  'gpu','cpu','ram','ssd','hdd','usb','ssh','ftp','smtp',
+  'api', 'php', 'sql', 'html', 'css', 'xml', 'jwt', 'sdk', 'cli',
+  'ui', 'ux', 'ios', 'aws', 'gcp', 'cdn', 'dns', 'orm', 'mvc',
+  'spa', 'pwa', 'pdf', 'csv', 'json', 'yaml', 'toml', 'ci', 'cd',
+  'http', 'https', 'rest', 'grpc', 'tcp', 'ip', 'oop', 'tdd',
+  'bdd', 'ddd', 'sso', 'oauth', 'saml', 'ldap', 'cms', 'crm',
+  'erp', 'pos', 'qr', 'ar', 'vr', 'ai', 'ml', 'nlp', 'llm',
+  'gpu', 'cpu', 'ram', 'ssd', 'hdd', 'usb', 'ssh', 'ftp', 'smtp',
 ]);
 
 export function formatearNombre(raw) {
-  return raw
+  return String(raw || '')
     .trim()
     .replace(/\s+/g, ' ')
     .split(' ')
+    .filter(Boolean)
     .map(word => {
       const lower = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (ACROS.has(lower)) return word.toUpperCase();
+
+      if (ACROS.has(lower)) {
+        return word.toUpperCase();
+      }
+
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
     .join(' ');
 }
 
-export default function ProjectsTechModal({ catalogoTotal = [], onConfirmar, onCerrar }) {
-  const [nombre,    setNombre]    = useState('');
+export default function ProjectsTechModal({
+  catalogoTotal = [],
+  onConfirmar,
+  onCerrar,
+}) {
+  const [nombre, setNombre] = useState('');
   const [categoria, setCategoria] = useState('Personalizado');
-  const [touched,   setTouched]   = useState(false);
+  const [touched, setTouched] = useState(false);
   const inputRef = useRef(null);
 
-  // Focus al montar
   useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 60);
+    const t = setTimeout(() => inputRef.current?.focus(), 60);
+    return () => clearTimeout(t);
   }, []);
 
-  // Cerrar con Escape
   useEffect(() => {
-    const h = (e) => { if (e.key === 'Escape') onCerrar(); };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && typeof onCerrar === 'function') {
+        onCerrar();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [onCerrar]);
 
-  // ── Lógica de validación en tiempo real ──
-  const nombreTrim  = nombre.trim();
+  const nombreTrim = nombre.trim();
   const nombreFinal = nombreTrim ? formatearNombre(nombreTrim) : '';
-  const idNorm      = normalizarId(nombreTrim);
-  const idFinal     = normalizarId(nombreFinal);
+  const idNorm = normalizarId(nombreTrim);
+  const idFinal = normalizarId(nombreFinal);
 
-  // Detectar duplicado comparando ambas versiones normalizadas
   const duplicado = nombreTrim.length > 0
     ? catalogoTotal.find(
-        t => normalizarId(t.nombre) === idNorm || normalizarId(t.nombre) === idFinal
+        t => normalizarId(t?.nombre || '') === idNorm || normalizarId(t?.nombre || '') === idFinal
       )
     : null;
 
-  // Mensajes de validación
-  const getError = () => {
-    if (!touched) return null;
+  const getError = (force = false) => {
+    if (!force && !touched) return null;
     if (!nombreTrim) return 'El nombre es obligatorio.';
     if (nombreTrim.length < 2) return 'Mínimo 2 caracteres.';
     if (nombreTrim.length > 60) return 'Máximo 60 caracteres.';
+
     if (duplicado) {
       const cat = duplicado.categoria !== 'Personalizado'
         ? ` (categoría: ${duplicado.categoria})`
         : '';
+
       return `"${duplicado.nombre}" ya existe en el catálogo${cat}. No es necesario crearla.`;
     }
+
     return null;
   };
 
-  const errorMsg  = getError();
-  const puedeGuardar = touched && !errorMsg && nombreTrim.length >= 2;
+  const errorMsg = getError();
+  const errorForzado = getError(true);
+  const puedeGuardar = !errorForzado && nombreTrim.length >= 2;
+
+  const cerrar = () => {
+    if (typeof onCerrar === 'function') {
+      onCerrar();
+    }
+  };
 
   const handleConfirmar = () => {
     setTouched(true);
+
     if (!puedeGuardar) return;
-    onConfirmar({
-      id:        normalizarId(nombreFinal),
-      nombre:    nombreFinal,
-      categoria,
-    });
+
+    if (typeof onConfirmar === 'function') {
+      onConfirmar({
+        id: normalizarId(nombreFinal),
+        nombre: nombreFinal,
+        categoria,
+      });
+    }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleConfirmar(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleConfirmar();
+    }
   };
 
   return (
-    /* z-index 700 — por encima del modal de edición (500) y ConfirmModal (600) */
     <div
       className="prj-modal-overlay"
       style={{ zIndex: 700 }}
-      onClick={(e) => e.target === e.currentTarget && onCerrar()}
+      onClick={(e) => e.target === e.currentTarget && cerrar()}
     >
       <div
         className="prj-modal"
@@ -133,8 +160,6 @@ export default function ProjectsTechModal({ catalogoTotal = [], onConfirmar, onC
         aria-modal="true"
         aria-label="Nueva tecnología"
       >
-
-        {/* ── Cabecera ── */}
         <div className="prj-modal-head">
           <div>
             <div className="prj-modal-title">Nueva tecnología</div>
@@ -142,35 +167,42 @@ export default function ProjectsTechModal({ catalogoTotal = [], onConfirmar, onC
               Agrega una herramienta que no está en el catálogo
             </div>
           </div>
-          <button className="prj-modal-close" onClick={onCerrar} title="Cerrar">
+
+          <button
+            type="button"
+            className="prj-modal-close"
+            onClick={cerrar}
+            title="Cerrar"
+          >
             <svg viewBox="0 0 12 12">
-              <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/>
+              <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2" />
             </svg>
           </button>
         </div>
 
-        {/* ── Cuerpo ── */}
         <div className="prj-modal-body" style={{ padding: '18px 20px' }}>
           <div className="row g-3">
-
-            {/* Campo nombre */}
             <div className="col-12">
               <label className="prj-label">
                 Nombre de la tecnología
                 <span className="prj-required-star"> *</span>
               </label>
+
               <input
                 ref={inputRef}
                 className={`prj-input${errorMsg ? ' prj-input-error' : ''}`}
                 value={nombre}
-                onChange={e => { setNombre(e.target.value); setTouched(true); }}
+                onChange={(e) => {
+                  setNombre(e.target.value);
+                  setTouched(true);
+                }}
+                onBlur={() => setTouched(true)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ej: Tauri, Bun, Drizzle ORM..."
                 maxLength={61}
                 autoComplete="off"
               />
 
-              {/* Preview del formato final */}
               {nombreTrim.length >= 2 && !duplicado && (
                 <div className="prj-tech-modal-preview">
                   <span>Se guardará como:</span>
@@ -180,18 +212,19 @@ export default function ProjectsTechModal({ catalogoTotal = [], onConfirmar, onC
                 </div>
               )}
 
-              {/* Error */}
               {errorMsg && (
                 <div className="prj-field-error" role="alert">
-                  <svg viewBox="0 0 12 12" style={{ width: 11, height: 11, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
-                    <circle cx="6" cy="6" r="5"/>
-                    <path d="M6 3.5v3M6 8.5v.5"/>
+                  <svg
+                    viewBox="0 0 12 12"
+                    style={{ width: 11, height: 11, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}
+                  >
+                    <circle cx="6" cy="6" r="5" />
+                    <path d="M6 3.5v3M6 8.5v.5" />
                   </svg>
                   {errorMsg}
                 </div>
               )}
 
-              {/* Hint */}
               {!touched && (
                 <div className="prj-field-hint">
                   El nombre se formateará automáticamente al estilo del catálogo.
@@ -199,32 +232,34 @@ export default function ProjectsTechModal({ catalogoTotal = [], onConfirmar, onC
               )}
             </div>
 
-            {/* Selector de categoría */}
             <div className="col-12">
               <label className="prj-label">Categoría</label>
+
               <select
                 className="prj-select"
                 value={categoria}
-                onChange={e => setCategoria(e.target.value)}
+                onChange={(e) => setCategoria(e.target.value)}
               >
                 {CATEGORIAS_DISPONIBLES.map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
+
               <div className="prj-field-hint">
                 Elegí la categoría que mejor describe esta tecnología.
                 Si no estás seguro, dejá &ldquo;Personalizado&rdquo;.
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* ── Footer ── */}
         <div className="prj-modal-foot">
-          <button type="button" className="prj-btn-cancel" onClick={onCerrar}>
+          <button type="button" className="prj-btn-cancel" onClick={cerrar}>
             Cancelar
           </button>
+
           <button
             type="button"
             className="prj-btn-save"
@@ -232,12 +267,11 @@ export default function ProjectsTechModal({ catalogoTotal = [], onConfirmar, onC
             disabled={touched && !!errorMsg}
           >
             <svg viewBox="0 0 14 14">
-              <path d="M6 1v10M1 6h10" stroke="currentColor" fill="none" strokeWidth="2.2"/>
+              <path d="M6 1v10M1 6h10" stroke="currentColor" fill="none" strokeWidth="2.2" />
             </svg>
             Agregar al catálogo
           </button>
         </div>
-
       </div>
     </div>
   );

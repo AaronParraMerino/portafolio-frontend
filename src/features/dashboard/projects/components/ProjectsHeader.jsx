@@ -8,6 +8,12 @@ import '../styles/projects.css';
    ─ onAgregar  fn()   abre el modal de nuevo proyecto
 ════════════════════════════════════════ */
 export default function ProjectsHeader({ onAgregar }) {
+  const handleAgregar = () => {
+    if (typeof onAgregar === 'function') {
+      onAgregar();
+    }
+  };
+
   return (
     <div className="prj-module-header">
       <div>
@@ -15,9 +21,16 @@ export default function ProjectsHeader({ onAgregar }) {
         <div className="prj-header-title">Mis Proyectos</div>
       </div>
 
-      {/* Botón: texto completo en desktop, solo + en móvil */}
-      <button className="prj-btn-add" onClick={onAgregar} title="Agregar nuevo proyecto">
-        <svg viewBox="0 0 12 12"><path d="M6 1v10M1 6h10"/></svg>
+      <button
+        type="button"
+        className="prj-btn-add"
+        onClick={handleAgregar}
+        title="Agregar nuevo proyecto"
+      >
+        <svg viewBox="0 0 12 12">
+          <path d="M6 1v10M1 6h10" />
+        </svg>
+
         <span className="prj-btn-add-label">Agregar nuevo</span>
       </button>
     </div>
