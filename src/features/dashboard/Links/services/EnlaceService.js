@@ -97,9 +97,10 @@ export const fetchEnlaces = async () => {
 export const postEnlace = async (datos) => {
   const userId = getUserId();
   const body = {
-    nombre:      datos.nombre?.trim()      || null,
-    link:        datos.url?.trim()         || null,
-    descripcion: datos.descripcion?.trim() || null,
+    nombre:        datos.nombre?.trim()          || null,
+    link:          datos.url?.trim()             || null,
+    descripcion:   datos.descripcion?.trim()     || null,
+    plataformaKey: datos.plataformaKey ?? null,
   };
   const res = await fetch(`${API_URL}/enlaces/${userId}`, fetchConfig('POST', body));
   const data = await parseJson(res);
