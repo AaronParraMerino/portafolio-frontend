@@ -14,6 +14,7 @@ import Codigo from '../../features/auth/components/Codigo';
 import CambiarContra from '../../features/auth/components/CambiarContra';
 import SkillsPage from '../../features/dashboard/skills/pages/SkillsPage';
 import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
+import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -29,6 +30,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
               <Route path="experience" element={<ExperiencePage />} />
               <Route path="skills" element={<SkillsPage />} />
                <Route path="enlaces" element={<EnlacePage />} />
+              <Route path="view" element={<ViewPage />} />
             </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

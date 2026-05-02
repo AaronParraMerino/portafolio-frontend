@@ -41,7 +41,7 @@ const NAV_SECTIONS = [
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="3" r="1.5" /><circle cx="2.5" cy="12" r="1.5" /><circle cx="12.5" cy="12" r="1.5" /><path d="M7.5 4.5v3M7.5 7.5L2.5 10.5M7.5 7.5l5 3" /></svg>),
       },
       {
-        id: 'preview', label: 'Vista Portafolio', to: '/dashboard/preview', badgeVariant: 'amber',
+        id: 'preview', label: 'Vista Portafolio', to: '/dashboard/view', badgeVariant: 'amber',
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M.5 7.5S3 2 7.5 2 14.5 7.5 14.5 7.5 12 13 7.5 13 .5 7.5.5 7.5z" /><circle cx="7.5" cy="7.5" r="2.5" /></svg>),
       },
     ],
