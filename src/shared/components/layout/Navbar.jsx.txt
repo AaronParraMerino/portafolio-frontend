@@ -54,12 +54,12 @@ export default function Navbar() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const stored = sessionStorage.getItem('usuario');
+    const stored = localStorage.getItem('usuario');
     if (!stored) return;
     try {
       setUser(JSON.parse(stored));
     } catch (err) {
-      console.warn('Usuario inválido en sessionStorage', err);
+      console.warn('Usuario inválido en localStorage', err);
       setUser(null);
     }
   }, []);
@@ -75,7 +75,7 @@ export default function Navbar() {
       console.error('Error al intentar cerrar sesión:', err);
     }
     sessionStorage.removeItem('tokenPORT');
-    sessionStorage.removeItem('usuario');
+    localStorage.removeItem('usuario');
     window.location.href = '/';
   };
 
