@@ -37,7 +37,7 @@ const NAV_SECTIONS = [
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V1.5M10 3V1.5M2 6.5h11" /></svg>),
       },
       {
-        id: 'networks', label: 'Redes Profesionales', to: '/dashboard/networks',
+        id: 'networks', label: 'Redes Profesionales', to: '/dashboard/enlaces', badge: '3', badgeVariant: 'blue',
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="3" r="1.5" /><circle cx="2.5" cy="12" r="1.5" /><circle cx="12.5" cy="12" r="1.5" /><path d="M7.5 4.5v3M7.5 7.5L2.5 10.5M7.5 7.5l5 3" /></svg>),
       },
       {
