@@ -1,20 +1,154 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BASE_URL from "../../../../services/http/const";
 
 export default function VincularCuenta() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState([
-    { id: "google", name: "Google", connected: true, detail: "usuario@gmail.com", description: "Inicio de sesión rápido con Google" },
-    { id: "discord", name: "Discord", connected: false, detail: "No vinculado", description: "Conecta tu cuenta de Discord" },
-    { id: "github", name: "GitHub", connected: true, detail: "github.com/usuario", description: "Repositorios públicos vinculados" },
-    { id: "gitlab", name: "GitLab", connected: false, detail: "No vinculado", description: "Conecta tus proyectos de GitLab" },
-  ]);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingProvider, setLoadingProvider] = useState("");
+  const [unlinkingProvider, setUnlinkingProvider] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const handleVincular = (id) => console.log("Vincular:", id);
+  const meta = useMemo(() => ({
+    google: { name: "Google", description: "Escoge qué cuenta Google quieres vincular" },
+    discord: { name: "Discord", description: "Conecta tu cuenta de Discord" },
+    github: { name: "GitHub", description: "Conecta o cambia la cuenta de GitHub" },
+    gitlab: { name: "GitLab", description: "Conecta tus proyectos de GitLab" },
+  }), []);
 
-  const handleDesvincular = (id) => {
-    setAccounts(prev => prev.map(a => a.id === id ? { ...a, connected: false, detail: "No vinculado" } : a));
-    console.log("Desvincular:", id);
+  const loadLinkedProviders = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const token = localStorage.getItem("tokenPORT");
+      if (!token) throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+
+      const res = await fetch(`${BASE_URL}/auth/oauth/linked-providers`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.message || "No se pudo cargar el estado de vinculación.");
+
+      const rows = Array.isArray(payload?.data) ? payload.data : [];
+      const merged = ["google", "discord", "github", "gitlab"].map((id) => {
+        const row = rows.find((x) => x.provider === id) || { connected: false, detail: "No vinculado" };
+        return {
+          id,
+          name: meta[id].name,
+          description: meta[id].description,
+          connected: !!row.connected,
+          detail: row.detail || "No vinculado",
+        };
+      });
+
+      setAccounts(merged);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLinkedProviders();
+  }, [meta]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connectStatus = params.get("oauth_connect");
+    const provider = params.get("provider");
+    const connectError = params.get("oauth_connect_error");
+
+    if (!connectStatus || !provider) {
+      return;
+    }
+
+    if (connectStatus === "success") {
+      setNotice(`Cuenta de ${provider} vinculada correctamente.`);
+      setError("");
+    } else {
+      setNotice("");
+      setError(getConnectErrorMessage(connectError, provider));
+    }
+
+    params.delete("oauth_connect");
+    params.delete("provider");
+    params.delete("oauth_connect_error");
+    const next = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${next ? `?${next}` : ""}`);
+  }, []);
+
+  const handleVincular = async (id) => {
+    try {
+      setLoadingProvider(id);
+      setError("");
+      setNotice("");
+      const token = localStorage.getItem("tokenPORT");
+      if (!token) throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+
+      const res = await fetch(`${BASE_URL}/auth/${id}/connect-url`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok || !payload?.url) {
+        throw new Error(payload.message || "No se pudo iniciar la vinculación.");
+      }
+
+      window.location.assign(payload.url);
+    } catch (e) {
+      setError(e.message);
+      setLoadingProvider("");
+    }
+  };
+
+  const handleDesvincular = async (id) => {
+    const account = accounts.find((a) => a.id === id);
+    const providerName = account?.name || id;
+
+    const ok = window.confirm(`¿Seguro que quieres desvincular ${providerName}?`);
+    if (!ok) {
+      return;
+    }
+
+    try {
+      setUnlinkingProvider(id);
+      setError("");
+      setNotice("");
+      const token = localStorage.getItem("tokenPORT");
+      if (!token) throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+
+      const res = await fetch(`${BASE_URL}/auth/${id}/unlink`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload.message || "No se pudo desvincular la cuenta.");
+      }
+
+      setNotice(payload.message || `Cuenta de ${providerName} desvinculada.`);
+      await loadLinkedProviders();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setUnlinkingProvider("");
+    }
   };
 
   return (
@@ -35,6 +169,11 @@ export default function VincularCuenta() {
         <h1 style={titleStyle}>Vincular cuenta</h1>
         <p style={subtitleStyle}>Conecta tu perfil con plataformas externas para enriquecer tu portafolio.</p>
 
+        {error ? <div style={errorStyle}>{error}</div> : null}
+        {notice ? <div style={noticeStyle}>{notice}</div> : null}
+
+        {loading ? <div style={loadingStyle}>Cargando cuentas...</div> : null}
+
         <div style={listStyle}>
           {accounts.map(account => (
             <div key={account.id} style={cardStyle}>
@@ -50,10 +189,29 @@ export default function VincularCuenta() {
                 {account.connected ? (
                   <>
                     <span style={connectedBadgeStyle}>● Conectado</span>
-                    <button style={btnDesvinculaStyle} onClick={() => handleDesvincular(account.id)}>Desvincular</button>
+                    <button
+                      style={btnDesvinculaStyle}
+                      onClick={() => handleVincular(account.id)}
+                      disabled={loadingProvider === account.id || unlinkingProvider === account.id}
+                    >
+                      {loadingProvider === account.id ? "Abriendo..." : "Cambiar cuenta"}
+                    </button>
+                    <button
+                      style={btnUnlinkStyle}
+                      onClick={() => handleDesvincular(account.id)}
+                      disabled={unlinkingProvider === account.id || loadingProvider === account.id}
+                    >
+                      {unlinkingProvider === account.id ? "Desvinculando..." : "Desvincular"}
+                    </button>
                   </>
                 ) : (
-                  <button style={btnVincularStyle} onClick={() => handleVincular(account.id)}>Vincular</button>
+                  <button
+                    style={btnVincularStyle}
+                    onClick={() => handleVincular(account.id)}
+                    disabled={loadingProvider === account.id || unlinkingProvider === account.id}
+                  >
+                    {loadingProvider === account.id ? "Abriendo..." : "Vincular"}
+                  </button>
                 )}
               </div>
             </div>
@@ -111,4 +269,21 @@ const descriptionStyle = { fontSize: 12, color: "#64748b" };
 const actionColStyle = { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 };
 const connectedBadgeStyle = { fontSize: 11, fontWeight: 700, color: "#16a34a", background: "#dcfce7", border: "1px solid #86efac", borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" };
 const btnDesvinculaStyle = { background: "transparent", color: "#374151", border: "1.5px solid #d1d5db", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
+const btnUnlinkStyle = { background: "#fff1f2", color: "#be123c", border: "1.5px solid #fecdd3", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" };
 const btnVincularStyle = { background: "#0ea5e9", color: "#fff", border: "none", borderRadius: 9, padding: "9px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(14,165,233,0.3)" };
+const loadingStyle = { background: "#ffffff", border: "1px solid #e2e8f0", color: "#475569", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
+const errorStyle = { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
+const noticeStyle = { background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
+
+function getConnectErrorMessage(code, provider) {
+  if (code === "already_linked") {
+    return `La cuenta de ${provider} ya está vinculada a otro usuario.`;
+  }
+  if (code === "provider_conflict") {
+    return `Ya tienes una cuenta distinta de ${provider} vinculada.`;
+  }
+  if (code === "blocked") {
+    return "Tu usuario está bloqueado. No se pudo vincular la cuenta.";
+  }
+  return `No se pudo vincular la cuenta de ${provider}. Inténtalo nuevamente.`;
+}
