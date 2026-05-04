@@ -19,6 +19,7 @@ import CambiarContraPage from '../../features/dashboard/configurate/pages/Cambia
 import SesionesActivasPage from '../../features/dashboard/configurate/pages/SesionesActivasPage';
 import EliminarCuentaPage from '../../features/dashboard/configurate/pages/EliminarCuentaPage';
 import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
+import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -52,6 +53,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
         <Route path="/auth/forgot-password" element={<Contraseña />} />
         <Route path="/auth/codigo" element={<Codigo />} />
         <Route path="/auth/cambiar-contraseña" element={<CambiarContra />} />
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
       </Routes>
     </BrowserRouter>
   );
