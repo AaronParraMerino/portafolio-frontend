@@ -8,7 +8,6 @@ export default function SkillForm({ onSave, onCancel, editData }) {
     catalogo_habilidad_id: "",
     nombre_habilidad: "",
     nivel: "basico",
-    es_visible: true, // CAMBIO: es_publico -> es_visible
   });
 
   const [catalog, setCatalog] = useState([]);
@@ -27,37 +26,31 @@ export default function SkillForm({ onSave, onCancel, editData }) {
       }
     };
     loadCatalog();
-    
+
     if (editData) {
-      /**
-       * CAMBIO 3.1: Sincronización Inicial Robusta.
-       * Usamos 'es_visible' para mapear desde el objeto de edición.
-       */
       setFormData({
         tipo: editData.tipo || "tecnica",
         catalogo_habilidad_id: editData.catalogo_habilidad_id || "",
         nombre_habilidad: editData.nombre || editData.nombre_habilidad || "",
         nivel: editData.nivel || "basico",
-        // MEJORA: Forzamos booleano para que el switch de React reconozca 0/1 como false/true
-        es_visible: Boolean(editData.es_visible), // CAMBIO: es_publico -> es_visible
       });
     }
   }, [editData]);
 
   const levelStyles = {
-    basico: { color: "#64748b", bg: "#f1f5f9" },
-    intermedio: { color: "#16a34a", bg: "#f0fdf4" },
-    avanzado: { color: "#2563eb", bg: "#eff6ff" },
-    experto: { color: "#7c3aed", bg: "#f5f3ff" }
+    basico: { color: "var(--gris-texto)", bg: "var(--fondo)" },
+    intermedio: { color: "var(--verde-hover)", bg: "var(--verde-chip)" },
+    avanzado: { color: "var(--azul)", bg: "var(--azul-light)" },
+    experto: { color: "var(--violeta-hover)", bg: "var(--violeta-chip)" },
   };
 
   const handleSearch = (e) => {
     const value = e.target.value;
     setFormData({ ...formData, nombre_habilidad: value, catalogo_habilidad_id: "" });
-    
+
     if (value.trim().length > 0) {
-      const filtered = catalog.filter(s => 
-        s.tipo === formData.tipo && 
+      const filtered = catalog.filter(s =>
+        s.tipo === formData.tipo &&
         s.nombre.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(filtered);
@@ -67,17 +60,18 @@ export default function SkillForm({ onSave, onCancel, editData }) {
   };
 
   const selectSkill = (skill) => {
-    setFormData({ 
-      ...formData, 
-      catalogo_habilidad_id: skill.id, 
-      nombre_habilidad: skill.nombre 
+    setFormData({
+      ...formData,
+      catalogo_habilidad_id: skill.id,
+      nombre_habilidad: skill.nombre,
     });
     setSuggestions([]);
+    setErrors({});
   };
 
   const handleCreatedInCatalog = (newSkill) => {
-    setCatalog([...catalog, newSkill]); 
-    selectSkill(newSkill); 
+    setCatalog([...catalog, newSkill]);
+    selectSkill(newSkill);
     setShowCatalogModal(false);
   };
 
@@ -94,55 +88,204 @@ export default function SkillForm({ onSave, onCancel, editData }) {
 
   return (
     <>
-      <div className="prf-modal-overlay" style={{ position: 'fixed', top:0, left:0, width:'100%', height:'100%', backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1100, display:'flex', justifyContent:'center', alignItems:'center', backdropFilter: 'blur(2px)' }}>
-        <div className="prf-modal-content p-0 shadow-lg" style={{ width: "90%", maxWidth: "500px", borderRadius: "12px", backgroundColor: "white", overflow: 'hidden' }}>
-          
-          {/* Header estilo Dashboard */}
-          <div className="p-3 d-flex justify-content-between align-items-center" style={{ backgroundColor: "#111827", borderBottom: "4px solid var(--azul)" }}>
-            <span className="fw-bold text-white" style={{ fontSize: '1.1rem' }}>
-              {editData ? "✏️ Editar Habilidad" : "➕ Registrar Habilidad"}
+      <style>{`
+        .skill-modal-overlay {
+          position: fixed;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,.65);
+          z-index: 1100;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 16px;
+          backdrop-filter: blur(2px);
+          font-family: var(--font);
+        }
+        .skill-modal-card {
+          width: 90%;
+          max-width: 500px;
+          border-radius: 12px;
+          background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        }
+        .skill-modal-head {
+          padding: 1rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--negro-texto);
+          border-bottom: 4px solid var(--azul);
+        }
+        .skill-form-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--gris-oscuro);
+          text-transform: uppercase;
+          letter-spacing: .05em;
+          margin-bottom: 6px;
+        }
+        .skill-input {
+          font-family: var(--font) !important;
+          font-size: 13px !important;
+          border: 1.5px solid var(--gris-borde) !important;
+          border-radius: 7px !important;
+          color: var(--negro-texto) !important;
+          background: var(--blanco) !important;
+          transition: border-color .15s, box-shadow .15s !important;
+        }
+        .skill-input:focus {
+          outline: none !important;
+          border-color: var(--azul) !important;
+          box-shadow: 0 0 0 3px var(--azul-glow) !important;
+        }
+        .skill-input.is-invalid {
+          border-color: var(--rojo-soft) !important;
+          background: var(--rojo-bg) !important;
+        }
+        .skill-new-btn {
+          border: 1.5px solid var(--azul) !important;
+          background: var(--azul-light) !important;
+          color: var(--azul) !important;
+          font-family: var(--font);
+          font-weight: 700;
+          transition: all .15s ease;
+        }
+        .skill-new-btn:hover {
+          background: var(--azul) !important;
+          color: var(--blanco) !important;
+          box-shadow: 0 3px 10px rgba(0,119,183,.22);
+        }
+        .skill-btn-cancel,
+        .skill-btn-primary {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 18px;
+          border-radius: 7px;
+          font-family: var(--font);
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all .15s ease;
+          white-space: nowrap;
+        }
+        .skill-btn-cancel {
+          border: 1.5px solid var(--gris-borde);
+          background: var(--blanco);
+          color: var(--gris-oscuro);
+        }
+        .skill-btn-cancel:hover {
+          border-color: var(--rojo-soft);
+          color: var(--rojo-soft);
+          background: var(--rojo-bg);
+        }
+        .skill-btn-primary {
+          border: none;
+          background: var(--azul);
+          color: var(--blanco);
+          box-shadow: 0 2px 8px rgba(0,119,183,.18);
+        }
+        .skill-btn-primary:hover {
+          background: var(--azul-hover);
+          color: var(--blanco);
+          box-shadow: 0 4px 12px rgba(0,119,183,.3);
+          transform: translateY(-1px);
+        }
+        .skill-btn-primary:disabled,
+        .skill-btn-cancel:disabled {
+          opacity: .55;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+        .skill-type-label {
+          border-color: var(--azul) !important;
+          color: var(--azul) !important;
+          font-weight: 700;
+        }
+        .btn-check:checked + .skill-type-label {
+          background: var(--azul) !important;
+          color: var(--blanco) !important;
+          border-color: var(--azul) !important;
+        }
+      `}</style>
+
+      <div className="skill-modal-overlay">
+        <div className="skill-modal-card">
+          <div className="skill-modal-head">
+            <span className="fw-bold text-white" style={{ fontSize: "1.1rem" }}>
+              {editData ? "Editar Habilidad" : "Registrar Habilidad"}
             </span>
-            <button className="btn-close btn-close-white" onClick={onCancel} aria-label="Close"></button>
+            <button
+              className="btn-close btn-close-white"
+              onClick={onCancel}
+              aria-label="Cerrar modal"
+              disabled={isSubmitting}
+            ></button>
           </div>
 
           <form onSubmit={handleSubmit} className="p-4">
-            {/* Selector de Tipo (Solo en modo creación) */}
             {!editData && (
               <div className="mb-4">
-                <label className="form-label fw-bold small text-muted text-uppercase">Tipo de Habilidad</label>
+                <label className="skill-form-label">Tipo de Habilidad</label>
                 <div className="btn-group w-100 shadow-sm">
-                  <input type="radio" className="btn-check" id="t-tec" checked={formData.tipo === "tecnica"} onChange={() => setFormData({...formData, tipo: "tecnica", catalogo_habilidad_id: "", nombre_habilidad: ""})} />
-                  <label className="btn btn-outline-primary fw-bold" htmlFor="t-tec">🛠️ Técnica</label>
-                  <input type="radio" className="btn-check" id="t-bla" checked={formData.tipo === "blanda"} onChange={() => setFormData({...formData, tipo: "blanda", catalogo_habilidad_id: "", nombre_habilidad: ""})} />
-                  <label className="btn btn-outline-primary fw-bold" htmlFor="t-bla">🧠 Blanda</label>
+                  <input
+                    type="radio"
+                    className="btn-check"
+                    id="t-tec"
+                    checked={formData.tipo === "tecnica"}
+                    onChange={() => setFormData({ ...formData, tipo: "tecnica", catalogo_habilidad_id: "", nombre_habilidad: "" })}
+                  />
+                  <label className="btn btn-outline-primary skill-type-label" htmlFor="t-tec">Técnica</label>
+                  <input
+                    type="radio"
+                    className="btn-check"
+                    id="t-bla"
+                    checked={formData.tipo === "blanda"}
+                    onChange={() => setFormData({ ...formData, tipo: "blanda", catalogo_habilidad_id: "", nombre_habilidad: "" })}
+                  />
+                  <label className="btn btn-outline-primary skill-type-label" htmlFor="t-bla">Blanda</label>
                 </div>
               </div>
             )}
 
-            {/* Búsqueda / Nombre */}
             <div className="mb-4 position-relative">
               <label className="form-label fw-bold">Nombre de Habilidad *</label>
               <div className="input-group">
-                <input 
-                  type="text" 
-                  className={`form-control ${errors.habilidad ? 'is-invalid' : ''}`}
+                <input
+                  type="text"
+                  className={`form-control skill-input ${errors.habilidad ? "is-invalid" : ""}`}
                   placeholder="Escribe para buscar..."
                   value={formData.nombre_habilidad}
                   onChange={handleSearch}
-                  disabled={!!editData} 
+                  disabled={!!editData}
                 />
                 {!editData && (
-                  <button type="button" className="btn btn-light border fw-bold text-primary" onClick={() => setShowCatalogModal(true)}>
+                  <button
+                    type="button"
+                    className="btn skill-new-btn"
+                    onClick={() => setShowCatalogModal(true)}
+                  >
                     + Nueva
                   </button>
                 )}
               </div>
               {errors.habilidad && <div className="text-danger small mt-1">{errors.habilidad}</div>}
-              
+
               {suggestions.length > 0 && (
-                <ul className="list-group position-absolute w-100 shadow-lg" style={{ zIndex: 100, top: '100%' }}>
+                <ul className="list-group position-absolute w-100 shadow-lg" style={{ zIndex: 100, top: "100%" }}>
                   {suggestions.map(s => (
-                    <li key={s.id} className="list-group-item list-group-item-action py-2" style={{ cursor: 'pointer' }} onClick={() => selectSkill(s)}>
+                    <li
+                      key={s.id}
+                      className="list-group-item list-group-item-action py-2"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => selectSkill(s)}
+                    >
                       {s.nombre}
                     </li>
                   ))}
@@ -150,20 +293,25 @@ export default function SkillForm({ onSave, onCancel, editData }) {
               )}
             </div>
 
-            {/* Selector de Niveles Ovalados */}
             <div className="mb-4">
               <label className="form-label fw-bold small">Nivel de dominio</label>
               <div className="row g-2">
                 {Object.keys(levelStyles).map(lvl => (
                   <div className="col-6" key={lvl}>
-                    <div 
-                      onClick={() => setFormData({...formData, nivel: lvl})}
+                    <div
+                      onClick={() => setFormData({ ...formData, nivel: lvl })}
                       style={{
-                        cursor: 'pointer', padding: '10px', borderRadius: '25px',
-                        textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', textTransform: 'capitalize', transition: '0.2s',
-                        border: formData.nivel === lvl ? `2px solid ${levelStyles[lvl].color}` : '1px solid #e2e8f0',
-                        backgroundColor: formData.nivel === lvl ? levelStyles[lvl].bg : 'white',
-                        color: formData.nivel === lvl ? levelStyles[lvl].color : '#64748b'
+                        cursor: "pointer",
+                        padding: "10px",
+                        borderRadius: "25px",
+                        textAlign: "center",
+                        fontWeight: "bold",
+                        fontSize: "0.85rem",
+                        textTransform: "capitalize",
+                        transition: "0.2s",
+                        border: formData.nivel === lvl ? `2px solid ${levelStyles[lvl].color}` : "1px solid var(--gris-borde)",
+                        backgroundColor: formData.nivel === lvl ? levelStyles[lvl].bg : "var(--blanco)",
+                        color: formData.nivel === lvl ? levelStyles[lvl].color : "var(--gris-texto)",
                       }}
                     >
                       {lvl}
@@ -173,29 +321,21 @@ export default function SkillForm({ onSave, onCancel, editData }) {
               </div>
             </div>
 
-            {/* Switch de Visibilidad Vinculado */}
-            <div className="form-check form-switch mb-4 p-3 border rounded" style={{ backgroundColor: '#f8fafc' }}>
-              <div className="d-flex justify-content-between align-items-center">
-                <label className="form-check-label fw-bold text-muted small" htmlFor="v-switch">
-                  {formData.es_visible ? '● PUBLICAR EN PERFIL' : '○ GUARDAR COMO PRIVADO'}
-                </label>
-                <input 
-                  className="form-check-input" 
-                  type="checkbox" 
-                  role="switch"
-                  id="v-switch" 
-                  checked={formData.es_visible} 
-                  onChange={(e) => setFormData({...formData, es_visible: e.target.checked})} 
-                  style={{ cursor: 'pointer', width: '2.5em' }}
-                />
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
             <div className="d-flex gap-2 justify-content-end pt-3 border-top">
-              <button type="button" className="btn btn-light border px-4 fw-bold" onClick={onCancel} disabled={isSubmitting}>Cancelar</button>
-              <button type="submit" className="btn btn-primary px-4 fw-bold shadow-sm" disabled={isSubmitting} style={{ backgroundColor: 'var(--azul)', border: 'none' }}>
-                {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+              <button
+                type="button"
+                className="skill-btn-cancel"
+                onClick={onCancel}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="skill-btn-primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Guardando..." : editData ? "Guardar Cambios" : "Guardar Habilidad"}
               </button>
             </div>
           </form>
@@ -203,7 +343,7 @@ export default function SkillForm({ onSave, onCancel, editData }) {
       </div>
 
       {showCatalogModal && (
-        <SkillCatalogModal 
+        <SkillCatalogModal
           tipo={formData.tipo}
           onSave={handleCreatedInCatalog}
           onCancel={() => setShowCatalogModal(false)}
@@ -212,3 +352,4 @@ export default function SkillForm({ onSave, onCancel, editData }) {
     </>
   );
 }
+

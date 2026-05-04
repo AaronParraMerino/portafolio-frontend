@@ -20,7 +20,10 @@ export default function SkillsPage() {
   const [confirmConfig, setConfirmConfig] = useState({
     open: false,
     title: "",
+    subtitle: "",
     message: "",
+    confirmLabel: "Confirmar",
+    cancelLabel: "Cancelar",
     variant: "blue",
     icon: "check",
     onConfirm: () => {},
@@ -61,48 +64,24 @@ export default function SkillsPage() {
       }
 
       if (modalMode === "edit") {
-        console.log('🔄 EDIT MODE: enviando a updateUserSkill:', {
-          id: selectedSkill.id,
-          nivel: formData.nivel,
-          es_visible: formData.es_visible,
-          tipo: typeof formData.es_visible,
-        });
-
         const updated = await updateUserSkill(
           selectedSkill.id,
-          formData.nivel,
-          formData.es_visible
+          formData.nivel
         );
 
-        console.log('✅ Respuesta del backend:', updated);
-
-        /**
-         * FIX 3: Comparamos ambos ids como Number para evitar fallos string vs number.
-         * Si el back devuelve un id distinto al esperado, caemos en fallback:
-         * actualizamos igualmente con los campos del formData para que la UI
-         * refleje el cambio aunque el id tuviera alguna inconsistencia.
-         */
         setSkills((prev) => {
           const selectedId = Number(selectedSkill.id);
           const updatedId = Number(updated?.id);
 
-          console.log('🔍 Comparando IDs:', { selectedId, updatedId, match: selectedId === updatedId });
-
-          // Caso normal: el back devolvió el objeto actualizado con id correcto
           if (updatedId && updatedId === selectedId) {
-            console.log('✓ Usando respuesta del backend directamente');
             return prev.map((s) => (Number(s.id) === selectedId ? updated : s));
           }
 
-          // Fallback: actualizamos manualmente con los campos que conocemos
-          // Esto cubre el caso en que el back devuelva estructura inesperada
-          console.log('⚠️ Usando fallback con formData');
           return prev.map((s) => {
             if (Number(s.id) !== selectedId) return s;
             return {
               ...s,
               nivel: formData.nivel,
-              es_visible: Boolean(formData.es_visible),
             };
           });
         });
@@ -111,8 +90,7 @@ export default function SkillsPage() {
       } else {
         const created = await addUserSkill(
           skillIdFromCatalog,
-          formData.nivel,
-          formData.es_visible
+          formData.nivel
         );
         setSkills((prev) => [created, ...prev]);
         showToast("Habilidad añadida", "ok");
@@ -125,10 +103,15 @@ export default function SkillsPage() {
   };
 
   const handleDeleteRequest = (id) => {
+    const skill = skills.find((s) => Number(s.id) === Number(id));
+
     setConfirmConfig({
       open: true,
-      title: "¿Eliminar Habilidad?",
-      message: "Esta acción quitará la habilidad de tu perfil. ¿Deseas continuar?",
+      title: "Eliminar habilidad",
+      subtitle: "Esta acción no se puede deshacer.",
+      message: `Estás por quitar "${skill?.nombre || skill?.nombre_habilidad || "esta habilidad"}" de tu perfil. ¿Deseas continuar?`,
+      confirmLabel: "Sí, eliminar",
+      cancelLabel: "Cancelar",
       variant: "red",
       icon: "warning",
       onConfirm: async () => {
@@ -144,6 +127,11 @@ export default function SkillsPage() {
     });
   };
 
+  const openAddModal = () => {
+    setSelectedSkill(null);
+    setModalMode("add");
+  };
+
   const tecnicas = skills.filter((s) => s.tipo === "tecnica");
   const blandas = skills.filter((s) => s.tipo === "blanda");
 
@@ -151,32 +139,95 @@ export default function SkillsPage() {
     <>
       <style>{`
         .custom-breadcrumb-bar {
-          background-color: #111827;
+          background-color: var(--negro-texto);
           padding: 1.2rem 2.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
           border-bottom: 4px solid var(--azul);
+          font-family: var(--font);
         }
-        .bc-text { color: #6b7280; font-size: 0.85rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .bc-active { color: #ffffff; font-weight: 800; font-size: 1.4rem; margin: 0; }
-        
+        .bc-text {
+          color: var(--gris-texto);
+          font-size: 0.85rem;
+          margin: 0;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .bc-active {
+          color: var(--blanco);
+          font-weight: 800;
+          font-size: 1.4rem;
+          margin: 0;
+        }
+
+        .skill-page-body {
+          min-height: calc(100vh - var(--nav-height, 60px));
+          background: var(--fondo);
+          font-family: var(--font);
+        }
+
+        .skill-add-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 18px;
+          border-radius: 8px;
+          border: none;
+          background: var(--azul);
+          color: var(--blanco);
+          font-family: var(--font);
+          font-size: 0.9rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all .15s ease;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0, 119, 183, .18);
+        }
+        .skill-add-btn:hover {
+          background: var(--azul-hover);
+          color: var(--blanco);
+          box-shadow: 0 4px 12px rgba(0, 119, 183, .3);
+          transform: translateY(-1px);
+        }
+        .skill-add-btn:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px var(--azul-glow), 0 4px 12px rgba(0, 119, 183, .25);
+        }
+
         .skill-long-card {
-          background: white;
+          background: var(--blanco);
           border-radius: 16px;
-          border: 1px solid #e2e8f0;
+          border: 1px solid var(--gris-borde);
           border-left: 6px solid var(--azul);
           padding: 1.2rem;
           margin-bottom: 1rem;
           transition: all 0.2s ease;
+          box-shadow: 0 1px 4px rgba(0,0,0,.04);
         }
-        .skill-long-card:hover { transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
+        .skill-long-card:hover {
+          transform: translateX(4px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
         .section-divider {
-          font-weight: 800; color: #1e293b; text-transform: uppercase;
-          letter-spacing: 1px; margin: 2rem 0 1rem 0; display: flex; align-items: center; gap: 10px;
+          font-weight: 800;
+          color: var(--negro-texto);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin: 2rem 0 1rem 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
         }
-        .section-divider::after { content: ""; flex: 1; height: 1px; background: #cbd5e1; }
+        .section-divider::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: var(--gris-borde);
+        }
 
         .level-circle-badge {
           width: 38px;
@@ -185,37 +236,117 @@ export default function SkillsPage() {
           align-items: center;
           justify-content: center;
           border-radius: 50%;
-          color: white;
+          color: var(--blanco);
           font-weight: 800;
           font-size: 0.7rem;
           text-transform: uppercase;
+          flex-shrink: 0;
         }
 
-        .visibility-tag {
-          font-size: 0.7rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          padding: 2px 8px;
-          border-radius: 4px;
+        .btn-action-skill {
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1.5px solid var(--gris-borde);
+          background: var(--blanco);
+          color: var(--gris-oscuro);
+          font-family: var(--font);
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          white-space: nowrap;
         }
-        .tag-public { color: #16a34a; background: #f0fdf4; }
-        .tag-private { color: #64748b; background: #f8fafc; }
+        .btn-action-skill:hover {
+          transform: translateY(-1px);
+        }
+        .btn-edit:hover {
+          color: var(--amarillo-hover);
+          border-color: var(--amarillo);
+          background: var(--amarillo-chip);
+          box-shadow: 0 3px 10px rgba(251,191,36,.18);
+        }
+        .btn-delete:hover {
+          color: var(--rojo-soft);
+          border-color: var(--rojo-soft);
+          background: var(--rojo-chip);
+          box-shadow: 0 3px 10px rgba(232,85,85,.14);
+        }
 
-        .btn-action-dash {
-          width: 32px;
-          height: 32px;
+        .skill-empty-state {
+          margin: 2.2rem auto 0;
+          max-width: 680px;
+          background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 18px;
+          padding: 2.2rem 2rem;
+          text-align: center;
+          box-shadow: 0 8px 24px rgba(0,0,0,.05);
+          position: relative;
+          overflow: hidden;
+        }
+        .skill-empty-state::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 auto 0;
+          height: 5px;
+          background: linear-gradient(90deg, var(--azul), var(--azul-mid));
+        }
+        .skill-empty-icon {
+          width: 56px;
+          height: 56px;
+          margin: 0 auto 14px;
+          border-radius: 16px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid #cbd5e1;
-          background: #ffffff;
-          transition: all 0.2s;
-          color: #475569;
-          border-radius: 8px;
+          background: var(--azul-light);
+          border: 1.5px solid var(--azul-mid);
+          color: var(--azul);
+          font-size: 1.45rem;
+          font-weight: 800;
         }
-        .btn-edit:hover { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
-        .btn-delete:hover { color: #dc2626; border-color: #dc2626; background: #fef2f2; }
+        .skill-empty-title {
+          margin: 0;
+          color: var(--negro-texto);
+          font-size: clamp(1.15rem, 2vw, 1.45rem);
+          font-weight: 800;
+          letter-spacing: -.02em;
+        }
+        .skill-empty-text {
+          max-width: 480px;
+          margin: .55rem auto 1.35rem;
+          color: var(--gris-texto);
+          font-size: .95rem;
+          line-height: 1.55;
+        }
+        .skill-empty-chips {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 1.45rem;
+        }
+        .skill-empty-chip {
+          padding: 5px 10px;
+          border-radius: 999px;
+          border: 1px solid var(--gris-borde);
+          background: var(--fondo);
+          color: var(--gris-oscuro);
+          font-size: .75rem;
+          font-weight: 700;
+        }
+
+        @media (max-width: 640px) {
+          .custom-breadcrumb-bar {
+            padding: 1rem;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .skill-add-btn {
+            width: 100%;
+          }
+        }
       `}</style>
 
       <div className="custom-breadcrumb-bar shadow">
@@ -224,27 +355,25 @@ export default function SkillsPage() {
           <h2 className="bc-active">HABILIDADES</h2>
         </div>
         <button
-          className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "8px" }}
-          onClick={() => {
-            setSelectedSkill(null);
-            setModalMode("add");
-          }}
+          className="skill-add-btn"
+          onClick={openAddModal}
         >
-          ➕ Agregar Habilidad
+          + Agregar Habilidad
         </button>
       </div>
 
-      <div className="container-fluid p-4" style={{ minHeight: "100vh", background: "#f8fafc" }}>
+      <div className="container-fluid p-4 skill-page-body">
         <div className="row justify-content-center">
           <div className="col-12 col-xl-10">
             {loading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-primary"></div>
               </div>
+            ) : skills.length === 0 ? (
+              <SkillEmptyState onAdd={openAddModal} />
             ) : (
               <>
-                <h5 className="section-divider">🛠️ Habilidades Técnicas</h5>
+                <h5 className="section-divider">Habilidades Técnicas</h5>
                 {tecnicas.length === 0 ? (
                   <p className="text-muted small ms-2">No has registrado habilidades técnicas aún.</p>
                 ) : (
@@ -258,7 +387,7 @@ export default function SkillsPage() {
                   ))
                 )}
 
-                <h5 className="section-divider">🧠 Habilidades Blandas</h5>
+                <h5 className="section-divider">Habilidades Blandas</h5>
                 {blandas.length === 0 ? (
                   <p className="text-muted small ms-2">No hay registros de habilidades blandas.</p>
                 ) : (
@@ -295,44 +424,57 @@ export default function SkillsPage() {
   );
 }
 
+function SkillEmptyState({ onAdd }) {
+  return (
+    <div className="skill-empty-state">
+      <div className="skill-empty-icon">✦</div>
+      <h3 className="skill-empty-title">Aún no tienes habilidades registradas</h3>
+      <p className="skill-empty-text">
+        Agrega habilidades técnicas o blandas para completar tu perfil profesional y mostrar tus fortalezas.
+      </p>
+      <div className="skill-empty-chips" aria-hidden="true">
+        <span className="skill-empty-chip">Técnicas</span>
+        <span className="skill-empty-chip">Blandas</span>
+        <span className="skill-empty-chip">Nivel de dominio</span>
+      </div>
+      <button type="button" className="skill-add-btn" onClick={onAdd}>
+        + Agregar Habilidad
+      </button>
+    </div>
+  );
+}
+
 function SkillLongRow({ skill, onEdit, onDelete }) {
   const levels = {
-    basico: { p: 30, c: "#64748b", n: "BAS" },
-    intermedio: { p: 60, c: "#16a34a", n: "INT" },
-    avanzado: { p: 85, c: "#2563eb", n: "AVZ" },
-    experto: { p: 100, c: "#7c3aed", n: "EXP" },
+    basico: { p: 30, c: "var(--gris-texto)", n: "BAS" },
+    intermedio: { p: 60, c: "var(--verde-hover)", n: "INT" },
+    avanzado: { p: 85, c: "var(--azul)", n: "AVZ" },
+    experto: { p: 100, c: "var(--violeta-hover)", n: "EXP" },
   };
-  const current = levels[skill.nivel] || { p: 0, c: "#ccc", n: "---" };
+  const current = levels[skill.nivel] || { p: 0, c: "var(--gris-borde)", n: "---" };
 
   return (
     <div className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3">
-      {/* INFO PRINCIPAL */}
       <div className="d-flex align-items-center gap-3" style={{ minWidth: "250px", flex: "1" }}>
         <div className="level-circle-badge" style={{ backgroundColor: current.c }}>
           {current.n}
         </div>
         <div>
-          <div className="d-flex align-items-center gap-2 mb-1">
-            <h6 className="fw-bold mb-0" style={{ color: "#1e293b" }}>
-              {skill.nombre}
-            </h6>
-            <span className={`visibility-tag ${skill.es_visible ? "tag-public" : "tag-private"}`}>
-              {skill.es_visible ? "● Público" : "○ Privado"}
-            </span>
-          </div>
+          <h6 className="fw-bold mb-0" style={{ color: "var(--negro-texto)" }}>
+            {skill.nombre || skill.nombre_habilidad}
+          </h6>
           <p className="text-muted mb-0 small">
             {skill.descripcion || "Sin descripción adicional."}
           </p>
         </div>
       </div>
 
-      {/* BARRA DE PROGRESO */}
       <div className="flex-grow-1 mx-md-4" style={{ minWidth: "200px", maxWidth: "400px" }}>
         <div className="d-flex justify-content-between align-items-center mb-1">
           <span className="text-muted fw-bold" style={{ fontSize: "10px" }}>DOMINIO</span>
-          <span className="small fw-bold" style={{ color: "#475569" }}>{current.p}%</span>
+          <span className="small fw-bold" style={{ color: "var(--gris-oscuro)" }}>{current.p}%</span>
         </div>
-        <div className="progress" style={{ height: "8px", backgroundColor: "#e2e8f0", borderRadius: "10px" }}>
+        <div className="progress" style={{ height: "8px", backgroundColor: "var(--gris-borde)", borderRadius: "10px" }}>
           <div
             className="progress-bar"
             style={{
@@ -345,13 +487,22 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
         </div>
       </div>
 
-      {/* ACCIONES */}
       <div className="d-flex gap-2">
-        <button onClick={() => onEdit(skill)} className="btn-action-dash btn-edit" title="Editar">
-          ✎
+        <button
+          onClick={() => onEdit(skill)}
+          className="btn-action-skill btn-edit"
+          title="Editar"
+          aria-label="Editar habilidad"
+        >
+          Editar
         </button>
-        <button onClick={() => onDelete(skill.id)} className="btn-action-dash btn-delete" title="Eliminar">
-          🗑️
+        <button
+          onClick={() => onDelete(skill.id)}
+          className="btn-action-skill btn-delete"
+          title="Eliminar"
+          aria-label="Eliminar habilidad"
+        >
+          Eliminar
         </button>
       </div>
     </div>

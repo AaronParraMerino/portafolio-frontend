@@ -32,17 +32,12 @@ const mapCatalogToFront = (item) => ({
 });
 
 /**
- * FIX 1: Resolución de id robusta.
+ * FIX: Resolución robusta de id y es_visible
  * El modelo Eloquent serializa con el nombre exacto de la PK: id_habilidad_usuario.
- * Después de un fresh()->load(), el campo sigue siendo id_habilidad_usuario.
- * Agregamos Number() para evitar que una comparación string vs number falle en el map().
- *
- * FIX 2: es_visible — el cast Eloquent retorna true/false, pero si el valor viene
- * como 1/0 (ej. en algunos drivers de PostgreSQL), Boolean() lo convierte correctamente.
- * También cubrimos el caso en que venga dentro de data.data anidado.
+ * Convertimos a Number() para evitar comparaciones string vs number fallidas.
+ * Es_visible puede venir como boolean, 1/0 o "true"/"false" desde distintos drivers.
  */
 const mapUserSkillToFront = (item) => {
-  // Resolvemos el id con prioridad al nombre real de la PK del modelo
   const id = Number(
     item.id_habilidad_usuario ??
     item.id_usuario_habilidad ??
@@ -50,7 +45,6 @@ const mapUserSkillToFront = (item) => {
     0
   );
 
-  // es_visible puede venir como boolean, 1/0 o "true"/"false" desde distintos drivers
   const esVisible = item.es_visible === true ||
                     item.es_visible === 1 ||
                     item.es_visible === 'true';
@@ -98,33 +92,29 @@ export const getUserSkills = async () => {
   return lista.map(mapUserSkillToFront);
 };
 
-export const addUserSkill = async (catalogoId, nivel, es_visible) => {
+export const addUserSkill = async (catalogoId, nivel) => {
   const { token, userId } = getAuthData();
-  // 🔧 FIX: Enviar true/false, NO 1/0, para columna boolean de PostgreSQL
   const res = await fetch(`${BASE_URL}/habilidades/usuario/${userId}`, {
     method: 'POST',
     headers: buildHeaders(token),
     body: JSON.stringify({
       habilidad_id: catalogoId,
       nivel,
-      es_visible: Boolean(es_visible), // ← true o false, nunca 1 o 0
     }),
   });
   const data = await parseJson(res);
   return mapUserSkillToFront(data.data || data);
 };
 
-export const updateUserSkill = async (id, nivel, es_visible) => {
+export const updateUserSkill = async (id, nivel) => {
   const { token, userId } = getAuthData();
   const skillId = Number(id);
 
-  // 🔧 FIX: Enviar true/false, NO 1/0, para columna boolean de PostgreSQL
   const res = await fetch(`${BASE_URL}/habilidades/usuario/${userId}/${skillId}`, {
     method: 'PUT',
     headers: buildHeaders(token),
     body: JSON.stringify({
       nivel,
-      es_visible: Boolean(es_visible), // ← true o false, nunca 1 o 0
     }),
   });
 
@@ -140,3 +130,4 @@ export const deleteUserSkill = async (id) => {
   });
   return parseJson(res);
 };
+

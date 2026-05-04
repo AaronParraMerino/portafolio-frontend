@@ -24,34 +24,44 @@ const parseJson = async (res) => {
   return data;
 };
 
-// --- TRADUCCIÓN: Lo que viene de Laravel hacia React ---
+const toBoolean = (value) => {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value === null || value === undefined) return false;
+
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 'true' || normalized === '1' || normalized === 't' || normalized === 'yes' || normalized === 'si';
+};
+
+const normalizeDate = (value) => (value ? String(value).slice(0, 10) : '');
+
+// Traducción: Lo que viene de Laravel hacia React
 const toFrontModel = (exp) => ({
-  id: exp.id_experiencia,
+  id: exp.id_experiencia ?? exp.id,
   tipo_experiencia: exp.tipo === 'academica' ? 'Académica' : 'Laboral',
   empresa: exp.institucion ?? '',
   puesto: exp.cargo ?? '',
-  // Limpieza de fechas para que el input type="date" no de error
-  fecha_inicio: exp.fecha_inicio ? String(exp.fecha_inicio).slice(0, 10) : '',
-  fecha_fin: exp.fecha_fin ? String(exp.fecha_fin).slice(0, 10) : '',
-  // IMPORTANTE: Tu back devuelve cadenas 'true'/'false', convertimos a booleano real
-  actual: exp.es_actual === 'true' || exp.es_actual === true || exp.es_actual === 1,
+  fecha_inicio: normalizeDate(exp.fecha_inicio),
+  fecha_fin: normalizeDate(exp.fecha_fin),
+  actual: toBoolean(exp.es_actual),
   descripcion: exp.descripcion ?? '',
-  es_publico: !!exp.es_publico,
+  es_publico: toBoolean(exp.es_publico),
 });
 
-// --- TRADUCCIÓN: De React hacia tu Laravel ---
-const toBackModel = (formData) => ({
-  tipo: formData.tipo_experiencia === 'Académica' ? 'academica' : 'laboral',
-  institucion: formData.empresa.trim(),
-  cargo: formData.puesto.trim(),
-  // Si la descripción está vacía, mandamos null para que la DB no guarde ""
-  descripcion: formData.descripcion?.trim() || null,
-  fecha_inicio: formData.fecha_inicio || null,
-  // Si es actual, mandamos null. Tu Back PHP también limpia esto, así que doble seguridad
-  fecha_fin: formData.actual ? null : (formData.fecha_fin || null),
-  es_actual: formData.actual, // Mandamos true/false (tu Back PHP usa filter_var)
-  es_publico: formData.es_publico ? 1 : 0,
-});
+// Traducción: De React hacia Laravel
+const toBackModel = (formData) => {
+  const isActual = toBoolean(formData.actual);
+
+  return {
+    tipo: formData.tipo_experiencia === 'Académica' ? 'academica' : 'laboral',
+    institucion: formData.empresa.trim(),
+    cargo: formData.puesto.trim(),
+    descripcion: formData.descripcion?.trim() || null,
+    fecha_inicio: formData.fecha_inicio || null,
+    fecha_fin: isActual ? null : (formData.fecha_fin || null),
+    es_actual: isActual,
+    // NO enviamos es_publico - el backend lo gestiona
+  };
+};
 
 export const getExperiencias = async () => {
   const { token, userId } = getAuthData();
@@ -60,7 +70,6 @@ export const getExperiencias = async () => {
     headers: buildHeaders(token),
   });
   const data = await parseJson(res);
-  // Laravel suele devolver el array en data.data o directamente en data
   const lista = Array.isArray(data) ? data : (data.data || []);
   return lista.map(toFrontModel);
 };
@@ -95,3 +104,4 @@ export const deleteExperiencia = async (id) => {
   });
   return parseJson(res);
 };
+
