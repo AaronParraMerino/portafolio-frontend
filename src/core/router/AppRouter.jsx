@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../../shared/components/layout/MainLayout';
 import HomePage from '../../features/public/home/pages/HomePage';
+import PortfolioSearchPage from '../../features/public/portfolio-search/pages/PortfolioSearchPage';
 import LoginPage from '../../features/auth/pages/LoginPage';
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
@@ -23,13 +24,15 @@ export default function AppRouter({ isBackendAvailable = true }) {
         {/* ── CON Navbar y Footer ── */}
         <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
           <Route index element={<HomePage />} />
-            <Route path="dashboard" element={<DashboardLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="experience" element={<ExperiencePage />} />
-              <Route path="skills" element={<SkillsPage />} />
-               <Route path="enlaces" element={<EnlacePage />} />
-            </Route>
+          <Route path="portafolios" element={<PortfolioSearchPage />} />
+
+          <Route path="dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="experience" element={<ExperiencePage />} />
+            <Route path="skills" element={<SkillsPage />} />
+            <Route path="enlaces" element={<EnlacePage />} />
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
@@ -46,3 +49,4 @@ export default function AppRouter({ isBackendAvailable = true }) {
     </BrowserRouter>
   );
 }
+

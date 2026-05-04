@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /* ── Datos ── */
 const CHIPS_LEFT = [
@@ -29,8 +30,26 @@ const STATS = [
   { num: '18+',    lbl: 'Tecnologías'    },
 ];
 
+
 export default function Hero() {
   const heroRef = useRef(null);
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const goToSearch = (term = searchTerm) => {
+    const cleanTerm = term.trim();
+    if (cleanTerm) {
+      navigate(`/portafolios?q=${encodeURIComponent(cleanTerm)}`);
+      return;
+    }
+    navigate('/portafolios');
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    goToSearch();
+  };
+
 
   return (
     <>
@@ -48,7 +67,7 @@ export default function Hero() {
           text-align: center;
           position: relative;
           overflow: hidden;
-          padding: 60px 24px 90px;
+          padding: 42px 24px 86px;
         }
 
         /* Franja superior azul */
@@ -105,8 +124,6 @@ export default function Hero() {
         .spk-chips-area {
           position: absolute; inset: 0;
           pointer-events: none; overflow: hidden;
-          /* Sin z-index explícito: el DOM order hace que spk-hero-inner
-             (position: relative, z-index: 1) quede siempre encima */
         }
         .spk-chip {
           position: absolute;
@@ -149,19 +166,13 @@ export default function Hero() {
         .cr-4 { top: 415px; right:  25px; transform: rotate( 3deg); }
         .cr-5 { top: 480px; right: -12px; transform: rotate(-2deg); }
 
-        /*
-          CHIPS_TOP — FIX: desplazados al margen exterior del badge.
-          El badge mide ≈ 380px centrado → ocupa de calc(50% - 190px)
-          a calc(50% + 190px). Los chips se posicionan MÁS ALLÁ de ese
-          rango para que no queden tapados por el fondo blanco del badge.
-        */
         .ct-0 { top: 62px; left:  calc(50% - 360px); transform: rotate(-2deg); }
         .ct-1 { top: 62px; left:  calc(50% + 240px); transform: rotate( 2deg); }
 
         /* ══ CONTENIDO CENTRAL ══ */
         .spk-hero-inner {
           position: relative; z-index: 1;
-          max-width: 840px; width: 100%;
+          max-width: 880px; width: 100%;
           display: flex; flex-direction: column;
           align-items: center;
         }
@@ -176,7 +187,7 @@ export default function Hero() {
           font-size: 11px; font-weight: 600;
           color: var(--azul);
           letter-spacing: .07em; text-transform: uppercase;
-          margin-bottom: 30px;
+          margin-bottom: 14px;
           box-shadow: 0 2px 10px rgba(0,119,183,.1);
           animation: fadeUp .5s .05s ease both;
         }
@@ -192,8 +203,8 @@ export default function Hero() {
           font-weight: 800;
           line-height: .94;
           letter-spacing: -.03em;
-          margin-bottom: 26px;
-          animation: fadeUp .5s .12s ease both;
+          margin-bottom: 22px;
+          animation: fadeUp .5s .26s ease both;
         }
         .spk-title-dark { color: var(--negro-texto); }
         .spk-title-blue { color: var(--azul); }
@@ -203,29 +214,163 @@ export default function Hero() {
           width: 48px; height: 3px;
           background: linear-gradient(90deg, var(--azul), var(--azul-mid));
           border-radius: 2px;
-          margin: 0 auto 24px;
-          animation: fadeUp .5s .18s ease both;
+          margin: 0 auto 22px;
+          animation: fadeUp .5s .32s ease both;
         }
 
         /* descripción */
         .spk-hero-desc {
           font-size: 15.5px; line-height: 1.8;
           color: var(--gris-texto);
-          max-width: 500px; margin: 0 auto 36px;
-          animation: fadeUp .5s .23s ease both;
+          max-width: 540px; margin: 0 auto 0;
+          animation: fadeUp .5s .38s ease both;
         }
         .spk-hero-desc strong { color: var(--negro-texto); font-weight: 600; }
+
+        /* ══ BUSCADOR PÚBLICO ══ */
+        .spk-search-box {
+          position: absolute;
+          top: 24px;
+          left: 28px;
+          z-index: 4;
+          width: min(440px, calc(100% - 56px));
+          margin: 0;
+          text-align: left;
+          animation: fadeUp .5s .12s ease both;
+        }
+        .spk-portfolio-search {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          padding: 6px;
+          background: rgba(255,255,255,.94);
+          border: 1.5px solid var(--azul-mid);
+          border-radius: 16px;
+          box-shadow: 0 10px 30px rgba(0,79,124,.10);
+          backdrop-filter: blur(8px);
+        }
+        .spk-search-input-wrap {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 0 6px 0 10px;
+        }
+        .spk-search-icon {
+          width: 30px;
+          height: 30px;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--azul-light);
+          color: var(--azul);
+          flex-shrink: 0;
+        }
+        .spk-search-icon svg {
+          width: 16px;
+          height: 16px;
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 2.2;
+        }
+        .spk-search-input {
+          width: 100%;
+          border: none;
+          outline: none;
+          background: transparent;
+          font-family: var(--font);
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--negro-texto);
+          min-height: 38px;
+        }
+        .spk-search-input::placeholder {
+          color: var(--gris-texto);
+          font-weight: 400;
+        }
+        .spk-search-btn {
+          min-height: 40px;
+          border: none;
+          border-radius: 12px;
+          padding: 0 15px;
+          background: var(--azul);
+          color: var(--blanco);
+          font-family: var(--font);
+          font-size: 13px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: background .15s, box-shadow .15s, transform .15s;
+        }
+        .spk-search-btn:hover {
+          background: var(--azul-hover);
+          box-shadow: 0 6px 18px rgba(0,119,183,.28);
+          transform: translateY(-1px);
+        }
+        .spk-search-btn svg {
+          width: 14px;
+          height: 14px;
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 2.4;
+        }
+        .spk-search-meta {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-top: 9px;
+          padding: 0 2px;
+        }
+        .spk-advanced-btn {
+          border: 1.5px solid var(--gris-borde);
+          background: var(--blanco);
+          color: var(--gris-oscuro);
+          border-radius: 999px;
+          padding: 7px 14px;
+          font-family: var(--font);
+          font-size: 12px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          cursor: pointer;
+          transition: all .15s;
+          white-space: nowrap;
+        }
+        .spk-advanced-btn:hover {
+          border-color: var(--azul);
+          color: var(--azul);
+          background: var(--azul-light);
+          transform: translateY(-1px);
+        }
+        .spk-advanced-btn svg {
+          width: 13px;
+          height: 13px;
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 2.2;
+        }
+
 
         /* ══ MINI STATS ══ */
         .spk-stats {
           display: flex; align-items: stretch;
-          margin-top: 36px;
+          margin-top: 28px;
           background: var(--blanco);
           border: 1.5px solid var(--gris-borde);
           border-radius: 10px;
           overflow: hidden;
           box-shadow: 0 2px 12px rgba(0,0,0,.06);
-          animation: fadeUp .5s .36s ease both;
+          animation: fadeUp .5s .46s ease both;
         }
         .spk-stat {
           padding: 13px 22px; text-align: center;
@@ -283,7 +428,30 @@ export default function Hero() {
           .spk-chips-area { display: none; }
         }
         @media (max-width: 768px) {
-          .spk-hero { padding: 40px 20px 80px; }
+          .spk-hero { padding: 34px 20px 80px; }
+          .spk-search-box {
+            position: relative;
+            top: auto;
+            left: auto;
+            width: min(100%, 560px);
+            margin: 0 auto 28px;
+          }
+          .spk-portfolio-search {
+            flex-direction: column;
+            align-items: stretch;
+            border-radius: 16px;
+          }
+          .spk-search-input-wrap {
+            padding: 4px 8px 4px 10px;
+          }
+          .spk-search-btn {
+            width: 100%;
+          }
+          .spk-search-meta {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
           .spk-stats { flex-wrap: wrap; }
           .spk-stat {
             flex: 1 1 calc(50% - 1px);
@@ -295,7 +463,22 @@ export default function Hero() {
           .spk-copyright { right: 20px; }
         }
         @media (max-width: 520px) {
-          .spk-stats { flex-direction: column; }
+          .spk-badge {
+            font-size: 10px;
+            padding-inline: 12px;
+          }
+          .spk-hero-desc {
+            font-size: 14px;
+            margin-bottom: 20px;
+          }
+          .spk-search-icon {
+            width: 28px;
+            height: 28px;
+          }
+          .spk-search-input {
+            font-size: 13px;
+          }
+          .spk-stats { flex-direction: column; width: min(100%, 340px); }
           .spk-stat { border-right: none !important; }
           .spk-copyright { font-size: 10px; }
         }
@@ -329,6 +512,47 @@ export default function Hero() {
           ))}
         </div>
 
+        {/* Buscador público — esquina superior izquierda */}
+        <div className="spk-search-box" aria-label="Buscador público de portafolios">
+          <form className="spk-portfolio-search" onSubmit={handleSubmit}>
+            <div className="spk-search-input-wrap">
+              <span className="spk-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20l-3.8-3.8" />
+                </svg>
+              </span>
+              <input
+                className="spk-search-input"
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar habilidad, profesión, tecnología o nombre..."
+                aria-label="Buscar portafolios"
+              />
+            </div>
+
+            <button className="spk-search-btn" type="submit">
+              Buscar
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14" />
+                <path d="M13 6l6 6-6 6" />
+              </svg>
+            </button>
+          </form>
+
+          <div className="spk-search-meta">
+            <button className="spk-advanced-btn" type="button" onClick={() => navigate('/portafolios')}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6h16" />
+                <path d="M7 12h10" />
+                <path d="M10 18h4" />
+              </svg>
+              Búsqueda avanzada
+            </button>
+          </div>
+        </div>
+
         {/* Contenido principal */}
         <div className="spk-hero-inner">
 
@@ -356,6 +580,8 @@ export default function Hero() {
             con las empresas que buscan tu stack.
           </p>
 
+
+
           {/* Mini stats */}
           <div className="spk-stats">
             {STATS.map(({ num, lbl, red }) => (
@@ -378,3 +604,4 @@ export default function Hero() {
     </>
   );
 }
+
