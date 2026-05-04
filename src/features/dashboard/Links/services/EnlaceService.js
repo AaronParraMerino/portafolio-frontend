@@ -1,12 +1,12 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 /**
- * Obtiene el ID del usuario desde el sessionStorage.
+ * Obtiene el ID del usuario desde el localStorage.
  * Según tu captura, está dentro del objeto "usuario" -> "id_usuario".
  * Si no lo encuentra, usa el 31 por defecto (aunque esto puede dar 401).
  */
 const getUserId = () => {
-  const userJson = sessionStorage.getItem('usuario');
+  const userJson = localStorage.getItem('usuario');
   if (userJson) {
     try {
       const user = JSON.parse(userJson);
@@ -19,10 +19,10 @@ const getUserId = () => {
 };
 
 /**
- * Configura las cabeceras con el token correcto de tu Session Storage.
+ * Configura las cabeceras con el token correcto de tu localStorage.
  */
 const getHeaders = () => {
-  const token = sessionStorage.getItem('tokenPORT');
+  const token = localStorage.getItem('tokenPORT');
   
   const headers = {
     'Accept': 'application/json',

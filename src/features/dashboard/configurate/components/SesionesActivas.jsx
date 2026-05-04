@@ -1,22 +1,101 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  closeOtherSessions,
+  closeSessionById,
+  fetchMySessions,
+} from "../services/ConfigurateServices";
+
+const relativeTime = (dateInput) => {
+  if (!dateInput) return "Sin actividad reciente";
+
+  const now = Date.now();
+  const date = new Date(dateInput).getTime();
+
+  if (Number.isNaN(date)) return "Sin actividad reciente";
+
+  const diffSeconds = Math.floor((date - now) / 1000);
+  const absSeconds = Math.abs(diffSeconds);
+  const rtf = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
+
+  if (absSeconds < 60) return rtf.format(diffSeconds, "second");
+  if (absSeconds < 3600) return rtf.format(Math.round(diffSeconds / 60), "minute");
+  if (absSeconds < 86400) return rtf.format(Math.round(diffSeconds / 3600), "hour");
+  return rtf.format(Math.round(diffSeconds / 86400), "day");
+};
+
+const toUiSession = (item) => {
+  const browser = [item.navegador_nombre, item.navegador_version]
+    .filter(Boolean)
+    .join(" ") || "Navegador desconocido";
+
+  const location = [item.pais_codigo, item.ip_address]
+    .filter(Boolean)
+    .join(" · ") || "Ubicación no disponible";
+
+  return {
+    id: item.id_rastreo_interno,
+    os: item.sistema_operativo || "Sistema desconocido",
+    browser,
+    location,
+    time: relativeTime(item.ultima_actividad),
+    current: Boolean(item.is_current),
+    icon: item.es_movil ? "mobile" : "desktop",
+  };
+};
 
 export default function SesionesActivas() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState([
-    { id: 1, os: "Windows 11", browser: "Chrome 124", location: "Cochabamba, Bolivia", time: "Hace 2 min", current: true, icon: "desktop" },
-    { id: 2, os: "Android", browser: "Chrome Mobile", location: "Cochabamba, Bolivia", time: "Hace 1 hora", current: false, icon: "mobile" },
-    { id: 3, os: "Ubuntu 22", browser: "Firefox 125", location: "La Paz, Bolivia", time: "Hace 3 días", current: false, icon: "desktop" },
-  ]);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busyIds, setBusyIds] = useState([]);
+  const [closingAll, setClosingAll] = useState(false);
 
-  const handleClose = (id) => {
-    setSessions(prev => prev.filter(s => s.id !== id));
-    console.log("Cerrar sesión:", id);
+  const loadSessions = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await fetchMySessions();
+      setSessions(data.map(toUiSession));
+    } catch (err) {
+      setError(err.message || "No se pudieron cargar las sesiones");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCloseAll = () => {
-    setSessions(prev => prev.filter(s => s.current));
-    console.log("Cerrar todas las demás sesiones");
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const handleClose = async (id) => {
+    setBusyIds((prev) => [...prev, id]);
+    setError("");
+
+    try {
+      await closeSessionById(id);
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      setError(err.message || "No se pudo cerrar la sesión");
+    } finally {
+      setBusyIds((prev) => prev.filter((item) => item !== id));
+    }
+  };
+
+  const handleCloseAll = async () => {
+    setClosingAll(true);
+    setError("");
+
+    try {
+      await closeOtherSessions();
+      await loadSessions();
+    } catch (err) {
+      setError(err.message || "No se pudieron cerrar las demás sesiones");
+    } finally {
+      setClosingAll(false);
+    }
   };
 
   return (
@@ -36,6 +115,12 @@ export default function SesionesActivas() {
 
         <h1 style={titleStyle}>Sesiones activas</h1>
         <p style={subtitleStyle}>Estas son las sesiones abiertas en tu cuenta actualmente.</p>
+
+        {loading && <p style={subtitleStyle}>Cargando sesiones...</p>}
+        {!loading && error && <p style={errorStyle}>{error}</p>}
+        {!loading && !error && sessions.length === 0 && (
+          <p style={subtitleStyle}>No se encontraron sesiones activas.</p>
+        )}
 
         <div style={listStyle}>
           {sessions.map(session => (
@@ -64,18 +149,36 @@ export default function SesionesActivas() {
                 </div>
               </div>
               {!session.current && (
-                <button style={btnCloseStyle} onClick={() => handleClose(session.id)}>Cerrar sesión</button>
+                <button
+                  style={{
+                    ...btnCloseStyle,
+                    opacity: busyIds.includes(session.id) ? 0.65 : 1,
+                    cursor: busyIds.includes(session.id) ? "not-allowed" : "pointer",
+                  }}
+                  disabled={busyIds.includes(session.id)}
+                  onClick={() => handleClose(session.id)}
+                >
+                  {busyIds.includes(session.id) ? "Cerrando..." : "Cerrar sesión"}
+                </button>
               )}
             </div>
           ))}
         </div>
 
-        <button style={btnCloseAllStyle} onClick={handleCloseAll}>
+        <button
+          style={{
+            ...btnCloseAllStyle,
+            opacity: closingAll ? 0.65 : 1,
+            cursor: closingAll ? "not-allowed" : "pointer",
+          }}
+          disabled={closingAll}
+          onClick={handleCloseAll}
+        >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
           </svg>
-          Cerrar todas las demás sesiones
+          {closingAll ? "Cerrando sesiones..." : "Cerrar todas las demás sesiones"}
         </button>
       </div>
     </div>
@@ -88,6 +191,7 @@ const backBtnStyle = { background: 'transparent', border: 'none', color: '#64748
 const badgeStyle = { display: "inline-flex", alignItems: "center", gap: 7, border: "1.5px solid #93c5fd", borderRadius: 999, padding: "5px 14px", background: "#eff8ff", fontSize: 12, fontWeight: 700, color: "#1e40af", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 18 };
 const titleStyle = { fontSize: 34, fontWeight: 900, color: "#0f172a", fontFamily: "Georgia,'Times New Roman',serif", marginBottom: 10, lineHeight: 1.1 };
 const subtitleStyle = { fontSize: 14, color: "#475569", marginBottom: 28 };
+const errorStyle = { fontSize: 14, color: "#dc2626", marginBottom: 18, fontWeight: 600 };
 const listStyle = { display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 };
 const cardStyle = { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" };
 const cardLeftStyle = { display: "flex", alignItems: "center", gap: 14 };

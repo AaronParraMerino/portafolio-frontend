@@ -120,7 +120,7 @@ const QUICK_LINKS = [
 export default function DashboardPage() {
   const [nombreUsuario, setNombreUsuario] = useState('Desarrollador');
   useEffect(() => {
-    const userStr = sessionStorage.getItem('usuario');
+    const userStr = localStorage.getItem('usuario');
     if (userStr) {
       const user = JSON.parse(userStr);
       // Busca 'nombre' o 'name' (dependiendo de cómo lo guardaste)
