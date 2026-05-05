@@ -57,8 +57,10 @@ export default function PortfolioPage() {
 
   const skills = portfolio?.skills_destacadas || [];
   const experiences = portfolio?.experiencias_destacadas || [];
+  const projects = portfolio?.proyectos_destacados || [];
   const remainingSkills = Number(portfolio?.habilidades_restantes || 0);
   const remainingExperiences = Number(portfolio?.experiencias_restantes || 0);
+  const remainingProjects = Number(portfolio?.proyectos_restantes || 0);
   const location = [portfolio?.ciudad, portfolio?.pais].filter(Boolean).join(', ');
 
   return (
@@ -229,6 +231,21 @@ export default function PortfolioPage() {
           line-height: 1.45;
           margin: 0;
         }
+        .spk-public-project-techs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 8px;
+        }
+        .spk-public-project-techs span {
+          background: var(--azul-light);
+          border: 1px solid var(--azul-mid);
+          border-radius: 999px;
+          color: var(--azul-deep);
+          font-size: 10px;
+          font-weight: 700;
+          padding: 4px 7px;
+        }
         .spk-public-preview-note {
           color: var(--gris-texto);
           font-size: 12px;
@@ -291,6 +308,33 @@ export default function PortfolioPage() {
                     <strong>{portfolio.total_habilidades}</strong>
                     <span>Habilidades</span>
                   </div>
+                </div>
+
+                <div className="spk-public-section">
+                  <div className="spk-public-section-head">
+                    <h2>Proyectos publicos</h2>
+                    <span>{portfolio.total_proyectos} visibles</span>
+                  </div>
+                  <div className="spk-public-experience-list">
+                    {projects.length > 0 ? projects.map((project) => (
+                      <div className="spk-public-experience" key={project.id_proyecto}>
+                        <strong>{project.titulo || 'Proyecto sin titulo'}</strong>
+                        {project.descripcion && <p>{project.descripcion}</p>}
+                        {Array.isArray(project.tecnologias) && project.tecnologias.length > 0 && (
+                          <div className="spk-public-project-techs">
+                            {project.tecnologias.map((tech) => <span key={`${project.id_proyecto}-${tech}`}>{tech}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    )) : (
+                      <div className="spk-public-experience">
+                        <p>Sin proyectos publicos.</p>
+                      </div>
+                    )}
+                  </div>
+                  {remainingProjects > 0 && (
+                    <p className="spk-public-preview-note">+{remainingProjects} proyectos publicos mas.</p>
+                  )}
                 </div>
 
                 <div className="spk-public-section">

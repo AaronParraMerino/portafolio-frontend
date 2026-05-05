@@ -45,8 +45,17 @@ export default function PortfolioCard({ portfolio, variant }) {
   const skills = Array.isArray(portfolio.skills_destacadas)
     ? portfolio.skills_destacadas.slice(0, 3)
     : [];
+  const projects = Array.isArray(portfolio.proyectos_destacados)
+    ? portfolio.proyectos_destacados.slice(0, 2).map((project) => project.titulo).filter(Boolean)
+    : [];
   const location = locationFor(portfolio);
   const remainingSkills = Number(portfolio.habilidades_restantes || 0);
+  const remainingProjects = Number(portfolio.proyectos_restantes || 0);
+  const previewItems = variant === 'projects' && projects.length > 0 ? projects : skills;
+  const remainingItems = variant === 'projects' && projects.length > 0 ? remainingProjects : remainingSkills;
+  const previewLabel = variant === 'projects'
+    ? 'Vista previa de proyectos publicos'
+    : 'Vista previa de habilidades destacadas';
 
   return (
     <article className="spk-portfolio-card">
@@ -67,11 +76,11 @@ export default function PortfolioCard({ portfolio, variant }) {
 
       {location && <div className="spk-portfolio-location">{location}</div>}
 
-      <div className="spk-portfolio-skills" aria-label="Vista previa de habilidades destacadas">
-        {skills.length > 0 ? (
+      <div className="spk-portfolio-skills" aria-label={previewLabel}>
+        {previewItems.length > 0 ? (
           <>
-            {skills.map((skill) => <span key={skill}>{skill}</span>)}
-            {remainingSkills > 0 && <span className="spk-chip-more">+{remainingSkills} mas</span>}
+            {previewItems.map((item) => <span key={item}>{item}</span>)}
+            {remainingItems > 0 && <span className="spk-chip-more">+{remainingItems} mas</span>}
           </>
         ) : (
           <span>Perfil publico</span>

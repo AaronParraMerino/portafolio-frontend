@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import ConfirmModal from '../../ui/ConfirmModal'
+import { clearAuthStorage } from '../../utils/authStorage';
 
 /* ── Links de navegación pública ── */
 const NAV_LINKS = [
@@ -51,16 +52,16 @@ export default function Navbar() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const stored = sessionStorage.getItem('usuario');
+    const stored = localStorage.getItem('usuario');
     if (!stored) return;
     try { setUser(JSON.parse(stored)); }
-    catch (err) { console.warn('Usuario inválido en sessionStorage', err); setUser(null); }
+    catch (err) { console.warn('Usuario inválido en localStorage', err); setUser(null); }
   }, []);
 
   /* ── Ejecuta el logout real (solo desde el modal) ── */
   const doLogout = async () => {
     setLoggingOut(true);
-    const token = sessionStorage.getItem('tokenPORT');
+    const token = localStorage.getItem('tokenPORT');
     try {
       await fetch(`${BASE_URL}/auth/logout`, {
         method: 'POST',
@@ -69,9 +70,7 @@ export default function Navbar() {
     } catch (err) {
       console.error('Error al intentar cerrar sesión:', err);
     }
-    sessionStorage.removeItem('tokenPORT');
-    sessionStorage.removeItem('usuario');
-    sessionStorage.removeItem('perfil_cache');
+    clearAuthStorage();
     window.location.href = '/';
   };
 

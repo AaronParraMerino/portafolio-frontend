@@ -12,7 +12,7 @@ const SECTION_CONFIG = [
   {
     key: 'mas_proyectos',
     label: 'Mas proyectos',
-    description: 'Se activara cuando existan proyectos publicos.',
+    description: 'Portafolios con mas proyectos publicos.',
     variant: 'projects',
   },
   {
@@ -29,30 +29,17 @@ const SECTION_CONFIG = [
   },
 ];
 
-function EmptyState({ sectionKey, meta }) {
-  const isProjects = sectionKey === 'mas_proyectos';
-
+function EmptyState() {
   return (
-    <div className={`spk-featured-empty${isProjects ? ' projects' : ''}`}>
+    <div className="spk-featured-empty">
       <div className="spk-empty-icon" aria-hidden="true">
-        {isProjects ? (
-          <svg viewBox="0 0 28 28">
-            <rect x="4" y="6" width="20" height="15" rx="2.5" />
-            <path d="M8 11h5M8 15h8M18 6v15" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 28 28">
-            <circle cx="14" cy="14" r="9" />
-            <path d="M10 14h8M14 10v8" />
-          </svg>
-        )}
+        <svg viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="9" />
+          <path d="M10 14h8M14 10v8" />
+        </svg>
       </div>
-      <strong>{isProjects ? 'Proyectos publicos en preparacion' : 'Aun no hay resultados'}</strong>
-      <span>
-        {isProjects
-          ? (meta?.mensaje_proyectos || 'Este bloque se activara cuando HU-06 publique proyectos visibles para Home.')
-          : 'Cuando existan datos publicos suficientes, este bloque mostrara portafolios destacados.'}
-      </span>
+      <strong>Aun no hay resultados</strong>
+      <span>Cuando existan datos publicos suficientes, este bloque mostrara portafolios destacados.</span>
     </div>
   );
 }
@@ -303,10 +290,6 @@ export default function FeaturedPortfolios() {
           text-align: center;
           padding: 30px;
         }
-        .spk-featured-empty.projects {
-          background: linear-gradient(180deg, #ffffff 0%, var(--azul-light) 100%);
-          border-style: dashed;
-        }
         .spk-empty-icon {
           width: 48px;
           height: 48px;
@@ -428,7 +411,7 @@ export default function FeaturedPortfolios() {
             )}
 
             {!loading && !error && portfolios.length === 0 && (
-              <EmptyState sectionKey={activeSection.key} meta={sections.meta} />
+              <EmptyState />
             )}
 
             {!loading && !error && portfolios.map((portfolio) => (

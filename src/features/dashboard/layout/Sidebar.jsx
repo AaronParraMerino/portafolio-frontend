@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
+import { clearAuthStorage } from '../../../shared/utils/authStorage';
 
 /* ══════════════════════════════════════
    Sidebar.jsx
@@ -95,7 +96,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   /* Ejecuta el logout real (solo llamado desde el modal) */
   const doLogout = async () => {
     setLoggingOut(true);
-    const token = sessionStorage.getItem('tokenPORT');
+    const token = localStorage.getItem('tokenPORT');
     try {
       await fetch(`${BASE_URL}/auth/logout`, {
         method: 'POST',
@@ -104,9 +105,7 @@ export default function Sidebar({ collapsed, onToggle }) {
     } catch (err) {
       console.error('Error al intentar cerrar sesión:', err);
     }
-    sessionStorage.removeItem('tokenPORT');
-    sessionStorage.removeItem('usuario');
-    sessionStorage.removeItem('perfil_cache');
+    clearAuthStorage();
     window.location.href = '/';
   };
 
