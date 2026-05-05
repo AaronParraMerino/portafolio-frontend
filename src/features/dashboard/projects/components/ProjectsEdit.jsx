@@ -801,9 +801,6 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
   );
 }
 
-/* ════════════════════════════════════════
-   ParticipacionModal
-════════════════════════════════════════ */
 function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', initialDescripcion = '', proyectoInfo = null }) {
   const [rol, setRol] = useState(initialRol);
   const [descripcion, setDescripcion] = useState(initialDescripcion);
@@ -971,8 +968,10 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   const [repoEnUsoConfirmPending, setRepoEnUsoConfirmPending] = useState(null);
   const [githubLinked, setGithubLinked] = useState(false);
   const [detectedRepos, setDetectedRepos] = useState([]);
+  const [busquedaDetectedRepos, setBusquedaDetectedRepos] = useState('');
   const [loadingDetectedRepos, setLoadingDetectedRepos] = useState(false);
   const [syncingDetectedRepos, setSyncingDetectedRepos] = useState(false);
+  const [mostrarDetectedRepos, setMostrarDetectedRepos] = useState(false);
   const [detectedReposError, setDetectedReposError] = useState('');
   const [joinRepoPending, setJoinRepoPending] = useState(null);
   const [joiningRepo, setJoiningRepo] = useState(false);
@@ -1348,6 +1347,26 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     setRepoEnUsoConfirmPending(null);
   }, []);
 
+  const repositoriosDetectadosFiltrados = detectedRepos.filter((repo) => {
+    const q = busquedaDetectedRepos.trim().toLowerCase();
+
+    if (!q) return true;
+
+    const nombre = String(repo?.nombre || repo?.repo_github?.repo_name || '').toLowerCase();
+    const url = String(repo?.url_repositorio || '').toLowerCase();
+    const proyectoTitulo = String(repo?.proyecto?.titulo || '').toLowerCase();
+    const estado = String(repo?.estado_vinculacion || '').toLowerCase();
+    const validacion = String(repo?.validacion?.relacion_github || '').toLowerCase();
+
+    return (
+      nombre.includes(q) ||
+      url.includes(q) ||
+      proyectoTitulo.includes(q) ||
+      estado.includes(q) ||
+      validacion.includes(q)
+    );
+  });
+
   return (
     <>
       <div
@@ -1540,76 +1559,134 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     {githubLinked && (
                       <div className="prj-detected-repos-box">
                         <div className="prj-detected-repos-head">
-                          <span>Repositorios detectados de tu cuenta vinculada</span>
+                          <div>
+                            <span>Repositorios detectados de tu cuenta vinculada</span>
 
-                          <button
-                            type="button"
-                            className="prj-detected-sync-btn"
-                            disabled={guardando || syncingDetectedRepos || loadingDetectedRepos}
-                            onClick={handleSyncDetectedRepos}
-                          >
-                            {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar'}
-                          </button>
+                            <div className="prj-field-hint" style={{ marginTop: 4 }}>
+                              {loadingDetectedRepos
+                                ? 'Cargando repositorios...'
+                                : `${detectedRepos.length} repositorio${detectedRepos.length !== 1 ? 's' : ''} detectado${detectedRepos.length !== 1 ? 's' : ''}`}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              className="prj-detected-sync-btn"
+                              disabled={guardando || syncingDetectedRepos || loadingDetectedRepos}
+                              onClick={handleSyncDetectedRepos}
+                            >
+                              {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar'}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="prj-detected-sync-btn"
+                              onClick={() => setMostrarDetectedRepos(prev => !prev)}
+                              disabled={guardando}
+                            >
+                              {mostrarDetectedRepos ? 'Ocultar' : 'Mostrar'}
+                            </button>
+                          </div>
                         </div>
 
                         {detectedReposError && (
                           <div className="prj-detected-error">{detectedReposError}</div>
                         )}
 
-                        {loadingDetectedRepos ? (
-                          <div className="prj-detected-muted">Cargando repositorios detectados...</div>
-                        ) : detectedRepos.length === 0 ? (
-                          <div className="prj-detected-muted">No hay repositorios detectados sin proyecto.</div>
-                        ) : (
-                          <div className="prj-detected-list">
-                            {detectedRepos.map((repo) => {
-                              const url = repo?.url_repositorio || '';
-                              const yaAgregado = form.url_repositorios.includes(url);
-                              const enUso = repo?.estado_vinculacion === 'en_uso';
+                        {mostrarDetectedRepos && (
+                          <>
+                            {detectedRepos.length > 0 && (
+                              <div className="prj-detected-search-wrap">
+                                <input
+                                  type="search"
+                                  className="prj-input prj-detected-search-input"
+                                  value={busquedaDetectedRepos}
+                                  onChange={(e) => setBusquedaDetectedRepos(e.target.value)}
+                                  placeholder="Buscar repositorio por nombre, URL, proyecto o estado..."
+                                  disabled={guardando || loadingDetectedRepos}
+                                />
 
-                              return (
-                                <div key={repo.id_proyecto_repositorio || url} className="prj-detected-item">
-                                  <div className="prj-detected-main">
-                                    <div className="prj-detected-title">{repo.nombre || repo.repo_github?.repo_name || 'Repositorio GitHub'}</div>
-                                    <div className="prj-detected-url">{url}</div>
-                                    {enUso && repo?.proyecto?.titulo && (
-                                      <div className="prj-detected-url">Proyecto: {repo.proyecto.titulo}</div>
-                                    )}
-                                  </div>
+                                {busquedaDetectedRepos && (
+                                  <button
+                                    type="button"
+                                    className="prj-detected-search-clear"
+                                    onClick={() => setBusquedaDetectedRepos('')}
+                                    disabled={guardando || loadingDetectedRepos}
+                                    title="Limpiar búsqueda"
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </div>
+                            )}
 
-                                  <div className="prj-detected-side">
-                                    <span className={`prj-detected-pill ${enUso ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
-                                      {enUso
-                                        ? 'en uso'
-                                        : repo?.validacion?.validado
-                                          ? (repo?.validacion?.relacion_github || 'validado')
-                                          : 'sin validar'}
-                                    </span>
+                            {loadingDetectedRepos ? (
+                              <div className="prj-detected-muted">Cargando repositorios detectados...</div>
+                            ) : detectedRepos.length === 0 ? (
+                              <div className="prj-detected-muted">No hay repositorios detectados sin proyecto.</div>
+                            ) : repositoriosDetectadosFiltrados.length === 0 ? (
+                              <div className="prj-detected-muted">
+                                No se encontraron repositorios con “{busquedaDetectedRepos}”.
+                              </div>
+                            ) : (
+                              <div className="prj-detected-list">
+                                {repositoriosDetectadosFiltrados.map((repo) => {
+                                  const url = repo?.url_repositorio || '';
+                                  const yaAgregado = form.url_repositorios.includes(url);
+                                  const enUso = repo?.estado_vinculacion === 'en_uso';
 
-                                    {enUso ? (
-                                      <button
-                                        type="button"
-                                        className="prj-detected-add-btn"
-                                        onClick={() => handleJoinRepoProject(repo)}
-                                        disabled={!repo?.puede_unirse || guardando || joiningRepo}
-                                      >
-                                        Ser parte
-                                      </button>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        className="prj-detected-add-btn"
-                                        onClick={() => addDetectedRepoToForm(url)}
-                                        disabled={yaAgregado || form.url_repositorios.length >= MAX_REPOSITORIOS_GITHUB || guardando}
-                                      >
-                                        {yaAgregado ? 'Agregado' : 'Usar en proyecto'}
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                                  return (
+                                    <div key={repo.id_proyecto_repositorio || url} className="prj-detected-item">
+                                      <div className="prj-detected-main">
+                                        <div className="prj-detected-title">
+                                          {repo.nombre || repo.repo_github?.repo_name || 'Repositorio GitHub'}
+                                        </div>
+
+                                        <div className="prj-detected-url">{url}</div>
+
+                                        {enUso && repo?.proyecto?.titulo && (
+                                          <div className="prj-detected-url">
+                                            Proyecto: {repo.proyecto.titulo}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div className="prj-detected-side">
+                                        <span className={`prj-detected-pill ${enUso ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
+                                          {enUso
+                                            ? 'en uso'
+                                            : repo?.validacion?.validado
+                                              ? (repo?.validacion?.relacion_github || 'validado')
+                                              : 'sin validar'}
+                                        </span>
+
+                                        {enUso ? (
+                                          <button
+                                            type="button"
+                                            className="prj-detected-add-btn"
+                                            onClick={() => handleJoinRepoProject(repo)}
+                                            disabled={!repo?.puede_unirse || guardando || joiningRepo}
+                                          >
+                                            Ser parte
+                                          </button>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            className="prj-detected-add-btn"
+                                            onClick={() => addDetectedRepoToForm(url)}
+                                            disabled={yaAgregado || form.url_repositorios.length >= MAX_REPOSITORIOS_GITHUB || guardando}
+                                          >
+                                            {yaAgregado ? 'Agregado' : 'Usar en proyecto'}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
