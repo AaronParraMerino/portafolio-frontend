@@ -1,8 +1,10 @@
+import { Link } from 'react-router-dom';
+
 const counterLabels = {
-  updates: 'Actualizacion',
+  updates: '',
   projects: 'Proyectos',
   experience: 'Experiencias',
-  skills: 'Habilidades',
+  skills: 'Habilidades publicas',
 };
 
 function initialsFor(portfolio) {
@@ -44,6 +46,7 @@ export default function PortfolioCard({ portfolio, variant }) {
     ? portfolio.skills_destacadas.slice(0, 3)
     : [];
   const location = locationFor(portfolio);
+  const remainingSkills = Number(portfolio.habilidades_restantes || 0);
 
   return (
     <article className="spk-portfolio-card">
@@ -64,9 +67,12 @@ export default function PortfolioCard({ portfolio, variant }) {
 
       {location && <div className="spk-portfolio-location">{location}</div>}
 
-      <div className="spk-portfolio-skills" aria-label="Habilidades destacadas">
+      <div className="spk-portfolio-skills" aria-label="Vista previa de habilidades destacadas">
         {skills.length > 0 ? (
-          skills.map((skill) => <span key={skill}>{skill}</span>)
+          <>
+            {skills.map((skill) => <span key={skill}>{skill}</span>)}
+            {remainingSkills > 0 && <span className="spk-chip-more">+{remainingSkills} mas</span>}
+          </>
         ) : (
           <span>Perfil publico</span>
         )}
@@ -78,9 +84,9 @@ export default function PortfolioCard({ portfolio, variant }) {
           {variant !== 'updates' && <span>{counterLabels[variant]}</span>}
         </div>
 
-        <a className="spk-portfolio-cta" href={portfolio.ruta_portafolio || '#'}>
+        <Link className="spk-portfolio-cta" to={portfolio.ruta_portafolio || '#'}>
           Ver portafolio
-        </a>
+        </Link>
       </div>
     </article>
   );

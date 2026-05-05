@@ -8,6 +8,12 @@ function initialsFor(portfolio) {
   return `${first}${last}`.toUpperCase();
 }
 
+function formatDate(value) {
+  if (!value) return '';
+  const [year, month, day] = String(value).slice(0, 10).split('-');
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
 export default function PortfolioPage() {
   const { userId } = useParams();
   const [portfolio, setPortfolio] = useState(null);
@@ -19,13 +25,20 @@ export default function PortfolioPage() {
 
     async function loadPortfolio() {
       try {
+        setLoading(true);
         const response = await get(`/home/portafolios/${userId}`);
         if (mounted) {
-          setPortfolio(response?.data ?? null);
-          setError('');
+          if (response?.data) {
+            setPortfolio(response.data);
+            setError('');
+          } else {
+            setPortfolio(null);
+            setError(response?.message || 'Portafolio publico no encontrado.');
+          }
         }
       } catch (err) {
         if (mounted) {
+          setPortfolio(null);
           setError(err?.message || 'No se pudo cargar el portafolio.');
         }
       } finally {
@@ -43,6 +56,9 @@ export default function PortfolioPage() {
   }, [userId]);
 
   const skills = portfolio?.skills_destacadas || [];
+  const experiences = portfolio?.experiencias_destacadas || [];
+  const remainingSkills = Number(portfolio?.habilidades_restantes || 0);
+  const remainingExperiences = Number(portfolio?.experiencias_restantes || 0);
   const location = [portfolio?.ciudad, portfolio?.pais].filter(Boolean).join(', ');
 
   return (
@@ -60,6 +76,8 @@ export default function PortfolioPage() {
         .spk-public-back {
           color: var(--azul);
           display: inline-flex;
+          align-items: center;
+          gap: 6px;
           font-size: 13px;
           font-weight: 700;
           margin-bottom: 18px;
@@ -71,6 +89,13 @@ export default function PortfolioPage() {
           border-radius: 8px;
           box-shadow: 0 12px 34px rgba(17,24,39,.08);
           padding: 28px;
+        }
+        .spk-public-card::before {
+          content: "";
+          display: block;
+          height: 4px;
+          margin: -28px -28px 24px;
+          background: linear-gradient(90deg, var(--azul-deep), var(--azul), var(--azul-mid));
         }
         .spk-public-head {
           display: flex;
@@ -155,14 +180,75 @@ export default function PortfolioPage() {
           font-weight: 700;
           padding: 7px 10px;
         }
+        .spk-public-skills .spk-public-more {
+          background: var(--azul-light);
+        }
+        .spk-public-section {
+          border-top: 1px solid #eef2f6;
+          margin-top: 24px;
+          padding-top: 22px;
+        }
+        .spk-public-section-head {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 12px;
+        }
+        .spk-public-section-head h2 {
+          color: var(--negro-texto);
+          font-size: 17px;
+          font-weight: 800;
+          margin: 0;
+        }
+        .spk-public-section-head span {
+          color: var(--gris-texto);
+          font-family: var(--mono);
+          font-size: 10px;
+          text-transform: uppercase;
+        }
+        .spk-public-experience-list {
+          display: grid;
+          gap: 10px;
+        }
+        .spk-public-experience {
+          background: #f9fbfc;
+          border: 1px solid var(--gris-borde);
+          border-radius: 8px;
+          padding: 13px 14px;
+        }
+        .spk-public-experience strong {
+          color: var(--negro-texto);
+          display: block;
+          font-size: 14px;
+          margin-bottom: 3px;
+        }
+        .spk-public-experience p {
+          color: var(--gris-texto);
+          font-size: 12px;
+          line-height: 1.45;
+          margin: 0;
+        }
+        .spk-public-preview-note {
+          color: var(--gris-texto);
+          font-size: 12px;
+          margin: 10px 0 0;
+        }
         .spk-public-empty {
           color: var(--gris-texto);
+          font-size: 14px;
+          margin: 0;
+          min-height: 180px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           text-align: center;
         }
         @media (max-width: 620px) {
           .spk-public-head { align-items: flex-start; flex-direction: column; }
           .spk-public-stats { grid-template-columns: 1fr; }
           .spk-public-card { padding: 22px; }
+          .spk-public-card::before { margin: -22px -22px 22px; }
         }
       `}</style>
 
@@ -207,10 +293,53 @@ export default function PortfolioPage() {
                   </div>
                 </div>
 
-                <div className="spk-public-skills">
-                  {skills.length > 0
-                    ? skills.map((skill) => <span key={skill}>{skill}</span>)
-                    : <span>Perfil publico</span>}
+                <div className="spk-public-section">
+                  <div className="spk-public-section-head">
+                    <h2>Habilidades destacadas</h2>
+                    <span>{portfolio.total_habilidades} publicas</span>
+                  </div>
+                  <div className="spk-public-skills">
+                    {skills.length > 0
+                      ? (
+                        <>
+                          {skills.map((skill) => <span key={skill}>{skill}</span>)}
+                          {remainingSkills > 0 && <span className="spk-public-more">+{remainingSkills} mas</span>}
+                        </>
+                      )
+                      : <span>Sin habilidades publicas</span>}
+                  </div>
+                  {remainingSkills > 0 && (
+                    <p className="spk-public-preview-note">
+                      Se muestra una vista previa de habilidades destacadas.
+                    </p>
+                  )}
+                </div>
+
+                <div className="spk-public-section">
+                  <div className="spk-public-section-head">
+                    <h2>Experiencia publica</h2>
+                    <span>{portfolio.total_experiencias} visibles</span>
+                  </div>
+                  <div className="spk-public-experience-list">
+                    {experiences.length > 0 ? experiences.map((experience) => (
+                      <div className="spk-public-experience" key={experience.id_experiencia}>
+                        <strong>{experience.cargo || 'Cargo no especificado'}</strong>
+                        <p>{experience.institucion || 'Institucion no especificada'}</p>
+                        <p>
+                          {formatDate(experience.fecha_inicio)}
+                          {' - '}
+                          {experience.es_actual ? 'Actualidad' : formatDate(experience.fecha_fin)}
+                        </p>
+                      </div>
+                    )) : (
+                      <div className="spk-public-experience">
+                        <p>Sin experiencia publica.</p>
+                      </div>
+                    )}
+                  </div>
+                  {remainingExperiences > 0 && (
+                    <p className="spk-public-preview-note">+{remainingExperiences} experiencias publicas mas.</p>
+                  )}
                 </div>
               </>
             )}
