@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../../shared/components/layout/MainLayout';
 import HomePage from '../../features/public/home/pages/HomePage';
+import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 import LoginPage from '../../features/auth/pages/LoginPage';
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
@@ -23,6 +24,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
         {/* ── CON Navbar y Footer ── */}
         <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
           <Route index element={<HomePage />} />
+          <Route path="portfolio/:userId" element={<PortfolioPage />} />
             <Route path="dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="profile" element={<ProfilePage />} />
