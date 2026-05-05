@@ -1,5 +1,12 @@
 import React from 'react';
 
+const formatDateFull = (fechaStr) => {
+  if (!fechaStr) return '';
+  const [year, month, day] = String(fechaStr).slice(0, 10).split('-');
+  if (!year || !month || !day) return fechaStr;
+  return `${day}/${month}/${year}`;
+};
+
 export default function ExperienceDetailModal({ exp, onClose }) {
   if (!exp) return null;
 
@@ -22,9 +29,9 @@ export default function ExperienceDetailModal({ exp, onClose }) {
           width: 100%;
           max-width: 550px;
           max-height: calc(100dvh - 24px);
-          border-radius: 4px;
+          border-radius: 14px;
           overflow: hidden;
-          border: none;
+          border: 1.5px solid var(--gris-borde);
           font-family: var(--font);
           background: var(--blanco);
           display: flex;
@@ -112,7 +119,7 @@ export default function ExperienceDetailModal({ exp, onClose }) {
 
               <p className="mb-1 small fw-bold mt-3" style={{ color: 'var(--gris-texto)' }}>PERIODO</p>
               <p className="mb-0" style={{ color: 'var(--negro-texto)' }}>
-                📅 {exp.fecha_inicio} — {exp.actual ? 'Actualidad' : exp.fecha_fin}
+                📅 {formatDateFull(exp.fecha_inicio)} — {exp.actual ? 'Actualidad' : formatDateFull(exp.fecha_fin)}
               </p>
             </div>
 
@@ -121,7 +128,7 @@ export default function ExperienceDetailModal({ exp, onClose }) {
               style={{
                 background: 'var(--azul-light)',
                 borderLeft: '4px solid var(--azul)',
-                borderRadius: '2px',
+                borderRadius: '6px',
               }}
             >
               <p className="mb-1 small fw-bold" style={{ color: 'var(--gris-texto)' }}>DESCRIPCIÓN</p>

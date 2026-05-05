@@ -1,33 +1,32 @@
 import React, { useState, useEffect, useCallback } from "react";
 import SkillForm from "../components/SkillForm";
-import { 
-  getUserSkills, 
-  addUserSkill, 
-  updateUserSkill, 
+import {
+  getUserSkills,
+  addUserSkill,
+  updateUserSkill,
   deleteUserSkill,
-  createCatalogSkill 
+  createCatalogSkill,
 } from "../services/skillService";
 import ExperienceToast from "../../experience/components/ExperienceToast";
-// Importamos el modal compartido sugerido por tu compañero
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modalMode, setModalMode] = useState(null); // 'add' o 'edit'
+  const [modalMode, setModalMode] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
-  
-  // Estado para el Toast (Notificaciones)
   const [toast, setToast] = useState(null);
-  
-  // Estado para el ConfirmModal compartido
+
   const [confirmConfig, setConfirmConfig] = useState({
     open: false,
     title: "",
+    subtitle: "",
     message: "",
+    confirmLabel: "Confirmar",
+    cancelLabel: "Cancelar",
     variant: "blue",
     icon: "check",
-    onConfirm: () => {}
+    onConfirm: () => {},
   });
 
   const showToast = (msg, tipo = "ok") => {
@@ -47,110 +46,306 @@ export default function SkillsPage() {
     }
   }, []);
 
-  useEffect(() => { loadSkills(); }, [loadSkills]);
+  useEffect(() => {
+    loadSkills();
+  }, [loadSkills]);
 
   const handleSaveRequest = async (formData) => {
     try {
       let skillIdFromCatalog = formData.catalogo_habilidad_id;
 
-      // Si es una habilidad nueva (no está en el catálogo), se crea primero
       if (!skillIdFromCatalog) {
         const newCatalogSkill = await createCatalogSkill(
-          formData.nombre_habilidad, 
+          formData.nombre_habilidad,
           formData.tipo,
-          formData.descripcion_nueva // Usamos la descripción del form
+          formData.descripcion_nueva || ""
         );
         skillIdFromCatalog = newCatalogSkill.id;
       }
 
       if (modalMode === "edit") {
-        await updateUserSkill(selectedSkill.id, formData.nivel, formData.es_publico);
-        showToast("Habilidad actualizada con éxito", "ok");
+        const updated = await updateUserSkill(
+          selectedSkill.id,
+          formData.nivel
+        );
+
+        setSkills((prev) => {
+          const selectedId = Number(selectedSkill.id);
+          const updatedId = Number(updated?.id);
+
+          if (updatedId && updatedId === selectedId) {
+            return prev.map((s) => (Number(s.id) === selectedId ? updated : s));
+          }
+
+          return prev.map((s) => {
+            if (Number(s.id) !== selectedId) return s;
+            return {
+              ...s,
+              nivel: formData.nivel,
+            };
+          });
+        });
+
+        showToast("Habilidad actualizada", "ok");
       } else {
-        await addUserSkill(skillIdFromCatalog, formData.nivel, formData.es_publico);
-        showToast("Habilidad añadida a tu perfil", "ok");
+        const created = await addUserSkill(
+          skillIdFromCatalog,
+          formData.nivel
+        );
+        setSkills((prev) => [created, ...prev]);
+        showToast("Habilidad añadida", "ok");
       }
 
       setModalMode(null);
-      loadSkills();
     } catch (err) {
       showToast(err.message, "error");
     }
   };
 
   const handleDeleteRequest = (id) => {
+    const skill = skills.find((s) => Number(s.id) === Number(id));
+
     setConfirmConfig({
       open: true,
-      title: "¿Eliminar Habilidad?",
-      message: "Esta acción quitará la habilidad de tu perfil público y privado. ¿Deseas continuar?",
+      title: "Eliminar habilidad",
+      subtitle: "Esta acción no se puede deshacer.",
+      message: `Estás por quitar "${skill?.nombre || skill?.nombre_habilidad || "esta habilidad"}" de tu perfil. ¿Deseas continuar?`,
+      confirmLabel: "Sí, eliminar",
+      cancelLabel: "Cancelar",
       variant: "red",
       icon: "warning",
       onConfirm: async () => {
         try {
           await deleteUserSkill(id);
+          setSkills((prev) => prev.filter((s) => Number(s.id) !== Number(id)));
           showToast("Habilidad eliminada", "ok");
-          loadSkills();
         } catch (err) {
           showToast("Error al eliminar", "error");
         }
-        setConfirmConfig(prev => ({ ...prev, open: false }));
-      }
+        setConfirmConfig((prev) => ({ ...prev, open: false }));
+      },
     });
   };
 
-  const tecnicas = skills.filter(s => s.tipo === 'tecnica');
-  const blandas = skills.filter(s => s.tipo === 'blanda');
+  const openAddModal = () => {
+    setSelectedSkill(null);
+    setModalMode("add");
+  };
+
+  const tecnicas = skills.filter((s) => s.tipo === "tecnica");
+  const blandas = skills.filter((s) => s.tipo === "blanda");
 
   return (
     <>
       <style>{`
         .custom-breadcrumb-bar {
-          background-color: #111827;
+          background-color: var(--negro-texto);
           padding: 1.2rem 2.5rem;
           display: flex;
           justify-content: space-between;
           align-items: center;
           border-bottom: 4px solid var(--azul);
+          font-family: var(--font);
         }
-        .bc-text { color: #6b7280; font-size: 0.85rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .bc-active { color: #ffffff; font-weight: 800; font-size: 1.4rem; margin: 0; }
-        
-        .skill-long-card {
-          background: white;
+        .bc-text {
+          color: var(--gris-texto);
+          font-size: 0.85rem;
+          margin: 0;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .bc-active {
+          color: var(--blanco);
+          font-weight: 800;
+          font-size: 1.4rem;
+          margin: 0;
+        }
+
+        .skill-page-body {
+          min-height: calc(100vh - var(--nav-height, 60px));
+          background: var(--fondo);
+          font-family: var(--font);
+        }
+
+        .skill-add-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 18px;
           border-radius: 8px;
-          border: 1px solid #e2e8f0;
-          border-left: 5px solid var(--azul);
+          border: none;
+          background: var(--azul);
+          color: var(--blanco);
+          font-family: var(--font);
+          font-size: 0.9rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all .15s ease;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0, 119, 183, .18);
+        }
+        .skill-add-btn:hover {
+          background: var(--azul-hover);
+          color: var(--blanco);
+          box-shadow: 0 4px 12px rgba(0, 119, 183, .3);
+          transform: translateY(-1px);
+        }
+        .skill-add-btn:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px var(--azul-glow), 0 4px 12px rgba(0, 119, 183, .25);
+        }
+
+        .skill-long-card {
+          background: var(--blanco);
+          border-radius: 16px;
+          border: 1px solid var(--gris-borde);
+          border-left: 6px solid var(--azul);
           padding: 1.2rem;
           margin-bottom: 1rem;
-          transition: 0.2s;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 4px rgba(0,0,0,.04);
         }
-        .skill-long-card:hover { transform: translateX(5px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        
+        .skill-long-card:hover {
+          transform: translateX(4px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
         .section-divider {
-          font-weight: 800; color: #1e293b; text-transform: uppercase;
-          letter-spacing: 1px; margin: 2rem 0 1rem 0; display: flex; align-items: center; gap: 10px;
-        }
-        .section-divider::after { content: ""; flex: 1; height: 1px; background: #cbd5e1; }
-
-        .level-square-badge {
-          padding: 4px 10px;
-          font-size: 0.72rem;
           font-weight: 800;
+          color: var(--negro-texto);
           text-transform: uppercase;
-          border-radius: 0px !important; /* Cuadrado sin puntas */
-          color: white;
-          display: inline-block;
-          letter-spacing: 0.5px;
+          letter-spacing: 1px;
+          margin: 2rem 0 1rem 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .section-divider::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: var(--gris-borde);
         }
 
-        .btn-action-outline {
-          border: 1.5px solid #e2e8f0;
-          background: white;
-          transition: all 0.2s;
+        .level-circle-badge {
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          color: var(--blanco);
+          font-weight: 800;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          flex-shrink: 0;
         }
-        .btn-action-outline:hover {
-          background: #f8fafc;
-          border-color: #cbd5e1;
+
+        .btn-action-skill {
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1.5px solid var(--gris-borde);
+          background: var(--blanco);
+          color: var(--gris-oscuro);
+          font-family: var(--font);
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        .btn-action-skill:hover {
+          transform: translateY(-1px);
+        }
+        .btn-edit:hover {
+          color: var(--amarillo-hover);
+          border-color: var(--amarillo);
+          background: var(--amarillo-chip);
+          box-shadow: 0 3px 10px rgba(251,191,36,.18);
+        }
+        .btn-delete:hover {
+          color: var(--rojo-soft);
+          border-color: var(--rojo-soft);
+          background: var(--rojo-chip);
+          box-shadow: 0 3px 10px rgba(232,85,85,.14);
+        }
+
+        .skill-empty-state {
+          margin: 2.2rem auto 0;
+          max-width: 680px;
+          background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 18px;
+          padding: 2.2rem 2rem;
+          text-align: center;
+          box-shadow: 0 8px 24px rgba(0,0,0,.05);
+          position: relative;
+          overflow: hidden;
+        }
+        .skill-empty-state::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 auto 0;
+          height: 5px;
+          background: linear-gradient(90deg, var(--azul), var(--azul-mid));
+        }
+        .skill-empty-icon {
+          width: 56px;
+          height: 56px;
+          margin: 0 auto 14px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--azul-light);
+          border: 1.5px solid var(--azul-mid);
+          color: var(--azul);
+          font-size: 1.45rem;
+          font-weight: 800;
+        }
+        .skill-empty-title {
+          margin: 0;
+          color: var(--negro-texto);
+          font-size: clamp(1.15rem, 2vw, 1.45rem);
+          font-weight: 800;
+          letter-spacing: -.02em;
+        }
+        .skill-empty-text {
+          max-width: 480px;
+          margin: .55rem auto 1.35rem;
+          color: var(--gris-texto);
+          font-size: .95rem;
+          line-height: 1.55;
+        }
+        .skill-empty-chips {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 1.45rem;
+        }
+        .skill-empty-chip {
+          padding: 5px 10px;
+          border-radius: 999px;
+          border: 1px solid var(--gris-borde);
+          background: var(--fondo);
+          color: var(--gris-oscuro);
+          font-size: .75rem;
+          font-weight: 700;
+        }
+
+        @media (max-width: 640px) {
+          .custom-breadcrumb-bar {
+            padding: 1rem;
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .skill-add-btn {
+            width: 100%;
+          }
         }
       `}</style>
 
@@ -160,41 +355,48 @@ export default function SkillsPage() {
           <h2 className="bc-active">HABILIDADES</h2>
         </div>
         <button
-          className="btn btn-primary px-4 py-2 fw-bold"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
-          onClick={() => { setSelectedSkill(null); setModalMode("add"); }}
+          className="skill-add-btn"
+          onClick={openAddModal}
         >
-          ➕ Agregar Habilidad
+          + Agregar Habilidad
         </button>
       </div>
 
-      <div className="container-fluid p-4" style={{ minHeight: "100vh", background: "#f1f5f9" }}>
+      <div className="container-fluid p-4 skill-page-body">
         <div className="row justify-content-center">
           <div className="col-12 col-xl-10">
             {loading ? (
-              <div className="text-center py-5"><div className="spinner-border text-primary"></div></div>
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary"></div>
+              </div>
+            ) : skills.length === 0 ? (
+              <SkillEmptyState onAdd={openAddModal} />
             ) : (
               <>
-                <h5 className="section-divider">🛠️ Habilidades Técnicas</h5>
-                {tecnicas.length === 0 ? <p className="text-muted small">No hay registros.</p> : (
-                  tecnicas.map(s => (
-                    <SkillLongRow 
-                      key={s.id} 
-                      skill={s} 
-                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }} 
-                      onDelete={handleDeleteRequest} 
+                <h5 className="section-divider">Habilidades Técnicas</h5>
+                {tecnicas.length === 0 ? (
+                  <p className="text-muted small ms-2">No has registrado habilidades técnicas aún.</p>
+                ) : (
+                  tecnicas.map((s) => (
+                    <SkillLongRow
+                      key={s.id}
+                      skill={s}
+                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }}
+                      onDelete={handleDeleteRequest}
                     />
                   ))
                 )}
 
-                <h5 className="section-divider">🧠 Habilidades Blandas</h5>
-                {blandas.length === 0 ? <p className="text-muted small">No hay registros.</p> : (
-                  blandas.map(s => (
-                    <SkillLongRow 
-                      key={s.id} 
-                      skill={s} 
-                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }} 
-                      onDelete={handleDeleteRequest} 
+                <h5 className="section-divider">Habilidades Blandas</h5>
+                {blandas.length === 0 ? (
+                  <p className="text-muted small ms-2">No hay registros de habilidades blandas.</p>
+                ) : (
+                  blandas.map((s) => (
+                    <SkillLongRow
+                      key={s.id}
+                      skill={s}
+                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }}
+                      onDelete={handleDeleteRequest}
                     />
                   ))
                 )}
@@ -204,92 +406,106 @@ export default function SkillsPage() {
         </div>
       </div>
 
-      {/* Modal de Confirmación Compartido */}
-      <ConfirmModal 
+      <ConfirmModal
         {...confirmConfig}
-        onClose={() => setConfirmConfig(prev => ({ ...prev, open: false }))}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, open: false }))}
       />
 
-      {/* Formulario Modal */}
       {modalMode && (
-        <SkillForm 
-          onSave={handleSaveRequest} 
-          onCancel={() => setModalMode(null)} 
-          editData={selectedSkill} 
+        <SkillForm
+          onSave={handleSaveRequest}
+          onCancel={() => setModalMode(null)}
+          editData={selectedSkill}
         />
       )}
 
-      {/* Toast de Experiencia para notificaciones */}
       <ExperienceToast toast={toast} />
     </>
   );
 }
 
+function SkillEmptyState({ onAdd }) {
+  return (
+    <div className="skill-empty-state">
+      <div className="skill-empty-icon">✦</div>
+      <h3 className="skill-empty-title">Aún no tienes habilidades registradas</h3>
+      <p className="skill-empty-text">
+        Agrega habilidades técnicas o blandas para completar tu perfil profesional y mostrar tus fortalezas.
+      </p>
+      <div className="skill-empty-chips" aria-hidden="true">
+        <span className="skill-empty-chip">Técnicas</span>
+        <span className="skill-empty-chip">Blandas</span>
+        <span className="skill-empty-chip">Nivel de dominio</span>
+      </div>
+      <button type="button" className="skill-add-btn" onClick={onAdd}>
+        + Agregar Habilidad
+      </button>
+    </div>
+  );
+}
+
 function SkillLongRow({ skill, onEdit, onDelete }) {
-  const levels = { 
-    basico: { p: 30, c: "#64748b" }, 
-    intermedio: { p: 60, c: "#16a34a" }, 
-    avanzado: { p: 85, c: "#2563eb" }, 
-    experto: { p: 100, c: "#7c3aed" } 
+  const levels = {
+    basico: { p: 30, c: "var(--gris-texto)", n: "BAS" },
+    intermedio: { p: 60, c: "var(--verde-hover)", n: "INT" },
+    avanzado: { p: 85, c: "var(--azul)", n: "AVZ" },
+    experto: { p: 100, c: "var(--violeta-hover)", n: "EXP" },
   };
-  const current = levels[skill.nivel] || { p: 0, c: "#ccc" };
+  const current = levels[skill.nivel] || { p: 0, c: "var(--gris-borde)", n: "---" };
 
   return (
     <div className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3">
-      {/* Nombre y Descripción extraída del Service */}
-      <div style={{ minWidth: "220px", flex: "1 0 200px" }}>
-        <div className="d-flex align-items-center gap-2 mb-1">
-          <h6 className="fw-bold mb-0" style={{ color: "#1e293b", fontSize: '1.05rem' }}>{skill.nombre}</h6>
-          <span className={`badge ${skill.es_publico ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`} style={{ fontSize: '9px' }}>
-            {skill.es_publico ? 'PÚBLICO' : 'PRIVADO'}
-          </span>
+      <div className="d-flex align-items-center gap-3" style={{ minWidth: "250px", flex: "1" }}>
+        <div className="level-circle-badge" style={{ backgroundColor: current.c }}>
+          {current.n}
         </div>
-        <p className="text-muted mb-0" style={{ fontSize: '0.82rem', lineHeight: '1.2' }}>
-          {skill.descripcion || "Sin descripción disponible."}
-        </p>
+        <div>
+          <h6 className="fw-bold mb-0" style={{ color: "var(--negro-texto)" }}>
+            {skill.nombre || skill.nombre_habilidad}
+          </h6>
+          <p className="text-muted mb-0 small">
+            {skill.descripcion || "Sin descripción adicional."}
+          </p>
+        </div>
       </div>
 
-      {/* Barra de Progreso y Nivel Cuadrado */}
-      <div className="flex-grow-1 mx-md-4" style={{ minWidth: "280px" }}>
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <div className="d-flex align-items-center gap-2">
-            <div className="level-square-badge" style={{ backgroundColor: current.c }}>
-              {skill.nivel}
-            </div>
-            <span className="small fw-bold" style={{ color: "#475569" }}>{current.p}%</span>
-          </div>
-          <span className="small text-muted fw-bold" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Dominio</span>
+      <div className="flex-grow-1 mx-md-4" style={{ minWidth: "200px", maxWidth: "400px" }}>
+        <div className="d-flex justify-content-between align-items-center mb-1">
+          <span className="text-muted fw-bold" style={{ fontSize: "10px" }}>DOMINIO</span>
+          <span className="small fw-bold" style={{ color: "var(--gris-oscuro)" }}>{current.p}%</span>
         </div>
-        <div className="progress" style={{ height: "8px", backgroundColor: "#e2e8f0", borderRadius: "20px" }}>
-          <div 
-            className="progress-bar" 
-            style={{ 
-                width: `${current.p}%`, 
-                backgroundColor: current.c, 
-                borderRadius: "20px",
-                transition: 'width 1s ease'
+        <div className="progress" style={{ height: "8px", backgroundColor: "var(--gris-borde)", borderRadius: "10px" }}>
+          <div
+            className="progress-bar"
+            style={{
+              width: `${current.p}%`,
+              backgroundColor: current.c,
+              borderRadius: "10px",
+              transition: "width 1s ease",
             }}
           ></div>
         </div>
       </div>
 
-      {/* Botones con Bordes Visibles */}
       <div className="d-flex gap-2">
-        <button 
-          onClick={() => onEdit(skill)} 
-          className="btn btn-sm btn-action-outline text-primary shadow-sm" 
-          title="Editar habilidad"
+        <button
+          onClick={() => onEdit(skill)}
+          className="btn-action-skill btn-edit"
+          title="Editar"
+          aria-label="Editar habilidad"
         >
-          ✏️ <span className="d-none d-xxl-inline ms-1">Editar</span>
+          Editar
         </button>
-        <button 
-          onClick={() => onDelete(skill.id)} 
-          className="btn btn-sm btn-action-outline text-danger shadow-sm" 
-          title="Eliminar habilidad"
+        <button
+          onClick={() => onDelete(skill.id)}
+          className="btn-action-skill btn-delete"
+          title="Eliminar"
+          aria-label="Eliminar habilidad"
         >
-          🗑️ <span className="d-none d-xxl-inline ms-1">Borrar</span>
+          Eliminar
         </button>
       </div>
     </div>
   );
 }
+
