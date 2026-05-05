@@ -10,7 +10,7 @@ import '../styles/projects.css';
    ─ onEditar     fn(proyecto)
    ─ onEliminar   fn(proyecto)
 ════════════════════════════════════════ */
-export default function ProjectsDotsMenu({ proyecto, onEditar, onEliminar }) {
+export default function ProjectsDotsMenu({ proyecto, onEditar, onEliminar, onDesvincular }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -81,6 +81,20 @@ export default function ProjectsDotsMenu({ proyecto, onEditar, onEliminar }) {
           </button>
 
           <div className="prj-menu-divider" />
+
+          {proyecto?.puede_desvincular_participacion && (
+            <button
+              className="prj-menu-item"
+              type="button"
+              role="menuitem"
+              onClick={action(onDesvincular)}
+            >
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M5.5 2.5h-2A1.5 1.5 0 002 4v6a1.5 1.5 0 001.5 1.5h2M8 4l3 3-3 3M11 7H5" />
+              </svg>
+              Desvincularme
+            </button>
+          )}
 
           <button
             className="prj-menu-item danger"

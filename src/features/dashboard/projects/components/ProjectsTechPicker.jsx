@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { CATALOGO_TECNOLOGIAS } from '../model/projectsModel';
 import ProjectsTechModal from './ProjectsTechModal';
 import '../styles/projects.css';
 
@@ -25,13 +24,15 @@ import '../styles/projects.css';
 const MAX_TECHS = 15;
 
 const ORDEN_CATEGORIAS = [
-  'Frontend',
-  'Backend',
   'Móvil',
   'Lenguaje',
-  'BD',
-  'DevOps',
+  'Framework',
+  'Libreria',
+  'Base de datos',
   'Herramienta',
+  'Servicio',
+  'Plataforma',
+  'Otro',
 ];
 
 function normalizarTexto(value) {
@@ -44,7 +45,39 @@ function getTechNombre(tech) {
 }
 
 function getTechCategoria(tech) {
-  return tech?.categoria || tech?.category || 'Personalizado';
+  return tech?.categoria || tech?.category || 'Otro';
+}
+
+function getTechIcono(tech) {
+  return tech?.icono_url || tech?.iconoUrl || tech?.icon || '';
+}
+
+function getTechColor(tech) {
+  return tech?.color || '';
+}
+
+function isDarkColor(color = '') {
+  const hex = String(color || '').trim().replace('#', '');
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return false;
+  }
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  return ((r * 299 + g * 587 + b * 114) / 1000) < 96;
+}
+
+function colorWithAlpha(color = '', alphaHex = '24') {
+  const hex = String(color || '').trim();
+
+  if (/^#[0-9a-f]{6}$/i.test(hex)) {
+    return `${hex}${alphaHex}`;
+  }
+
+  return '';
 }
 
 function getTechId(tech) {
@@ -66,6 +99,8 @@ function limpiarCatalogo(catalogo = []) {
         id: key,
         nombre,
         categoria: getTechCategoria(item),
+        icono_url: getTechIcono(item),
+        color: getTechColor(item),
       });
     }
   });
@@ -91,10 +126,7 @@ export default function ProjectsTechPicker({
     : [];
 
   const catalogoTotal = useMemo(() => {
-    return limpiarCatalogo([
-      ...CATALOGO_TECNOLOGIAS,
-      ...(Array.isArray(catalogoExtra) ? catalogoExtra : []),
-    ]);
+    return limpiarCatalogo(Array.isArray(catalogoExtra) ? catalogoExtra : []);
   }, [catalogoExtra]);
 
   useEffect(() => {
@@ -163,6 +195,16 @@ export default function ProjectsTechPicker({
   const hayCategorias = Object.keys(porCategoria).length > 0;
   const sinResultados = q.length > 0 && !hayCategorias;
 
+  const getSelectedTech = (nombre) => {
+    const normalized = normalizarTexto(nombre);
+    return catalogoTotal.find(tech => normalizarTexto(tech.nombre) === normalized) || {
+      nombre,
+      categoria: 'Otro',
+      icono_url: '',
+      color: '',
+    };
+  };
+
   const toggle = (nombre) => {
     if (selectedList.includes(nombre)) {
       emitirCambio(selectedList.filter(s => s !== nombre));
@@ -178,13 +220,15 @@ export default function ProjectsTechPicker({
     emitirCambio(selectedList.filter(s => s !== nombre));
   };
 
-  const handleConfirmarNueva = (tech) => {
+  const handleConfirmarNueva = async (tech) => {
+    let finalTech = tech;
+
     if (typeof onAgregarExtra === 'function') {
-      onAgregarExtra(tech);
+      finalTech = await onAgregarExtra(tech) || tech;
     }
 
-    if (!selectedList.includes(tech.nombre) && selectedList.length < MAX_TECHS) {
-      emitirCambio([...selectedList, tech.nombre]);
+    if (!selectedList.includes(finalTech.nombre) && selectedList.length < MAX_TECHS) {
+      emitirCambio([...selectedList, finalTech.nombre]);
     }
 
     setModalAbierto(false);
@@ -212,9 +256,28 @@ export default function ProjectsTechPicker({
             <span className="prj-tech-placeholder">Seleccionar tecnologías...</span>
           ) : (
             <div className="prj-tech-chips" onClick={(e) => e.stopPropagation()}>
-              {selectedList.map(s => (
-                <span key={s} className="prj-tag-chip">
-                  {s}
+              {selectedList.map(s => {
+                const tech = getSelectedTech(s);
+                const dark = isDarkColor(tech.color);
+                const chipStyle = tech.color
+                  ? {
+                      '--tech-color': tech.color,
+                      '--tech-bg': dark ? '#111827' : colorWithAlpha(tech.color, '24'),
+                      '--tech-text': dark ? '#ffffff' : '#111827',
+                    }
+                  : undefined;
+
+                return (
+                <span key={s} className={`prj-tag-chip prj-tech-chip${dark ? ' dark' : ''}`} style={chipStyle}>
+                  <span className="prj-tech-chip-icon" aria-hidden="true">
+                    {tech.icono_url ? (
+                      <img src={tech.icono_url} alt="" />
+                    ) : (
+                      s.slice(0, 1).toUpperCase()
+                    )}
+                  </span>
+
+                  <span className="prj-tech-chip-label">{s}</span>
 
                   <button
                     type="button"
@@ -230,7 +293,8 @@ export default function ProjectsTechPicker({
                     </svg>
                   </button>
                 </span>
-              ))}
+              );
+              })}
             </div>
           )}
 
@@ -359,10 +423,22 @@ export default function ProjectsTechPicker({
                             onChange={() => toggle(tech.nombre)}
                           />
 
+                          <span
+                            className="prj-tech-icon"
+                            style={{ backgroundColor: tech.color || 'transparent' }}
+                            aria-hidden="true"
+                          >
+                            {tech.icono_url ? (
+                              <img src={tech.icono_url} alt="" />
+                            ) : (
+                              tech.nombre.slice(0, 1).toUpperCase()
+                            )}
+                          </span>
+
                           <span className="prj-tech-nombre">{tech.nombre}</span>
 
-                          {tech.categoria === 'Personalizado' && (
-                            <span className="prj-tech-custom-badge">CUSTOM</span>
+                          {tech.categoria && (
+                            <span className="prj-tech-custom-badge">{tech.categoria}</span>
                           )}
 
                           {checked && (

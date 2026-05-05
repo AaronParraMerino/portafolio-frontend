@@ -205,6 +205,71 @@ function getDesarrolladoLabel(proyecto = {}) {
   );
 }
 
+function normalizarTexto(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isDarkColor(color = '') {
+  const hex = String(color || '').trim().replace('#', '');
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return false;
+  }
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  return ((r * 299 + g * 587 + b * 114) / 1000) < 96;
+}
+
+function colorWithAlpha(color = '', alphaHex = '24') {
+  const hex = String(color || '').trim();
+
+  if (/^#[0-9a-f]{6}$/i.test(hex)) {
+    return `${hex}${alphaHex}`;
+  }
+
+  return '';
+}
+
+function getTecnologiaDetalle(proyecto = {}, nombre = '') {
+  const detalles = Array.isArray(proyecto.tecnologias_detalle)
+    ? proyecto.tecnologias_detalle
+    : [];
+
+  return detalles.find(tech => normalizarTexto(tech.nombre) === normalizarTexto(nombre)) || {
+    nombre,
+    icono_url: '',
+    color: '',
+  };
+}
+
+function TechChip({ proyecto, tag, detail = false }) {
+  const tech = getTecnologiaDetalle(proyecto, tag);
+  const dark = isDarkColor(tech.color);
+  const style = tech.color
+    ? {
+        '--tech-color': tech.color,
+        '--tech-bg': dark ? '#111827' : colorWithAlpha(tech.color, '24'),
+        '--tech-text': dark ? '#ffffff' : '#111827',
+      }
+    : undefined;
+
+  return (
+    <span className={`prj-tag-chip prj-tech-chip prj-project-tech-chip${detail ? ' detail' : ''}${dark ? ' dark' : ''}`} style={style}>
+      <span className="prj-tech-chip-icon" aria-hidden="true">
+        {tech.icono_url ? (
+          <img src={tech.icono_url} alt="" />
+        ) : (
+          tag.slice(0, 1).toUpperCase()
+        )}
+      </span>
+      <span className="prj-tech-chip-label">{tag}</span>
+    </span>
+  );
+}
+
 /* ════════════════════════════════════════
    Íconos
 ════════════════════════════════════════ */
@@ -302,7 +367,7 @@ function DetailLink({ href, children, className = '' }) {
 /* ════════════════════════════════════════
    ProjectCard
 ════════════════════════════════════════ */
-export default function ProjectCard({ proyecto = {}, onEditar, onEliminar }) {
+export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDesvincular }) {
   const [idx, setIdx] = useState(0);
   const [mediaExpandida, setMediaExpandida] = useState(false);
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
@@ -506,6 +571,7 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar }) {
             proyecto={proyecto}
             onEditar={onEditar}
             onEliminar={onEliminar}
+            onDesvincular={onDesvincular}
           />
         </div>
       </div>
@@ -540,7 +606,7 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar }) {
         {!detallesExpandidos && proyecto.etiquetas?.length > 0 && (
           <div className="prj-stack-tags">
             {proyecto.etiquetas.map(tag => (
-              <span key={tag} className="prj-chip">{tag}</span>
+              <TechChip key={tag} proyecto={proyecto} tag={tag} />
             ))}
           </div>
         )}
@@ -666,9 +732,7 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar }) {
                 <div className="prj-detail-section-title">Tecnologías</div>
                 <div className="prj-detail-tags">
                   {proyecto.etiquetas.map(tag => (
-                    <span key={`detail-${tag}`} className="prj-chip">
-                      {tag}
-                    </span>
+                    <TechChip key={`detail-${tag}`} proyecto={proyecto} tag={tag} detail />
                   ))}
                 </div>
               </div>

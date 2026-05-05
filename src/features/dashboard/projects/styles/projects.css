@@ -459,6 +459,23 @@
   border: 1px solid color-mix(in srgb, var(--azul) 28%, transparent);
   padding: 2px 7px; border-radius: 4px;
 }
+.prj-project-tech-chip {
+  min-height: 28px;
+  padding: 3px 8px 3px 4px;
+  font-size: 12px;
+}
+.prj-project-tech-chip .prj-tech-chip-icon {
+  width: 22px;
+  height: 22px;
+}
+.prj-project-tech-chip .prj-tech-chip-icon img {
+  width: 15px;
+  height: 15px;
+}
+.prj-project-tech-chip.detail {
+  min-height: 31px;
+  font-size: 13px;
+}
 
 /* Card footer con links — estilo pill del HTML */
 .prj-card-footer {
@@ -634,9 +651,43 @@
   color: var(--azul-deep); font-size: 11px; font-weight: 600;
   padding: 2px 8px; border-radius: 20px; font-family: var(--mono);
 }
+.prj-tech-chip {
+  gap: 7px;
+  min-height: 34px;
+  padding: 4px 9px 4px 5px;
+  border: 1px solid color-mix(in srgb, var(--tech-color, var(--azul)) 30%, transparent);
+  background: var(--tech-bg, var(--azul-light));
+  color: var(--tech-text, var(--azul-deep));
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+}
+.prj-tech-chip-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(255,255,255,.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 1px 2px rgba(15,23,42,.12);
+}
+.prj-tech-chip.dark .prj-tech-chip-icon { background: #111827; color: #fff; border-color: rgba(255,255,255,.28); }
+.prj-tech-chip-icon img { width: 18px; height: 18px; object-fit: contain; display: block; }
+.prj-tech-chip-label { line-height: 1; }
+.prj-tech-chip button { color: currentColor; opacity: .8; margin-left: 1px; }
+.prj-tech-chip button:hover { color: currentColor; opacity: 1; }
 .prj-tag-chip button { background: none; border: none; cursor: pointer; color: var(--azul); padding: 0; display: flex; transition: color .12s; }
 .prj-tag-chip button:hover { color: var(--rojo-soft); }
 .prj-tag-chip button svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+.prj-tech-chip button { color: currentColor; opacity: .8; margin-left: 1px; }
+.prj-tech-chip button:hover { color: currentColor; opacity: 1; }
 .prj-tags-text-input {
   border: none; outline: none; background: transparent;
   font-family: var(--font); font-size: 13px; color: var(--negro-texto); min-width: 80px; flex: 1;
@@ -951,6 +1002,8 @@
 .prj-tech-item.checked { background: var(--azul-light); }
 .prj-tech-item.disabled { opacity: .4; cursor: not-allowed; }
 .prj-tech-item input[type="checkbox"] { cursor: pointer; accent-color: var(--azul); width: 14px; height: 14px; flex-shrink: 0; }
+.prj-tech-icon { width: 24px; height: 24px; border: 1px solid var(--gris-borde); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: #fff !important; color: var(--negro-texto); font-size: 11px; font-weight: 800; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+.prj-tech-icon img { width: 16px; height: 16px; object-fit: contain; display: block; }
 .prj-tech-nombre { flex: 1; }
 .prj-tech-empty { padding: 16px 12px; font-size: 13px; color: var(--gris-texto); text-align: center; font-style: italic; }
 .prj-tech-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--gris-borde); font-size: 11px; color: var(--gris-texto); font-family: var(--mono); background: var(--fondo); }
@@ -1814,4 +1867,177 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+.prj-detected-repos-box {
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.prj-detected-repos-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.prj-detected-sync-btn {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.prj-detected-sync-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.prj-detected-error {
+  color: #b91c1c;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.prj-detected-muted {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.prj-detected-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prj-detected-item {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.prj-detected-main {
+  min-width: 0;
+}
+
+.prj-detected-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.prj-detected-url {
+  font-size: 11px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360px;
+}
+
+.prj-detected-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prj-detected-pill {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prj-detected-pill.ok {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.prj-detected-pill.warn {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde68a;
+}
+
+.prj-detected-add-btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.prj-detected-add-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ─── Participation block inside detected repos ─── */
+.prj-detected-participacion {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.prj-detected-participacion-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prj-detected-participacion-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prj-detected-participacion-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prj-detected-participacion-field .prj-label {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+.prj-detected-participacion-field .prj-input {
+  font-size: 13px;
+  padding: 7px 10px;
+}
+
+/* ── Participation modal (smaller variant) ── */
+.prj-modal-sm {
+  max-width: 460px;
+}
+
+.prj-link-detecting {
+  font-size: 12px;
+  color: var(--azul-acento);
+  padding: 6px 0 2px;
+  animation: prj-fadeIn .2s ease;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BASE_URL from "../../../../services/http/const";
 
@@ -8,8 +8,10 @@ export default function VincularCuenta() {
   const [loading, setLoading] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState("");
   const [unlinkingProvider, setUnlinkingProvider] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); 
   const [notice, setNotice] = useState("");
+  const [githubSyncing, setGithubSyncing] = useState(false);
+  const [githubDetectedCount, setGithubDetectedCount] = useState(0);
 
   const meta = useMemo(() => ({
     google: { name: "Google", description: "Escoge qué cuenta Google quieres vincular" },
@@ -18,7 +20,7 @@ export default function VincularCuenta() {
     gitlab: { name: "GitLab", description: "Conecta tus proyectos de GitLab" },
   }), []);
 
-  const loadLinkedProviders = async () => {
+  const loadLinkedProviders = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -53,11 +55,53 @@ export default function VincularCuenta() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [meta]);
+
+  const loadGithubDetected = useCallback(async (refresh = false) => {
+    try {
+      const token = localStorage.getItem("tokenPORT");
+      if (!token) return;
+
+      const qs = refresh ? "?refresh=true" : "";
+
+      const res = await fetch(`${BASE_URL}/auth/github/repos/detected${qs}`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 404) {
+          setGithubDetectedCount(0);
+          return;
+        }
+
+        throw new Error(payload.message || "No se pudieron obtener los repositorios detectados.");
+      }
+
+      const rows = Array.isArray(payload?.data) ? payload.data : [];
+      setGithubDetectedCount(rows.length);
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
 
   useEffect(() => {
     loadLinkedProviders();
-  }, [meta]);
+  }, [loadLinkedProviders]);
+
+  useEffect(() => {
+    const github = accounts.find((item) => item.id === "github");
+
+    if (github?.connected) {
+      loadGithubDetected(false);
+      return;
+    }
+
+    setGithubDetectedCount(0);
+  }, [accounts, loadGithubDetected]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -151,6 +195,41 @@ export default function VincularCuenta() {
     }
   };
 
+  const handleSyncGithub = async () => {
+    try {
+      setGithubSyncing(true);
+      setError("");
+      setNotice("");
+
+      const token = localStorage.getItem("tokenPORT");
+      if (!token) throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+
+      const syncRes = await fetch(`${BASE_URL}/auth/github/repos/sync`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const syncPayload = await syncRes.json().catch(() => ({}));
+      if (!syncRes.ok) {
+        throw new Error(syncPayload.message || "No se pudo sincronizar con GitHub.");
+      }
+
+      await loadGithubDetected(false);
+
+      const stats = syncPayload?.stats || {};
+      const creados = stats.creados ?? 0;
+      const actualizados = stats.actualizados ?? 0;
+      setNotice(`Sincronización lista. Repos nuevos: ${creados}. Repos actualizados: ${actualizados}.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setGithubSyncing(false);
+    }
+  };
+
   return (
     <div style={pageStyle}>
       <div style={innerStyle}>
@@ -189,6 +268,18 @@ export default function VincularCuenta() {
                 {account.connected ? (
                   <>
                     <span style={connectedBadgeStyle}>● Conectado</span>
+                    {account.id === "github" ? (
+                      <>
+                        <span style={miniInfoStyle}>Repos detectados: {githubDetectedCount}</span>
+                        <button
+                          style={btnSyncStyle}
+                          onClick={handleSyncGithub}
+                          disabled={githubSyncing || loadingProvider === account.id || unlinkingProvider === account.id}
+                        >
+                          {githubSyncing ? "Sincronizando..." : "Sincronizar repos"}
+                        </button>
+                      </>
+                    ) : null}
                     <button
                       style={btnDesvinculaStyle}
                       onClick={() => handleVincular(account.id)}
@@ -268,6 +359,8 @@ const detailStyle = { fontSize: 13, color: "#94a3b8", marginBottom: 2 };
 const descriptionStyle = { fontSize: 12, color: "#64748b" };
 const actionColStyle = { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 };
 const connectedBadgeStyle = { fontSize: 11, fontWeight: 700, color: "#16a34a", background: "#dcfce7", border: "1px solid #86efac", borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" };
+const miniInfoStyle = { fontSize: 11, color: "#0f766e", background: "#ccfbf1", border: "1px solid #99f6e4", borderRadius: 999, padding: "2px 10px", whiteSpace: "nowrap" };
+const btnSyncStyle = { background: "#ecfeff", color: "#0e7490", border: "1.5px solid #a5f3fc", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" };
 const btnDesvinculaStyle = { background: "transparent", color: "#374151", border: "1.5px solid #d1d5db", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
 const btnUnlinkStyle = { background: "#fff1f2", color: "#be123c", border: "1.5px solid #fecdd3", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" };
 const btnVincularStyle = { background: "#0ea5e9", color: "#fff", border: "none", borderRadius: 9, padding: "9px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(14,165,233,0.3)" };

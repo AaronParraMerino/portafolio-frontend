@@ -18,10 +18,12 @@ import {
   crearProyecto,
   actualizarProyecto,
   eliminarProyecto,
+  desvincularParticipacionProyecto,
   uploadImagenes,
   eliminarImagenes,
   uploadDocumentos,
   eliminarDocumentos,
+  attachDetectedReposToProject,
   normalizeProyectoFromApi,
 } from '../services/projectsService';
 import { MOCK_PROYECTOS } from '../model/projectsModel';
@@ -400,6 +402,13 @@ export function useProjects() {
         };
       }
 
+      // 4. Vincular repos detectados (cuenta GitHub vinculada) a proyecto/participación.
+      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
+        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
+          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
+        );
+      }
+
       const actualizados = [mapeado, ...proyectos];
       setProyectos(actualizados);
       guardarEnCache(actualizados);
@@ -409,7 +418,7 @@ export function useProjects() {
 
     } catch (err) {
       console.error('[useProjects] Error creando proyecto:', err.message);
-      mostrarToast('Error al crear el proyecto', 'error');
+      mostrarToast(err.message || 'Error al crear el proyecto', 'error');
       throw err;
     } finally {
       setGuardando(false);
@@ -537,6 +546,12 @@ export function useProjects() {
         documentos: documentosFinales,
       };
 
+      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
+        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
+          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
+        );
+      }
+
       const actualizados = proyectos.map(p =>
         p.id === proyectoId || p.id_proyecto === proyectoId
           ? mapeado
@@ -551,7 +566,7 @@ export function useProjects() {
 
     } catch (err) {
       console.error('[useProjects] Error editando proyecto:', err.message);
-      mostrarToast('Error al actualizar el proyecto', 'error');
+      mostrarToast(err.message || 'Error al actualizar el proyecto', 'error');
       throw err;
     } finally {
       setGuardando(false);
@@ -583,6 +598,31 @@ export function useProjects() {
 
       console.error('[useProjects] Error eliminando proyecto:', err.message);
       mostrarToast('Error al eliminar el proyecto', 'error');
+    }
+  };
+
+  const desvincularParticipacion = async (id) => {
+    const previo = proyectos;
+    const actualizados = proyectos.filter(p => p.id !== id && p.id_proyecto !== id);
+
+    setProyectos(actualizados);
+    guardarEnCache(actualizados);
+
+    try {
+      if (!USAR_MOCK) {
+        await desvincularParticipacionProyecto(id);
+      } else {
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      mostrarToast('Participacion desvinculada');
+
+    } catch (err) {
+      setProyectos(previo);
+      guardarEnCache(previo);
+
+      console.error('[useProjects] Error desvinculando participacion:', err.message);
+      mostrarToast(err.message || 'Error al desvincular la participacion', 'error');
     }
   };
 
@@ -629,6 +669,7 @@ export function useProjects() {
     crearNuevo,
     editarExistente,
     eliminar,
+    desvincularParticipacion,
     refrescar,
 
     limpiarCacheProjects,

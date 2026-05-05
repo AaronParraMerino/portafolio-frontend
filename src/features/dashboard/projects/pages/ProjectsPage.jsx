@@ -19,20 +19,31 @@ import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 export default function ProjectsPage() {
   const {
     proyectos, loading, guardando, toast,
-    crearNuevo, editarExistente, eliminar,
+    crearNuevo, editarExistente, eliminar, desvincularParticipacion,
   } = useProjects();
 
   // ── Estado UI puro ──
   const [editando,   setEditando]   = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [confirmDetach, setConfirmDetach] = useState(null);
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
 
   // ── Callbacks ──
-  const handleGuardar = async (datos, archivo) => {
-    if (editando === 'nuevo') await crearNuevo(datos, archivo);
-    else await editarExistente(editando.id, datos, archivo);
+  const handleGuardar = async (
+    datos,
+    imagenesNuevas = [],
+    imagenesAEliminar = [],
+    documentosNuevos = [],
+    documentosAEliminar = []
+  ) => {
+    if (editando === 'nuevo') {
+      await crearNuevo(datos, imagenesNuevas, imagenesAEliminar, documentosNuevos, documentosAEliminar);
+    } else {
+      await editarExistente(editando.id, datos, imagenesNuevas, imagenesAEliminar, documentosNuevos, documentosAEliminar);
+    }
+
     setEditando(null);
   };
 
@@ -92,6 +103,7 @@ export default function ProjectsPage() {
           busqueda={busqueda}
           onEditar={(p)     => setEditando(p)}
           onEliminar={(p)   => setConfirmDel(p)}
+          onDesvincular={(p) => setConfirmDetach(p)}
           onAgregar={() => setEditando('nuevo')}
         />
 
@@ -117,6 +129,17 @@ export default function ProjectsPage() {
         icon="warning"
         onConfirm={async () => { await eliminar(confirmDel.id); setConfirmDel(null); }}
         onClose={() => setConfirmDel(null)}
+      />
+
+      <ConfirmModal
+        open={!!confirmDetach}
+        title="¿Desvincular participación?"
+        message={`Vas a quitar tu participación de "${confirmDetach?.titulo}". El proyecto seguirá existiendo para los demás participantes.`}
+        confirmLabel="Sí, desvincularme"
+        variant="blue"
+        icon="warning"
+        onConfirm={async () => { await desvincularParticipacion(confirmDetach.id); setConfirmDetach(null); }}
+        onClose={() => setConfirmDetach(null)}
       />
 
       <ProjectsToast toast={toast} />

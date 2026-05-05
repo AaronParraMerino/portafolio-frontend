@@ -16,6 +16,7 @@
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
+const TECNOLOGIAS_CACHE_KEY = 'projects_tecnologias_catalogo_cache_v1';
 
 // ═══════════════════════════════════════════
 // CONSTANTES
@@ -26,8 +27,8 @@ export const PROJECT_LIMITS = {
   videosYoutube: 2,
   repositoriosGithub: 3,
   documentos: 2,
-  imageMaxMb: 5,
-  documentMaxMb: 10,
+  imageMaxMb: 2,
+  documentMaxMb: 2,
 };
 
 export const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'md', 'odt'];
@@ -37,11 +38,18 @@ export const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'md', 'o
 // ═══════════════════════════════════════════
 
 function getSession() {
-  const raw = sessionStorage.getItem('usuario');
+  const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
 
   if (!raw) throw new Error('No hay sesión activa');
 
-  const user = JSON.parse(raw);
+  let user;
+
+  try {
+    user = JSON.parse(raw);
+  } catch {
+    throw new Error('Sesion invalida. Inicia sesion nuevamente');
+  }
+
   const userId = user.id || user.id_usuario || user.idUsuario;
 
   if (!userId) throw new Error('ID de usuario no encontrado');
@@ -107,6 +115,209 @@ async function apiFetchFormData(url, formData, options = {}) {
 
   const text = await res.text();
   return text ? JSON.parse(text) : {};
+}
+
+// ═══════════════════════════════════════════
+// GITHUB VINCULADO / REPOS DETECTADOS
+// ═══════════════════════════════════════════
+
+export async function isGithubLinked() {
+  const data = await apiFetch(`${API_URL}/auth/oauth/linked-providers`);
+
+  const providers = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+      ? data.data
+      : [];
+
+  const github = providers.find((item) => item.provider === 'github');
+  return Boolean(github?.connected);
+}
+
+export async function getGithubDetectedRepos({ refresh = false } = {}) {
+  const qs = refresh ? '?refresh=true' : '';
+  const data = await apiFetch(`${API_URL}/auth/github/repos/detected${qs}`);
+
+  return Array.isArray(data?.data) ? data.data : [];
+}
+
+export async function syncGithubRepos() {
+  return apiFetch(`${API_URL}/auth/github/repos/sync`, {
+    method: 'POST',
+  });
+}
+
+function mapTecnologiaTipoToCategoria(tipo = '') {
+  switch (tipo) {
+    case 'lenguaje':
+      return 'Lenguaje';
+    case 'framework':
+      return 'Framework';
+    case 'libreria':
+      return 'Libreria';
+    case 'base_datos':
+      return 'Base de datos';
+    case 'herramienta':
+      return 'Herramienta';
+    case 'servicio':
+      return 'Servicio';
+    case 'plataforma':
+      return 'Plataforma';
+    default:
+      return 'Otro';
+  }
+}
+
+function normalizeTecnologiaFromApi(tech = {}) {
+  return {
+    id: tech.id_tecnologia || tech.id || tech.nombre,
+    nombre: tech.nombre,
+    tipo: tech.tipo || 'otro',
+    categoria: mapTecnologiaTipoToCategoria(tech.tipo || 'otro'),
+    icono_url: tech.icono_url || null,
+    color: tech.color || null,
+  };
+}
+
+function normalizeTecnologiasCatalogo(items = []) {
+  return items
+    .map(normalizeTecnologiaFromApi)
+    .filter((tech) => tech.nombre);
+}
+
+function readTecnologiasCatalogoCache() {
+  try {
+    const raw = localStorage.getItem(TECNOLOGIAS_CACHE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    const items = Array.isArray(parsed?.items) ? parsed.items : [];
+    return normalizeTecnologiasCatalogo(items);
+  } catch {
+    return [];
+  }
+}
+
+function writeTecnologiasCatalogoCache(items = []) {
+  try {
+    localStorage.setItem(TECNOLOGIAS_CACHE_KEY, JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      items: normalizeTecnologiasCatalogo(items),
+    }));
+  } catch {}
+}
+
+function sameTecnologiasCatalogo(a = [], b = []) {
+  return JSON.stringify(normalizeTecnologiasCatalogo(a)) === JSON.stringify(normalizeTecnologiasCatalogo(b));
+}
+
+export function getTecnologiasCatalogoCache() {
+  return readTecnologiasCatalogoCache();
+}
+
+export async function refreshTecnologiasCatalogoCache() {
+  const res = await fetch(`${API_URL}/tecno`, {
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    return readTecnologiasCatalogoCache();
+  }
+
+  const data = await res.json();
+  const items = Array.isArray(data?.data) ? data.data : [];
+  const tecnologias = normalizeTecnologiasCatalogo(items);
+  const cached = readTecnologiasCatalogoCache();
+
+  if (!sameTecnologiasCatalogo(cached, tecnologias)) {
+    writeTecnologiasCatalogoCache(tecnologias);
+  }
+
+  return tecnologias;
+}
+
+export async function getTecnologiasCatalogo() {
+  const cached = readTecnologiasCatalogoCache();
+
+  if (cached.length > 0) {
+    return cached;
+  }
+
+  return refreshTecnologiasCatalogoCache();
+}
+
+export async function ensureTecnologia(nombre, tipo = null) {
+  const cleanNombre = typeof nombre === 'string' ? nombre.trim() : '';
+
+  if (!cleanNombre) {
+    throw new Error('Nombre de tecnologia invalido');
+  }
+
+  const body = tipo ? { tipo } : {};
+  const data = await apiFetch(`${API_URL}/tecno/${encodeURIComponent(cleanNombre)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const tecnologia = normalizeTecnologiaFromApi(data?.data || {});
+
+  if (tecnologia?.nombre) {
+    const cached = readTecnologiasCatalogoCache();
+    writeTecnologiasCatalogoCache([...cached, tecnologia]);
+  }
+
+  return tecnologia;
+}
+
+export async function getGithubRepoLanguages(repoUrl) {
+  const cleanUrl = typeof repoUrl === 'string' ? repoUrl.trim() : '';
+
+  if (!cleanUrl) {
+    return [];
+  }
+
+  const data = await apiFetch(`${API_URL}/auth/github/repos/languages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ repo_url: cleanUrl }),
+  });
+
+  return Array.isArray(data?.languages) ? data.languages : [];
+}
+
+export async function attachDetectedReposToProject(idProyecto, repositoriosIds = [], participacionData = {}) {
+  const ids = Array.isArray(repositoriosIds)
+    ? repositoriosIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
+    : [];
+
+  if (!idProyecto || ids.length === 0) {
+    return { status: 'skipped' };
+  }
+
+  const body = {
+    id_proyecto: Number(idProyecto),
+    repositorios_ids: ids,
+  };
+
+  if (participacionData && typeof participacionData === 'object') {
+    const rol = typeof participacionData.rol === 'string' ? participacionData.rol.trim() : '';
+    const descripcion = typeof participacionData.descripcion_aporte === 'string' ? participacionData.descripcion_aporte.trim() : '';
+
+    if (rol || descripcion) {
+      body.participacion_data = {};
+      if (rol) body.participacion_data.rol = rol;
+      if (descripcion) body.participacion_data.descripcion_aporte = descripcion;
+    }
+  }
+
+  return apiFetch(`${API_URL}/auth/github/repos/attach-to-project`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -323,7 +534,16 @@ function evidenciaTipo(ev = {}) {
 }
 
 function isVisible(ev = {}) {
-  return ev.es_visible === undefined || ev.es_visible === null || ev.es_visible === true || ev.es_visible === 1;
+  if (ev.es_visible === undefined || ev.es_visible === null) return true;
+
+  const value = String(ev.es_visible).trim().toLowerCase();
+  return ev.es_visible === true || ev.es_visible === 1 || ['true', '1', 't', 'si', 'yes'].includes(value);
+}
+
+function isTruthyDb(value) {
+  if (value === true || value === 1) return true;
+
+  return ['true', '1', 't', 'si', 'yes'].includes(String(value ?? '').trim().toLowerCase());
 }
 
 function sortByOrden(a, b) {
@@ -342,7 +562,7 @@ function getImagenesFromEvidencias(evidencias = []) {
 function getPortadaFromEvidencias(evidencias = [], imagenes = []) {
   const portada = evidencias
     .filter(isVisible)
-    .find(ev => ['imagen', 'captura'].includes(evidenciaTipo(ev)) && (ev.es_portada === true || ev.es_portada === 1));
+    .find(ev => ['imagen', 'captura'].includes(evidenciaTipo(ev)) && isTruthyDb(ev.es_portada));
 
   return formatUrl(evidenciaUrl(portada)) || imagenes[0] || '';
 }
@@ -533,6 +753,7 @@ export function normalizeProyectoFromApi(project = {}) {
     es_publico: esPublico,
 
     etiquetas: getEtiquetasFromProject(project),
+    tecnologias_detalle: Array.isArray(project.tecnologias_detalle) ? project.tecnologias_detalle : [],
   };
 }
 
@@ -608,6 +829,9 @@ export function normalizeProyectoPayload(datos = {}) {
     etiquetas: normalizeEtiquetas(datos.etiquetas),
     tecnologias: normalizeEtiquetas(datos.etiquetas),
 
+    rol: cleanString(datos.rol),
+    descripcion_aporte: cleanString(datos.descripcion_aporte),
+
     evidencias,
     proyecto_evidencias: evidencias,
   };
@@ -675,6 +899,12 @@ export async function eliminarProyecto(id) {
   });
 }
 
+export async function desvincularParticipacionProyecto(id) {
+  return apiFetch(`${API_URL}/projects/${id}/participation`, {
+    method: 'DELETE',
+  });
+}
+
 // ═══════════════════════════════════════════
 // IMÁGENES
 // ═══════════════════════════════════════════
@@ -686,7 +916,6 @@ export async function uploadImagenes(id, archivos = []) {
 
   archivos.forEach(file => {
     formData.append('images[]', file);
-    formData.append('imagenes[]', file);
   });
 
   return apiFetchFormData(`${API_URL}/projects/${id}/images`, formData, {
@@ -733,7 +962,6 @@ export async function uploadDocumentos(id, archivos = []) {
 
   archivos.forEach(file => {
     formData.append('documents[]', file);
-    formData.append('documentos[]', file);
   });
 
   return apiFetchFormData(`${API_URL}/projects/${id}/documents`, formData, {
