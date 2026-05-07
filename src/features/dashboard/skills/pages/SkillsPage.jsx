@@ -10,6 +10,17 @@ import {
 import ExperienceToast from "../../experience/components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 
+const normalizeSkillName = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+
+const getSkillName = (skill) =>
+  skill?.nombre ?? skill?.nombre_habilidad ?? skill?.habilidad?.nombre ?? "";
+
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +72,17 @@ export default function SkillsPage() {
           formData.descripcion_nueva || ""
         );
         skillIdFromCatalog = newCatalogSkill.id;
+      }
+
+      if (modalMode !== "edit") {
+        const duplicateOwned = skills.some(
+          (skill) => normalizeSkillName(getSkillName(skill)) === normalizeSkillName(formData.nombre_habilidad)
+        );
+
+        if (duplicateOwned) {
+          showToast(`Ya tienes "${formData.nombre_habilidad}" registrada en tu perfil.`, "error");
+          return;
+        }
       }
 
       if (modalMode === "edit") {
@@ -416,6 +438,7 @@ export default function SkillsPage() {
           onSave={handleSaveRequest}
           onCancel={() => setModalMode(null)}
           editData={selectedSkill}
+          userSkills={skills}
         />
       )}
 
@@ -446,9 +469,9 @@ function SkillEmptyState({ onAdd }) {
 
 function SkillLongRow({ skill, onEdit, onDelete }) {
   const levels = {
-    basico: { p: 30, c: "var(--gris-texto)", n: "BAS" },
-    intermedio: { p: 60, c: "var(--verde-hover)", n: "INT" },
-    avanzado: { p: 85, c: "var(--azul)", n: "AVZ" },
+    basico: { p: 25, c: "var(--gris-texto)", n: "BAS" },
+    intermedio: { p: 50, c: "var(--verde-hover)", n: "INT" },
+    avanzado: { p: 75, c: "var(--azul)", n: "AVZ" },
     experto: { p: 100, c: "var(--violeta-hover)", n: "EXP" },
   };
   const current = levels[skill.nivel] || { p: 0, c: "var(--gris-borde)", n: "---" };
@@ -508,4 +531,3 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
     </div>
   );
 }
-
