@@ -1,34 +1,126 @@
 import React, { useState } from "react";
-import { createCatalogSkill } from "../services/skillService";
+import { createCatalogSkill, formatSkillDisplayName } from "../services/skillService";
 
-export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
-  const [nombre, setNombre] = useState("");
+const normalizeSkillName = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+
+const getSkillName = (skill) =>
+  skill?.nombre ?? skill?.nombre_habilidad ?? skill?.habilidad?.nombre ?? "";
+
+const getSkillType = (skill) =>
+  String(skill?.tipo ?? skill?.habilidad?.tipo ?? "").toLowerCase();
+
+const typeLabel = (tipo) => (tipo === "tecnica" ? "técnica" : "blanda");
+
+const duplicateMessage = (duplicate, requestedTipo, typedName) => {
+  const duplicateTipo = getSkillType(duplicate);
+  const duplicateName = getSkillName(duplicate) || typedName;
+
+  if (duplicateTipo === requestedTipo) {
+    return `La habilidad "${duplicateName}" ya existe como habilidad ${typeLabel(duplicateTipo)}. Selecciónala desde el catálogo en lugar de crearla nuevamente.`;
+  }
+
+  return `La habilidad "${duplicateName}" ya está registrada como habilidad ${typeLabel(duplicateTipo)}. No puedes crearla como habilidad ${typeLabel(requestedTipo)}.`;
+};
+
+export default function SkillCatalogModal({ tipo, catalog = [], initialName = "", onSave, onCancel }) {
+  const [nombre, setNombre] = useState(
+    initialName ? formatSkillDisplayName(initialName.trim().replace(/\s+/g, " ")) : ""
+  );
   const [desc, setDesc] = useState("");
   const [confirmar, setConfirmar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const findDuplicate = (value) => {
+    const normalized = normalizeSkillName(value);
+    if (!normalized) return null;
+    return catalog.find((skill) => normalizeSkillName(getSkillName(skill)) === normalized) || null;
+  };
+
+  const validateName = (rawValue) => {
+    const cleanName = rawValue.trim().replace(/\s+/g, " ");
+
+    if (!cleanName) {
+      return { ok: false, cleanName, message: "Escribe el nombre de la habilidad." };
+    }
+
+    if (normalizeSkillName(cleanName).length < 2) {
+      return { ok: false, cleanName, message: "La habilidad debe tener al menos 2 caracteres." };
+    }
+
+    if (cleanName.length > 40) {
+      return { ok: false, cleanName, message: "La habilidad no puede superar los 40 caracteres." };
+    }
+
+    const duplicate = findDuplicate(cleanName);
+    if (duplicate) {
+      return { ok: false, cleanName, message: duplicateMessage(duplicate, tipo, cleanName) };
+    }
+
+    return { ok: true, cleanName, message: "" };
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!nombre.trim()) return;
+    const validation = validateName(nombre);
+
+    if (!validation.ok) {
+      setNombre(validation.cleanName);
+      setError(validation.message);
+      setConfirmar(false);
+      return;
+    }
+
+    setNombre(formatSkillDisplayName(validation.cleanName));
     setError("");
     setConfirmar(true);
   };
 
   const handleFinalConfirm = async () => {
+    const validation = validateName(nombre);
+    if (!validation.ok) {
+      setError(validation.message);
+      setConfirmar(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
 
       const nuevaHabilidad = await createCatalogSkill(
-        nombre.trim(),
+        formatSkillDisplayName(validation.cleanName),
         tipo,
         desc.trim()
       );
 
+      const duplicate = findDuplicate(getSkillName(nuevaHabilidad));
+      if (duplicate && getSkillName(duplicate) !== getSkillName(nuevaHabilidad)) {
+        setError(duplicateMessage(duplicate, tipo, validation.cleanName));
+        setConfirmar(false);
+        return;
+      }
+
       onSave(nuevaHabilidad);
     } catch (err) {
-      setError(err.message || "Error al crear habilidad en catálogo");
+      const message = String(err?.message || "");
+      const normalizedMessage = message.toLowerCase();
+      if (
+        normalizedMessage.includes("existe") ||
+        normalizedMessage.includes("duplic") ||
+        normalizedMessage.includes("unique")
+      ) {
+        setError(`No se pudo crear "${validation.cleanName}" porque ya existe en el catálogo. Actualiza el catálogo o selecciónala desde la búsqueda.`);
+      } else {
+        setError(message || "Error al crear habilidad en catálogo");
+      }
+      setConfirmar(false);
     } finally {
       setLoading(false);
     }
@@ -51,7 +143,7 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
           font-family: var(--font);
         }
         .skill-catalog-card {
-          width: 350px;
+          width: 370px;
           max-width: 100%;
           overflow: hidden;
           background: var(--blanco);
@@ -67,6 +159,14 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
           background: var(--negro-texto);
           border-bottom: 4px solid var(--azul);
         }
+        .skill-catalog-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--gris-oscuro);
+          text-transform: uppercase;
+          letter-spacing: .05em;
+          margin-bottom: 6px;
+        }
         .skill-catalog-input {
           font-family: var(--font) !important;
           font-size: 13px !important;
@@ -80,6 +180,26 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
           outline: none !important;
           border-color: var(--azul) !important;
           box-shadow: 0 0 0 3px var(--azul-glow) !important;
+        }
+        .skill-catalog-input.is-invalid {
+          border-color: var(--rojo-soft) !important;
+          background: var(--rojo-bg) !important;
+        }
+        .skill-catalog-hint {
+          margin-top: 5px;
+          font-size: 11px;
+          color: var(--gris-texto);
+          line-height: 1.35;
+        }
+        .skill-catalog-alert {
+          padding: 9px 12px;
+          border-radius: 8px;
+          background: var(--rojo-bg);
+          border: 1px solid var(--rojo-borde);
+          color: var(--rojo-soft);
+          font-size: 12px;
+          font-weight: 600;
+          line-height: 1.35;
         }
         .skill-catalog-cancel,
         .skill-catalog-primary {
@@ -144,22 +264,29 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
           {!confirmar ? (
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
-                <label className="form-label small fw-bold">
+                <label className="skill-catalog-label">
                   Nombre de la habilidad:
                 </label>
                 <input
                   type="text"
-                  className="form-control form-control-sm skill-catalog-input"
-                  placeholder="Ej: AWS, Scrum..."
+                  className={`form-control form-control-sm skill-catalog-input ${error ? "is-invalid" : ""}`}
+                  placeholder="Ej: Inglés, AWS, Scrum..."
                   value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  onChange={(e) => {
+                    setNombre(e.target.value);
+                    if (error) setError("");
+                  }}
                   required
+                  maxLength="40"
                   disabled={loading}
                 />
+                <div className="skill-catalog-hint">
+                  No puede repetirse entre habilidades técnicas y blandas. {nombre.length}/40
+                </div>
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-bold">
+                <label className="skill-catalog-label">
                   Pequeña descripción (Máx 30 carac.):
                 </label>
                 <textarea
@@ -179,11 +306,7 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
                 </div>
               </div>
 
-              {error && (
-                <div className="alert alert-danger py-2 small">
-                  {error}
-                </div>
-              )}
+              {error && <div className="skill-catalog-alert mb-3">{error}</div>}
 
               <div className="d-flex gap-2 justify-content-end pt-3 border-top">
                 <button
@@ -207,14 +330,10 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
             <div className="text-center py-2">
               <p className="mb-4 fw-semibold" style={{ color: "var(--gris-oscuro)" }}>
                 ¿Estás seguro de crear{" "}
-                <span className="text-azul">"{nombre}"</span> en el catálogo general?
+                <span className="text-azul">"{nombre}"</span> como habilidad {typeLabel(tipo)}?
               </p>
 
-              {error && (
-                <div className="alert alert-danger py-2 small text-start">
-                  {error}
-                </div>
-              )}
+              {error && <div className="skill-catalog-alert mb-3 text-start">{error}</div>}
 
               <div className="d-flex gap-2">
                 <button
@@ -239,4 +358,3 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
     </div>
   );
 }
-
