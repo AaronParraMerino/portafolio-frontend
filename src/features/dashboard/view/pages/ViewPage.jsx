@@ -17,6 +17,7 @@ import ViewSkills from '../components/ViewSkills';
 import ViewExperience from '../components/ViewExperience';
 import ViewProjects from '../components/ViewProjects';
 import ViewToast from '../components/ViewToast';
+import ViewPreviewNotice from '../components/ViewPreviewNotice';
 import ViewConfigModal from '../modal/ViewConfigModal';
 
 export default function ViewPage() {
@@ -30,6 +31,9 @@ export default function ViewPage() {
     config,
     toast,
     guardando,
+    loading,
+    dataSource,
+    error,
     updateConfig,
     updatePerfil,
     resetConfig,
@@ -71,12 +75,19 @@ export default function ViewPage() {
       />
 
       <main className="page">
+        <ViewPreviewNotice
+          loading={loading}
+          dataSource={dataSource}
+          error={error}
+        />
+
         <ViewOsFrame frameId={config?.frameId || 'mac'} title={title}>
           <ViewHero perfil={perfil} config={config} />
 
           <ViewIdentity
             perfil={perfil}
             redes={redes}
+            disponible={config?.disponible}
             visibilidad={visibilidad}
             onPerfilChange={updatePerfil}
           />
@@ -125,7 +136,7 @@ export default function ViewPage() {
         icon="check"
         title="Publicar portafolio"
         subtitle="Confirmación de publicación"
-        message="¿Deseas publicar esta vista mock del portafolio?"
+        message="¿Deseas publicar esta vista del portafolio con la visibilidad configurada?"
         confirmLabel="Sí, publicar"
         cancelLabel="Cancelar"
         loading={guardando}

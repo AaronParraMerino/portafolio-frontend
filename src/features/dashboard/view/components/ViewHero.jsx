@@ -2,9 +2,15 @@
 
 import { getInitial } from '../model/viewModel';
 
+function resolveImage(primary, fallback) {
+  return primary || fallback || null;
+}
+
 export default function ViewHero({ perfil, config }) {
-  const useHeroPhoto = config?.heroBgSource === 'foto' && perfil?.bannerUrl;
-  const useAvatarPhoto = config?.avatarBgSource === 'foto' && perfil?.avatarUrl;
+  const bannerUrl = resolveImage(perfil?.bannerUrl, perfil?.foto_fondo);
+  const avatarUrl = resolveImage(perfil?.avatarUrl, perfil?.foto_perfil);
+  const useHeroPhoto = config?.heroBgSource === 'foto' && bannerUrl;
+  const useAvatarPhoto = config?.avatarBgSource === 'foto' && avatarUrl;
 
   return (
     <div className={`pf-hero pattern-${config?.heroPattern || 'dots'}`}>
@@ -12,7 +18,7 @@ export default function ViewHero({ perfil, config }) {
         className="pf-hero-bg"
         style={useHeroPhoto
           ? {
-              backgroundImage: `url(${perfil.bannerUrl})`,
+              backgroundImage: `url(${bannerUrl})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
@@ -23,16 +29,10 @@ export default function ViewHero({ perfil, config }) {
       <div className="pf-hero-glow" />
 
       <div className="pf-hero-banner">
-        {config?.disponible && (
-          <div className="pf-available">
-            Disponible para proyectos
-          </div>
-        )}
-
         <div className="pf-avatar">
           {useAvatarPhoto ? (
             <img
-              src={perfil.avatarUrl}
+              src={avatarUrl}
               alt="Foto de perfil"
               className="pf-avatar-img"
             />

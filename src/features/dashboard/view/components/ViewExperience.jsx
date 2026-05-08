@@ -1,7 +1,7 @@
 // src/features/dashboard/view/components/ViewExperience.jsx
 import { isVisible } from '../model/viewModel';
 function ExperienceBadge({ tipo }) {
-  const isAcademico = tipo === 'academico';
+  const isAcademico = tipo === 'academico' || tipo === 'academica';
 
   return (
     <span className={`tl-badge ${isAcademico ? 'b-academico' : 'b-laboral'}`}>
@@ -20,7 +20,7 @@ function SubsectionTitle({ children }) {
 }
 
 function ExperienceCard({ experiencia }) {
-  const isAcademico = experiencia.tipo === 'academico';
+  const isAcademico = experiencia.tipo === 'academico' || experiencia.tipo === 'academica';
 
   return (
     <article className={`exp-card ${isAcademico ? 'academico' : 'laboral'}`}>
@@ -67,7 +67,7 @@ const visibles = experiencias.filter(exp =>
 );
 
 const laborales = visibles.filter(exp => exp.tipo === 'laboral');
-const academicas = visibles.filter(exp => exp.tipo === 'academico');
+const academicas = visibles.filter(exp => exp.tipo === 'academico' || exp.tipo === 'academica');
 
   if (!laborales.length && !academicas.length) return null;
 

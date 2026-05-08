@@ -514,6 +514,8 @@ export default function ViewConfigModal({
                     <SourceToggle
                     value={config.heroBgSource || 'custom'}
                     onChange={value => onChange({ heroBgSource: value })}
+                    leftLabel="Usar banner"
+                    rightLabel="Personalizar"
                     />
 
                     <div className={`cfg-block ${config.heroBgSource === 'foto' ? 'disabled' : ''}`}>
@@ -561,6 +563,8 @@ export default function ViewConfigModal({
                     <SourceToggle
                     value={config.avatarBgSource || 'custom'}
                     onChange={value => onChange({ avatarBgSource: value })}
+                    leftLabel="Usar avatar"
+                    rightLabel="Personalizar"
                     />
 
                     <div className={`cfg-block ${config.avatarBgSource === 'foto' ? 'disabled' : ''}`}>

@@ -15,6 +15,7 @@ function levelLabel(level = '') {
   if (normalized === 'experto') return 'Experto';
   if (normalized === 'avanzado') return 'Avanzado';
   if (normalized === 'intermedio') return 'Intermedio';
+  if (normalized === 'basico') return 'Basico';
 
   return level || 'Intermedio';
 }

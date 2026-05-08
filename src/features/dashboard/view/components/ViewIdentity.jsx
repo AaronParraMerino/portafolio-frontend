@@ -61,7 +61,7 @@ function SocialIcon({ tipo }) {
   );
 }
 
-export default function ViewIdentity({ perfil, redes = [], visibilidad }) {
+export default function ViewIdentity({ perfil, redes = [], disponible = false, visibilidad }) {
   const showNombre = isVisible(visibilidad, 'perfil', 'nombre');
   const showProfesion = isVisible(visibilidad, 'perfil', 'profesion');
   const showUbicacion = isVisible(visibilidad, 'perfil', 'ubicacion');
@@ -70,23 +70,34 @@ export default function ViewIdentity({ perfil, redes = [], visibilidad }) {
   const showRedes = isVisible(visibilidad, 'perfil', 'redes');
   const showBiografia = isVisible(visibilidad, 'perfil', 'biografia');
 
-  const showContact = showTelefono || showCorreo;
+  const ubicacion = [perfil?.ciudad, perfil?.pais].filter(Boolean).join(', ');
+  const showContact = (showTelefono && perfil?.telefono) || (showCorreo && perfil?.correo);
 
   return (
     <div className="pf-identity">
       <div className="pf-identity-header">
-        {showNombre && (
-          <div className="pf-name">{getFullName(perfil)}</div>
+        {(showNombre || disponible) && (
+          <div className="pf-name-row">
+            {showNombre && (
+              <div className="pf-name">{getFullName(perfil)}</div>
+            )}
+
+            {disponible && (
+              <div className="pf-available">
+                Disponible para proyectos
+              </div>
+            )}
+          </div>
         )}
 
-        {showProfesion && (
+        {showProfesion && perfil?.profesion && (
           <div className="pf-role">{perfil?.profesion}</div>
         )}
 
-        {showUbicacion && (
+        {showUbicacion && ubicacion && (
           <div className="pf-location">
             <IconLocation />
-            <span>{perfil?.ciudad}, {perfil?.pais}</span>
+            <span>{ubicacion}</span>
           </div>
         )}
       </div>
@@ -97,14 +108,14 @@ export default function ViewIdentity({ perfil, redes = [], visibilidad }) {
 
       {showContact && (
         <div className="pf-contact-row">
-          {showTelefono && (
+          {showTelefono && perfil?.telefono && (
             <a className="pf-contact-item" href={`tel:${perfil?.telefono || ''}`}>
               <IconPhone />
               {perfil?.telefono}
             </a>
           )}
 
-          {showCorreo && (
+          {showCorreo && perfil?.correo && (
             <a className="pf-contact-item" href={`mailto:${perfil?.correo || ''}`}>
               <IconMail />
               {perfil?.correo}
@@ -134,7 +145,7 @@ export default function ViewIdentity({ perfil, redes = [], visibilidad }) {
         </div>
       )}
 
-      {showBiografia && (
+      {showBiografia && perfil?.biografia && (
         <div className="pf-about-inline">
           <div className="pf-about-label">Acerca de mí</div>
           <p className="pf-about-text">{perfil?.biografia}</p>

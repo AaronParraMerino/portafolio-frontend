@@ -111,19 +111,28 @@ export default function ViewProjects({ proyectos = [], visibilidad }) {
       <div className="proj-grid">
         {visibles.map(proyecto => {
           const isPublished = proyecto.estado === 'publicado';
+          const hasCover = Boolean(proyecto.imagenUrl);
 
           return (
             <article key={proyecto.id} className="proj-card">
-              <div className="proj-cover">
-                <div className="proj-cover-icon">
-                  <ProjectIcon type={proyecto.icono} />
-                </div>
+              <div className={`proj-cover ${hasCover ? 'has-image' : ''}`}>
+                {hasCover ? (
+                  <img
+                    src={proyecto.imagenUrl}
+                    alt={proyecto.titulo || 'Proyecto'}
+                    className="proj-cover-img"
+                  />
+                ) : (
+                  <div className="proj-cover-icon">
+                    <ProjectIcon type={proyecto.icono} />
+                  </div>
+                )}
               </div>
 
               <div className="proj-body">
                 <div className="proj-badges">
                   <span className={`pb ${isPublished ? 'pb-pub' : 'pb-dev'}`}>
-                    {isPublished ? 'Publicado' : 'Desarrollo'}
+                    {proyecto.estadoLabel || (isPublished ? 'Publicado' : 'Desarrollo')}
                   </span>
 
                   <span className="pb pb-type">
