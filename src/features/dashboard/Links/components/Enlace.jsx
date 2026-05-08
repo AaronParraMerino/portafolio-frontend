@@ -38,23 +38,21 @@ export default function RedesSociales() {
 
   const navigate = useNavigate();
 
-  // ── API: estado y acciones vienen del hook ──────
   const { redes, loading, error, setError, agregar, editar, toggleVisible, eliminar } = useEnlace();
 
-  // ── UI: solo estado visual ──────────────────────
-  const [secActiva,   setSecActiva]   = useState(true);
-  const [modal,       setModal]       = useState(false);
-  const [redEditar,   setRedEditar]   = useState(null);
-  const [confirmarId, setConfirmarId] = useState(null);
-  const [pgA,         setPgA]         = useState(1);
-  const [pgO,         setPgO]         = useState(1);
+  const [secActiva,        setSecActiva]        = useState(true);
+  const [modal,            setModal]            = useState(false);
+  // ── redEditar ahora guarda { red, isKnownPlatform } ──────────────────
+  const [redEditar,        setRedEditar]        = useState(null);
+  const [confirmarId,      setConfirmarId]      = useState(null);
+  const [pgA,              setPgA]              = useState(1);
+  const [pgO,              setPgO]              = useState(1);
 
   const activas = redes.filter(r =>  r.visible);
   const ocultas = redes.filter(r => !r.visible);
   const pgdA    = activas.slice((pgA-1)*POR_PAG, pgA*POR_PAG);
   const pgdO    = ocultas.slice((pgO-1)*POR_PAG, pgO*POR_PAG);
 
-  // ── Handlers ────────────────────────────────────
   const handleToggle  = (id)  => { toggleVisible(id); setPgA(1); setPgO(1); };
 
   const handleAdd     = async (n) => {
@@ -68,8 +66,13 @@ export default function RedesSociales() {
     setRedEditar(null);
   };
 
-  const pedirEliminar  = (id) => setConfirmarId(id);
-  const cancelarBorrar = ()   => setConfirmarId(null);
+  // ── Recibe (red, isKnownPlatform) desde Card ─────────────────────────
+  const handleEdit = (red, isKnownPlatform) => {
+    setRedEditar({ red, isKnownPlatform });
+  };
+
+  const pedirEliminar   = (id) => setConfirmarId(id);
+  const cancelarBorrar  = ()   => setConfirmarId(null);
   const confirmarBorrar = async () => {
     await eliminar(confirmarId);
     setConfirmarId(null);
@@ -78,7 +81,6 @@ export default function RedesSociales() {
 
   const redAEliminar = redes.find(r => r.id === confirmarId);
 
-  // ── Loading ──────────────────────────────────────
   if (loading) return (
     <div style={{ fontFamily:"'Segoe UI','Inter',sans-serif" }}>
       <div style={{ background:"#0f172a",padding:"28px 40px" }}>
@@ -91,7 +93,6 @@ export default function RedesSociales() {
     </div>
   );
 
-  // ── Render ───────────────────────────────────────
   return (
     <div style={{ fontFamily:"'Segoe UI','Inter',sans-serif" }}>
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}*{box-sizing:border-box;}`}</style>
@@ -110,7 +111,6 @@ export default function RedesSociales() {
 
       <div style={{ maxWidth:640,margin:"0 auto",padding:"24px 16px 40px" }}>
 
-        {/* Banner de error */}
         {error && (
           <div style={{ marginBottom:14,padding:"10px 14px",borderRadius:8,background:"#fef2f2",border:"1.5px solid #fecaca",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8 }}>
             <span style={{ fontSize:13,color:"#b91c1c" }}>{error}</span>
@@ -120,7 +120,6 @@ export default function RedesSociales() {
 
         <p style={{ margin:"0 0 14px",fontSize:13,color:"#6b7280" }}>Tus perfiles en plataformas profesionales y repositorios de código</p>
 
-        {/* Toggle maestro */}
         <div style={{ border:"1.5px solid #93c5fd",borderRadius:8,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#fff" }}>
           <div>
             <p style={{ margin:0,fontWeight:700,fontSize:13,color:"#1d4ed8" }}>Redes profesionales visibles en portafolio publico</p>
@@ -137,19 +136,14 @@ export default function RedesSociales() {
             {activas.length === 0
               ? <div style={{ border:"1.5px dashed #d1d5db",borderRadius:8,padding:"28px",textAlign:"center",color:"#9ca3af",fontSize:13 }}>Sin redes activas. Agrega una nueva o activa alguna oculta.</div>
               : <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-                  {pgdA.map(r => <Card key={r.id} red={r} onToggle={handleToggle} onDelete={pedirEliminar} onEdit={setRedEditar} isOculta={false}/>)}
+                  {pgdA.map(r => <Card key={r.id} red={r} onToggle={handleToggle} onDelete={pedirEliminar} onEdit={handleEdit} isOculta={false}/>)}
                 </div>
             }
             <div style={{ display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",marginTop:20,gap:8 }}>
               <div/>
               {activas.length > POR_PAG ? <Pager total={activas.length} page={pgA} perPage={POR_PAG} onChange={setPgA}/> : <div/>}
               <div style={{ display:"flex",justifyContent:"flex-end" }}>
-                <button
-                  onClick={() => navigate(-1)}
-                  style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}
-                >
-                  Salir
-                </button>
+                <button onClick={() => navigate(-1)} style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>Salir</button>
               </div>
             </div>
           </>
@@ -166,25 +160,20 @@ export default function RedesSociales() {
                   <span style={{ fontSize:11,fontWeight:600,padding:"1px 7px",borderRadius:20,background:"#f3f4f6",color:"#6b7280",border:"1px solid #e5e7eb" }}>{ocultas.length}</span>
                 </div>
                 <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-                  {pgdO.map(r => <Card key={r.id} red={r} onToggle={handleToggle} onDelete={pedirEliminar} onEdit={setRedEditar} isOculta={true}/>)}
+                  {pgdO.map(r => <Card key={r.id} red={r} onToggle={handleToggle} onDelete={pedirEliminar} onEdit={handleEdit} isOculta={true}/>)}
                 </div>
                 {ocultas.length > POR_PAG && <div style={{ marginTop:10 }}><Pager total={ocultas.length} page={pgO} perPage={POR_PAG} onChange={setPgO}/></div>}
               </div>
             )}
             <div style={{ display:"flex",justifyContent:"flex-end",marginTop:20 }}>
-              <button
-                onClick={() => navigate(-1)}
-                style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}
-              >
-                Salir
-              </button>
+              <button onClick={() => navigate(-1)} style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>Salir</button>
             </div>
           </>
         )}
       </div>
 
-      {modal       && <Modal       onClose={() => setModal(false)}    onAdd={handleAdd}/>}
-      {redEditar   && <ModalEditar onClose={() => setRedEditar(null)} onSave={handleSave} red={redEditar}/>}
+      {modal     && <Modal       onClose={() => setModal(false)}    onAdd={handleAdd}/>}
+      {redEditar && <ModalEditar onClose={() => setRedEditar(null)} onSave={handleSave} red={redEditar.red} isKnownPlatform={redEditar.isKnownPlatform}/>}
       {confirmarId && <ModalConfirmar nombre={redAEliminar?.nombre} onCancel={cancelarBorrar} onConfirm={confirmarBorrar}/>}
     </div>
   );
