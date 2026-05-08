@@ -14,10 +14,6 @@ export default function CambiarContraseña() {
   return (
     <div style={pageStyle}>
       <div style={innerStyle}>
-        <button onClick={() => navigate('/dashboard/settings')} style={backBtnStyle}>
-          ← Volver a Configuración
-        </button>
-
         <div style={badgeStyle}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -61,9 +57,8 @@ export default function CambiarContraseña() {
   );
 }
 
-const pageStyle = { fontFamily: "'Segoe UI','Inter',sans-serif", background: '#e8f4fd', minHeight: '100vh', padding: '36px 24px' };
+const pageStyle = { fontFamily: "'Segoe UI','Inter',sans-serif", background: '#ffffff', minHeight: '100vh', padding: '36px 24px' };
 const innerStyle = { maxWidth: 680, margin: '0 auto', width: '100%' };
-const backBtnStyle = { background: 'transparent', border: 'none', color: '#64748b', fontSize: 14, cursor: 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 };
 const badgeStyle = { display: 'inline-flex', alignItems: 'center', gap: 7, border: '1.5px solid #93c5fd', borderRadius: 999, padding: '5px 14px', background: '#eff8ff', fontSize: 12, fontWeight: 700, color: '#1e40af', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 18 };
 const titleStyle = { fontSize: 34, fontWeight: 900, color: '#0f172a', fontFamily: "Georgia,'Times New Roman',serif", marginBottom: 10, lineHeight: 1.1 };
 const subtitleStyle = { fontSize: 14, color: '#475569', marginBottom: 28 };
