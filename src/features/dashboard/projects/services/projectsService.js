@@ -147,6 +147,16 @@ export async function syncGithubRepos() {
   });
 }
 
+export async function getGithubConnectUrl() {
+  const data = await apiFetch(`${API_URL}/auth/github/connect-url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+
+  return data?.url || '';
+}
+
 function mapTecnologiaTipoToCategoria(tipo = '') {
   switch (tipo) {
     case 'lenguaje':

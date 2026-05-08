@@ -19,7 +19,7 @@ import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 export default function ProjectsPage() {
   const {
     proyectos, loading, guardando, toast,
-    crearNuevo, editarExistente, eliminar, desvincularParticipacion,
+    crearNuevo, editarExistente, eliminar, desvincularParticipacion, refrescar,
   } = useProjects();
 
   // ── Estado UI puro ──
@@ -29,6 +29,7 @@ export default function ProjectsPage() {
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
+  const [reposIniciales, setReposIniciales] = useState(null);
 
   // ── Callbacks ──
   const handleGuardar = async (
@@ -45,6 +46,28 @@ export default function ProjectsPage() {
     }
 
     setEditando(null);
+    setReposIniciales(null);
+  };
+
+  const handleAgregarNuevo = () => {
+    setReposIniciales(null);
+    setEditando('nuevo');
+  };
+
+  const handleAgregarConRepos = (selection) => {
+    setReposIniciales(selection || null);
+    setEditando('nuevo');
+  };
+
+  const handleEditar = (proyecto) => {
+    setReposIniciales(null);
+    setEditando(proyecto);
+  };
+
+  const handleCancelarEdicion = () => {
+    if (guardando) return;
+    setEditando(null);
+    setReposIniciales(null);
   };
 
   // ── Derivados: filtrar + ordenar + contar ──
@@ -87,7 +110,7 @@ export default function ProjectsPage() {
   return (
     <div className="prj-page">
 
-      <ProjectsHeader onAgregar={() => setEditando('nuevo')} />
+      <ProjectsHeader onAgregar={handleAgregarNuevo} />
 
       <div className="prj-content">
 
@@ -96,15 +119,17 @@ export default function ProjectsPage() {
           filtro={filtro}       onFiltro={setFiltro}
           orden={orden}         onOrden={setOrden}
           conteo={conteo}
+          onAgregarConRepos={handleAgregarConRepos}
+          onReposChanged={refrescar}
         />
 
         <ProjectsGrid
           proyectos={proyectosFiltrados}
           busqueda={busqueda}
-          onEditar={(p)     => setEditando(p)}
+          onEditar={handleEditar}
           onEliminar={(p)   => setConfirmDel(p)}
           onDesvincular={(p) => setConfirmDetach(p)}
-          onAgregar={() => setEditando('nuevo')}
+          onAgregar={handleAgregarNuevo}
         />
 
       </div>
@@ -114,8 +139,9 @@ export default function ProjectsPage() {
       {editando !== null && (
         <ProjectsEdit
           proyecto={editando === 'nuevo' ? null : editando}
+          initialGithubRepos={editando === 'nuevo' ? reposIniciales : null}
           onGuardar={handleGuardar}
-          onCancelar={() => !guardando && setEditando(null)}
+          onCancelar={handleCancelarEdicion}
           guardando={guardando}
         />
       )}
