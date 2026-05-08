@@ -74,32 +74,36 @@ const TagInput = ({
         )}
 
         <div className="ps-tag-row">
-          <input
-            type="text"
-            className="ps-input"
-            value={inputValue}
-            placeholder={placeholder}
-            onChange={(event) => setInputValue(event.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setFocused(true)}
-            onBlur={() => window.setTimeout(() => setFocused(false), 120)}
-          />
+          <div className="ps-tag-input-wrap">
+            <input
+              type="text"
+              className="ps-input"
+              value={inputValue}
+              placeholder={placeholder}
+              onChange={(event) => setInputValue(event.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setFocused(true)}
+              onBlur={() => window.setTimeout(() => setFocused(false), 140)}
+            />
+
+            {focused && filteredSuggestions.length > 0 && (
+              <div className="ps-suggestions ps-suggestions-inline">
+                {filteredSuggestions.map((suggestion) => (
+                  <button
+                    type="button"
+                    key={suggestion}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => addValues(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button type="button" className="ps-add-tag" onClick={() => addValues(inputValue)}>+</button>
         </div>
-
-        {focused && filteredSuggestions.length > 0 && (
-          <div className="ps-suggestions">
-            {filteredSuggestions.map((suggestion) => (
-              <button
-                type="button"
-                key={suggestion}
-                onClick={() => addValues(suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

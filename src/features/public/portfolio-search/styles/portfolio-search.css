@@ -6,11 +6,11 @@
 .ps-page {
   min-height: calc(100vh - var(--nav-height, 60px));
   background: var(--fondo);
-  padding: 22px 24px 36px;
+  padding: 26px 24px 36px;
 }
 
 .ps-shell {
-  max-width: 1360px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -60,7 +60,7 @@
   border-radius: 14px;
   padding: 12px;
   box-shadow: 0 1px 6px rgba(0,0,0,.05);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .ps-search-input,
@@ -153,8 +153,8 @@
 
 .ps-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
 }
 
@@ -162,7 +162,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 0;
+  position: sticky;
+  top: calc(var(--nav-height, 60px) + 18px);
+  max-height: calc(100vh - var(--nav-height, 60px) - 34px);
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .ps-filter-card {
@@ -213,16 +217,12 @@
   width: 27px;
   height: 27px;
   border-radius: 8px;
-  background: var(--blanco);
-  border: 1.5px solid var(--gris-borde);
-  color: var(--azul-deep);
+  background: var(--azul-light);
+  border: 1px solid var(--azul-mid);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .02em;
+  font-family: var(--font);
 }
 
 .ps-chevron {
@@ -696,11 +696,8 @@
   border-radius: 18px;
   background: var(--azul-light);
   border: 1.5px solid var(--azul-mid);
-  color: var(--azul-deep);
   margin-bottom: 14px;
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 24px;
 }
 
 .ps-empty-state h3 {
@@ -764,15 +761,16 @@
   border-radius: 99px;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1020px) {
   .ps-layout {
     grid-template-columns: 1fr;
   }
 
   .ps-filters {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
-    align-items: start;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
   }
 }
 
@@ -782,10 +780,6 @@
   }
 
   .ps-searchbar {
-    grid-template-columns: 1fr;
-  }
-
-  .ps-filters {
     grid-template-columns: 1fr;
   }
 
@@ -830,3 +824,270 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Ajustes V2: layout sin scroll interno de filtros ── */
+.ps-filters {
+  position: static;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+/* ── Tags con nivel ── */
+.ps-tag-row-with-select {
+  grid-template-columns: minmax(0, 1fr) minmax(118px, .45fr) 38px;
+}
+
+.ps-level-select {
+  min-width: 118px;
+}
+
+.ps-field-error {
+  display: block;
+  color: var(--rojo-soft);
+  font-size: 11.5px;
+  font-weight: 650;
+  margin-top: 2px;
+}
+
+.ps-level-tag {
+  gap: 7px;
+}
+
+.ps-level-tag strong {
+  font-size: 10.5px;
+  font-family: var(--mono);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.ps-tag.level-basico,
+.ps-active-chip.level-basico {
+  background: var(--azul-light);
+  color: var(--azul-deep);
+  border-color: var(--azul-mid);
+}
+
+.ps-tag.level-intermedio,
+.ps-active-chip.level-intermedio {
+  background: var(--verde-chip);
+  color: var(--verde-hover);
+  border-color: var(--verde-borde);
+}
+
+.ps-tag.level-avanzado,
+.ps-active-chip.level-avanzado {
+  background: var(--amarillo-chip);
+  color: #b7791f;
+  border-color: var(--amarillo-borde);
+}
+
+.ps-tag.level-experto,
+.ps-active-chip.level-experto {
+  background: var(--violeta-chip);
+  color: #6d5bd0;
+  border-color: var(--violeta-borde);
+}
+
+/* ── Experiencia V2 ── */
+.ps-exp-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ps-add-exp {
+  border: 1.5px solid var(--azul-mid);
+  background: var(--azul-light);
+  color: var(--azul-deep);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all .12s;
+}
+
+.ps-add-exp:hover {
+  background: var(--azul-mid);
+  border-color: var(--azul);
+}
+
+.ps-exp-tag {
+  background: var(--fondo);
+  color: var(--gris-oscuro);
+  border-color: var(--gris-borde);
+}
+
+.ps-exp-mini-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ps-exp-mini {
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+
+.ps-exp-mini.laboral,
+.ps-select-chip.exp-laboral.active {
+  background: var(--azul);
+  color: var(--blanco);
+  border-color: var(--azul);
+}
+
+.ps-exp-mini.academica,
+.ps-select-chip.exp-academica.active {
+  background: var(--violeta-bg);
+  color: #6d5bd0;
+  border-color: var(--violeta-borde);
+}
+
+.ps-active-chip.exp-chip {
+  background: var(--gris-oscuro);
+  color: var(--blanco);
+}
+
+/* ── Prioridad exclusiva ── */
+.ps-priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ps-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 9px;
+  background: var(--blanco);
+  color: var(--gris-oscuro);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all .12s;
+}
+
+.ps-radio-row:hover,
+.ps-radio-row.active {
+  border-color: var(--azul);
+  background: var(--azul-light);
+  color: var(--azul-deep);
+}
+
+.ps-radio-row input {
+  accent-color: var(--azul);
+}
+
+/* ── Card V2 ── */
+.ps-avatar.has-image {
+  background: var(--blanco);
+  border: 2px solid var(--azul-mid);
+  overflow: hidden;
+}
+
+.ps-avatar.has-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ps-card-location {
+  color: var(--gris-texto);
+}
+
+.ps-card-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ps-empty-icon {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--azul-deep);
+}
+
+@media (max-width: 760px) {
+  .ps-tag-row-with-select {
+    grid-template-columns: 1fr;
+  }
+
+  .ps-level-select,
+  .ps-add-tag {
+    width: 100%;
+    min-height: 38px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   FIX DEFINITIVO — Sugerencias de catálogos
+   Las sugerencias viven dentro del bloque del input.
+   Evita que se pierdan abajo, se recorten o aplasten Nivel/+.
+═══════════════════════════════════════════ */
+.ps-tag-input-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ps-tag-row,
+.ps-tag-row-with-select {
+  align-items: start;
+}
+
+.ps-tag-row-with-select {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 118px 38px;
+  gap: 6px;
+}
+
+.ps-level-select,
+.ps-add-tag {
+  min-height: 40px;
+}
+
+.ps-suggestions.ps-suggestions-inline {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: 1;
+  width: 100%;
+  max-height: 150px;
+  margin-top: 2px;
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.10);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.ps-suggestions.ps-suggestions-inline button {
+  min-height: 34px;
+  padding: 8px 12px;
+}
+
+.ps-exp-entry .ps-tag-input-wrap {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .ps-tag-row-with-select {
+    grid-template-columns: 1fr;
+  }
+}
+

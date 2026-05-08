@@ -5,17 +5,47 @@ const JSON_HEADERS = {
   Accept: 'application/json',
 };
 
-const getOptionalAuthHeaders = () => {
+const getAuthHeaders = () => {
   const token = sessionStorage.getItem('tokenPORT');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+
+  if (!token) {
+    throw new Error('Debes iniciar sesión para buscar portafolios.');
+  }
+
+  return { Authorization: `Bearer ${token}` };
+};
+
+const getFirstValidationError = (errors) => {
+  if (!errors || typeof errors !== 'object') return '';
+  const first = Object.values(errors).flat()?.[0];
+  return typeof first === 'string' ? first : '';
+};
+
+const normalizeApiError = (message = '', errors = null, status = 0) => {
+  if (status === 401 || status === 419) {
+    return 'Debes iniciar sesión para buscar portafolios.';
+  }
+
+  const validationError = getFirstValidationError(errors);
+  const raw = validationError || message || 'Error en la solicitud.';
+  const lower = String(raw).toLowerCase();
+
+  if (lower.includes('solo se puede activar una opción')) {
+    return 'Solo puedes priorizar un criterio a la vez.';
+  }
+
+  if (lower.includes('validation') || lower.includes('validación')) {
+    return 'Revisa los filtros aplicados. Hay datos que el servidor no pudo validar.';
+  }
+
+  return raw;
 };
 
 const parseJson = async (res) => {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const details = data?.errors ? ` ${JSON.stringify(data.errors)}` : '';
-    throw new Error(`${data?.message || 'Error en la solicitud.'}${details}`);
+    throw new Error(normalizeApiError(data?.message, data?.errors, res.status));
   }
 
   return data;
@@ -33,14 +63,47 @@ const buildUrl = (path, params = {}) => {
   return url.toString();
 };
 
+const cleanText = (value) => String(value || '').trim();
+
 const cleanArray = (value) => {
   if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => String(item || '').trim())
-    .filter(Boolean);
+
+  const seen = new Set();
+  const result = [];
+
+  value.forEach((item) => {
+    const text = cleanText(item);
+    const key = text.toLowerCase();
+    if (text && !seen.has(key)) {
+      seen.add(key);
+      result.push(text);
+    }
+  });
+
+  return result;
 };
 
-const cleanText = (value) => String(value || '').trim();
+const uniqueValues = (values = []) => cleanArray(values);
+
+const buildSkillBlock = (skills = []) => {
+  const safeSkills = Array.isArray(skills) ? skills : [];
+
+  return {
+    items: uniqueValues(safeSkills.map((skill) => skill?.item || skill?.nombre || skill?.habilidad)),
+    niveles: uniqueValues(safeSkills.map((skill) => skill?.nivel)),
+  };
+};
+
+const buildExperienceBlock = (experiences = []) => {
+  if (!Array.isArray(experiences)) return [];
+
+  return experiences
+    .map((experience) => ({
+      cargo: cleanText(experience?.cargo),
+      tipos: uniqueValues(experience?.tipos),
+    }))
+    .filter((experience) => experience.cargo && experience.tipos.length > 0);
+};
 
 export const buildSearchPayload = (filters = {}) => ({
   query: cleanText(filters.query),
@@ -53,15 +116,11 @@ export const buildSearchPayload = (filters = {}) => ({
   },
 
   habilidades: {
-    tecnicas: cleanArray(filters.habilidades?.tecnicas),
-    blandas: cleanArray(filters.habilidades?.blandas),
-    niveles: cleanArray(filters.habilidades?.niveles),
+    tecnicas: buildSkillBlock(filters.habilidades?.tecnicas),
+    blandas: buildSkillBlock(filters.habilidades?.blandas),
   },
 
-  experiencia: {
-    tipo: cleanArray(filters.experiencia?.tipo),
-    cargo: cleanArray(filters.experiencia?.cargo),
-  },
+  experiencia: buildExperienceBlock(filters.experiencia),
 
   proyectos: {
     tecnologias: cleanArray(filters.proyectos?.tecnologias),
@@ -70,12 +129,11 @@ export const buildSearchPayload = (filters = {}) => ({
   },
 
   orden: {
-    campo: filters.orden?.campo || 'relevancia',
     direccion: filters.orden?.direccion || 'desc',
     fecha_desde: cleanText(filters.orden?.fecha_desde),
-    priorizar_proyectos: Boolean(filters.orden?.priorizar_proyectos),
-    priorizar_experiencia: Boolean(filters.orden?.priorizar_experiencia),
-    priorizar_habilidades: Boolean(filters.orden?.priorizar_habilidades),
+    priorizar_proyectos: filters.orden?.prioridad === 'proyectos',
+    priorizar_experiencia: filters.orden?.prioridad === 'experiencia',
+    priorizar_habilidades: filters.orden?.prioridad === 'habilidades',
   },
 
   per_page: Number(filters.per_page || 12),
@@ -86,17 +144,19 @@ export const normalizeSearchResponse = (response) => {
     ? response
     : response?.data || response?.portafolios || response?.results || response?.items || [];
 
-  const meta = response?.meta || {
-    current_page: response?.current_page || 1,
-    last_page: response?.last_page || 1,
-    per_page: response?.per_page || 12,
-    total: response?.total ?? list.length,
+  const rawMeta = response?.meta || {};
+
+  const meta = {
+    total: Number(rawMeta.total ?? response?.total ?? list.length),
+    per_page: Number(rawMeta.por_pagina ?? rawMeta.per_page ?? response?.per_page ?? 12),
+    current_page: Number(rawMeta.pagina_actual ?? rawMeta.current_page ?? response?.current_page ?? 1),
+    last_page: Number(rawMeta.ultima_pagina ?? rawMeta.last_page ?? response?.last_page ?? 1),
   };
 
   return {
     items: Array.isArray(list) ? list : [],
     meta,
-    links: response?.links || {},
+    message: response?.message || '',
   };
 };
 
@@ -107,7 +167,7 @@ export const searchPortfolios = async (filters, page = 1) => {
     method: 'POST',
     headers: {
       ...JSON_HEADERS,
-      ...getOptionalAuthHeaders(),
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   });
@@ -121,7 +181,7 @@ export const getSearchCatalog = async (catalogPath) => {
     method: 'GET',
     headers: {
       Accept: 'application/json',
-      ...getOptionalAuthHeaders(),
+      ...getAuthHeaders(),
     },
   });
 
@@ -133,19 +193,28 @@ export const getSearchCatalog = async (catalogPath) => {
       if (typeof item === 'string') return item;
       return item?.nombre || item?.name || item?.titulo || item?.valor || '';
     })
+    .map(cleanText)
     .filter(Boolean);
 };
 
 export const getSearchCatalogs = async () => {
-  const [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias] = await Promise.allSettled([
+  const [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto] = await Promise.allSettled([
     getSearchCatalog('profesiones'),
     getSearchCatalog('habilidades-blandas'),
     getSearchCatalog('habilidades-tecnicas'),
     getSearchCatalog('cargos-experiencia'),
     getSearchCatalog('tecnologias-proyecto'),
+    getSearchCatalog('tipos-proyecto'),
   ]);
 
   const valueOf = (result) => (result.status === 'fulfilled' ? result.value : []);
+
+  const rejected = [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto]
+    .find((result) => result.status === 'rejected');
+
+  if (rejected?.reason?.message === 'Debes iniciar sesión para buscar portafolios.') {
+    throw rejected.reason;
+  }
 
   return {
     profesiones: valueOf(profesiones),
@@ -153,5 +222,6 @@ export const getSearchCatalogs = async () => {
     habilidadesTecnicas: valueOf(habilidadesTecnicas),
     cargos: valueOf(cargos),
     tecnologias: valueOf(tecnologias),
+    tiposProyecto: valueOf(tiposProyecto),
   };
 };

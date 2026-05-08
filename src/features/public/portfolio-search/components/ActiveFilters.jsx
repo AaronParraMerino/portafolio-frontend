@@ -5,7 +5,7 @@ const ActiveFilters = ({ chips = [], onClear }) => {
     <div className="ps-active-wrap">
       <div className="ps-active-filters">
         {chips.map((chip) => (
-          <span className="ps-active-chip" key={chip.id}>
+          <span className={`ps-active-chip ${chip.className || ''}`} key={chip.id}>
             {chip.label}
             <button type="button" onClick={chip.onRemove} aria-label={`Quitar filtro ${chip.label}`}>×</button>
           </span>
