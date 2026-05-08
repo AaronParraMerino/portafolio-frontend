@@ -1,19 +1,9 @@
 import React from "react";
+import { getSkillLevelColor, getSkillProgress } from "../model/skillLevel";
 
 export default function SkillCard({ skill, onEdit, onDelete }) {
-  // Lógica de porcentajes basada en nivel
-  const getProgress = (nivel) => {
-    const levels = { basico: 30, intermedio: 60, avanzado: 85, experto: 100 };
-    return levels[nivel.toLowerCase()] || 0;
-  };
-
-  const getLevelColor = (nivel) => {
-    const colors = { basico: "#64748b", intermedio: "#16a34a", avanzado: "#2563eb", experto: "#7c3aed" };
-    return colors[nivel.toLowerCase()] || "#var(--azul)";
-  };
-
-  const progress = getProgress(skill.nivel);
-  const color = getLevelColor(skill.nivel);
+  const progress = getSkillProgress(skill.nivel);
+  const color = getSkillLevelColor(skill.nivel);
 
   return (
     <div className="card border-0 shadow-sm mb-3 p-3" style={{ borderRadius: "12px", borderLeft: `5px solid ${color}` }}>
@@ -40,8 +30,8 @@ export default function SkillCard({ skill, onEdit, onDelete }) {
         </div>
 
         <div className="ms-3 d-flex gap-1">
-          <button className="btn btn-sm btn-outline-primary border-0" onClick={() => onEdit(skill)}>✏️</button>
-          <button className="btn btn-sm btn-outline-danger border-0" onClick={() => onDelete(skill.id)}>🗑️</button>
+          <button className="btn btn-sm btn-outline-primary border-0" onClick={() => onEdit(skill)}>Editar</button>
+          <button className="btn btn-sm btn-outline-danger border-0" onClick={() => onDelete(skill.id)}>Borrar</button>
         </div>
       </div>
     </div>

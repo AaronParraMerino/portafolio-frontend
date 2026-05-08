@@ -1750,7 +1750,7 @@
 }
 
 .proj-cover {
-  height: 100px;
+  height: 175px;
   background: var(--accent);
   display: flex;
   align-items: center;
@@ -1764,11 +1764,12 @@
 }
 
 .proj-cover-img {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  transition: transform .42s ease;
+  user-select: none;
 }
 
 .proj-cover.has-image::after {
@@ -1785,6 +1786,182 @@
   inset: 0;
   background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.12) 0%, transparent 70%);
   pointer-events: none;
+}
+
+.proj-cover-media {
+  display: block;
+  background: #111827;
+}
+
+.proj-cover.has-image::before,
+.proj-cover.has-video::before {
+  display: none;
+}
+
+.proj-card:hover .proj-cover-img {
+  transform: scale(1.04);
+}
+
+.proj-carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform .38s cubic-bezier(.4, 0, .2, 1);
+  will-change: transform;
+}
+
+.proj-carousel-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.proj-cover-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 42%, rgba(0,0,0,.48) 100%);
+  pointer-events: none;
+}
+
+.proj-video-wrap,
+.proj-video-frame {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.proj-video-frame {
+  display: block;
+  border: 0;
+}
+
+.proj-video-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: rgba(0,0,0,.58);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border: 1px solid rgba(255,255,255,.16);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.proj-video-badge svg {
+  width: 12px;
+  height: 10px;
+}
+
+.proj-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 7;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  transition: opacity .18s, background .15s, transform .15s;
+}
+
+.proj-card:hover .proj-carousel-arrow {
+  opacity: 1;
+}
+
+.proj-carousel-arrow:hover {
+  background: rgba(0,0,0,.72);
+}
+
+.proj-carousel-arrow svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.proj-carousel-prev {
+  left: 8px;
+  transform: translateY(-50%);
+}
+
+.proj-carousel-next {
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+.proj-carousel-prev:hover,
+.proj-carousel-next:hover {
+  transform: translateY(-50%) scale(1.08);
+}
+
+.proj-carousel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transform: translateX(-50%);
+}
+
+.proj-carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  padding: 0;
+  border: 0;
+  background: rgba(255,255,255,.52);
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+
+.proj-carousel-dot.video {
+  width: 9px;
+  border-radius: 2px;
+}
+
+.proj-carousel-dot.active {
+  background: #fff;
+  transform: scale(1.35);
+}
+
+.proj-carousel-counter {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 7;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.88);
+  background: rgba(0,0,0,.42);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  padding: 2px 7px;
+  backdrop-filter: blur(3px);
 }
 
 .proj-cover-icon {
@@ -1843,6 +2020,18 @@
   color: #92400e;
   background: var(--amarillo-bg);
   border: 1px solid var(--amarillo-borde);
+}
+
+.pb-draft {
+  color: var(--gris-oscuro);
+  background: var(--fondo);
+  border: 1px solid var(--gris-borde);
+}
+
+.pb-arch {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .pb-type {

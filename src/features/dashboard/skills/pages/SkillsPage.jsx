@@ -10,6 +10,7 @@ import {
 import ExperienceToast from "../../experience/components/ExperienceToast";
 // Importamos el modal compartido sugerido por tu compañero
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import { getSkillLevelColor, getSkillProgress } from "../model/skillLevel";
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
@@ -226,13 +227,8 @@ export default function SkillsPage() {
 }
 
 function SkillLongRow({ skill, onEdit, onDelete }) {
-  const levels = { 
-    basico: { p: 30, c: "#64748b" }, 
-    intermedio: { p: 60, c: "#16a34a" }, 
-    avanzado: { p: 85, c: "#2563eb" }, 
-    experto: { p: 100, c: "#7c3aed" } 
-  };
-  const current = levels[skill.nivel] || { p: 0, c: "#ccc" };
+  const progress = getSkillProgress(skill.nivel);
+  const color = getSkillLevelColor(skill.nivel);
 
   return (
     <div className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -253,19 +249,19 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
       <div className="flex-grow-1 mx-md-4" style={{ minWidth: "280px" }}>
         <div className="d-flex justify-content-between align-items-center mb-2">
           <div className="d-flex align-items-center gap-2">
-            <div className="level-square-badge" style={{ backgroundColor: current.c }}>
+            <div className="level-square-badge" style={{ backgroundColor: color }}>
               {skill.nivel}
             </div>
-            <span className="small fw-bold" style={{ color: "#475569" }}>{current.p}%</span>
+            <span className="small fw-bold" style={{ color: "#475569" }}>{progress}%</span>
           </div>
           <span className="small text-muted fw-bold" style={{ fontSize: '10px', textTransform: 'uppercase' }}>Dominio</span>
         </div>
         <div className="progress" style={{ height: "8px", backgroundColor: "#e2e8f0", borderRadius: "20px" }}>
-          <div 
-            className="progress-bar" 
-            style={{ 
-                width: `${current.p}%`, 
-                backgroundColor: current.c, 
+          <div
+            className="progress-bar"
+            style={{
+                width: `${progress}%`,
+                backgroundColor: color,
                 borderRadius: "20px",
                 transition: 'width 1s ease'
             }}

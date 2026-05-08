@@ -1,16 +1,11 @@
 import BASE_URL from '../../../../services/http/const';
 import { DEFAULT_CONFIG, DEFAULT_VISIBILITY } from '../model/viewModel';
+import { getSkillProgress, normalizeSkillLevel } from '../../skills/model/skillLevel';
+import { normalizeProyectoFromApi } from '../../projects/services/projectsService';
 
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const CONFIG_STORAGE_PREFIX = 'portfolio-view-config';
-const DATA_CACHE_PREFIX = 'portfolio-view-data';
-
-const LEVEL_PERCENTAGE = {
-  basico: 35,
-  intermedio: 60,
-  avanzado: 82,
-  experto: 96,
-};
+const DATA_CACHE_PREFIX = 'portfolio-view-data:v2';
 
 const CATEGORY_LABELS = {
   sin_especificar: 'Proyecto',
@@ -67,18 +62,9 @@ function toBool(value, fallback = false) {
   return fallback;
 }
 
-function normalizeLevel(value = 'intermedio') {
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') || 'intermedio';
-}
-
 function getSession() {
-  const rawUser = sessionStorage.getItem('usuario');
-  const token = sessionStorage.getItem('tokenPORT') || localStorage.getItem('tokenPORT');
+  const rawUser = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
 
   if (!rawUser || !token) {
     throw new Error('No hay sesion activa.');
@@ -172,6 +158,9 @@ async function apiFetch(endpoint, options = {}) {
 function unwrapList(response) {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.proyectos)) return response.proyectos;
+  if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.results)) return response.results;
   return [];
 }
 
@@ -394,7 +383,7 @@ export function mapHabilidadesFromBackend(lista = []) {
     .filter((item) => toBool(item.es_visible ?? item.es_publico, true))
     .map((item) => {
       const catalog = item.habilidad || item.catalogo_habilidad || {};
-      const level = normalizeLevel(item.nivel);
+      const level = normalizeSkillLevel(item.nivel);
       const tipo = catalog.tipo || item.tipo || 'tecnica';
 
       return {
@@ -404,7 +393,7 @@ export function mapHabilidadesFromBackend(lista = []) {
         nombre: catalog.nombre || item.nombre || item.nombre_habilidad || 'Habilidad',
         tipo,
         nivel: level,
-        porcentaje: Number(item.porcentaje ?? LEVEL_PERCENTAGE[level] ?? 60),
+        porcentaje: Number(item.porcentaje ?? getSkillProgress(level)),
         descripcion: catalog.descripcion || item.descripcion || '',
       };
     });
@@ -455,7 +444,12 @@ export function mapExperienciasFromBackend(lista = []) {
 }
 
 function mapProjectIcon(project = {}) {
-  const raw = `${project.categoria_proyecto || ''} ${project.plataforma_objetivo || ''}`.toLowerCase();
+  const raw = [
+    project.categoria_proyecto,
+    project.plataforma_objetivo,
+    project.tipo,
+    project.tipoLabel,
+  ].filter(Boolean).join(' ').toLowerCase();
 
   if (raw.includes('educativo')) return 'school';
   if (raw.includes('api') || raw.includes('herramienta')) return 'api';
@@ -470,38 +464,126 @@ function getProjectYear(project = {}) {
   return /^\d{4}$/.test(year) ? year : '';
 }
 
+const PROJECT_STATUS_LABELS = {
+  publicado: 'Publicado',
+  desarrollo: 'En desarrollo',
+  borrador: 'Borrador',
+  archivado: 'Archivado',
+};
+
+function getProjectStatus(project = {}) {
+  if (project.estado) return project.estado;
+  if (project.estado_publicacion === 'archivado') return 'archivado';
+  if (project.estado_publicacion === 'publicado') return 'publicado';
+
+  if (['en_desarrollo', 'mantenimiento', 'versionado', 'pausado'].includes(project.estado_desarrollo)) {
+    return 'desarrollo';
+  }
+
+  return 'borrador';
+}
+
+function getProjectStatusLabel(project = {}) {
+  if (project.estadoLabel) return project.estadoLabel;
+
+  const status = getProjectStatus(project);
+
+  if (status === 'desarrollo' && project.estado_desarrollo) {
+    return DEVELOPMENT_LABELS[project.estado_desarrollo] || PROJECT_STATUS_LABELS.desarrollo;
+  }
+
+  return PROJECT_STATUS_LABELS[status] || project.estado_publicacion || 'Proyecto';
+}
+
+function getProjectTypeLabel(project = {}) {
+  return (
+    project.tipoLabel ||
+    project.tipo_label ||
+    project.tipo_proyecto?.nombre ||
+    project.tipoProyecto?.nombre ||
+    CATEGORY_LABELS[project.categoria_proyecto] ||
+    project.tipo ||
+    'Proyecto'
+  );
+}
+
+function uniqueNonEmpty(values = []) {
+  return [...new Set(values.map(value => String(value || '').trim()).filter(Boolean))];
+}
+
+function getProjectImages(project = {}) {
+  return uniqueNonEmpty([
+    project.imagen_portada,
+    project.imagenUrl,
+    ...(Array.isArray(project.imagenes) ? project.imagenes : []),
+  ])
+    .map(buildImageUrl)
+    .filter(Boolean);
+}
+
+function getProjectVideos(project = {}) {
+  return uniqueNonEmpty([
+    ...(Array.isArray(project.url_videos) ? project.url_videos : []),
+    project.url_video,
+    project.videoUrl,
+  ]);
+}
+
+function getProjectRepos(project = {}) {
+  return uniqueNonEmpty([
+    ...(Array.isArray(project.url_repositorios) ? project.url_repositorios : []),
+    project.url_repositorio,
+    project.githubUrl,
+  ]);
+}
+
+function isPortfolioProjectVisible(project = {}) {
+  const visibility = project.es_publico ?? project.participacion?.visibilidad ?? project.visibilidad;
+  return toBool(visibility, true);
+}
+
 export function mapProyectosFromBackend(lista = []) {
   return lista
-    .filter((project) => {
-      const isPublicParticipation = toBool(project.participacion?.visibilidad ?? project.visibilidad, true);
-      const isPublished = (project.estado_publicacion || 'publicado') === 'publicado';
-      return isPublicParticipation && isPublished;
-    })
-    .map((project) => {
+    .map((project) => normalizeProyectoFromApi(project))
+    .filter(isPortfolioProjectVisible)
+    .map((project, index) => {
       const evidencias = Array.isArray(project.evidencias) ? project.evidencias : [];
-      const coverUrl = findFirstUrl(evidencias, ['imagen', 'captura']);
-      const demoUrl = project.url_demo || findFirstUrl(evidencias, ['demo', 'link']);
-      const videoUrl = project.url_video || findFirstUrl(evidencias, ['video']);
-      const repoUrl = project.url_repositorio || project.url_repositorios?.[0] || '';
-      const estadoDesarrollo = project.estado_desarrollo || 'sin_especificar';
+      const imagenes = getProjectImages(project);
+      const videos = getProjectVideos(project);
+      const repositorios = getProjectRepos(project);
+      const demoUrl = project.url_demo || findFirstUrl(evidencias, ['demo', 'sitio', 'sitio_web', 'web', 'link']);
+      const estado = getProjectStatus(project);
+      const backendId = project.id_proyecto ?? project.id ?? index;
+      const tecnologias = Array.isArray(project.etiquetas) && project.etiquetas.length > 0
+        ? project.etiquetas
+        : (project.tecnologias || []);
 
       return {
-        id: `proyecto-${project.id_proyecto ?? project.id}`,
-        backendId: project.id_proyecto ?? project.id,
+        ...project,
+        id: `proyecto-${backendId}`,
+        backendId,
         titulo: project.titulo || 'Proyecto',
         descripcion: project.descripcion || project.descripcion_aporte || '',
-        estado: project.estado_publicacion === 'publicado' ? 'publicado' : 'desarrollo',
-        estadoLabel: project.estado_publicacion === 'publicado'
-          ? 'Publicado'
-          : (DEVELOPMENT_LABELS[estadoDesarrollo] || 'Desarrollo'),
-        tipo: CATEGORY_LABELS[project.categoria_proyecto] || project.tipo || 'Proyecto',
+        estado,
+        estadoLabel: getProjectStatusLabel({ ...project, estado }),
+        tipo: getProjectTypeLabel(project),
         anio: getProjectYear(project),
         icono: mapProjectIcon(project),
-        tecnologias: Array.isArray(project.tecnologias) ? project.tecnologias : (project.etiquetas || []),
-        githubUrl: repoUrl,
+        tecnologias,
+        etiquetas: tecnologias,
+        tecnologias_detalle: Array.isArray(project.tecnologias_detalle) ? project.tecnologias_detalle : [],
+        githubUrl: repositorios[0] || '',
+        repositoriosGithub: repositorios,
+        url_repositorios: repositorios,
+        url_repositorio: project.url_repositorio || repositorios[0] || '',
         demoUrl,
-        videoUrl,
-        imagenUrl: buildImageUrl(coverUrl),
+        url_demo: demoUrl,
+        videoUrl: project.url_video || videos[0] || '',
+        url_video: project.url_video || videos[0] || '',
+        url_videos: videos,
+        imagenes,
+        imagenUrl: buildImageUrl(project.imagen_portada) || imagenes[0] || null,
+        imagen_portada: buildImageUrl(project.imagen_portada) || imagenes[0] || null,
         participacion: project.participacion || null,
       };
     });
