@@ -433,6 +433,310 @@ function normalizeVideos(datos) {
   return legacy ? [legacy] : [];
 }
 
+function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeRoleText(value = '') {
+  return cleanString(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getFullName(...parts) {
+  return parts
+    .map(cleanString)
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+function getParticipantSources(project = {}) {
+  const sources = [
+    project.participantes,
+    project.participants,
+    project.participaciones,
+    project.colaboradores,
+    project.collaborators,
+    project.github_colaboradores,
+    project.githubCollaborators,
+    project.github_collaborators,
+    project.miembros,
+    project.members,
+  ];
+
+  const items = sources.flatMap(source => Array.isArray(source) ? source : []);
+
+  if (project.owner && typeof project.owner === 'object') {
+    items.push({
+      ...project.owner,
+      es_propietario: true,
+      relacion_github: 'owner',
+    });
+  }
+
+  if (Array.isArray(project.owners)) {
+    project.owners.forEach(owner => {
+      if (owner && typeof owner === 'object') {
+        items.push({
+          ...owner,
+          es_propietario: true,
+          relacion_github: owner.relacion_github || 'owner',
+        });
+      }
+    });
+  }
+
+  return items;
+}
+
+function getParticipantAvatar(item = {}, usuario = {}, perfil = {}, githubAccount = {}) {
+  return formatUrl(
+    item.avatar_url ||
+    item.avatarUrl ||
+    item.foto_url ||
+    item.fotoUrl ||
+    item.foto_perfil ||
+    item.fotoPerfil ||
+    item.github_avatar_url ||
+    item.githubAvatarUrl ||
+    perfil.foto_perfil ||
+    perfil.fotoPerfil ||
+    githubAccount.foto_url ||
+    githubAccount.fotoUrl ||
+    githubAccount.avatar_url ||
+    githubAccount.avatarUrl ||
+    usuario.foto_url ||
+    usuario.fotoUrl ||
+    usuario.foto_perfil ||
+    usuario.fotoPerfil ||
+    usuario.avatar_url ||
+    usuario.avatarUrl
+  );
+}
+
+function normalizeParticipant(item = {}, index = 0) {
+  const usuario = item.usuario || item.user || {};
+  const perfil = item.perfil || usuario.perfil || {};
+  const githubAccount =
+    item.github ||
+    item.cuenta_github ||
+    item.cuentaGithub ||
+    item.oauth_github ||
+    item.oauthGithub ||
+    item.cuenta_oauth ||
+    item.cuentaOauth ||
+    {};
+  const validacion =
+    item.validacion ||
+    item.validacion_github ||
+    item.github_validacion ||
+    item.usuario_repositorio_validacion ||
+    {};
+
+  const githubRole = normalizeRoleText(
+    item.relacion_github ||
+    item.github_role ||
+    item.githubRole ||
+    validacion.relacion_github ||
+    validacion.github_role ||
+    ''
+  );
+
+  const projectRole = normalizeRoleText(
+    item.rol_tipo ||
+    item.tipo_rol ||
+    item.role_type ||
+    item.tipo ||
+    item.rol ||
+    item.role ||
+    ''
+  );
+
+  const isOwner =
+    isTruthyDb(item.es_propietario) ||
+    isTruthyDb(item.is_owner) ||
+    isTruthyDb(item.owner) ||
+    isTruthyDb(validacion.es_propietario) ||
+    githubRole === 'owner' ||
+    projectRole === 'owner' ||
+    projectRole === 'propietario';
+
+  const githubUsername = cleanString(
+    item.github_username ||
+    item.githubUsername ||
+    item.github_login ||
+    item.githubLogin ||
+    item.login ||
+    githubAccount.login ||
+    githubAccount.username ||
+    githubAccount.provider_username ||
+    githubAccount.providerUsername
+  );
+
+  const nombre = getFullName(
+    item.nombre_completo || item.nombreCompleto,
+    item.nombre,
+    item.apellido
+  ) || getFullName(
+    usuario.nombre_completo || usuario.nombreCompleto,
+    usuario.nombre,
+    usuario.apellido
+  ) || cleanString(
+    githubAccount.nombre ||
+    githubAccount.name ||
+    githubUsername ||
+    item.email ||
+    usuario.correo ||
+    'Participante'
+  );
+
+  const rol = cleanString(item.rol || item.role || item.cargo || item.titulo_rol || item.tituloRol);
+
+  return {
+    ...item,
+    id: item.id || item.id_participacion || item.idParticipacion || item.id_usuario || usuario.id || usuario.id_usuario || `participant-${index}`,
+    id_usuario: item.id_usuario || item.idUsuario || usuario.id_usuario || usuario.id || null,
+    nombre,
+    rol,
+    tipo_rol: isOwner ? 'owner' : 'colaborador',
+    rol_label: isOwner ? 'Owner' : 'Colaborador',
+    avatar_url: getParticipantAvatar(item, usuario, perfil, githubAccount),
+    github_username: githubUsername,
+    github_role: githubRole || (isOwner ? 'owner' : ''),
+    descripcion_aporte: item.descripcion_aporte || item.descripcionAporte || '',
+    es_propietario: isOwner,
+  };
+}
+
+function uniqueParticipants(items = []) {
+  const seen = new Set();
+
+  return items.filter((item) => {
+    const key = item.id_usuario
+      ? `usuario:${item.id_usuario}`
+      : item.github_username
+        ? `github:${item.github_username.toLowerCase()}`
+        : item.id
+          ? `id:${item.id}`
+          : `nombre:${normalizeRoleText(item.nombre)}`;
+
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getProjectParticipantsCount(project = {}) {
+  const raw = project.participantes_count ?? project.participants_count ?? project.colaboradores_count;
+  const count = Number(raw);
+
+  return Number.isFinite(count) && count > 0 ? count : 0;
+}
+
+function getCurrentUserParticipant(project = {}) {
+  const user = getStoredUser();
+
+  if (!user) return null;
+
+  const participacion = project.participacion || project.mi_participacion || project.my_participation || {};
+  const fallbackOwner = getProjectParticipantsCount(project) <= 1;
+
+  return normalizeParticipant({
+    ...participacion,
+    usuario: user,
+    perfil: user.perfil || {},
+    id_usuario: user.id || user.id_usuario || user.idUsuario,
+    es_propietario: participacion.es_propietario ?? project.es_propietario ?? fallbackOwner,
+  }, 0);
+}
+
+export function normalizeProyectoParticipantes(project = {}, options = {}) {
+  const { includeCurrentUserFallback = true } = options;
+  const sources = getParticipantSources(project);
+  let participantes = uniqueParticipants(
+    sources
+      .map(normalizeParticipant)
+      .filter(participante => participante.nombre)
+  );
+
+  if (participantes.length === 0 && includeCurrentUserFallback) {
+    const current = getCurrentUserParticipant(project);
+    if (current) {
+      participantes = [current];
+    }
+  }
+
+  return participantes.sort((a, b) => {
+    if (a.tipo_rol === b.tipo_rol) {
+      return a.nombre.localeCompare(b.nombre);
+    }
+
+    return a.tipo_rol === 'owner' ? -1 : 1;
+  });
+}
+
+function extractParticipantsPayload(data = {}) {
+  const payload = data?.data ?? data;
+  const project = payload?.proyecto || payload?.project || payload;
+  const directSources = [
+    payload?.participantes,
+    payload?.participants,
+    payload?.colaboradores,
+    payload?.collaborators,
+    payload?.data?.participantes,
+    payload?.data?.participants,
+  ];
+  const direct = directSources.find(Array.isArray);
+
+  if (direct) {
+    return {
+      hasPayload: true,
+      items: normalizeProyectoParticipantes({ participantes: direct }, { includeCurrentUserFallback: false }),
+    };
+  }
+
+  const items = normalizeProyectoParticipantes(project, { includeCurrentUserFallback: false });
+
+  return {
+    hasPayload: items.length > 0,
+    items,
+  };
+}
+
+export async function getProyectoParticipantes(id) {
+  if (!id) return [];
+
+  const endpoints = [
+    `${API_URL}/projects/${id}/participants`,
+    `${API_URL}/projects/${id}/participantes`,
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const data = await apiFetch(endpoint);
+      const payload = extractParticipantsPayload(data);
+
+      if (payload.hasPayload) {
+        return payload.items;
+      }
+    } catch (err) {
+      if (!String(err?.message || '').includes('404')) {
+        throw err;
+      }
+    }
+  }
+
+  const project = await getProyecto(id);
+  return normalizeProyectoParticipantes(project, { includeCurrentUserFallback: false });
+}
+
 // ═══════════════════════════════════════════
 // HELPERS PARA BACKEND EXISTENTE
 // ═══════════════════════════════════════════
@@ -709,6 +1013,11 @@ export function normalizeProyectoFromApi(project = {}) {
     : getDocumentosFromEvidencias(evidencias);
 
   const participacion = getParticipacionUsuario(project);
+  const participantes = normalizeProyectoParticipantes(project);
+  const participantesCountRaw = project.participantes_count ?? project.participants_count ?? project.colaboradores_count;
+  const participantesCount = Number.isFinite(Number(participantesCountRaw))
+    ? Number(participantesCountRaw)
+    : participantes.length;
 
   const esPublico = project.es_publico !== undefined
     ? Boolean(project.es_publico)
@@ -764,6 +1073,11 @@ export function normalizeProyectoFromApi(project = {}) {
 
     etiquetas: getEtiquetasFromProject(project),
     tecnologias_detalle: Array.isArray(project.tecnologias_detalle) ? project.tecnologias_detalle : [],
+
+    participantes,
+    colaboradores: participantes.filter(participante => participante.tipo_rol !== 'owner'),
+    owners: participantes.filter(participante => participante.tipo_rol === 'owner'),
+    participantes_count: participantesCount,
   };
 }
 

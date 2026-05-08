@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ProjectsDotsMenu from './ProjectsDotsMenu';
+import ProjectsGithubCollaborators from './ProjectsGithubCollaborators';
 import '../styles/projects.css';
 import { TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/projectsModel';
 
@@ -678,6 +679,10 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDes
           </div>
         )}
 
+        {!detallesExpandidos && (
+          <ProjectsGithubCollaborators proyecto={proyecto} />
+        )}
+
         {hayDetallesExtra && (
           <div className="prj-card-actions">
             <button
@@ -784,6 +789,8 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDes
                 </div>
               </div>
             )}
+
+            <ProjectsGithubCollaborators proyecto={proyecto} detail />
           </div>
         )}
       </div>
