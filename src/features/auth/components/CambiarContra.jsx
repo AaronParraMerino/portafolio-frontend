@@ -56,6 +56,11 @@ export default function CambiarContrasena() {
       sessionStorage.removeItem("codigo_recuperacion");
       sessionStorage.removeItem("correo_recuperacion");
       setSuccess(true);
+      const redirect = sessionStorage.getItem("redirect_after_recovery");
+      if (redirect) {
+        sessionStorage.removeItem("redirect_after_recovery");
+        setTimeout(() => navigate(redirect), 1500);
+      }
     } catch (e) {
       setError(e.message);
     } finally {
@@ -63,7 +68,11 @@ export default function CambiarContrasena() {
     }
   };
 
-  const handleLoginRedirect = () => navigate("/auth/login");
+  const handleLoginRedirect = () => {
+    const redirect = sessionStorage.getItem("redirect_after_recovery");
+    if (redirect) { sessionStorage.removeItem("redirect_after_recovery"); navigate(redirect); }
+    else navigate("/auth/login");
+  };
 
   return (
     <div style={{ minHeight: "420px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--fondo)", borderRadius: "16px", padding: "24px" }}>

@@ -1,8 +1,8 @@
 import BASE_URL from '../../../../services/http/const';
 
 const getAuthData = () => {
-  const token = sessionStorage.getItem('tokenPORT');
-  const usuarioRaw = sessionStorage.getItem('usuario');
+  const token = localStorage.getItem('tokenPORT');
+  const usuarioRaw = localStorage.getItem('usuario');
   if (!token || !usuarioRaw) throw new Error('No hay sesión activa.');
   const usuario = JSON.parse(usuarioRaw);
   if (!usuario?.id_usuario) throw new Error('No se encontró el usuario autenticado.');
