@@ -7,7 +7,7 @@ import PortfolioResultCard from '../components/PortfolioResultCard';
 import SearchEmptyState from '../components/SearchEmptyState';
 import SkillLevelTagInput from '../components/SkillLevelTagInput';
 import TagInput from '../components/TagInput';
-import { getSearchCatalogs, searchPortfolios } from '../services/portfolioSearchService';
+import { SEARCH_AUTH_REQUIRED_MESSAGE, getSearchCatalogs, searchPortfolios } from '../services/portfolioSearchService';
 import '../styles/portfolio-search.css';
 
 const BASE_FILTERS = {
@@ -100,7 +100,7 @@ const PortfolioSearchPage = () => {
       })
       .catch((err) => {
         if (!mounted) return;
-        if (err.message === 'Debes iniciar sesión para buscar portafolios.') {
+        if (err.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
           setAuthRequired(true);
           setError(err.message);
         }
@@ -195,7 +195,7 @@ const PortfolioSearchPage = () => {
       setResults([]);
       setError(message);
       setHasSearched(true);
-      if (message === 'Debes iniciar sesión para buscar portafolios.') {
+      if (message === SEARCH_AUTH_REQUIRED_MESSAGE) {
         setAuthRequired(true);
       }
     } finally {

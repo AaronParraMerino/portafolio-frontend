@@ -5,11 +5,30 @@ const JSON_HEADERS = {
   Accept: 'application/json',
 };
 
+export const SEARCH_AUTH_REQUIRED_MESSAGE = 'Debes iniciar sesión para buscar portafolios.';
+
+const readStorageItem = (storage, key) => {
+  try {
+    return storage?.getItem(key) || '';
+  } catch (_) {
+    return '';
+  }
+};
+
+const getStoredToken = () => {
+  if (typeof window === 'undefined') return '';
+
+  return (
+    readStorageItem(window.localStorage, 'tokenPORT') ||
+    readStorageItem(window.sessionStorage, 'tokenPORT')
+  );
+};
+
 const getAuthHeaders = () => {
-  const token = sessionStorage.getItem('tokenPORT');
+  const token = getStoredToken();
 
   if (!token) {
-    throw new Error('Debes iniciar sesión para buscar portafolios.');
+    throw new Error(SEARCH_AUTH_REQUIRED_MESSAGE);
   }
 
   return { Authorization: `Bearer ${token}` };
@@ -23,7 +42,7 @@ const getFirstValidationError = (errors) => {
 
 const normalizeApiError = (message = '', errors = null, status = 0) => {
   if (status === 401 || status === 419) {
-    return 'Debes iniciar sesión para buscar portafolios.';
+    return SEARCH_AUTH_REQUIRED_MESSAGE;
   }
 
   const validationError = getFirstValidationError(errors);
@@ -212,7 +231,7 @@ export const getSearchCatalogs = async () => {
   const rejected = [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto]
     .find((result) => result.status === 'rejected');
 
-  if (rejected?.reason?.message === 'Debes iniciar sesión para buscar portafolios.') {
+  if (rejected?.reason?.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
     throw rejected.reason;
   }
 
