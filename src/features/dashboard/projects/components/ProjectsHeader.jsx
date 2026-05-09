@@ -1,4 +1,5 @@
-import '../styles/projects.css';
+import { FiPlus } from 'react-icons/fi';
+import Header from '../../layout/Header';
 
 /* ════════════════════════════════════════
    ProjectsHeader
@@ -8,31 +9,18 @@ import '../styles/projects.css';
    ─ onAgregar  fn()   abre el modal de nuevo proyecto
 ════════════════════════════════════════ */
 export default function ProjectsHeader({ onAgregar }) {
-  const handleAgregar = () => {
-    if (typeof onAgregar === 'function') {
-      onAgregar();
-    }
-  };
-
   return (
-    <div className="prj-module-header">
-      <div>
-        <div className="prj-header-eyebrow">Portafolio</div>
-        <div className="prj-header-title">Mis Proyectos</div>
-      </div>
-
-      <button
-        type="button"
-        className="prj-btn-add"
-        onClick={handleAgregar}
-        title="Agregar nuevo proyecto"
-      >
-        <svg viewBox="0 0 12 12">
-          <path d="M6 1v10M1 6h10" />
-        </svg>
-
-        <span className="prj-btn-add-label">Agregar nuevo</span>
-      </button>
-    </div>
+    <Header
+      title="Mis Proyectos"
+      actions={[
+        {
+          label: 'Agregar nuevo',
+          title: 'Agregar nuevo proyecto',
+          ariaLabel: 'Agregar nuevo proyecto',
+          icon: <FiPlus />,
+          onClick: onAgregar,
+        },
+      ]}
+    />
   );
 }

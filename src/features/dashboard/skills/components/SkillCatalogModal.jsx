@@ -1,4 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import DashboardEdit, {
+  DashboardEditBody,
+  DashboardEditFieldError,
+  DashboardEditFooter,
+  DashboardEditSection,
+  DashboardEditSpinner,
+} from "../../layout/DashboardEdit";
 import { createCatalogSkill } from "../services/skillService";
 
 export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
@@ -28,49 +35,32 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
 
       onSave(nuevaHabilidad);
     } catch (err) {
-      setError(err.message || "Error al crear habilidad en catálogo");
+      setError(err.message || "Error al crear habilidad en catalogo");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className="prf-modal-overlay"
-      style={{
-        zIndex: 1200,
-        backgroundColor: "rgba(0,0,0,0.6)",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
+    <DashboardEdit
+      title={`Nueva habilidad ${tipo === "tecnica" ? "tecnica" : "blanda"}`}
+      subtitle="Se agregara al catalogo general para poder seleccionarla."
+      onClose={onCancel}
+      closeDisabled={loading}
+      closeOnOverlay={!loading}
+      size="sm"
+      className="dash-edit-modal--stacked"
+      ariaLabel="Nueva habilidad"
     >
-      <div
-        className="bg-white rounded-3 shadow-lg p-0"
-        style={{ width: "350px", overflow: "hidden" }}
-      >
-        <div className="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
-          <span className="fw-bold text-dark">
-            ✨ Nueva Habilidad {tipo === "tecnica" ? "Técnica" : "Blanda"}
-          </span>
-          <button className="btn-close" onClick={onCancel} disabled={loading}></button>
-        </div>
-
-        <div className="p-4">
-          {!confirmar ? (
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label small fw-bold">
-                  Nombre de la habilidad:
-                </label>
+      {!confirmar ? (
+        <form onSubmit={handleSubmit} style={{ display: "contents" }}>
+          <DashboardEditBody>
+            <DashboardEditSection label="Datos del catalogo">
+              <div className="dash-edit-field mb-3">
+                <label className="dash-edit-label">Nombre de la habilidad <span className="dash-edit-required">*</span></label>
                 <input
                   type="text"
-                  className="form-control form-control-sm"
+                  className="form-control dash-edit-input"
                   placeholder="Ej: AWS, Scrum..."
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
@@ -79,74 +69,82 @@ export default function SkillCatalogModal({ tipo, onSave, onCancel }) {
                 />
               </div>
 
-              <div className="mb-3">
-                <label className="form-label small fw-bold">
-                  Pequeña descripción (Máx 30 carac.):
+              <div className="dash-edit-field">
+                <label className="dash-edit-label">
+                  Pequena descripcion
+                  <span className="dash-edit-char-count" style={{ color: "var(--gris-texto)" }}>
+                    {desc.length}/30
+                  </span>
                 </label>
                 <textarea
-                  className="form-control form-control-sm"
+                  className="form-control dash-edit-textarea"
                   rows="2"
                   maxLength="30"
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="Ej: Dominio de servicios cloud"
+                  placeholder="Ej: Servicios cloud"
                   disabled={loading}
                 />
-                <div
-                  className="text-end small text-muted"
-                  style={{ fontSize: "10px" }}
-                >
-                  {desc.length}/30
-                </div>
               </div>
 
-              {error && (
-                <div className="alert alert-danger py-2 small">
-                  {error}
-                </div>
-              )}
+              <DashboardEditFieldError msg={error} />
+            </DashboardEditSection>
+          </DashboardEditBody>
 
-              <button
-                type="submit"
-                className="btn btn-primary w-100 fw-bold shadow-sm"
-                disabled={loading}
-              >
-                Crear en catálogo
-              </button>
-            </form>
-          ) : (
-            <div className="text-center py-2">
-              <p className="mb-4 fw-semibold">
-                ¿Estás seguro de crear{" "}
-                <span className="text-primary">"{nombre}"</span> en el catálogo general?
+          <DashboardEditFooter>
+            <button
+              type="button"
+              className="dash-edit-btn dash-edit-btn--secondary"
+              onClick={onCancel}
+              disabled={loading}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="dash-edit-btn dash-edit-btn--primary"
+              disabled={loading}
+            >
+              Crear en catalogo
+            </button>
+          </DashboardEditFooter>
+        </form>
+      ) : (
+        <>
+          <DashboardEditBody>
+            <div className="dash-edit-confirm">
+              <p>
+                Estas por crear <strong>{nombre}</strong> en el catalogo general.
               </p>
-
-              {error && (
-                <div className="alert alert-danger py-2 small text-start">
-                  {error}
-                </div>
-              )}
-
-              <div className="d-flex gap-2">
-                <button
-                  className="btn btn-light border w-100"
-                  onClick={() => setConfirmar(false)}
-                  disabled={loading}
-                >
-                  Atrás
-                </button>
-                <button
-                  className="btn btn-primary w-100 fw-bold"
-                  onClick={handleFinalConfirm}
-                  disabled={loading}
-                >
-                  {loading ? "Creando..." : "Sí, crear"}
-                </button>
-              </div>
+              <DashboardEditFieldError msg={error} />
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </DashboardEditBody>
+
+          <DashboardEditFooter>
+            <button
+              type="button"
+              className="dash-edit-btn dash-edit-btn--secondary"
+              onClick={() => setConfirmar(false)}
+              disabled={loading}
+            >
+              Atras
+            </button>
+            <button
+              type="button"
+              className="dash-edit-btn dash-edit-btn--primary"
+              onClick={handleFinalConfirm}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <DashboardEditSpinner />
+                  Creando...
+                </>
+              ) : "Si, crear"}
+            </button>
+          </DashboardEditFooter>
+        </>
+      )}
+    </DashboardEdit>
   );
 }

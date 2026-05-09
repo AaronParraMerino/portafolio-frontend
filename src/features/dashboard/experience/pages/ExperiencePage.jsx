@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { FiPlus } from "react-icons/fi";
 import ExperienceForm from "../components/ExperienceForm";
 import ExperienceDetailModal from "../components/ExperienceDetailModal";
 import ExperienceToast from "../components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import Header from "../../layout/Header";
 import {
   getExperiencias,
   createExperiencia,
@@ -139,31 +141,6 @@ export default function ExperiencePage() {
   return (
     <>
       <style>{`
-        .custom-breadcrumb-bar {
-          background-color: var(--negro-texto);
-          padding: 1.2rem 2.5rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 4px solid var(--azul);
-          font-family: var(--font);
-        }
-        .bc-text {
-          color: var(--gris-texto);
-          font-size: 0.85rem;
-          margin: 0;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          font-family: var(--font);
-        }
-        .bc-active {
-          color: var(--blanco);
-          font-weight: 800;
-          font-size: 1.4rem;
-          margin: 0;
-          font-family: var(--font);
-        }
         .exp-card {
           transition: all 0.3s ease;
           border-left: 5px solid var(--azul) !important;
@@ -188,29 +165,20 @@ export default function ExperiencePage() {
           border: 1px solid var(--violeta-borde) !important;
           font-family: var(--font);
         }
-        @media (max-width: 768px) {
-          .custom-breadcrumb-bar {
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
-          }
-        }
       `}</style>
 
       {/* Barra superior */}
-      <div className="custom-breadcrumb-bar shadow">
-        <div>
-          <p className="bc-text">Portafolio</p>
-          <h2 className="bc-active">EXPERIENCIA</h2>
-        </div>
-        <button
-          className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
-          onClick={() => { setModalMode("add"); setSelectedExp(null); }}
-        >
-          ➕ Agregar Nueva
-        </button>
-      </div>
+      <Header
+        title="Experiencia"
+        actions={[
+          {
+            label: "Agregar nueva",
+            title: "Agregar nueva experiencia",
+            icon: <FiPlus />,
+            onClick: () => { setModalMode("add"); setSelectedExp(null); },
+          },
+        ]}
+      />
 
       {/* Lista de experiencias */}
       <div

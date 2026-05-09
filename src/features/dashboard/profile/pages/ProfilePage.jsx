@@ -5,6 +5,7 @@ import ProfileInfo            from '../components/ProfileInfo';
 import ProfileEdit            from '../components/ProfileEdit';
 import ProfileCompletitud     from '../components/ProfileCompletitud';
 import ProfileToast           from '../components/ProfileToast';
+import Header                 from '../../layout/Header';
 import '../styles/profile.css';
 
 export default function ProfilePage() {
@@ -12,23 +13,36 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="prf-loading">
-        <span className="prf-spinner" />
-        <span>Cargando perfil...</span>
-      </div>
+      <>
+        <Header eyebrow="GENERAL" title="Mi Perfil" />
+        <div className="prf-page">
+          <div className="prf-loading">
+            <span className="prf-spinner" />
+            <span>Cargando perfil...</span>
+          </div>
+        </div>
+      </>
     );
   }
 
   if (!perfil) {
     return (
-      <div className="prf-error">
-        No se pudo cargar el perfil.
-      </div>
+      <>
+        <Header eyebrow="GENERAL" title="Mi Perfil" />
+        <div className="prf-page">
+          <div className="prf-error">
+            No se pudo cargar el perfil.
+          </div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="prf-page">
+    <>
+      <Header eyebrow="GENERAL" title="Mi Perfil" />
+
+      <div className="prf-page">
 
       {/* ── Header: banner + avatar + stats strip ── */}
       <ProfileHeader
@@ -80,6 +94,7 @@ export default function ProfilePage() {
       {/* ── Toast ── */}
       <ProfileToast toast={toast} />
 
-    </div>
+      </div>
+    </>
   );
 }
