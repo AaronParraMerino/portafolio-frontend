@@ -96,31 +96,9 @@ export const DEFAULT_VISIBILITY = {
     laboral: true,
   },
 
-  habilidades: {
-    'tec-php': true,
-    'tec-mysql': true,
-    'tec-html-css': true,
-    'tec-java': true,
-    'tec-js': true,
-    'tec-git': true,
-    'soft-team': true,
-    'soft-problem': true,
-    'soft-communication': true,
-    'soft-agile': true,
-  },
-
-  experiencias: {
-    'exp-1': true,
-    'exp-2': true,
-    'exp-3': true,
-  },
-
-  proyectos: {
-    'proy-1': true,
-    'proy-2': true,
-    'proy-3': true,
-    'proy-4': true,
-  },
+  habilidades: {},
+  experiencias: {},
+  proyectos: {},
 };
 
 export const DEFAULT_CONFIG = {
