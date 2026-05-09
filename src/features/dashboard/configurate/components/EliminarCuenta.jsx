@@ -79,11 +79,6 @@ export default function EliminarCuenta() {
             )}
           </div>
         )}
-
-        <button onClick={() => navigate('/dashboard/settings')} style={backBtnStyle}>
-          ← Volver a Configuración
-        </button>
-
         <div style={badgeStyle}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#991b1b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -183,17 +178,11 @@ export default function EliminarCuenta() {
 
 const pageStyle = {
   fontFamily: "'Segoe UI','Inter',sans-serif",
-  background: "#e8f4fd", minHeight: "100vh", padding: "36px 24px",
+  background: "#ffffff", minHeight: "100vh", padding: "36px 24px",
 };
 
 const innerStyle = {
   maxWidth: 680, margin: "0 auto", width: "100%",
-};
-
-const backBtnStyle = {
-  background: "transparent", border: "none", color: "#64748b",
-  fontSize: 14, cursor: "pointer", marginBottom: 20,
-  display: "flex", alignItems: "center", gap: 8,
 };
 
 const badgeStyle = {

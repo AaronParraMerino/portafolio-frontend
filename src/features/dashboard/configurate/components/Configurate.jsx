@@ -5,6 +5,8 @@ import Header from "../../layout/Header";
 export default function Configurate() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const [activeCard, setActiveCard] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -16,16 +18,55 @@ export default function Configurate() {
     navigate(`/dashboard/settings/${route}`);
   };
 
+  const getCardStyle = (id, overrides = {}) => ({
+    ...cardStyle,
+    ...overrides,
+    borderLeft: '4px solid #0ea5e9',
+    transform: activeCard === id ? 'scale(0.98)' : hoveredCard === id ? 'translateY(-2px)' : 'none',
+    boxShadow: hoveredCard === id
+      ? '0 12px 28px rgba(14,165,233,0.18)'
+      : '0 8px 20px rgba(14,165,233,0.09)',
+    background: hoveredCard === id ? '#f0f9ff' : overrides.background || '#ffffff',
+  });
+
+  const getDangerCardStyle = (id) => ({
+    ...cardStyle,
+    border: '1px solid #fecaca',
+    borderLeft: '4px solid #ef4444',
+    background: activeCard === id ? '#ffe4e6' : hoveredCard === id ? '#ffe4e6' : '#fff1f2',
+    boxShadow: hoveredCard === id
+      ? '0 12px 28px rgba(239,68,68,0.18)'
+      : '0 8px 20px rgba(239,68,68,0.10)',
+    transform: activeCard === id ? 'scale(0.98)' : hoveredCard === id ? 'translateY(-2px)' : 'none',
+  });
+
   return (
+<<<<<<< HEAD
     <div style={{ fontFamily: "var(--font)", minHeight: '100vh', background: '#effaff' }}>
       <Header
         eyebrow="CUENTA"
         title="Configuracion"
         subtitle="Gestiona ajustes de cuenta, seguridad y accesos."
       />
+=======
+    <div style={{ fontFamily: "'Segoe UI','Inter',sans-serif", minHeight: '100vh', background: '#ffffff' }}>
+
+      {/* ── BANNER ── */}
+      <div style={{ background: '#0f172a', padding: isMobile ? '24px 20px' : '28px 40px' }}>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#94a3b8', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+          PORTAFOLIO
+        </p>
+        <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: '#ffffff', letterSpacing: 1, textTransform: 'uppercase' }}>
+          CONFIGURACIÓN
+        </h1>
+        <p style={{ margin: '10px 0 0', color: '#cbd5e1', fontSize: 14, maxWidth: 640, lineHeight: 1.6 }}>
+          Desde aquí puedes gestionar ajustes de cuenta, seguridad y accesos. Selecciona una opción para continuar.
+        </p>
+      </div>
+>>>>>>> configuracion
 
       {/* ── SECCIÓN DE ABAJO ── */}
-      <div style={{ background: '#effaff', padding: isMobile ? '24px 14px 40px' : '36px 24px 48px' }}>
+      <div style={{ background: '#ffffff', padding: isMobile ? '24px 14px 40px' : '36px 24px 48px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Gestión de cuenta */}
@@ -37,7 +78,14 @@ export default function Configurate() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
             {/* Vincular cuenta */}
-            <button style={cardStyle} onClick={() => handleClick('vincular-cuenta')}>
+            <button
+              style={getCardStyle('vincular')}
+              onClick={() => handleClick('vincular-cuenta')}
+              onMouseEnter={() => setHoveredCard('vincular')}
+              onMouseLeave={() => { setHoveredCard(null); setActiveCard(null); }}
+              onMouseDown={() => setActiveCard('vincular')}
+              onMouseUp={() => setActiveCard(null)}
+            >
               <div style={cardLeftStyle}>
                 <div style={iconWrapStyle}>
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -54,7 +102,14 @@ export default function Configurate() {
             </button>
 
             {/* Cambiar contraseña */}
-            <button style={cardStyle} onClick={() => handleClick('cambiar-contraseña')}>
+            <button
+              style={getCardStyle('password')}
+              onClick={() => handleClick('cambiar-contraseña')}
+              onMouseEnter={() => setHoveredCard('password')}
+              onMouseLeave={() => { setHoveredCard(null); setActiveCard(null); }}
+              onMouseDown={() => setActiveCard('password')}
+              onMouseUp={() => setActiveCard(null)}
+            >
               <div style={cardLeftStyle}>
                 <div style={iconWrapStyle}>
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +126,14 @@ export default function Configurate() {
             </button>
 
             {/* Sesiones activas */}
-            <button style={cardStyle} onClick={() => handleClick('sesiones-activas')}>
+            <button
+              style={getCardStyle('sesiones')}
+              onClick={() => handleClick('sesiones-activas')}
+              onMouseEnter={() => setHoveredCard('sesiones')}
+              onMouseLeave={() => { setHoveredCard(null); setActiveCard(null); }}
+              onMouseDown={() => setActiveCard('sesiones')}
+              onMouseUp={() => setActiveCard(null)}
+            >
               <div style={cardLeftStyle}>
                 <div style={iconWrapStyle}>
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,13 +158,12 @@ export default function Configurate() {
           </div>
 
           <button
-            style={{
-              ...cardStyle,
-              border: '1px solid #fecaca',
-              background: '#fff1f2',
-              boxShadow: '0 8px 20px rgba(239,68,68,0.10)',
-            }}
+            style={getDangerCardStyle('eliminar')}
             onClick={() => handleClick('eliminar-cuenta')}
+            onMouseEnter={() => setHoveredCard('eliminar')}
+            onMouseLeave={() => { setHoveredCard(null); setActiveCard(null); }}
+            onMouseDown={() => setActiveCard('eliminar')}
+            onMouseUp={() => setActiveCard(null)}
           >
             <div style={cardLeftStyle}>
               <div style={{ ...iconWrapStyle, background: '#fee2e2', border: '1px solid #fca5a5' }}>
@@ -134,8 +195,9 @@ const sectionLabelStyle = {
 };
 
 const labelTextStyle = {
-  fontSize: 11, fontWeight: 800, color: '#64748b',
-  letterSpacing: 3, textTransform: 'uppercase', whiteSpace: 'nowrap',
+  fontSize: 15, fontWeight: 800, color: '#0a0a0a',
+  letterSpacing: 0, textTransform: 'none', whiteSpace: 'nowrap',
+  fontFamily: "'Segoe UI','Inter',sans-serif",
 };
 
 const dividerStyle = {
@@ -147,14 +209,14 @@ const cardStyle = {
   border: '1px solid #bae6fd',
   background: '#ffffff',
   borderRadius: 20,
-  padding: '20px 22px',          // más alto que antes
+  padding: '20px 22px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   boxShadow: '0 8px 20px rgba(14,165,233,0.09)',
   cursor: 'pointer',
   textAlign: 'left',
-  transition: 'transform 0.15s, box-shadow 0.15s',
+  transition: 'transform 0.18s, box-shadow 0.18s, background 0.18s',
 };
 
 const cardLeftStyle = {
@@ -162,7 +224,7 @@ const cardLeftStyle = {
 };
 
 const iconWrapStyle = {
-  width: 52, height: 52,         // más grande que antes (era 42)
+  width: 52, height: 52,
   borderRadius: 14,
   background: '#d8f1ff',
   border: '1px solid #a7ddff',
@@ -171,15 +233,15 @@ const iconWrapStyle = {
 };
 
 const cardTitleStyle = {
-  margin: 0, fontSize: 16, fontWeight: 800, color: '#1e293b',  // era 15
+  margin: 0, fontSize: 16, fontWeight: 800, color: '#1e293b',
 };
 
 const cardTextStyle = {
-  margin: '5px 0 0', fontSize: 13.5, color: '#64748b',         // era 13
+  margin: '5px 0 0', fontSize: 13.5, color: '#64748b',
 };
 
 const arrowStyle = {
-  width: 34, height: 34,         // más grande que antes (era 28)
+  width: 34, height: 34,
   borderRadius: 10,
   background: '#0ea5e9', color: '#fff',
   display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -21,15 +21,43 @@ const PLATS = [
     icon:<svg viewBox="0 0 40 40" width={40} height={40}><defs><linearGradient id="ig" x1="40" y1="40" x2="0" y2="0"><stop offset="0%" stopColor="#FD1D1D"/><stop offset="50%" stopColor="#E1306C"/><stop offset="100%" stopColor="#833AB4"/></linearGradient></defs><rect width="40" height="40" rx="8" fill="url(#ig)"/><rect x="11" y="11" width="18" height="18" rx="5" stroke="#fff" strokeWidth="2" fill="none"/><circle cx="20" cy="20" r="4.5" stroke="#fff" strokeWidth="2" fill="none"/><circle cx="25.5" cy="14.5" r="1.2" fill="#fff"/></svg> },
   { key:"facebook",      match:u=>u.includes("facebook.com")||u.includes("fb.com"),  name:"Facebook",
     icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#1877F2"/><path d="M22 29v-8h2.7l.4-3H22v-1.9c0-.9.2-1.5 1.5-1.5H25V12c-.3 0-1.2-.1-2.2-.1-2.2 0-3.8 1.3-3.8 3.8V18h-2.5v3H19v8h3z" fill="#fff"/></svg> },
+  { key:"threads",       match:u=>u.includes("threads.net"),                         name:"Threads",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#000"/><path d="M25.2 19.4c-.1-.1-.3-.1-.4-.2-.6-2.8-2.6-4.4-5.5-4.3-1.9.1-3.3.9-4.2 2.3-.7 1.1-1 2.4-.9 3.8.1 1.4.5 2.6 1.4 3.5.9.9 2.1 1.4 3.6 1.4 1.2 0 2.2-.3 3-.9.9-.7 1.5-1.7 1.7-3h-2c-.2.7-.5 1.2-1 1.6-.5.3-1.1.5-1.8.5-.9 0-1.6-.3-2.1-.8-.5-.5-.8-1.3-.9-2.3h7.9c0-.2 0-.4 0-.6 0-1.3-.3-2.4-.8-3zm-7.9 1.8c.1-.9.4-1.6.9-2.1.5-.5 1.1-.7 1.9-.7.8 0 1.4.2 1.9.7.4.4.7 1 .8 1.8v.3h-5.5zM20 10C14.5 10 10 14.5 10 20s4.5 10 10 10 10-4.5 10-10S25.5 10 20 10z" fill="white"/></svg> },
+  { key:"discord",       match:u=>u.includes("discord.com")||u.includes("discord.gg"), name:"Discord",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#5865F2"/><path d="M28.2 13.4A18.8 18.8 0 0023.7 12c-.2.4-.4.9-.6 1.3a17.4 17.4 0 00-6.2 0A13 13 0 0016.3 12a18.8 18.8 0 00-4.5 1.4C8.7 18.1 7.9 22.6 8.3 27c2 1.4 3.9 2.3 5.8 2.8.5-.6.9-1.3 1.2-2a12 12 0 01-1.9-1l.5-.3a13.5 13.5 0 0011.5 0l.5.3c-.6.4-1.2.7-1.9 1 .4.7.8 1.4 1.2 2 1.9-.6 3.8-1.4 5.8-2.8.5-5.1-.8-9.5-3.8-13.6zM16 24.3c-1.3 0-2.4-1.2-2.4-2.7s1-2.7 2.4-2.7c1.3 0 2.4 1.2 2.3 2.7 0 1.5-1 2.7-2.3 2.7zm8.1 0c-1.3 0-2.4-1.2-2.4-2.7s1-2.7 2.4-2.7c1.4 0 2.4 1.2 2.4 2.7s-1 2.7-2.4 2.7z" fill="white"/></svg> },
+  { key:"telegram",      match:u=>u.includes("t.me")||u.includes("telegram.me")||u.includes("telegram.org"), name:"Telegram",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#229ED9"/><path d="M30 11.5c-.3-.3-.8-.4-1.4-.2 0 0-18.5 7-19.3 7.6-.2.1-.2.2-.2.3.1.4.5.5.5.5l4.8 1.6s.2 0 .3-.1c.8-.5 8-5.3 8.4-5.5.1 0 .1 0 .1.1-.1.2-6.4 6-6.4 6.1l-.1.1-.3 5c0 .3.1.5.3.5.2 0 .3-.1.4-.2l2.2-2.1 4.3 3.2c.2.1.4.2.6.2.4 0 .7-.3.8-.7l3.5-16c.1-.8-.1-1.3-.5-1.6z" fill="white"/></svg> },
+  { key:"whatsapp",      match:u=>u.includes("wa.me")||u.includes("whatsapp.com"),    name:"WhatsApp",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#25D366"/><path d="M20 10a10 10 0 00-8.5 15.2L10 30l4.9-1.5A10 10 0 1020 10zm4.4 12.1c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.3-.5-.5-1-1.1-1.3-1.8-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.2-.4.1-.1.1-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.7.7-1 1.6-1 2.5.1.9.4 1.8 1 2.6 1.1 1.5 2.5 2.6 4.1 3.2.6.2 1.1.3 1.7.3.5 0 1.1-.2 1.5-.5.5-.4.8-.9.9-1.4 0-.2 0-.4-.2-.5z" fill="white"/></svg> },
+  { key:"snapchat",      match:u=>u.includes("snapchat.com"),                         name:"Snapchat",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#FFFC00"/><path d="M20 11.5c-2.6 0-4.8 2-4.8 5v1.2c-.5.1-1.2.4-1.4.8-.2.4 0 .8.3 1a7 7 0 01-1.1 2.1c-.5.7-1.4.9-2.2 1 .1.5.7.9 1.4 1 .2 0 .4.1.4.3 0 .4-.8.6-.9 1 0 .4.6.7 1.1.9 1.4.5 2.3 1.7 4.2 1.7.5.7 1.2 1.2 2.1 1.2.9 0 1.6-.5 2.1-1.2 1.9 0 2.8-1.2 4.2-1.7.5-.2 1.1-.5 1.1-.9-.1-.4-.9-.6-.9-1 0-.2.2-.3.4-.3.7-.1 1.3-.5 1.4-1-.8-.1-1.7-.3-2.2-1a7 7 0 01-1.1-2.1c.3-.2.5-.6.3-1-.2-.4-.9-.7-1.4-.8v-1.2c0-3-2.2-5-4.8-5z" fill="#222"/></svg> },
+  { key:"tiktok",        match:u=>u.includes("tiktok.com"),                           name:"TikTok",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#010101"/><path d="M23.2 10h-3.4v15.2a4 4 0 11-4-4v-3.4a7.4 7.4 0 107.4 7.4V16.8a10.8 10.8 0 006.3 2v-3.4a7.4 7.4 0 01-6.3-5.4z" fill="#69C9D0" transform="translate(-1.4,0)"/><path d="M23.2 10h-3.4v15.2a4 4 0 11-4-4v-3.4a7.4 7.4 0 107.4 7.4V16.8a10.8 10.8 0 006.3 2v-3.4a7.4 7.4 0 01-6.3-5.4z" fill="#EE1D52" transform="translate(1.4,0)"/><path d="M23.2 10h-3.4v15.2a4 4 0 11-4-4v-3.4a7.4 7.4 0 107.4 7.4V16.8a10.8 10.8 0 006.3 2v-3.4a7.4 7.4 0 01-6.3-5.4z" fill="white"/></svg> },
+  { key:"pinterest",     match:u=>u.includes("pinterest.com"),                        name:"Pinterest",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#E60023"/><path d="M20 10c-5.5 0-10 4.5-10 10 0 4.2 2.6 7.8 6.3 9.3-.1-.8-.1-2.1.2-3l1.3-5.6s-.3-.7-.3-1.7c0-1.6.9-2.8 2.3-2.8 1.1 0 1.6.8 1.6 1.8 0 1.1-.7 2.7-1 4.2-.3 1.3.6 2.3 1.8 2.3 2.1 0 3.6-2.7 3.6-5.9 0-2.5-1.7-4.2-4.2-4.2-2.9 0-4.5 2.1-4.5 4.3 0 .9.3 1.8.7 2.3.1.1.1.2.1.4l-.3 1.1c-.1.3-.3.4-.5.3-1.6-.7-2.5-2.9-2.5-4.7 0-3.8 2.8-7.3 8-7.3 4.2 0 7.5 3 7.5 7 0 4.2-2.6 7.5-6.3 7.5-1.2 0-2.4-.6-2.8-1.4l-.8 2.8c-.3 1.1-1 2.4-1.5 3.2.6.2 1.1.2 1.7.2 5.5 0 10-4.5 10-10S25.5 10 20 10z" fill="white"/></svg> },
+  { key:"twitch",        match:u=>u.includes("twitch.tv"),                            name:"Twitch",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#9146FF"/><path d="M11 10l-2 5v16h6v3h4l3-3h4l5-5V10H11zm17 14l-3 3h-5l-3 3v-3h-4V12h15v12z" fill="white"/><rect x="22" y="15" width="2" height="6" rx="1" fill="white"/><rect x="27" y="15" width="2" height="6" rx="1" fill="white"/></svg> },
+  { key:"spotify",       match:u=>u.includes("spotify.com"),                          name:"Spotify",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#1DB954"/><circle cx="20" cy="20" r="10" fill="#1DB954"/><path d="M14.5 17.2c3.5-1 7.8-.8 10.8 1" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/><path d="M15.2 20.5c2.8-.8 6.3-.6 8.8.8" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/><path d="M16 23.7c2.2-.6 4.8-.4 6.7.6" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/></svg> },
+  { key:"trabajopolis",  match:u=>u.includes("trabajopolis.com"),                     name:"Trabajopolis",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#0D6EFD"/><path d="M20 11L11 19v10h6v-6h6v6h6V19z" fill="white"/><rect x="16" y="12" width="8" height="3.5" rx="1" fill="#0D6EFD"/></svg> },
+  { key:"trabajito",     match:u=>u.includes("trabajito.com"),                        name:"Trabajito",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#FF6B35"/><rect x="11" y="12" width="18" height="2.5" rx="1" fill="white"/><rect x="11" y="17" width="18" height="2.5" rx="1" fill="white"/><rect x="11" y="22" width="13" height="2.5" rx="1" fill="white"/><circle cx="26.5" cy="27" r="4" fill="white"/><path d="M25 27.5l1.5-2 1.5 2" stroke="#FF6B35" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg> },
+  { key:"medium",        match:u=>u.includes("medium.com"),                           name:"Medium",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#000"/><ellipse cx="17" cy="20" rx="6" ry="7.5" fill="white"/><ellipse cx="27" cy="20" rx="2.5" ry="7" fill="white"/><ellipse cx="33" cy="20" rx="1.5" ry="6" fill="white"/></svg> },
+  { key:"devto",         match:u=>u.includes("dev.to"),                               name:"DEV.to",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#0A0A0A"/><path d="M10 16h3.5c2.8 0 4.5 1.8 4.5 4s-1.7 4-4.5 4H10V16zm2 1.8v4.4h1.4c1.5 0 2.6-.8 2.6-2.2s-1.1-2.2-2.6-2.2H12zM20 16h5.5v1.8H22v1.4h3v1.8h-3v1.2h3.5V24H20V16zM28 16h2l2.5 8h-2l-.4-1.3h-2.2L27.5 24H26l2-8zm1 2.5l-.7 2.5h1.4L29 18.5z" fill="white"/></svg> },
+  { key:"reddit",        match:u=>u.includes("reddit.com"),                           name:"Reddit",
+    icon:<svg viewBox="0 0 40 40" width={40} height={40}><rect width="40" height="40" rx="8" fill="#FF4500"/><circle cx="20" cy="21" r="9" fill="white"/><path d="M20 13c.8 0 1.5.7 1.5 1.5S20.8 16 20 16s-1.5-.7-1.5-1.5S19.2 13 20 13z" fill="#FF4500"/><path d="M28.5 20c0-1.1-.9-2-2-2-.5 0-1 .2-1.4.5-1.3-.9-3-1.4-5-1.5l.9-4 2.7.6c0 .7.6 1.2 1.3 1.2.7 0 1.3-.6 1.3-1.3s-.6-1.3-1.3-1.3c-.5 0-.9.3-1.1.7l-3-.6-.9 4.8c-2.1.1-3.9.6-5.2 1.5-.4-.3-.9-.5-1.4-.5-1.1 0-2 .9-2 2 0 .8.4 1.4 1.1 1.7v.3c0 2.8 3.3 5 7.5 5s7.5-2.2 7.5-5v-.3c.6-.3 1-.9 1-1.8zm-12.5 1a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm8.5 3.5c-.9.9-2.4 1.3-4.5 1.3-2.1 0-3.6-.4-4.5-1.3-.2-.2-.2-.5 0-.7.2-.2.5-.2.7 0 .7.7 2 1 3.8 1 1.8 0 3.1-.3 3.8-1 .2-.2.5-.2.7 0 .2.2.2.5 0 .7zm-.5-2a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#FF4500"/></svg> },
 ];
 
 const detectPlat = url => url ? PLATS.find(p => p.match(url.toLowerCase())) || null : null;
+
 const isValidUrl = url => {
   try { new URL(url.startsWith("http") ? url : `https://${url}`); return true; }
   catch { return false; }
 };
 
-// ── Helper: normaliza la URL garantizando protocolo ──────────────────
 const normalizeUrl = url => {
   const trimmed = url.trim();
   return trimmed.startsWith("http://") || trimmed.startsWith("https://")
@@ -46,9 +74,9 @@ function Modal({ onClose, onAdd }) {
   const [err,    setErr]    = useState({});
   const timer = useRef(null);
 
-  // ── Detectar plataforma al escribir URL ──────────
+  // ── Detectar plataforma al escribir URL ──────────────────────────────
   useEffect(() => {
-    if (!link) { setStatus("idle"); setPlat(null); return; }
+    if (!link) { setStatus("idle"); setPlat(null); setTitulo(""); return; }
     setStatus("validando");
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
@@ -56,19 +84,21 @@ function Modal({ onClose, onAdd }) {
       const p = detectPlat(link);
       setPlat(p);
       setStatus("ok");
-      if (!titulo && p) setTitulo(p.name);
+      // Auto-rellena título siempre que detecte plataforma conocida,
+      // o solo si el campo está vacío para plataformas desconocidas
+      if (p) setTitulo(p.name);
     }, 600);
     return () => clearTimeout(timer.current);
-  }, [link, titulo]);
+  }, [link]);
 
-  // ── Cerrar con Escape ────────────────────────────
+  // ── Cerrar con Escape ────────────────────────────────────────────────
   useEffect(() => {
     const h = e => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  // ── Validación ───────────────────────────────────
+  // ── Validación ───────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!titulo.trim()) e.titulo = "Título obligatorio";
@@ -79,12 +109,12 @@ function Modal({ onClose, onAdd }) {
     return !Object.keys(e).length;
   };
 
-  // ── Submit ───────────────────────────────────────
+  // ── Submit ───────────────────────────────────────────────────────────
   const submit = () => {
     if (!validate()) return;
     onAdd({
       nombre:        titulo.trim(),
-      url:           normalizeUrl(link), // ← FIX: guarda URL completa con protocolo
+      url:           normalizeUrl(link),
       descripcion:   desc.trim(),
       plataformaKey: plat?.key || null,
       conectado:     status === "ok",
@@ -93,14 +123,19 @@ function Modal({ onClose, onAdd }) {
     onClose();
   };
 
-  // ── Estilo inputs ────────────────────────────────
-  const inp = k => ({
+  // ── Estilos de inputs ────────────────────────────────────────────────
+  const inp = (k, disabled = false) => ({
     width: "100%", padding: "9px 12px", borderRadius: 7,
-    border: `1.5px solid ${err[k] ? "#e85555" : "#d1d5db"}`,
+    border: `1.5px solid ${err[k] ? "#e85555" : disabled ? "#e5e7eb" : "#d1d5db"}`,
     fontSize: 14, outline: "none", fontFamily: "inherit",
-    color: "#111827", background: "#fff",
+    color: disabled ? "#9ca3af" : "#111827",
+    background: disabled ? "#f9fafb" : "#fff",
+    cursor: disabled ? "not-allowed" : "text",
     transition: "border .15s", boxSizing: "border-box",
   });
+
+  // plat !== null significa que es una plataforma conocida → bloquear título
+  const tituloLocked = plat !== null;
 
   return (
     <>
@@ -139,7 +174,7 @@ function Modal({ onClose, onAdd }) {
 
         <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
 
-          {/* Enlace / URL */}
+          {/* ── Enlace / URL ── */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
               Enlace / URL *
@@ -147,7 +182,7 @@ function Modal({ onClose, onAdd }) {
             <input
               value={link}
               onChange={e => setLink(e.target.value)}
-              placeholder="ej: linkedin.com/in/usuario"
+              placeholder="ej: instagram.com/usuario"
               style={inp("link")}
               onFocus={e => e.target.style.border = "1.5px solid #0077b7"}
               onBlur={e  => e.target.style.border = `1.5px solid ${err.link ? "#e85555" : "#d1d5db"}`}
@@ -180,25 +215,41 @@ function Modal({ onClose, onAdd }) {
             )}
           </div>
 
-          {/* Título */}
+          {/* ── Título ── */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
               Título *
+              {tituloLocked && (
+                <span style={{
+                  marginLeft:8, fontSize:11, fontWeight:500,
+                  color:"#9ca3af", background:"#f3f4f6",
+                  border:"1px solid #e5e7eb", borderRadius:4,
+                  padding:"1px 6px",
+                }}>
+                  bloqueado — plataforma reconocida
+                </span>
+              )}
             </label>
             <input
               value={titulo}
-              onChange={e => setTitulo(e.target.value)}
+              onChange={e => !tituloLocked && setTitulo(e.target.value)}
+              readOnly={tituloLocked}
               placeholder="ej: LinkedIn, GitHub…"
-              style={inp("titulo")}
-              onFocus={e => e.target.style.border = "1.5px solid #0077b7"}
-              onBlur={e  => e.target.style.border = `1.5px solid ${err.titulo ? "#e85555" : "#d1d5db"}`}
+              style={inp("titulo", tituloLocked)}
+              onFocus={e => { if (!tituloLocked) e.target.style.border = "1.5px solid #0077b7"; }}
+              onBlur={e  => { if (!tituloLocked) e.target.style.border = `1.5px solid ${err.titulo ? "#e85555" : "#d1d5db"}`; }}
             />
+            {tituloLocked && (
+              <p style={{ margin:"4px 0 0", fontSize:11, color:"#9ca3af" }}>
+                El título de plataformas reconocidas no se puede modificar.
+              </p>
+            )}
             {err.titulo && (
               <p style={{ margin:"4px 0 0", fontSize:12, color:"#e85555" }}>{err.titulo}</p>
             )}
           </div>
 
-          {/* Descripción */}
+          {/* ── Descripción ── */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
               Descripción *
@@ -216,6 +267,7 @@ function Modal({ onClose, onAdd }) {
               <p style={{ margin:"4px 0 0", fontSize:12, color:"#e85555" }}>{err.desc}</p>
             )}
           </div>
+
         </div>
 
         {/* Botones */}
