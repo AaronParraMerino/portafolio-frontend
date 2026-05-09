@@ -1,8 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-<<<<<<< HEAD
-import { useNavigate } from "react-router-dom";
-=======
->>>>>>> configuracion
 import BASE_URL from "../../../../services/http/const";
 
 export default function VincularCuenta() {
@@ -58,7 +54,6 @@ export default function VincularCuenta() {
       setLoading(false);
     }
   }, [meta]);
-<<<<<<< HEAD
 
   const loadGithubDetected = useCallback(async (refresh = false) => {
     try {
@@ -90,13 +85,10 @@ export default function VincularCuenta() {
       setError(e.message);
     }
   }, []);
-=======
->>>>>>> configuracion
 
   useEffect(() => {
     loadLinkedProviders();
   }, [loadLinkedProviders]);
-<<<<<<< HEAD
 
   useEffect(() => {
     const github = accounts.find((item) => item.id === "github");
@@ -108,8 +100,6 @@ export default function VincularCuenta() {
 
     setGithubDetectedCount(0);
   }, [accounts, loadGithubDetected]);
-=======
->>>>>>> configuracion
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
