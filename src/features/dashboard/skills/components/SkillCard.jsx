@@ -1,6 +1,9 @@
 import React from "react";
+import { getSkillLevelColor, getSkillProgress } from "../model/skillLevel";
 
 export default function SkillCard({ skill, onEdit, onDelete }) {
+  const progress = getSkillProgress(skill.nivel);
+  const color = getSkillLevelColor(skill.nivel);
   // Lógica de porcentajes basada en nivel
   const getProgress = (nivel) => {
     const levels = { basico: 25, intermedio: 50, avanzado: 75, experto: 100 };
@@ -37,8 +40,8 @@ export default function SkillCard({ skill, onEdit, onDelete }) {
         </div>
 
         <div className="ms-3 d-flex gap-1">
-          <button className="btn btn-sm btn-outline-primary border-0" onClick={() => onEdit(skill)}>✏️</button>
-          <button className="btn btn-sm btn-outline-danger border-0" onClick={() => onDelete(skill.id)}>🗑️</button>
+          <button className="btn btn-sm btn-outline-primary border-0" onClick={() => onEdit(skill)}>Editar</button>
+          <button className="btn btn-sm btn-outline-danger border-0" onClick={() => onDelete(skill.id)}>Borrar</button>
         </div>
       </div>
     </div>

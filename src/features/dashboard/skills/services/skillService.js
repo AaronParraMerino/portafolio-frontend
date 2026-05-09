@@ -112,8 +112,8 @@ export const formatSkillDisplayName = (value = '') => {
 };
 
 const getAuthData = () => {
-  const token = sessionStorage.getItem('tokenPORT');
-  const usuarioRaw = sessionStorage.getItem('usuario');
+  const token = localStorage.getItem('tokenPORT');
+  const usuarioRaw = localStorage.getItem('usuario');
 
   if (!token || !usuarioRaw) {
     throw new Error('No hay sesión activa.');
