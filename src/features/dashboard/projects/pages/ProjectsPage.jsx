@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { FiPlus } from 'react-icons/fi';
 import '../styles/projects.css';
 import { useProjects } from '../hooks/useProjects';
-import ProjectsHeader      from '../components/ProjectsHeader';
+import Header from '../../layout/Header';
 import ProjectsFilters     from '../components/ProjectsFilters';
 import ProjectsGrid        from '../components/ProjectsGrid';
 import ProjectsEdit        from '../components/ProjectsEdit';
@@ -30,6 +31,16 @@ export default function ProjectsPage() {
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
   const [reposIniciales, setReposIniciales] = useState(null);
+
+  const headerActions = [
+    {
+      label: 'Agregar nuevo',
+      title: 'Agregar nuevo proyecto',
+      ariaLabel: 'Agregar nuevo proyecto',
+      icon: <FiPlus />,
+      onClick: () => setEditando('nuevo'),
+    },
+  ];
 
   // ── Callbacks ──
   const handleGuardar = async (
@@ -101,8 +112,11 @@ export default function ProjectsPage() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="prj-page prj-page-loading">
-        <span className="prj-spinner prj-spinner-lg" />
+      <div className="prj-page">
+        <Header title="Mis Proyectos" actions={headerActions} />
+        <div className="prj-page-loading">
+          <span className="prj-spinner prj-spinner-lg" />
+        </div>
       </div>
     );
   }
@@ -110,7 +124,7 @@ export default function ProjectsPage() {
   return (
     <div className="prj-page">
 
-      <ProjectsHeader onAgregar={handleAgregarNuevo} />
+      <Header title="Mis Proyectos" actions={headerActions} />
 
       <div className="prj-content">
 

@@ -842,16 +842,16 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
   const [descripcion, setDescripcion] = useState(initialDescripcion);
 
   return (
-    <div className="prj-modal-overlay" style={{ zIndex: 600 }}>
-      <div className="prj-modal prj-modal-sm" role="dialog" aria-modal="true">
-        <div className="prj-modal-head">
+    <div className="dash-edit-overlay prj-modal-overlay" style={{ zIndex: 600 }}>
+      <div className="dash-edit-modal dash-edit-modal--sm prj-modal prj-modal-sm" role="dialog" aria-modal="true">
+        <div className="dash-edit-head prj-modal-head">
           <div>
-            <div className="prj-modal-title">Tu participación en el proyecto</div>
-            <div className="prj-modal-sub">Indica tu rol y aporte (opcional)</div>
+            <div className="dash-edit-title prj-modal-title">Tu participación en el proyecto</div>
+            <div className="dash-edit-subtitle prj-modal-sub">Indica tu rol y aporte (opcional)</div>
           </div>
         </div>
 
-        <div className="prj-modal-body">
+        <div className="dash-edit-body prj-modal-body">
           {proyectoInfo && (
             <div className="prj-detected-item" style={{ marginBottom: 14 }}>
               <div className="prj-detected-main">
@@ -871,7 +871,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
               <div className="col-12">
                 <label className="prj-label">Rol</label>
                 <input
-                  className="prj-input"
+                  className="dash-edit-input prj-input"
                   value={rol}
                   onChange={(e) => setRol(e.target.value)}
                   placeholder="Ej: Desarrollador backend, Líder técnico, Diseñador UI..."
@@ -893,7 +893,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
                   </span>
                 </label>
                 <textarea
-                  className="prj-input"
+                  className="dash-edit-textarea prj-input"
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   rows={3}
@@ -906,13 +906,13 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
           </div>
         </div>
 
-        <div className="prj-modal-foot">
-          <button type="button" className="prj-btn-cancel" onClick={onSaltar} disabled={loading}>
+        <div className="dash-edit-footer prj-modal-foot">
+          <button type="button" className="dash-edit-btn dash-edit-btn--secondary prj-btn-cancel" onClick={onSaltar} disabled={loading}>
             Omitir
           </button>
           <button
             type="button"
-            className="prj-btn-save"
+            className="dash-edit-btn dash-edit-btn--primary prj-btn-save"
             onClick={() => onContinuar({ rol: rol.trim(), descripcion_aporte: descripcion.trim() })}
             disabled={loading}
           >
@@ -1418,16 +1418,16 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   return (
     <>
       <div
-        className="prj-modal-overlay"
+        className="dash-edit-overlay prj-modal-overlay"
         onClick={(e) => e.target === e.currentTarget && !guardando && onCancelar()}
       >
-        <div className="prj-modal" role="dialog" aria-modal="true">
-          <div className="prj-modal-head">
+        <div className="dash-edit-modal dash-edit-modal--xl prj-modal" role="dialog" aria-modal="true">
+          <div className="dash-edit-head prj-modal-head">
             <div>
-              <div className="prj-modal-title">
+              <div className="dash-edit-title prj-modal-title">
                 {esNuevo ? 'Nuevo proyecto' : 'Editar proyecto'}
               </div>
-              <div className="prj-modal-sub">
+              <div className="dash-edit-subtitle prj-modal-sub">
                 {esNuevo
                   ? 'Completa los datos para agregar un nuevo proyecto'
                   : 'Edita la información del proyecto'}
@@ -1436,7 +1436,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
             <button
               type="button"
-              className="prj-modal-close"
+              className="dash-edit-close prj-modal-close"
               onClick={onCancelar}
               disabled={guardando}
               title="Cerrar"
@@ -1448,7 +1448,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
           </div>
 
           {submitAttempted && hasErrors && (
-            <div className="prj-banner-error">
+            <div className="dash-edit-banner-error prj-banner-error">
               <svg viewBox="0 0 14 14" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
                 <path d="M7 1L1 12h12L7 1z" />
                 <path d="M7 5.5v3M7 10v.5" />
@@ -1458,7 +1458,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'contents' }} autoComplete="off" noValidate>
-            <div className="prj-modal-body">
+            <div className="dash-edit-body prj-modal-body">
               <div className="prj-form-section">
                 <span className="prj-section-label">
                   Imágenes del proyecto
@@ -1881,14 +1881,14 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               </div>
             </div>
 
-            <div className="prj-modal-foot">
-              <button type="button" className="prj-btn-cancel" onClick={onCancelar} disabled={guardando}>
+            <div className="dash-edit-footer prj-modal-foot">
+              <button type="button" className="dash-edit-btn dash-edit-btn--secondary prj-btn-cancel" onClick={onCancelar} disabled={guardando}>
                 Cancelar
               </button>
 
-              <button type="submit" className="prj-btn-save" disabled={guardando}>
+              <button type="submit" className="dash-edit-btn dash-edit-btn--primary prj-btn-save" disabled={guardando}>
                 {guardando
-                  ? <><span className="prj-spinner" /> Guardando...</>
+                  ? <><span className="dash-edit-spinner prj-spinner" /> Guardando...</>
                   : <>
                     <svg viewBox="0 0 14 14">
                       <path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2" />

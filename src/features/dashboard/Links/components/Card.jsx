@@ -184,7 +184,10 @@ const PLATS = [
     </svg> },
 ];
 
-const getIcon = r => { const p = PLATS.find(x => x.key === r.plataformaKey); return p ? p.icon : <FallbackIcon url={r.url}/>; };
+const getIcon = r => {
+  const p = PLATS.find(x => x.key === r.plataformaKey);
+  return p ? p.icon : <FallbackIcon url={r.url}/>;
+};
 
 const normalizeUrl = url => {
   const trimmed = String(url || "").trim();
@@ -193,49 +196,82 @@ const normalizeUrl = url => {
     : `https://${trimmed}`;
 };
 
+// ── FIX: detecta plataforma conocida por key O por URL ────────────────────────
+const checkIsKnownPlatform = (red) =>
+  PLATS.some(x => x.key === red.plataformaKey) ||
+  PLATS.some(x => x.match((red.url || "").toLowerCase()));
+
 function Card({ red, onToggle, onEdit, isOculta }) {
   const conn = red.conectado && !isOculta;
-  const isKnownPlatform = PLATS.some(x => x.key === red.plataformaKey);
+
+  // Detecta si es plataforma conocida usando key O URL como fallback
+  const isKnownPlatform = checkIsKnownPlatform(red);
 
   return (
-    <div style={{ background:"#fff",border:"1px solid #d1d5db",borderRadius:8,
-      padding:"12px 16px",display:"flex",alignItems:"center",gap:14,opacity:isOculta?.75:1 }}>
-      <div style={{ flexShrink:0,opacity:isOculta?.5:1 }}>{getIcon(red)}</div>
-      <div style={{ flex:1,minWidth:0 }}>
-        <p style={{ margin:0,fontWeight:700,fontSize:14,color:isOculta?"#9ca3af":"#1d6fa5" }}>{red.nombre}</p>
-        <a href={normalizeUrl(red.url)} target="_blank" rel="noopener noreferrer"
-          style={{ display:"block",margin:"2px 0 3px",fontSize:11,color:"#0ea5e9",fontFamily:"monospace",
-          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:"none" }}
-          onMouseEnter={e=>e.currentTarget.style.textDecoration="underline"}
-          onMouseLeave={e=>e.currentTarget.style.textDecoration="none"}>
+    <div style={{
+      background: "#fff", border: "1px solid #d1d5db", borderRadius: 8,
+      padding: "12px 16px", display: "flex", alignItems: "center", gap: 14,
+      opacity: isOculta ? .75 : 1
+    }}>
+      <div style={{ flexShrink: 0, opacity: isOculta ? .5 : 1 }}>
+        {getIcon(red)}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: isOculta ? "#9ca3af" : "#1d6fa5" }}>
+          {red.nombre}
+        </p>
+        <a
+          href={normalizeUrl(red.url)}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "block", margin: "2px 0 3px", fontSize: 11,
+            color: "#0ea5e9", fontFamily: "monospace",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            textDecoration: "none",
+          }}
+          onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+          onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}
+        >
           {red.url}
         </a>
-        <p style={{ margin:0,fontSize:12,color:"#6b7280" }}>{red.descripcion}</p>
+        <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{red.descripcion}</p>
       </div>
-      <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0 }}>
-        <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-          <span style={{ fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:20,
-            background:red.visible?"#f0fdf7":"#f5f3ff",color:red.visible?"#16a34a":"#7c3aed",
-            border:`1px solid ${red.visible?"rgba(22,163,74,.2)":"rgba(124,58,237,.2)"}` }}>
-            {red.visible?"Visible":"Oculto"}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+            background: red.visible ? "#f0fdf7" : "#f5f3ff",
+            color: red.visible ? "#16a34a" : "#7c3aed",
+            border: `1px solid ${red.visible ? "rgba(22,163,74,.2)" : "rgba(124,58,237,.2)"}`,
+          }}>
+            {red.visible ? "Visible" : "Oculto"}
           </span>
-          <Toggle on={red.visible} onChange={()=>onToggle(red.id)}/>
+          <Toggle on={red.visible} onChange={() => onToggle(red.id)} />
         </div>
-        <span style={{ fontSize:12,fontWeight:600,color:conn?"#16a34a":"#e85555" }}>
-          {conn?"● Conectado":"● Desconectado"}
+        <span style={{ fontSize: 12, fontWeight: 600, color: conn ? "#16a34a" : "#e85555" }}>
+          {conn ? "● Conectado" : "● Desconectado"}
         </span>
-        <div style={{ display:"flex",gap:6 }}>
+        <div style={{ display: "flex", gap: 6 }}>
           <IconBtn
-            onClick={()=>!isOculta && onEdit(red, isKnownPlatform)}
+            onClick={() => !isOculta && onEdit(red, isKnownPlatform)}
             disabled={isOculta}
-            bg={isOculta?"#f3f4f6":"#e8f4fb"}
+            bg={isOculta ? "#f3f4f6" : "#e8f4fb"}
             hbg="#b8ddf0"
-            bc={isOculta?"#e5e7eb":"rgba(0,119,183,.2)"}
-            title={isOculta?"No disponible (oculto)":"Editar"}
+            bc={isOculta ? "#e5e7eb" : "rgba(0,119,183,.2)"}
+            title={isOculta ? "No disponible (oculto)" : "Editar"}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke={isOculta?"#9ca3af":"#0077b7"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke={isOculta?"#9ca3af":"#0077b7"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"
+                stroke={isOculta ? "#9ca3af" : "#0077b7"}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              />
+              <path
+                d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                stroke={isOculta ? "#9ca3af" : "#0077b7"}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              />
             </svg>
           </IconBtn>
         </div>

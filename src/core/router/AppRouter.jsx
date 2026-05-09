@@ -21,6 +21,7 @@ import EliminarCuentaPage from '../../features/dashboard/configurate/pages/Elimi
 import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
 import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
+import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -42,6 +43,8 @@ export default function AppRouter({ isBackendAvailable = true }) {
               <Route path="settings/eliminar-cuenta" element={<EliminarCuentaPage />} />
               <Route path="enlaces" element={<EnlacePage />} />
               <Route path="projects" element={<ProjectsPage />} />
+               <Route path="enlaces" element={<EnlacePage />} />
+              <Route path="view" element={<ViewPage />} />
             </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
