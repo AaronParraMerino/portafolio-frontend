@@ -3,7 +3,7 @@ import React from "react";
 export default function SkillCard({ skill, onEdit, onDelete }) {
   // Lógica de porcentajes basada en nivel
   const getProgress = (nivel) => {
-    const levels = { basico: 30, intermedio: 60, avanzado: 85, experto: 100 };
+    const levels = { basico: 25, intermedio: 50, avanzado: 75, experto: 100 };
     return levels[nivel.toLowerCase()] || 0;
   };
 
@@ -21,9 +21,6 @@ export default function SkillCard({ skill, onEdit, onDelete }) {
         <div className="flex-grow-1">
           <div className="d-flex align-items-center gap-2 mb-1">
             <h6 className="fw-bold mb-0" style={{ color: "#1e293b" }}>{skill.nombre_habilidad || skill.nombre}</h6>
-            <span className={`badge ${skill.es_publico ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`} style={{ fontSize: '10px' }}>
-              {skill.es_publico ? 'Visible' : 'Oculto'}
-            </span>
           </div>
           
           <div className="d-flex justify-content-between mb-1 mt-2">

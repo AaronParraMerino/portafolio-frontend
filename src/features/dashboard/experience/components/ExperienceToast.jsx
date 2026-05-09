@@ -8,24 +8,21 @@ export default function ExperienceToast({ toast }) {
       className={`prf-toast ${toast.tipo === 'error' ? 'error' : 'ok'}`} 
       style={{ 
         position: 'fixed', 
-        bottom: '30px',      // Un poco más arriba del borde
-        left: '50%',         // Movemos al centro
-        transform: 'translateX(-50%)', // Truco para centrar exactamente el elemento
+        bottom: '30px',
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 9999,
-        
-        // --- AJUSTES DE RESPONSIVIDAD Y CENTRADO ---
         width: 'auto',
-        minWidth: '280px',   // Ancho mínimo para que no se vea muy pequeño
-        maxWidth: '90vw',    // Máximo 90% del ancho de la pantalla
-        
+        minWidth: '280px',
+        maxWidth: '90vw',
         wordBreak: 'break-word',
         overflowWrap: 'anywhere',
         padding: '12px 24px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center', // Centra el contenido interno
+        justifyContent: 'center',
         boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-        borderRadius: '50px', // Estilo "Pill" más moderno y centrado
+        borderRadius: '50px',
         backgroundColor: toast.tipo === 'error' ? 'var(--rojo-chip)' : 'var(--verde-chip)',
         border: `2px solid ${toast.tipo === 'error' ? 'var(--rojo-soft)' : 'var(--verde)'}`,
         color: toast.tipo === 'error' ? 'var(--rojo-mid)' : 'var(--verde-hover)',
@@ -51,3 +48,5 @@ export default function ExperienceToast({ toast }) {
     </div>
   );
 }
+
+
