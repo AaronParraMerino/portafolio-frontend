@@ -19,19 +19,42 @@ export default function ViewPreviewNotice({
     : isMock
       ? 'No se pudo conectar con backend. Se muestran datos mock para mantener la vista editable.'
       : isCache
-        ? 'No se pudo actualizar desde backend. Se mantiene la informacion en cache.'
+        ? 'No se pudo actualizar desde backend. Se mantiene la información en cache.'
         : 'Algunas secciones usan datos locales porque no respondieron todos los endpoints.';
 
   return (
-    <div className={`preview-notice ${isMock ? 'mock' : ''} ${isPartial ? 'partial' : ''} ${isCache ? 'cache' : ''}`}>
-      <svg viewBox="0 0 14 14">
-        <circle cx="7" cy="7" r="6" />
-        <path d="M7 6v4M7 3.8v.2" />
-      </svg>
+    <div
+      className={`preview-notice ${loading ? 'loading' : ''} ${isMock ? 'mock' : ''} ${isPartial ? 'partial' : ''} ${isCache ? 'cache' : ''}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="preview-notice-icon" aria-hidden="true">
+        {loading ? (
+          <span className="preview-notice-spinner" />
+        ) : (
+          <svg
+            viewBox="0 0 14 14"
+            width="14"
+            height="14"
+            focusable="false"
+          >
+            <circle cx="7" cy="7" r="6" />
+            <path d="M7 6v4M7 3.8v.2" />
+          </svg>
+        )}
+      </span>
 
-      <span>
-        <strong>{loading ? 'Sincronizando:' : 'Vista previa:'}</strong> {message}
-        {error && <small>{error}</small>}
+      <span className="preview-notice-text">
+        <strong>
+          {loading ? 'Sincronizando:' : 'Vista previa:'}
+        </strong>{' '}
+        {message}
+
+        {error && (
+          <small>
+            {error}
+          </small>
+        )}
       </span>
     </div>
   );

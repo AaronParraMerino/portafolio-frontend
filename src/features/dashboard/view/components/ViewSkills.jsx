@@ -1,72 +1,79 @@
-// src/features/dashboard/view/components/ViewSkills.jsx
-  import { isVisible } from '../model/viewModel';
-function normalizeLevel(level = '') {
-  return level
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
+import { isVisible } from '../model/viewModel';
+import {
+  getSkillLevelColor,
+  getSkillLevelLabel,
+  getSkillLevelShortLabel,
+  getSkillProgress,
+  normalizeSkillLevel,
+} from '../../skills/model/skillLevel';
 
-function levelLabel(level = '') {
-  const normalized = normalizeLevel(level);
+function getSkillPercentage(skill) {
+  const fromSkill = Number(skill?.porcentaje);
 
-  if (normalized === 'experto') return 'Experto';
-  if (normalized === 'avanzado') return 'Avanzado';
-  if (normalized === 'intermedio') return 'Intermedio';
-  if (normalized === 'basico') return 'Basico';
+  if (!Number.isNaN(fromSkill) && fromSkill > 0) {
+    return Math.max(0, Math.min(fromSkill, 100));
+  }
 
-  return level || 'Intermedio';
+  return getSkillProgress(skill?.nivel);
 }
 
 function SkillCard({ skill, soft = false }) {
-  const normalizedLevel = normalizeLevel(skill.nivel);
-  const pct = Math.max(0, Math.min(Number(skill.porcentaje) || 0, 100));
-
-  const rootClass = soft
-    ? `sk-soft-card lvl-${normalizedLevel}`
-    : `sk-item lvl-${normalizedLevel}`;
+  const normalizedLevel = normalizeSkillLevel(skill.nivel);
+  const pct = getSkillPercentage(skill);
+  const progressColor = getSkillLevelColor(skill.nivel);
+  const levelLabel = getSkillLevelLabel(skill.nivel);
+  const shortLabel = getSkillLevelShortLabel(skill.nivel);
 
   return (
-    <article className={rootClass}>
+    <article
+      className={`sk-view-card ${soft ? 'is-soft' : 'is-tech'} lvl-${normalizedLevel}`}
+      style={{ '--skill-progress-color': progressColor }}
+    >
       <div className="sk-left-panel" />
 
-      <div className={soft ? 'sk-soft-content' : 'sk-item-content'}>
-        <div className={soft ? 'sk-soft-body' : 'sk-item-body'}>
-          <div className={soft ? 'sk-soft-top' : 'sk-item-header'}>
-            <h3 className={soft ? 'sk-soft-name' : 'sk-item-name'}>
-              {skill.nombre}
-            </h3>
+      <div className="sk-view-content">
+        <div className="sk-view-main">
+          <div
+            className="sk-level-circle"
+            title={levelLabel}
+            aria-label={`Nivel ${levelLabel}`}
+          >
+            {shortLabel}
+          </div>
 
-            <span className={`sk-level-badge lvl-${normalizedLevel}-badge`}>
-              {levelLabel(skill.nivel)}
+          <div className="sk-view-text">
+            <div className="sk-view-top">
+              <h3 className="sk-view-name">
+                {skill.nombre}
+              </h3>
+
+              <span className="sk-level-badge">
+                {levelLabel}
+              </span>
+            </div>
+
+            <p className="sk-view-desc">
+              {skill.descripcion || 'Sin descripción adicional.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="sk-view-progress">
+          <div className="sk-view-track-label">
+            <span className="sk-view-track-title">
+              Dominio
+            </span>
+
+            <span className="sk-view-pct">
+              {pct}%
             </span>
           </div>
 
-          <p className={soft ? 'sk-soft-desc' : 'sk-item-desc'}>
-            {skill.descripcion}
-          </p>
-        </div>
-
-        <div className={soft ? 'sk-soft-foot' : 'sk-item-foot'}>
-          <div className={soft ? 'sk-soft-track-wrap' : 'sk-item-track-wrap'}>
-            <div className={soft ? 'sk-soft-track-label' : 'sk-item-track-label'}>
-              <span className={soft ? 'sk-soft-pct' : 'sk-item-pct'}>
-                Dominio
-              </span>
-
-              <span className={soft ? 'sk-soft-pct' : 'sk-item-pct'}>
-                {pct}%
-              </span>
-            </div>
-
-            <div className={soft ? 'sk-soft-track' : 'sk-item-track'}>
-              <div
-                className={soft ? 'sk-soft-fill' : 'sk-item-fill'}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+          <div className="sk-view-track">
+            <div
+              className="sk-view-fill"
+              style={{ width: `${pct}%` }}
+            />
           </div>
         </div>
       </div>
@@ -84,14 +91,13 @@ function SubsectionTitle({ children }) {
 }
 
 export default function ViewSkills({ habilidades, visibilidad }) {
-
   const tecnicas = (habilidades?.tecnicas || []).filter(skill =>
     isVisible(visibilidad, 'habilidades', skill.id)
-    );
+  );
 
-    const blandas = (habilidades?.blandas || []).filter(skill =>
+  const blandas = (habilidades?.blandas || []).filter(skill =>
     isVisible(visibilidad, 'habilidades', skill.id)
-    );
+  );
 
   if (!tecnicas.length && !blandas.length) return null;
 
