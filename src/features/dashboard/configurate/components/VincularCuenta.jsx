@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import BASE_URL from "../../../../services/http/const";
 
 export default function VincularCuenta() {
-  const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState("");
@@ -18,7 +16,7 @@ export default function VincularCuenta() {
     gitlab: { name: "GitLab", description: "Conecta tus proyectos de GitLab" },
   }), []);
 
-  const loadLinkedProviders = async () => {
+  const loadLinkedProviders = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -53,11 +51,11 @@ export default function VincularCuenta() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [meta]);
 
   useEffect(() => {
     loadLinkedProviders();
-  }, [meta]);
+  }, [loadLinkedProviders]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

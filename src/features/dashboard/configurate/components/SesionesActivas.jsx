@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   closeOtherSessions,
   closeSessionById,
@@ -45,7 +44,6 @@ const toUiSession = (item) => {
 };
 
 export default function SesionesActivas() {
-  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
