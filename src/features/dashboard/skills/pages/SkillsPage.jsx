@@ -12,6 +12,7 @@ import ExperienceToast from "../../experience/components/ExperienceToast";
 // Importamos el modal compartido sugerido por tu compañero
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import Header from "../../layout/Header";
+import { getSkillLevelColor, getSkillProgress } from "../model/skillLevel";
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
