@@ -1,138 +1,338 @@
-/* ══════════════════════════════════════
-   Header.jsx — barra superior del dashboard
-   (breadcrumb + badge count + botón acción)
-══════════════════════════════════════ */
+const toArray = (actions) => {
+  if (!actions) return [];
+  return Array.isArray(actions) ? actions.filter(Boolean) : [actions];
+};
+
+const PlusIcon = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M8 3v10M3 8h10" />
+  </svg>
+);
 
 export default function Header({
-  breadcrumb = [],   // [{ label: 'portafolio' }, { label: 'mis proyectos', active: true }]
-  count,             // { value: 4, label: 'proyectos' } — badge rojo
-  actionLabel,       // 'Agregar proyecto'
-  onAction,          // callback
-  sidebarCollapsed,  // para ajustar margin-left (desktop)
+  eyebrow = 'Portafolio',
+  title = '',
+  subtitle = '',
+  actions = [],
+  children,
+  className = '',
+  dense = false,
+  breadcrumb = [],
+  count,
+  actionLabel,
+  onAction,
 }) {
-  const sidebarW = sidebarCollapsed ? 64 : 240;
+  const fallbackTitle = breadcrumb.find((item) => item.active)?.label || breadcrumb.at(-1)?.label || 'Dashboard';
+  const visibleTitle = title || fallbackTitle;
+  const visibleActions = [
+    ...toArray(actions),
+    actionLabel
+      ? {
+          label: actionLabel,
+          icon: <PlusIcon />,
+          onClick: onAction,
+        }
+      : null,
+  ].filter(Boolean);
 
-  // Filtra el crumb "dashboard" que queda raro solo
-  const visibleCrumbs = breadcrumb.filter(
-    (c) => c.label?.toLowerCase() !== 'dashboard' || breadcrumb.length > 1
-  );
+  const headerClassName = [
+    'dash-module-header',
+    dense ? 'dash-module-header--dense' : '',
+    className,
+  ].filter(Boolean).join(' ');
 
   return (
     <>
       <style>{`
-        .dsh-header {
-          position: sticky;
-          top: var(--nav-height, 60px);
-          z-index: 50;
-          height: 52px;
-          background: var(--blanco, #fff);
-          border-bottom: 1px solid var(--gris-borde, #d1d5db);
-          display: flex; align-items: center;
-          padding: 0 28px;
-          gap: 12px;
-          transition: margin-left .22s cubic-bezier(.4,0,.2,1);
-          margin-left: ${sidebarW}px;
+        .dash-module-header {
+          background: #0c1a2e;
+          border-bottom: 3px solid var(--azul);
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+          color: var(--blanco);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 18px;
+          min-height: 88px;
+          padding: 20px 28px;
+          position: relative;
+          z-index: 1;
         }
 
-        /* Móvil: sin sidebar → sin margen */
-        @media (max-width: 767px) {
-          .dsh-header {
-            margin-left: 0 !important;
-            padding: 0 16px;
-          }
+        .dash-module-header--dense {
+          min-height: 76px;
+          padding-top: 16px;
+          padding-bottom: 16px;
         }
 
-        /* breadcrumb */
-        .dsh-header-bc {
-          font-size: 13px; font-weight: 500;
-          color: var(--gris-texto, #6b7280);
-          white-space: nowrap;
-          overflow: hidden; text-overflow: ellipsis;
-        }
-        .dsh-header-bc span {
-          color: var(--negro-texto, #111827);
+        .dash-module-header-copy {
+          min-width: 0;
         }
 
-        /* badge count */
-        .dsh-header-count {
-          font-size: 11px; font-weight: 600;
-          padding: 2px 8px; border-radius: 10px;
-          background: var(--rojo-bg, rgba(232,85,85,.08));
-          color: var(--rojo-mid, #c94040);
-          border: 1px solid var(--rojo-borde, rgba(232,85,85,.22));
-          font-family: var(--mono, 'IBM Plex Mono', monospace);
-          white-space: nowrap;
-          flex-shrink: 0;
+        .dash-module-header-eyebrow,
+        .dash-module-header-title,
+        .dash-module-header-subtitle {
+          letter-spacing: 0;
         }
 
-        /* botón acción */
-        .dsh-header-btn {
-          display: flex; align-items: center; gap: 6px;
-          padding: 8px 18px;
-          background: var(--azul, #0077b7); color: #fff;
-          border: none; border-radius: 7px;
-          font-family: var(--font, 'Inter', sans-serif);
-          font-size: 13px; font-weight: 600;
-          cursor: pointer;
-          transition: background .15s, transform .15s, box-shadow .15s;
+        .dash-module-header-eyebrow {
+          color: rgba(255, 255, 255, 0.52);
+          font-family: var(--mono);
+          font-size: 11px;
+          font-weight: 600;
+          line-height: 1.2;
+          margin: 0 0 4px;
+          text-transform: uppercase;
+        }
+
+        .dash-module-header-title {
+          color: var(--blanco);
+          font-family: var(--font);
+          font-size: 22px;
+          font-weight: 800;
+          line-height: 1.15;
+          margin: 0;
+          overflow-wrap: anywhere;
+          text-transform: uppercase;
+        }
+
+        .dash-module-header-subtitle {
+          color: rgba(255, 255, 255, 0.68);
+          font-size: 13px;
+          line-height: 1.5;
+          margin: 7px 0 0;
+          max-width: 760px;
+        }
+
+        .dash-module-header-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+          gap: 10px;
           margin-left: auto;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-        .dsh-header-btn:hover {
-          background: var(--azul-hover, #005f95);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0,119,183,.3);
-        }
-        .dsh-header-btn svg {
-          width: 12px; height: 12px;
-          stroke: #fff; fill: none; stroke-width: 2.4;
         }
 
-        /* Móvil: botón más compacto */
-        @media (max-width: 480px) {
-          .dsh-header-btn {
-            padding: 7px 12px;
+        .dash-module-header-count {
+          align-items: center;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 8px;
+          color: rgba(255, 255, 255, 0.78);
+          display: inline-flex;
+          font-family: var(--mono);
+          font-size: 11px;
+          font-weight: 600;
+          min-height: 36px;
+          padding: 0 12px;
+          white-space: nowrap;
+        }
+
+        .dash-module-header-action {
+          align-items: center;
+          border: 1px solid transparent;
+          border-radius: 8px;
+          cursor: pointer;
+          display: inline-flex;
+          font-family: var(--font);
+          font-size: 13px;
+          font-weight: 700;
+          gap: 8px;
+          justify-content: center;
+          line-height: 1;
+          min-height: 40px;
+          padding: 0 16px;
+          text-decoration: none;
+          transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s, transform 0.15s;
+          white-space: nowrap;
+        }
+
+        .dash-module-header-action:hover {
+          transform: translateY(-1px);
+        }
+
+        .dash-module-header-action:disabled {
+          cursor: not-allowed;
+          opacity: 0.65;
+          transform: none;
+        }
+
+        .dash-module-header-action--primary {
+          background: var(--azul);
+          box-shadow: 0 2px 12px rgba(0, 119, 183, 0.35);
+          color: var(--blanco);
+        }
+
+        .dash-module-header-action--primary:hover {
+          background: var(--azul-hover);
+          box-shadow: 0 6px 18px rgba(0, 119, 183, 0.45);
+          color: var(--blanco);
+        }
+
+        .dash-module-header-action--secondary {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.16);
+          color: rgba(255, 255, 255, 0.82);
+        }
+
+        .dash-module-header-action--secondary:hover {
+          background: rgba(255, 255, 255, 0.14);
+          color: var(--blanco);
+        }
+
+        .dash-module-header-action--danger {
+          background: var(--rojo-soft);
+          box-shadow: 0 2px 12px rgba(232, 85, 85, 0.28);
+          color: var(--blanco);
+        }
+
+        .dash-module-header-action--danger:hover {
+          background: var(--rojo-mid);
+          color: var(--blanco);
+        }
+
+        .dash-module-header-action-icon {
+          display: inline-flex;
+          flex-shrink: 0;
+        }
+
+        .dash-module-header-action-icon svg {
+          display: block;
+          fill: none;
+          height: 16px;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 2;
+          width: 16px;
+        }
+
+        .dash-module-header-action-label {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        @media (max-width: 720px) {
+          .dash-module-header {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+            padding: 16px 18px;
+          }
+
+          .dash-module-header-title {
+            font-size: 19px;
+          }
+
+          .dash-module-header-subtitle {
             font-size: 12px;
           }
-          .dsh-header-btn .dsh-btn-label { display: none; }
-          .dsh-header-btn svg {
-            width: 14px; height: 14px;
+
+          .dash-module-header-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+            margin-left: 0;
+            width: 100%;
+          }
+
+          .dash-module-header-action,
+          .dash-module-header-count {
+            min-width: 0;
+            padding-left: 12px;
+            padding-right: 12px;
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .dash-module-header {
+            padding: 14px;
+          }
+
+          .dash-module-header-actions {
+            grid-template-columns: 1fr;
+          }
+
+          .dash-module-header-action {
+            min-height: 38px;
           }
         }
       `}</style>
 
-      <div className="dsh-header">
-        {/* Breadcrumb — solo se muestra si hay algo visible */}
-        {visibleCrumbs.length > 0 && (
-          <span className="dsh-header-bc">
-            {visibleCrumbs.map((crumb, i) => (
-              <span key={i}>
-                {i > 0 && ' / '}
-                {crumb.active ? <span>{crumb.label}</span> : crumb.label}
+      <header className={headerClassName}>
+        <div className="dash-module-header-copy">
+          {eyebrow ? <p className="dash-module-header-eyebrow">{eyebrow}</p> : null}
+          <h1 className="dash-module-header-title">{visibleTitle}</h1>
+          {subtitle ? <p className="dash-module-header-subtitle">{subtitle}</p> : null}
+        </div>
+
+        {(visibleActions.length > 0 || count || children) && (
+          <div className="dash-module-header-actions">
+            {count ? (
+              <span className="dash-module-header-count">
+                {count.value} {count.label}
               </span>
-            ))}
-          </span>
-        )}
+            ) : null}
 
-        {/* Badge count */}
-        {count && (
-          <span className="dsh-header-count">
-            {count.value} {count.label}
-          </span>
-        )}
+            {visibleActions.map((action, index) => {
+              const {
+                label,
+                loadingLabel = 'Cargando...',
+                icon,
+                variant = 'primary',
+                disabled = false,
+                loading = false,
+                type = 'button',
+                onClick,
+                href,
+                title: actionTitle,
+                ariaLabel,
+                className: actionClassName = '',
+              } = action;
+              const actionLabel = loading ? loadingLabel : label;
+              const actionClasses = [
+                'dash-module-header-action',
+                `dash-module-header-action--${variant}`,
+                actionClassName,
+              ].filter(Boolean).join(' ');
 
-        {/* Botón acción */}
-        {actionLabel && (
-          <button className="dsh-header-btn" onClick={onAction}>
-            <svg viewBox="0 0 13 13">
-              <line x1="6.5" y1="1" x2="6.5" y2="12" />
-              <line x1="1" y1="6.5" x2="12" y2="6.5" />
-            </svg>
-            <span className="dsh-btn-label">{actionLabel}</span>
-          </button>
+              if (href) {
+                return (
+                  <a
+                    key={action.key || label || index}
+                    className={actionClasses}
+                    href={href}
+                    title={actionTitle || label}
+                    aria-label={ariaLabel || label}
+                  >
+                    {icon ? <span className="dash-module-header-action-icon">{icon}</span> : null}
+                    {actionLabel ? <span className="dash-module-header-action-label">{actionLabel}</span> : null}
+                  </a>
+                );
+              }
+
+              return (
+                <button
+                  key={action.key || label || index}
+                  type={type}
+                  className={actionClasses}
+                  onClick={onClick}
+                  disabled={disabled || loading}
+                  title={actionTitle || label}
+                  aria-label={ariaLabel || label}
+                >
+                  {icon ? <span className="dash-module-header-action-icon">{icon}</span> : null}
+                  {actionLabel ? <span className="dash-module-header-action-label">{actionLabel}</span> : null}
+                </button>
+              );
+            })}
+
+            {children}
+          </div>
         )}
-      </div>
+      </header>
     </>
   );
 }

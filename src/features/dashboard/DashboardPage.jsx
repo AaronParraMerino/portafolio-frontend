@@ -4,6 +4,7 @@
 ══════════════════════════════════════ */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Header from './layout/Header';
 
 const QUICK_STATS = [
   { num: '4',   lbl: 'Proyectos',      color: 'var(--azul)',      bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
@@ -422,6 +423,12 @@ export default function DashboardPage() {
           .dsh-stats-row      { grid-template-columns: 1fr; }
         }
       `}</style>
+
+      <Header
+        eyebrow="GENERAL"
+        title="Dashboard"
+        subtitle="Resumen de tu portafolio y accesos principales."
+      />
 
       <div className="dsh-overview">
 

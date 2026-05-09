@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { FiPlus } from "react-icons/fi";
 import SkillForm from "../components/SkillForm";
 import { 
   getUserSkills, 
@@ -10,6 +11,7 @@ import {
 import ExperienceToast from "../../experience/components/ExperienceToast";
 // Importamos el modal compartido sugerido por tu compañero
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import Header from "../../layout/Header";
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
@@ -104,17 +106,6 @@ export default function SkillsPage() {
   return (
     <>
       <style>{`
-        .custom-breadcrumb-bar {
-          background-color: #111827;
-          padding: 1.2rem 2.5rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 4px solid var(--azul);
-        }
-        .bc-text { color: #6b7280; font-size: 0.85rem; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .bc-active { color: #ffffff; font-weight: 800; font-size: 1.4rem; margin: 0; }
-        
         .skill-long-card {
           background: white;
           border-radius: 8px;
@@ -154,20 +145,17 @@ export default function SkillsPage() {
         }
       `}</style>
 
-      <div className="custom-breadcrumb-bar shadow">
-        <div>
-          <p className="bc-text">Portafolio</p>
-          <h2 className="bc-active">HABILIDADES</h2>
-        </div>
-        <button
-          className="btn btn-primary px-4 py-2 fw-bold"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
-          onClick={() => { setSelectedSkill(null); setModalMode("add"); }}
-        >
-          ➕ Agregar Habilidad
-        </button>
-      </div>
-
+      <Header
+        title="Habilidades"
+        actions={[
+          {
+            label: "Agregar habilidad",
+            title: "Agregar habilidad",
+            icon: <FiPlus />,
+            onClick: () => { setSelectedSkill(null); setModalMode("add"); },
+          },
+        ]}
+      />
       <div className="container-fluid p-4" style={{ minHeight: "100vh", background: "#f1f5f9" }}>
         <div className="row justify-content-center">
           <div className="col-12 col-xl-10">

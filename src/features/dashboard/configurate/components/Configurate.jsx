@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import Header from "../../layout/Header";
 
 export default function Configurate() {
   const navigate = useNavigate();
@@ -16,20 +17,12 @@ export default function Configurate() {
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI','Inter',sans-serif", minHeight: '100vh', background: '#effaff' }}>
-
-      {/* ── BANNER ── */}
-      <div style={{ background: '#0f172a', padding: isMobile ? '24px 20px' : '28px 40px' }}>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#94a3b8', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
-          PORTAFOLIO
-        </p>
-        <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: '#ffffff', letterSpacing: 1, textTransform: 'uppercase' }}>
-          CONFIGURACIÓN
-        </h1>
-        <p style={{ margin: '10px 0 0', color: '#cbd5e1', fontSize: 14, maxWidth: 640, lineHeight: 1.6 }}>
-          Desde aquí puedes gestionar ajustes de cuenta, seguridad y accesos. Selecciona una opción para continuar.
-        </p>
-      </div>
+    <div style={{ fontFamily: "var(--font)", minHeight: '100vh', background: '#effaff' }}>
+      <Header
+        eyebrow="CUENTA"
+        title="Configuracion"
+        subtitle="Gestiona ajustes de cuenta, seguridad y accesos."
+      />
 
       {/* ── SECCIÓN DE ABAJO ── */}
       <div style={{ background: '#effaff', padding: isMobile ? '24px 14px 40px' : '36px 24px 48px' }}>

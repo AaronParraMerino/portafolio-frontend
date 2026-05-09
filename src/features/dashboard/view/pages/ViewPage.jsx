@@ -1,14 +1,15 @@
 // src/features/dashboard/view/pages/ViewPage.jsx
 
 import { useState } from 'react';
+import { FiCheck, FiSettings } from 'react-icons/fi';
 import '../styles/view.css';
 
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import Header from '../../layout/Header';
 
 import { useView } from '../hooks/useView';
 import { getFullName, FONTS, getAutoTextColor } from '../model/viewModel';
 
-import ViewHeader from '../components/ViewHeader';
 import ViewOsFrame from '../components/ViewOsFrame';
 import ViewHero from '../components/ViewHero';
 import ViewIdentity from '../components/ViewIdentity';
@@ -64,10 +65,25 @@ export default function ViewPage() {
         '--text-color': resolvedTextColor,
       }}
     >
-      <ViewHeader
-        guardando={guardando}
-        onPersonalizar={() => setConfigOpen(true)}
-        onPublicar={() => setPublishOpen(true)}
+      <Header
+        title="Vista Portafolio"
+        actions={[
+          {
+            label: 'Personalizar',
+            title: 'Personalizar vista',
+            icon: <FiSettings />,
+            variant: 'secondary',
+            onClick: () => setConfigOpen(true),
+          },
+          {
+            label: 'Publicar',
+            loadingLabel: 'Publicando...',
+            title: 'Publicar portafolio',
+            icon: <FiCheck />,
+            loading: guardando,
+            onClick: () => setPublishOpen(true),
+          },
+        ]}
       />
 
       <main className="page">
