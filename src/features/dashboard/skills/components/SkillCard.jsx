@@ -4,6 +4,19 @@ import { getSkillLevelColor, getSkillProgress } from "../model/skillLevel";
 export default function SkillCard({ skill, onEdit, onDelete }) {
   const progress = getSkillProgress(skill.nivel);
   const color = getSkillLevelColor(skill.nivel);
+  // Lógica de porcentajes basada en nivel
+  const getProgress = (nivel) => {
+    const levels = { basico: 25, intermedio: 50, avanzado: 75, experto: 100 };
+    return levels[nivel.toLowerCase()] || 0;
+  };
+
+  const getLevelColor = (nivel) => {
+    const colors = { basico: "#64748b", intermedio: "#16a34a", avanzado: "#2563eb", experto: "#7c3aed" };
+    return colors[nivel.toLowerCase()] || "#var(--azul)";
+  };
+
+  const progress = getProgress(skill.nivel);
+  const color = getLevelColor(skill.nivel);
 
   return (
     <div className="card border-0 shadow-sm mb-3 p-3" style={{ borderRadius: "12px", borderLeft: `5px solid ${color}` }}>
@@ -11,9 +24,6 @@ export default function SkillCard({ skill, onEdit, onDelete }) {
         <div className="flex-grow-1">
           <div className="d-flex align-items-center gap-2 mb-1">
             <h6 className="fw-bold mb-0" style={{ color: "#1e293b" }}>{skill.nombre_habilidad || skill.nombre}</h6>
-            <span className={`badge ${skill.es_publico ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`} style={{ fontSize: '10px' }}>
-              {skill.es_publico ? 'Visible' : 'Oculto'}
-            </span>
           </div>
           
           <div className="d-flex justify-content-between mb-1 mt-2">
