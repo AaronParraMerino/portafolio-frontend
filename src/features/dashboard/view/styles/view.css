@@ -109,6 +109,251 @@
   margin: 0;
 }
 
+/* Editor inline de la vista publica */
+.edit-panel {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.edit-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 10px;
+  border-bottom: 1px solid var(--gris-borde);
+  background: #f8fafc;
+}
+
+.edit-tab {
+  border: 1px solid var(--gris-borde);
+  background: var(--blanco);
+  border-radius: 7px;
+  color: var(--gris-oscuro);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 0 12px;
+  transition: all .15s;
+}
+
+.edit-tab:hover,
+.edit-tab.active {
+  border-color: var(--azul);
+  background: var(--azul-light);
+  color: var(--azul-deep);
+}
+
+.edit-body {
+  padding: 18px;
+}
+
+.edit-section {
+  display: grid;
+  gap: 14px;
+}
+
+.edit-section-head h3 {
+  color: var(--negro-texto);
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.edit-section-head p {
+  color: var(--gris-texto);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.edit-field {
+  display: grid;
+  gap: 4px;
+}
+
+.edit-field.full,
+.edit-check.full {
+  grid-column: 1 / -1;
+}
+
+.edit-field span,
+.edit-subtitle-row span {
+  color: var(--gris-oscuro);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.edit-field input,
+.edit-field select,
+.edit-field textarea {
+  font-family: var(--font);
+  font-size: 13px;
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 7px;
+  color: var(--negro-texto);
+  background: var(--blanco);
+  transition: border-color .15s, box-shadow .15s;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.edit-field textarea {
+  resize: vertical;
+}
+
+.edit-field input:focus,
+.edit-field select:focus,
+.edit-field textarea:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px var(--azul-glow);
+}
+
+.edit-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.edit-btn,
+.edit-icon-btn {
+  border-radius: 7px;
+  border: 1.5px solid var(--gris-borde);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 12px;
+  transition: all .15s;
+}
+
+.edit-btn-primary {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--blanco);
+}
+
+.edit-btn-primary:hover {
+  background: var(--azul-hover);
+  border-color: var(--azul-hover);
+}
+
+.edit-btn-soft {
+  background: var(--azul-light);
+  border-color: var(--azul-mid);
+  color: var(--azul-deep);
+}
+
+.edit-btn-soft:hover {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--blanco);
+}
+
+.edit-list {
+  display: grid;
+  gap: 12px;
+}
+
+.edit-card {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-left: 4px solid var(--azul);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.edit-card-compact {
+  padding: 12px;
+}
+
+.edit-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.edit-card-head strong {
+  color: var(--negro-texto);
+  font-size: 13px;
+}
+
+.edit-icon-btn {
+  background: var(--blanco);
+  color: var(--gris-oscuro);
+}
+
+.edit-icon-btn.danger {
+  border-color: var(--rojo-borde);
+  color: var(--rojo-mid);
+}
+
+.edit-icon-btn.danger:hover {
+  background: var(--rojo-bg);
+  border-color: var(--rojo-soft);
+}
+
+.edit-empty {
+  border: 1.5px dashed var(--gris-borde);
+  border-radius: 8px;
+  color: var(--gris-texto);
+  font-size: 13px;
+  padding: 22px;
+  text-align: center;
+}
+
+.edit-subtitle-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.edit-subtitle-row::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gris-borde);
+}
+
+.edit-check {
+  align-items: center;
+  color: var(--gris-oscuro);
+  display: inline-flex;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.edit-check input {
+  accent-color: var(--azul);
+}
+
+.edit-range-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  gap: 10px;
+}
+
 /* ══ PORTFOLIO CARD ══ */
 .pf-card {
   background: var(--card-bg, #ffffff);
@@ -697,43 +942,47 @@
 }
 
 .cfg-head {
-  background: #0c1a2e;
-  padding: 20px 24px 18px;
+  background: var(--blanco);
+  border-bottom: 1px solid var(--gris-borde);
+  padding: 18px 22px 16px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 16px;
 }
 
 .cfg-head-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  color: #fff;
+  color: var(--negro-texto);
+  letter-spacing: 0;
 }
 
 .cfg-head-sub {
-  font-size: 12px;
-  color: rgba(255,255,255,.45);
-  margin-top: 3px;
+  font-size: 11px;
+  color: var(--gris-texto);
+  margin-top: 2px;
 }
 
 .cfg-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.14);
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: rgba(255,255,255,.6);
+  color: var(--gris-texto);
   transition: all .12s;
   flex-shrink: 0;
 }
 
 .cfg-close:hover {
-  background: rgba(255,255,255,.18);
-  color: #fff;
+  border-color: var(--rojo-soft);
+  background: var(--rojo-bg);
+  color: var(--rojo-soft);
 }
 
 .cfg-close svg {
@@ -745,9 +994,7 @@
 }
 
 .cfg-head-divider {
-  height: 3px;
-  background: var(--accent);
-  flex-shrink: 0;
+  display: none;
 }
 
 .cfg-tabs {
@@ -1178,6 +1425,22 @@
   .btn-primary {
     flex: 1;
     justify-content: center;
+  }
+
+  .edit-body {
+    padding: 14px;
+  }
+
+  .edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-search {
+    min-width: 100%;
+  }
+
+  .edit-toolbar > .edit-btn {
+    flex: 1;
   }
 
   .pf-hero-banner {

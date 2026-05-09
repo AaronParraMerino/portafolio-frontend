@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import '../styles/profile.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import DashboardEdit, {
+  DashboardEditBody,
+  DashboardEditFooter,
+} from '../../layout/DashboardEdit';
 
 /* ══════════════════════════════════════════════
    DATOS: Países con bandera, código y regex tel
@@ -95,7 +99,7 @@ function PaisDropdown({ value, onChange }) {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button type="button"
-        className="form-control prf-input prf-country-btn"
+        className="form-control dash-edit-input prf-input prf-country-btn"
         onClick={() => setOpen(o => !o)}
         aria-haspopup="listbox" aria-expanded={open}
       >
@@ -144,7 +148,7 @@ function PaisDropdown({ value, onChange }) {
 function FieldError({ msg }) {
   if (!msg) return null;
   return (
-    <div className="prf-field-error" role="alert">
+    <div className="dash-edit-field-error prf-field-error" role="alert">
       <svg viewBox="0 0 12 12" style={{ width: 11, height: 11, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
         <circle cx="6" cy="6" r="5"/><path d="M6 3.5v3M6 8.5v.5"/>
       </svg>
@@ -230,21 +234,17 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
 
   return (
     <>
-      <div className="prf-modal-overlay" onClick={(e) => e.target === e.currentTarget && !guardando && onCancelar()}>
-        <div className="prf-modal" role="dialog" aria-modal="true" aria-label="Editar perfil">
-
-          <div className="prf-modal-head">
-            <div>
-              <div className="prf-modal-title">Editar perfil</div>
-              <div className="prf-modal-sub">Los cambios se reflejan en tu vista pública</div>
-            </div>
-            <button className="prf-modal-close" onClick={onCancelar} disabled={guardando} title="Cerrar">
-              <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
-            </button>
-          </div>
-
+      <DashboardEdit
+        title="Editar perfil"
+        subtitle="Los cambios se reflejan en tu vista publica"
+        onClose={onCancelar}
+        closeDisabled={guardando}
+        closeOnOverlay={!guardando}
+        size="lg"
+        ariaLabel="Editar perfil"
+      >
           {submitAttempted && hasErrors && (
-            <div className="prf-global-error-banner" role="alert">
+            <div className="dash-edit-banner-error prf-global-error-banner" role="alert">
               <svg viewBox="0 0 14 14" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
                 <path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10v.5"/>
               </svg>
@@ -253,28 +253,28 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'contents' }} autoComplete="off" noValidate>
-            <div className="prf-modal-body">
+            <DashboardEditBody>
 
               <div className="prf-form-section">
                 <span className="prf-section-label">Información básica</span>
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="prf-label">Nombre <span className="prf-required-star">*</span></label>
-                    <input className={`form-control prf-input${showError('nombre') ? ' prf-input-error' : ''}`}
+                    <input className={`form-control dash-edit-input prf-input${showError('nombre') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="nombre" value={form.nombre} onChange={handleChange} onBlur={handleBlur}
                       placeholder="Tu nombre" autoComplete="given-name" maxLength={51} />
                     <FieldError msg={showError('nombre')} />
                   </div>
                   <div className="col-md-6">
                     <label className="prf-label">Apellido <span className="prf-required-star">*</span></label>
-                    <input className={`form-control prf-input${showError('apellido') ? ' prf-input-error' : ''}`}
+                    <input className={`form-control dash-edit-input prf-input${showError('apellido') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="apellido" value={form.apellido} onChange={handleChange} onBlur={handleBlur}
                       placeholder="Tu apellido" autoComplete="family-name" maxLength={51} />
                     <FieldError msg={showError('apellido')} />
                   </div>
                   <div className="col-md-6">
                     <label className="prf-label">Profesión</label>
-                    <input className={`form-control prf-input${showError('profesion') ? ' prf-input-error' : ''}`}
+                    <input className={`form-control dash-edit-input prf-input${showError('profesion') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="profesion" value={form.profesion} onChange={handleChange} onBlur={handleBlur}
                       placeholder="Ej: Dev Full Stack" autoComplete="organization-title" maxLength={81} />
                     <FieldError msg={showError('profesion')} />
@@ -286,7 +286,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                         {form.biografia.length}/500
                       </span>
                     </label>
-                    <textarea className={`form-control prf-input${showError('biografia') ? ' prf-input-error' : ''}`}
+                    <textarea className={`form-control dash-edit-textarea prf-input${showError('biografia') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="biografia" value={form.biografia} onChange={handleChange} onBlur={handleBlur}
                       rows={3} placeholder="Cuéntanos sobre ti..." autoComplete="off" maxLength={501} />
                     <FieldError msg={showError('biografia')} />
@@ -303,7 +303,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                   </div>
                   <div className="col-md-4">
                     <label className="prf-label">Ciudad</label>
-                    <input className={`form-control prf-input${showError('ciudad') ? ' prf-input-error' : ''}`}
+                    <input className={`form-control dash-edit-input prf-input${showError('ciudad') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="ciudad" value={form.ciudad} onChange={handleChange} onBlur={handleBlur}
                       placeholder="Cochabamba" autoComplete="address-level2" maxLength={61} />
                     <FieldError msg={showError('ciudad')} />
@@ -328,21 +328,20 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                 </div>
               </div>
 
-            </div>
+            </DashboardEditBody>
 
-            <div className="prf-modal-foot">
-              <button type="button" className="prf-btn-cancel" onClick={onCancelar} disabled={guardando}>Cancelar</button>
-              <button type="submit" className="prf-btn-save" disabled={guardando}>
+            <DashboardEditFooter>
+              <button type="button" className="dash-edit-btn dash-edit-btn--secondary" onClick={onCancelar} disabled={guardando}>Cancelar</button>
+              <button type="submit" className="dash-edit-btn dash-edit-btn--primary" disabled={guardando}>
                 {guardando
-                  ? <><span className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Guardando...</>
+                  ? <><span className="dash-edit-spinner" /> Guardando...</>
                   : <><svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>Guardar cambios</>
                 }
               </button>
-            </div>
+            </DashboardEditFooter>
           </form>
 
-        </div>
-      </div>
+      </DashboardEdit>
 
       <ConfirmModal
         open={!!confirmPending}
