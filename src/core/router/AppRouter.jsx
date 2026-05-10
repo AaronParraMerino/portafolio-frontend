@@ -23,6 +23,7 @@ import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
 import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 import ViewPage from '../../features/dashboard/view/pages/ViewPage';
+import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -33,6 +34,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
         <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
           <Route index element={<HomePage />} />
           <Route path="portafolios" element={<PortfolioSearchPage />} />
+          <Route path="portafolio/:userId" element={<PortfolioPage />} />
           <Route path="dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
