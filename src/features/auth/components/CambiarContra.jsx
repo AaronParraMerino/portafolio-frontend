@@ -17,6 +17,10 @@ export default function CambiarContrasena() {
   const hasNumber = /[0-9]/.test(nueva);
   const matches = nueva === confirmar && nueva.length > 0;
 
+  const hasTokenPort = Boolean(localStorage.getItem("tokenPORT"));
+  const defaultRedirect = hasTokenPort ? "/dashboard/settings" : "/auth/login";
+  const returnButtonLabel = hasTokenPort ? "Volver a configuración" : "Ir al login";
+
   const handleSubmit = async () => {
     setError("");
 
@@ -70,8 +74,12 @@ export default function CambiarContrasena() {
 
   const handleLoginRedirect = () => {
     const redirect = sessionStorage.getItem("redirect_after_recovery");
-    if (redirect) { sessionStorage.removeItem("redirect_after_recovery"); navigate(redirect); }
-    else navigate("/auth/login");
+    if (redirect) {
+      sessionStorage.removeItem("redirect_after_recovery");
+      navigate(redirect);
+      return;
+    }
+    navigate(defaultRedirect);
   };
 
   return (
@@ -126,7 +134,7 @@ export default function CambiarContrasena() {
               onClick={handleLoginRedirect}
               style={{ padding: "11px 32px", background: "var(--azul)", color: "var(--blanco)", border: "none", borderRadius: "8px", cursor: "pointer", fontFamily: "var(--font)", fontWeight: "600" }}
             >
-              Ir al login
+              {returnButtonLabel}
             </button>
           </div>
         )}
