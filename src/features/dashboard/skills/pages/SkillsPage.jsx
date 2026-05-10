@@ -519,8 +519,9 @@ export default function SkillsPage() {
         <div className="row justify-content-center">
           <div className="col-12 col-xl-10">
             {loading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" />
+              <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+                <span className="dash-loading-spinner" />
+                <span>Cargando habilidades...</span>
               </div>
             ) : skills.length === 0 ? (
               <SkillEmptyState onAdd={openAddModal} />

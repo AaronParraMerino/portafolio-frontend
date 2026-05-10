@@ -1,7 +1,7 @@
 // src/features/dashboard/view/hooks/useView.js
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_CONFIG, DEFAULT_VISIBILITY, MOCK_VIEW } from '../model/viewModel';
+import { DEFAULT_CONFIG, DEFAULT_VISIBILITY, EMPTY_VIEW } from '../model/viewModel';
 import {
   clearStoredConfig,
   getPortfolioViewData,
@@ -47,7 +47,7 @@ function normalizeConfig(config = {}) {
   });
 }
 
-function normalizeViewData(patch = {}, previous = clone(MOCK_VIEW)) {
+function normalizeViewData(patch = {}, previous = clone(EMPTY_VIEW)) {
   const has = (key) => Object.prototype.hasOwnProperty.call(patch, key);
   const next = {
     ...previous,
@@ -78,12 +78,12 @@ function getInitialViewState() {
       };
     }
   } catch {
-    // Session may not exist yet; fall back to mock until auth/backend responds.
+    // Session may not exist yet; keep an empty state until auth/backend responds.
   }
 
   return {
-    data: normalizeViewData(clone(MOCK_VIEW)),
-    dataSource: 'mock',
+    data: normalizeViewData(clone(EMPTY_VIEW)),
+    dataSource: 'empty',
     hasCache: false,
   };
 }
@@ -111,7 +111,7 @@ export function useView() {
   }, []);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setLoading(!initialState.hasCache);
     setError(null);
 
     try {
@@ -124,13 +124,12 @@ export function useView() {
         showToast('Algunas secciones no se pudieron cargar desde backend.', 'info');
       }
     } catch (err) {
-      setData((prev) => initialState.hasCache ? prev : normalizeViewData(clone(MOCK_VIEW)));
-      setDataSource(initialState.hasCache ? 'cache' : 'mock');
+      setDataSource(initialState.hasCache ? 'cache' : 'error');
       setError(err.message || 'No se pudo conectar con el backend.');
       showToast(
         initialState.hasCache
           ? 'Backend no disponible: mostrando datos en cache.'
-          : 'Backend no disponible: mostrando datos mock.',
+          : 'Backend no disponible: no se pudieron cargar los datos del portafolio.',
         'info'
       );
     } finally {
@@ -182,7 +181,7 @@ export function useView() {
     try {
       clearStoredConfig();
     } catch {
-      // Mock mode can run without a persisted session.
+      // The session can be unavailable before auth finishes hydrating.
     }
 
     setData((prev) => {

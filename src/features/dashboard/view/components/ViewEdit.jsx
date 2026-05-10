@@ -895,7 +895,7 @@ export default function ViewEdit({
         variant="red"
         icon="warning"
         title="Eliminar elemento"
-        subtitle="Esta acción solo afecta los datos mock"
+        subtitle="Esta accion solo afecta la vista actual"
         message={`¿Deseas eliminar "${deleteTarget?.label || 'este elemento'}"?`}
         confirmLabel="Eliminar"
         cancelLabel="Cancelar"

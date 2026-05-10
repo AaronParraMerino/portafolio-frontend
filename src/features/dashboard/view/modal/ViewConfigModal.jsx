@@ -899,7 +899,7 @@ export default function ViewConfigModal({
         variant="yellow"
         icon="warning"
         title="Restaurar configuración"
-        subtitle="Volver a los valores mock"
+        subtitle="Volver a los valores iniciales"
         message="Se restaurarán los colores, el marco, la disponibilidad y la visibilidad inicial del portafolio."
         confirmLabel="Restaurar"
         cancelLabel="Cancelar"
