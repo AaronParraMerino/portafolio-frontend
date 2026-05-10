@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import ExperienceForm from "../components/ExperienceForm";
-import ExperienceDetailModal from "../components/ExperienceDetailModal";
 import ExperienceToast from "../components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import Header from "../../layout/Header";
 import {
   getExperiencias,
   createExperiencia,
@@ -10,33 +10,37 @@ import {
   deleteExperiencia,
 } from "../services/experienceService";
 
-const formatearFecha = (fechaStr) => {
-  if (!fechaStr) return "";
-  const [year, month] = fechaStr.split("-");
-  const meses = [
-    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-  ];
-  return `${meses[parseInt(month) - 1]} ${year}`;
+const formatearFechaCompleta = (fechaStr) => {
+  if (!fechaStr) return "Sin fecha";
+
+  const [year, month, day] = String(fechaStr).slice(0, 10).split("-");
+  if (!year || !month || !day) return fechaStr;
+
+  return `${day}/${month}/${year}`;
 };
 
 export default function ExperiencePage() {
   const [experiencias, setExperiencias] = useState([]);
-  const [modalMode, setModalMode]       = useState(null);
-  const [selectedExp, setSelectedExp]   = useState(null);
-  const [toast, setToast]               = useState(null);
-  const [loading, setLoading]           = useState(true);
+  const [modalMode, setModalMode] = useState(null);
+  const [selectedExp, setSelectedExp] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [confirmData, setConfirmData] = useState({
-    isOpen:   false,
-    title:    "",
+    isOpen: false,
+    title: "",
     subtitle: "",
-    message:  "",
+    message: "",
     confirmLabel: "Confirmar",
     onConfirm: null,
-    variant:  "blue",
-    icon:     "check",
+    variant: "blue",
+    icon: "check",
   });
+
+  const openAddModal = () => {
+    setSelectedExp(null);
+    setModalMode("add");
+  };
 
   const showToast = (msg, tipo = "ok") => {
     setToast({ msg, tipo });
@@ -67,7 +71,9 @@ export default function ExperiencePage() {
       if (modalMode === "edit" && selectedExp) {
         const updated = await updateExperiencia(selectedExp.id, data);
         setExperiencias((prev) =>
-          prev.map((exp) => (exp.id === selectedExp.id ? updated : exp))
+          prev.map((exp) =>
+            exp.id === selectedExp.id ? { ...exp, ...updated } : exp
+          )
         );
         showToast("Experiencia actualizada correctamente");
       } else {
@@ -75,11 +81,15 @@ export default function ExperiencePage() {
         setExperiencias((prev) => [created, ...prev]);
         showToast("Experiencia guardada con éxito");
       }
+
       setModalMode(null);
       setSelectedExp(null);
     } catch (error) {
       const errorMsg =
-        error.response?.data?.message || error.message || "Error en la operación";
+        error.response?.data?.message ||
+        error.message ||
+        "Error en la operación";
+
       showToast(errorMsg, "error");
     }
   };
@@ -99,16 +109,15 @@ export default function ExperiencePage() {
 
     setConfirmData({
       isOpen: true,
-      // Editar → azul (cambio de información).  Crear → verde (acción positiva nueva).
-      variant:      isEdit ? "blue"              : "green",
-      icon:         "check",
-      title:        isEdit ? "Actualizar experiencia" : "Guardar experiencia",
-      subtitle:     isEdit
+      variant: isEdit ? "blue" : "green",
+      icon: "check",
+      title: isEdit ? "Actualizar experiencia" : "Guardar experiencia",
+      subtitle: isEdit
         ? "Se sobreescribirán los datos actuales."
         : "Se añadirá al listado de experiencias.",
       message: isEdit
-        ? `¿Confirmas los cambios realizados en "${data.puesto}" en ${data.empresa}?`
-        : `¿Deseas guardar "${data.puesto}" en ${data.empresa} como nueva experiencia?`,
+        ? `¿Confirmas los cambios en "${data.puesto}"?`
+        : `¿Deseas guardar "${data.puesto}"?`,
       confirmLabel: isEdit ? "Sí, actualizar" : "Sí, guardar",
       onConfirm: () => {
         executeSave(data);
@@ -119,15 +128,14 @@ export default function ExperiencePage() {
 
   const handleDeleteRequest = (id) => {
     const exp = experiencias.find((e) => e.id === id);
+
     setConfirmData({
       isOpen: true,
-      variant:      "red",
-      icon:         "warning",
-      title:        "Eliminar experiencia",
-      subtitle:     "Esta acción no se puede deshacer.",
-      message:      exp
-        ? `Estás por eliminar "${exp.puesto}" en ${exp.empresa}. ¿Deseas continuar?`
-        : "Esta acción es permanente. ¿Deseas continuar?",
+      variant: "red",
+      icon: "warning",
+      title: "Eliminar experiencia",
+      subtitle: "Esta acción no se puede deshacer.",
+      message: `Estás por eliminar "${exp?.puesto}". ¿Deseas continuar?`,
       confirmLabel: "Sí, eliminar",
       onConfirm: () => {
         executeDelete(id);
@@ -136,154 +144,459 @@ export default function ExperiencePage() {
     });
   };
 
+  const laborales = experiencias.filter(
+    (e) => e.tipo_experiencia === "Laboral"
+  );
+
+  const academicas = experiencias.filter(
+    (e) => e.tipo_experiencia === "Académica"
+  );
+
   return (
     <>
       <style>{`
-        .custom-breadcrumb-bar {
-          background-color: var(--negro-texto);
-          padding: 1.2rem 2.5rem;
-          display: flex;
-          justify-content: space-between;
+        .exp-page-body {
+          min-height: 100vh;
+          background: var(--fondo);
+        }
+
+        .exp-add-btn {
+          display: inline-flex;
           align-items: center;
-          border-bottom: 4px solid var(--azul);
-          font-family: var(--font);
-        }
-        .bc-text {
-          color: var(--gris-texto);
-          font-size: 0.85rem;
-          margin: 0;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          font-family: var(--font);
-        }
-        .bc-active {
+          justify-content: center;
+          gap: 6px;
+          padding: 9px 18px;
+          border-radius: 8px;
+          border: none;
+          background: var(--azul);
           color: var(--blanco);
+          font-family: var(--font);
+          font-size: .92rem;
           font-weight: 800;
-          font-size: 1.4rem;
+          cursor: pointer;
+          transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0,119,183,.18);
+        }
+
+        .exp-add-btn:hover {
+          background: var(--azul-hover);
+          box-shadow: 0 4px 14px rgba(0,119,183,.3);
+          transform: translateY(-1px);
+        }
+
+        .exp-edit-section-divider {
+          margin: 1.55rem 0 .9rem;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .exp-edit-section-title {
+          color: var(--negro-texto);
+          font-family: var(--font);
+          font-size: .82rem;
+          font-weight: 800;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+
+        .exp-edit-section-line {
+          flex: 1;
+          height: 1px;
+          background: var(--gris-borde);
+        }
+
+        .exp-edit-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 16px;
+          margin-bottom: 1.4rem;
+        }
+
+        .exp-edit-card {
+          min-height: 165px;
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 12px;
+          overflow: hidden;
+          background: var(--blanco);
+          display: flex;
+          flex-direction: row;
+          box-shadow: 0 2px 8px rgba(0,0,0,.04);
+          transition: transform .18s ease, box-shadow .18s ease, border-color .2s ease;
+        }
+
+        .exp-edit-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 28px rgba(0,0,0,.10);
+          border-color: var(--azul-mid);
+        }
+
+        .exp-edit-left-panel {
+          width: 6px;
+          flex-shrink: 0;
+          background: var(--azul);
+        }
+
+        .exp-edit-card.is-academica .exp-edit-left-panel {
+          background: var(--azul-deep);
+        }
+
+        .exp-edit-content {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .exp-edit-body {
+          height: 100%;
+          padding: 18px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 7px;
+        }
+
+        .exp-edit-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .exp-edit-badges {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 5px;
+        }
+
+        .exp-edit-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-family: var(--mono);
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          padding: 2px 9px;
+          border-radius: 20px;
+          line-height: 1.4;
+        }
+
+        .exp-edit-badge.is-laboral {
+          color: var(--azul);
+          background: var(--azul-light);
+          border: 1px solid var(--azul-mid);
+        }
+
+        .exp-edit-badge.is-academica {
+          color: var(--azul-deep);
+          background: #ddeaf8;
+          border: 1px solid #b8d0ec;
+        }
+
+        .exp-edit-current {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-family: var(--mono);
+          font-size: 9px;
+          font-weight: 500;
+          color: #059669;
+          background: var(--verde-bg);
+          border: 1px solid var(--verde-borde);
+          padding: 2px 9px;
+          border-radius: 20px;
+          line-height: 1.4;
+        }
+
+        .exp-edit-current::before {
+          content: "●";
+          font-size: 7px;
+          animation: exp-edit-blink 2s infinite;
+        }
+
+        @keyframes exp-edit-blink {
+          0%, 100% { opacity: .35; }
+          50% { opacity: 1; }
+        }
+
+        .exp-edit-dates {
+          font-family: var(--mono);
+          font-size: 10px;
+          color: var(--gris-texto);
+          white-space: nowrap;
+          padding-top: 2px;
+        }
+
+        .exp-edit-role {
           margin: 0;
+          color: var(--negro-texto);
+          font-size: 15px;
+          font-weight: 700;
+          line-height: 1.25;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+
+        .exp-edit-org {
+          color: var(--azul);
+          font-size: 12.5px;
+          font-weight: 700;
+          line-height: 1.35;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+
+        .exp-edit-card.is-academica .exp-edit-org {
+          color: var(--azul-deep);
+        }
+
+        .exp-edit-desc {
+          margin: 0;
+          margin-top: auto;
+          padding-top: 8px;
+          color: var(--gris-texto);
+          font-size: 12.5px;
+          line-height: 1.7;
+          white-space: pre-wrap;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+
+        .exp-edit-actions {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 7px;
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(209, 213, 219, .7);
+        }
+
+        .exp-edit-action-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 30px;
+          padding: 6px 12px;
+          border-radius: 8px;
+          border: 1.5px solid var(--gris-borde);
+          background: var(--blanco);
+          color: var(--gris-oscuro);
           font-family: var(--font);
+          font-size: .78rem;
+          font-weight: 800;
+          cursor: pointer;
+          transition: transform .18s ease, color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
         }
-        .exp-card {
-          transition: all 0.3s ease;
-          border-left: 5px solid var(--azul) !important;
-          border-radius: 4px !important;
-          background-color: var(--blanco) !important;
-          border: 1px solid var(--gris-borde) !important;
-          font-family: var(--font);
+
+        .exp-edit-action-btn:hover {
+          transform: translateY(-1px);
         }
-        .exp-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+
+        .exp-edit-action-btn.is-edit:hover {
+          color: var(--azul);
+          border-color: var(--azul-mid);
+          background: var(--azul-light);
+          box-shadow: 0 3px 10px rgba(0,119,183,.15);
         }
-        .badge-laboral {
-          background-color: var(--amarillo-chip) !important;
-          color: var(--amarillo-hover) !important;
-          border: 1px solid var(--amarillo-borde) !important;
-          font-family: var(--font);
+
+        .exp-edit-action-btn.is-delete:hover {
+          color: var(--rojo-soft);
+          border-color: var(--rojo-soft);
+          background: var(--rojo-chip);
+          box-shadow: 0 3px 10px rgba(232,85,85,.14);
         }
-        .badge-academica {
-          background-color: var(--violeta-chip) !important;
-          color: var(--violeta-hover) !important;
-          border: 1px solid var(--violeta-borde) !important;
-          font-family: var(--font);
+
+        .exp-category-empty {
+          background: var(--blanco);
+          border: 1.5px dashed var(--gris-borde);
+          border-radius: 12px;
+          color: var(--gris-texto);
+          font-size: .86rem;
+          padding: 18px;
+          text-align: center;
+          margin-bottom: 1.4rem;
         }
-        @media (max-width: 768px) {
-          .custom-breadcrumb-bar {
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
+
+        .exp-empty-state {
+          margin: 2.2rem auto 0;
+          max-width: 680px;
+          background: var(--blanco);
+          border: 1.5px solid var(--gris-borde);
+          border-radius: 18px;
+          padding: 2.2rem 2rem;
+          text-align: center;
+          box-shadow: 0 8px 24px rgba(0,0,0,.05);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .exp-empty-state::before {
+          content: "";
+          position: absolute;
+          inset: 0 0 auto 0;
+          height: 5px;
+          background: linear-gradient(90deg, var(--azul), var(--azul-mid));
+        }
+
+        .exp-empty-icon {
+          width: 56px;
+          height: 56px;
+          margin: 0 auto 14px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--azul-light);
+          border: 1.5px solid var(--azul-mid);
+          color: var(--azul);
+          font-size: 1.45rem;
+          font-weight: 800;
+        }
+
+        .exp-empty-title {
+          margin: 0;
+          color: var(--negro-texto);
+          font-size: clamp(1.15rem, 2vw, 1.45rem);
+          font-weight: 800;
+          letter-spacing: -.02em;
+        }
+
+        .exp-empty-text {
+          max-width: 500px;
+          margin: .55rem auto 1.35rem;
+          color: var(--gris-texto);
+          font-size: .95rem;
+          line-height: 1.55;
+        }
+
+        .exp-empty-chips {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 1.45rem;
+        }
+
+        .exp-empty-chip {
+          padding: 5px 10px;
+          border-radius: 999px;
+          border: 1px solid var(--gris-borde);
+          background: var(--fondo);
+          color: var(--gris-oscuro);
+          font-size: .75rem;
+          font-weight: 700;
+        }
+
+        @media (max-width: 640px) {
+          .exp-page-body {
+            padding-inline: 1rem !important;
+          }
+
+          .exp-add-btn {
+            width: 100%;
+          }
+
+          .exp-edit-list {
+            grid-template-columns: 1fr;
+          }
+
+          .exp-edit-body {
+            padding: 16px;
+          }
+
+          .exp-edit-dates {
+            white-space: normal;
+          }
+
+          .exp-edit-actions {
+            width: 100%;
+          }
+
+          .exp-edit-action-btn {
+            flex: 1;
+          }
+
+          .exp-empty-state {
+            margin-top: 1rem;
+            padding: 1.7rem 1.2rem;
           }
         }
       `}</style>
 
-      {/* Barra superior */}
-      <div className="custom-breadcrumb-bar shadow">
-        <div>
-          <p className="bc-text">Portafolio</p>
-          <h2 className="bc-active">EXPERIENCIA</h2>
-        </div>
-        <button
-          className="btn btn-primary px-4 py-2 fw-bold shadow-sm"
-          style={{ backgroundColor: "var(--azul)", border: "none", borderRadius: "6px" }}
-          onClick={() => { setModalMode("add"); setSelectedExp(null); }}
-        >
-          ➕ Agregar Nueva
-        </button>
-      </div>
+      <Header
+        title="Experiencia"
+        actionLabel="Agregar nueva"
+        onAction={openAddModal}
+      />
 
-      {/* Lista de experiencias */}
-      <div
-        className="container-fluid p-4"
-        style={{ minHeight: "100vh", background: "var(--fondo)", fontFamily: "var(--font)" }}
-      >
+      <div className="container-fluid p-4 exp-page-body">
         <div className="row justify-content-center">
-          <div className="col-12 col-xl-11">
+          <div className="col-12 col-xl-10">
             {loading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status" />
-                <h5 className="text-muted mt-3">Cargando tus datos...</h5>
+              <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+                <span className="dash-loading-spinner" />
+                <span>Cargando experiencia...</span>
               </div>
             ) : experiencias.length === 0 ? (
-              <div className="text-center py-5 bg-white rounded shadow-sm">
-                <h5 className="text-muted">No hay experiencias registradas.</h5>
-              </div>
+              <ExperienceEmptyState onAdd={openAddModal} />
             ) : (
-              <div className="row g-4">
-                {experiencias.map((exp) => (
-                  <div key={exp.id} className="col-12 col-md-6 col-lg-4">
-                    <div className="card h-100 exp-card p-3 border-0">
-                      <div className="d-flex justify-content-between mb-3">
-                        <span
-                          className={`badge px-3 py-2 ${
-                            exp.tipo_experiencia === "Laboral"
-                              ? "badge-laboral"
-                              : "badge-academica"
-                          }`}
-                        >
-                          {exp.tipo_experiencia.toUpperCase()}
-                        </span>
-                        <button
-                          className="btn btn-light btn-sm rounded-circle shadow-sm"
-                          onClick={() => { setSelectedExp(exp); setModalMode("view"); }}
-                        >
-                          👁️
-                        </button>
-                      </div>
+              <>
+                <SubsectionTitle>Experiencia Laboral</SubsectionTitle>
 
-                      <h5 className="fw-bold mb-1">{exp.puesto}</h5>
-                      <p className="text-primary small mb-3 fw-bold">{exp.empresa}</p>
-
-                      <div className="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
-                        <small className="text-muted fw-bold">
-                          {formatearFecha(exp.fecha_inicio)} —{" "}
-                          {exp.actual ? "Actual" : formatearFecha(exp.fecha_fin)}
-                        </small>
-                        <div className="d-flex gap-2">
-                          <button
-                            onClick={() => { setSelectedExp(exp); setModalMode("edit"); }}
-                            className="btn btn-sm btn-outline-primary"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRequest(exp.id)}
-                            className="btn btn-sm btn-outline-danger"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                {laborales.length === 0 ? (
+                  <div className="exp-category-empty">
+                    No hay experiencia laboral registrada.
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="exp-edit-list">
+                    {laborales.map((exp) => (
+                      <ExperienceCard
+                        key={exp.id}
+                        exp={exp}
+                        onEdit={() => {
+                          setSelectedExp(exp);
+                          setModalMode("edit");
+                        }}
+                        onDelete={() => handleDeleteRequest(exp.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <SubsectionTitle>Experiencia Académica</SubsectionTitle>
+
+                {academicas.length === 0 ? (
+                  <div className="exp-category-empty">
+                    No hay experiencia académica registrada.
+                  </div>
+                ) : (
+                  <div className="exp-edit-list">
+                    {academicas.map((exp) => (
+                      <ExperienceCard
+                        key={exp.id}
+                        exp={exp}
+                        onEdit={() => {
+                          setSelectedExp(exp);
+                          setModalMode("edit");
+                        }}
+                        onDelete={() => handleDeleteRequest(exp.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* ConfirmModal unificado */}
       <ConfirmModal
         open={confirmData.isOpen}
         title={confirmData.title}
@@ -297,7 +610,6 @@ export default function ExperiencePage() {
         onClose={closeConfirm}
       />
 
-      {/* Modales de formulario y detalle */}
       {(modalMode === "add" || modalMode === "edit") && (
         <ExperienceForm
           onSave={handleSaveRequest}
@@ -305,14 +617,121 @@ export default function ExperiencePage() {
           editData={selectedExp}
         />
       )}
-      {modalMode === "view" && (
-        <ExperienceDetailModal
-          exp={selectedExp}
-          onClose={() => setModalMode(null)}
-        />
-      )}
 
       <ExperienceToast toast={toast} />
     </>
+  );
+}
+
+function SubsectionTitle({ children }) {
+  return (
+    <div className="exp-edit-section-divider">
+      <div className="exp-edit-section-title">{children}</div>
+      <div className="exp-edit-section-line" />
+    </div>
+  );
+}
+
+function ExperienceEmptyState({ onAdd }) {
+  return (
+    <div className="exp-empty-state">
+      <div className="exp-empty-icon">✦</div>
+
+      <h3 className="exp-empty-title">Aún no tienes experiencias registradas</h3>
+
+      <p className="exp-empty-text">
+        Agrega experiencias laborales o académicas para mostrar tu trayectoria y
+        fortalecer tu perfil profesional.
+      </p>
+
+      <div className="exp-empty-chips" aria-hidden="true">
+        <span className="exp-empty-chip">Laboral</span>
+        <span className="exp-empty-chip">Académica</span>
+        <span className="exp-empty-chip">Fechas y descripción</span>
+      </div>
+
+      <button type="button" className="exp-add-btn" onClick={onAdd}>
+        + Agregar Experiencia
+      </button>
+    </div>
+  );
+}
+
+function ExperienceCard({ exp, onEdit, onDelete }) {
+  const isAcademica = exp.tipo_experiencia === "Académica";
+
+  const fechaInicio = formatearFechaCompleta(exp.fecha_inicio);
+  const fechaFin = exp.actual
+    ? "Actualidad"
+    : formatearFechaCompleta(exp.fecha_fin);
+
+  return (
+    <article
+      className={`exp-edit-card ${isAcademica ? "is-academica" : "is-laboral"}`}
+    >
+      <div className="exp-edit-left-panel" />
+
+      <div className="exp-edit-content">
+        <div className="exp-edit-body">
+          <div className="exp-edit-top">
+            <div className="exp-edit-badges">
+              <span
+                className={`exp-edit-badge ${
+                  isAcademica ? "is-academica" : "is-laboral"
+                }`}
+              >
+                {isAcademica ? "Académico" : "Laboral"}
+              </span>
+
+              {exp.actual && (
+                <span className="exp-edit-current">
+                  Actual
+                </span>
+              )}
+            </div>
+
+            <span className="exp-edit-dates">
+              {fechaInicio} — {fechaFin}
+            </span>
+          </div>
+
+          <h3 className="exp-edit-role">
+            {exp.puesto}
+          </h3>
+
+          <div className="exp-edit-org">
+            {exp.empresa}
+          </div>
+
+          {exp.descripcion && (
+            <p className="exp-edit-desc">
+              {exp.descripcion}
+            </p>
+          )}
+
+          <div className="exp-edit-actions">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="exp-edit-action-btn is-edit"
+              title="Editar"
+              aria-label="Editar experiencia"
+            >
+              Editar
+            </button>
+
+            <button
+              type="button"
+              onClick={onDelete}
+              className="exp-edit-action-btn is-delete"
+              title="Eliminar"
+              aria-label="Eliminar experiencia"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
