@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import useFeaturedPortfolios from '../hooks/useFeaturedPortfolios';
 import PortfolioCard from './PortfolioCard';
 
@@ -65,7 +66,7 @@ export default function FeaturedPortfolios() {
           border: 1.5px solid var(--azul-mid); border-radius: 6px; padding: 9px 14px;
           white-space: nowrap; transition: background .15s, border-color .15s;
         }
-        .spk-featured-link:hover { background: var(--azul-light); border-color: var(--azul); }
+        .spk-featured-link:hover { background: var(--azul-light); border-color: var(--azul); color: var(--azul); }
         .spk-featured-tabs {
           display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 10px; margin-bottom: 26px;
@@ -179,9 +180,9 @@ export default function FeaturedPortfolios() {
                 Explora perfiles profesionales con actividad reciente, experiencia visible y habilidades publicas.
               </p>
             </div>
-            <a className="spk-featured-link" href="#desarrolladores">
+            <Link className="spk-featured-link" to="/desarrolladores">
               Mostrar todo
-            </a>
+            </Link>
           </div>
 
           <div className="spk-featured-tabs" role="tablist" aria-label="Rankings de portafolios">
