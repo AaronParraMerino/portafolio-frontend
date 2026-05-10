@@ -66,4 +66,3 @@ export default function AppRouter({ isBackendAvailable = true }) {
     </BrowserRouter>
   );
 }
-

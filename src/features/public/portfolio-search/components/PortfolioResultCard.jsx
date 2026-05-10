@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const pick = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
 
@@ -40,11 +40,18 @@ const normalizePortfolio = (portfolio = {}) => {
 
 const PortfolioResultCard = ({ portfolio }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const data = normalizePortfolio(portfolio);
 
   const handleOpen = () => {
     if (!data.id) return;
-    navigate(`/portafolio/${data.id}`);
+    const backFallback = `${location.pathname}${location.search}${location.hash}` || '/portafolios';
+    navigate(`/portafolio/${data.id}`, {
+      state: {
+        backLabel: 'Volver al buscador',
+        backFallback,
+      },
+    });
   };
 
   return (
