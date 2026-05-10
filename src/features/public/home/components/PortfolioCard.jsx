@@ -1,9 +1,20 @@
+import { Link } from 'react-router-dom';
+
 const counterLabels = {
   updates: 'Actualizacion',
   projects: 'Proyectos',
   experience: 'Experiencias',
   skills: 'Habilidades',
 };
+
+const pick = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+
+function portfolioPathFor(portfolio) {
+  const id = pick(portfolio?.id_usuario, portfolio?.usuario_id, portfolio?.user_id, portfolio?.id);
+  if (id) return `/portafolio/${id}`;
+
+  return String(portfolio?.ruta_portafolio || '#').replace(/^\/portfolio\//, '/portafolio/');
+}
 
 function initialsFor(portfolio) {
   const first = portfolio?.nombre?.trim()?.slice(0, 1) || 'C';
@@ -44,6 +55,7 @@ export default function PortfolioCard({ portfolio, variant }) {
     ? portfolio.skills_destacadas.slice(0, 3)
     : [];
   const location = locationFor(portfolio);
+  const portfolioPath = portfolioPathFor(portfolio);
 
   return (
     <article className="spk-portfolio-card">
@@ -78,9 +90,9 @@ export default function PortfolioCard({ portfolio, variant }) {
           {variant !== 'updates' && <span>{counterLabels[variant]}</span>}
         </div>
 
-        <a className="spk-portfolio-cta" href={portfolio.ruta_portafolio || '#'}>
+        <Link className="spk-portfolio-cta" to={portfolioPath}>
           Ver portafolio
-        </a>
+        </Link>
       </div>
     </article>
   );
