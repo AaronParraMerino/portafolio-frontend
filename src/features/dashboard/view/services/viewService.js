@@ -296,6 +296,27 @@ export function mapConfigFromBackend(raw = {}) {
   );
 }
 
+export function mapConfigToBackend(config = {}) {
+  const mapped = {
+    hero_color: config.heroColor,
+    hero_bg_source: config.heroBgSource,
+    hero_pattern: config.heroPattern,
+    avatar_bg_source: config.avatarBgSource,
+    avatar_color: config.avatarColor,
+    accent_color: config.accentColor,
+    card_bg: config.cardBg,
+    text_color_auto: config.textColorAuto,
+    text_color: config.textColor,
+    font_id: config.fontId,
+    frame_id: config.frameId,
+    disponible: config.disponible,
+  };
+
+  return Object.fromEntries(
+    Object.entries(mapped).filter(([, value]) => value !== undefined && value !== null)
+  );
+}
+
 export function normalizeConfig(config = {}) {
   return {
     ...DEFAULT_CONFIG,
@@ -308,11 +329,17 @@ export function loadStoredConfig(userId = getSession().userId) {
   return readStoredConfig(userId).config;
 }
 
-export async function saveConfig(config) {
+export async function getConfig() {
   const { userId } = getSession();
-  const normalized = normalizeConfig(config);
-  localStorage.setItem(configStorageKey(userId), JSON.stringify(normalized));
-  return normalized;
+  return apiFetch(`/portfolio/${userId}/config`);
+}
+
+export async function saveConfig(payload) {
+  const { userId } = getSession();
+  return apiFetch(`/portfolio/${userId}/config`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 }
 
 export function clearStoredConfig() {
@@ -674,17 +701,24 @@ export async function getPortfolioViewData() {
     getExperiencias(),
     getHabilidades(),
     getProyectosPublicos(),
+    getConfig(),
   ]);
 
-  const [perfilResult, redesResult, experienciasResult, habilidadesResult, proyectosResult] = entries;
+  const [perfilResult, redesResult, experienciasResult, habilidadesResult, proyectosResult, configResult] = entries;
+  const contentEntries = entries.slice(0, 5);
   const warnings = entries
     .filter((result) => result.status === 'rejected')
     .map((result) => result.reason?.message || 'No se pudo cargar una seccion.');
 
-  if (entries.every((result) => result.status === 'rejected')) {
+  if (contentEntries.every((result) => result.status === 'rejected')) {
     throw new Error(warnings[0] || 'No se pudo conectar con el backend.');
   }
 
+  const backendConfig = configResult.status === 'fulfilled'
+    ? mapConfigFromBackend(configResult.value)
+    : {};
+  const hasBackendHeroSource = Object.prototype.hasOwnProperty.call(backendConfig, 'heroBgSource');
+  const hasBackendAvatarSource = Object.prototype.hasOwnProperty.call(backendConfig, 'avatarBgSource');
   const perfilRaw = perfilResult.status === 'fulfilled' ? perfilResult.value : null;
   const perfil = mapPerfilFromBackend(perfilRaw);
   const redes = redesResult.status === 'fulfilled'
@@ -709,8 +743,8 @@ export async function getPortfolioViewData() {
     storedVisibility: storedConfig.visibilidad,
   });
   const imageSourceDefaults = {
-    ...(!stored.hasHeroSource && perfil?.bannerUrl ? { heroBgSource: 'foto' } : {}),
-    ...(!stored.hasAvatarSource && perfil?.avatarUrl ? { avatarBgSource: 'foto' } : {}),
+    ...(!hasBackendHeroSource && !stored.hasHeroSource && perfil?.bannerUrl ? { heroBgSource: 'foto' } : {}),
+    ...(!hasBackendAvatarSource && !stored.hasAvatarSource && perfil?.avatarUrl ? { avatarBgSource: 'foto' } : {}),
   };
 
   const data = {
@@ -722,8 +756,9 @@ export async function getPortfolioViewData() {
     proyectos,
     config: normalizeConfig({
       ...storedConfig,
+      ...backendConfig,
       ...imageSourceDefaults,
-      publicado: perfil?.portfolioPublico ?? storedConfig.publicado,
+      publicado: perfil?.portfolioPublico ?? backendConfig.publicado ?? storedConfig.publicado,
       visibilidad,
     }),
   };

@@ -319,6 +319,8 @@ export default function ViewConfigModal({
   data,
   onChange,
   onReset,
+  onSave,
+  saving = false,
   onClose,
 }) {
   const [tab, setTab] = useState('apariencia');
@@ -436,6 +438,18 @@ export default function ViewConfigModal({
     };
 
     onChange({ visibilidad: nextVisibility });
+  };
+
+  const handleSave = async () => {
+    try {
+      if (onSave) {
+        await onSave();
+      }
+
+      onClose();
+    } catch {
+      // El hook muestra el toast de error y el modal queda abierto.
+    }
   };
 
   const modalContent = (
@@ -871,9 +885,10 @@ export default function ViewConfigModal({
             <button
               type="button"
               className="cfg-btn-save"
-              onClick={onClose}
+              onClick={handleSave}
+              disabled={saving}
             >
-              Aplicar cambios
+              {saving ? 'Guardando...' : 'Aplicar cambios'}
             </button>
           </div>
         </div>

@@ -38,6 +38,7 @@ export default function ViewPage() {
     updateConfig,
     updatePerfil,
     resetConfig,
+    saveCurrentConfig,
     publicar,
   } = useView();
 
@@ -143,6 +144,8 @@ export default function ViewPage() {
         }}
         onChange={updateConfig}
         onReset={resetConfig}
+        onSave={() => saveCurrentConfig(config)}
+        saving={guardando}
         onClose={() => setConfigOpen(false)}
       />
 
