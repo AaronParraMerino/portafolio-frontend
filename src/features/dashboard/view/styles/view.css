@@ -3039,13 +3039,13 @@
   color: #6d28d9;
 }
 
-.preview-notice.mock {
+.preview-notice.error {
   border-color: var(--rojo-borde);
   background: var(--rojo-chip);
   color: var(--rojo-mid);
 }
 
-.preview-notice.mock .preview-notice-icon {
+.preview-notice.error .preview-notice-icon {
   color: var(--rojo-soft);
   border-color: var(--rojo-borde);
 }

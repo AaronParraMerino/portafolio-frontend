@@ -110,7 +110,12 @@ export default function SesionesActivas() {
         <h1 style={titleStyle}>Sesiones activas</h1>
         <p style={subtitleStyle}>Estas son las sesiones abiertas en tu cuenta actualmente.</p>
 
-        {loading && <p style={subtitleStyle}>Cargando sesiones...</p>}
+        {loading && (
+          <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+            <span className="dash-loading-spinner" />
+            <span>Cargando sesiones...</span>
+          </div>
+        )}
         {!loading && error && <p style={errorStyle}>{error}</p>}
         {!loading && !error && sessions.length === 0 && (
           <p style={subtitleStyle}>No se encontraron sesiones activas.</p>

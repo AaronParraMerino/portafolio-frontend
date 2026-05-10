@@ -86,8 +86,11 @@ export default function RedesSociales() {
   if (loading) return (
     <div style={{ fontFamily:"var(--font)" }}>
       <Header title="Redes Profesionales" />
-      <div style={{ maxWidth:640,margin:"40px auto",textAlign:"center",color:"#6b7280",fontSize:14 }}>
-        Cargando enlaces...
+      <div style={{ maxWidth:640,margin:"0 auto",padding:"24px 16px 40px" }}>
+        <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+          <span className="dash-loading-spinner" />
+          <span>Cargando enlaces...</span>
+        </div>
       </div>
     </div>
   );

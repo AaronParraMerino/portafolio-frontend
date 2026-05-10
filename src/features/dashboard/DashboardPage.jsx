@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from './layout/Header';
+import { useDashboardSummary } from './hooks/useDashboardSummary';
 
 const QUICK_STATS = [
-  { num: '4', lbl: 'Proyectos', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { num: '8', lbl: 'Habilidades', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { num: '3', lbl: 'Experiencias', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { num: '95', lbl: 'Contrataciones', color: 'var(--rojo-mid)', bg: 'var(--rojo-bg)', border: 'var(--rojo-borde)' },
+  { id: 'projects', lbl: 'Proyectos', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
+  { id: 'skills', lbl: 'Habilidades', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
+  { id: 'experiences', lbl: 'Experiencias', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
+  { id: 'links', lbl: 'Redes', color: 'var(--rojo-mid)', bg: 'var(--rojo-bg)', border: 'var(--rojo-borde)' },
 ];
 
 const QUICK_LINKS = [
@@ -15,7 +16,6 @@ const QUICK_LINKS = [
     label: 'Mis Proyectos',
     desc: 'Gestiona y publica tus proyectos en tu portafolio',
     to: '/dashboard/projects',
-    badge: '4 proyectos',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
     icon: (
@@ -30,7 +30,6 @@ const QUICK_LINKS = [
     label: 'Mi Perfil',
     desc: 'Edita tu informacion personal y configuracion publica',
     to: '/dashboard/profile',
-    badge: '72% completo',
     badgeColor: '#f59e0b',
     badgeBg: 'rgba(245,158,11,.1)',
     icon: (
@@ -45,7 +44,6 @@ const QUICK_LINKS = [
     label: 'Habilidades',
     desc: 'Agrega o actualiza tus tecnologias y skills tecnicos',
     to: '/dashboard/skills',
-    badge: '8 habilidades',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
     icon: (
@@ -59,7 +57,6 @@ const QUICK_LINKS = [
     label: 'Experiencia',
     desc: 'Registra tu experiencia laboral y formacion academica',
     to: '/dashboard/experience',
-    badge: '3 entradas',
     badgeColor: '#f59e0b',
     badgeBg: 'rgba(245,158,11,.1)',
     icon: (
@@ -74,7 +71,6 @@ const QUICK_LINKS = [
     label: 'Redes Profesionales',
     desc: 'Gestiona tus enlaces de LinkedIn, GitHub y otras redes',
     to: '/dashboard/enlaces',
-    badge: 'Nuevo',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
     icon: (
@@ -89,7 +85,6 @@ const QUICK_LINKS = [
     label: 'Vista Previa',
     desc: 'Revisa como se vera tu portafolio antes de publicarlo',
     to: '/dashboard/view',
-    badge: '2 sugerencias',
     badgeColor: 'var(--rojo-mid)',
     badgeBg: 'var(--rojo-bg)',
     icon: (
@@ -116,6 +111,34 @@ const QUICK_LINKS = [
 
 export default function DashboardPage() {
   const [nombreUsuario, setNombreUsuario] = useState('Desarrollador');
+  const summary = useDashboardSummary('dashboard');
+  const counts = summary.counts || {};
+  const loadingSummary = summary.loading && !summary.error;
+  const progress = summary.progress || 0;
+  const missingCount = summary.missingRequirements?.length || 0;
+  const nombreVisible = summary.profileName || nombreUsuario;
+
+  const countText = (value) => loadingSummary ? '...' : String(value ?? 0);
+
+  const getStatNumber = (id) => ({
+    projects: counts.projects,
+    skills: counts.skills,
+    experiences: counts.experiences,
+    links: counts.links,
+  }[id]);
+
+  const getQuickBadge = (id) => {
+    if (loadingSummary) return 'Cargando...';
+
+    if (id === 'projects') return `${counts.projects ?? 0} proyectos`;
+    if (id === 'profile') return `${progress}% completo`;
+    if (id === 'skills') return `${counts.skills ?? 0} habilidades`;
+    if (id === 'experience') return `${counts.experiences ?? 0} entradas`;
+    if (id === 'enlaces') return `${counts.links ?? 0} redes`;
+    if (id === 'preview') return missingCount > 0 ? `${missingCount} pendientes` : 'Listo';
+
+    return null;
+  };
 
   useEffect(() => {
     const userStr = localStorage.getItem('usuario');
@@ -141,31 +164,31 @@ export default function DashboardPage() {
           <div className="dsh-welcome-text">
             <div className="dsh-welcome-label">CreaFolio</div>
             <div className="dsh-welcome-title">
-              Bienvenido de vuelta, {nombreUsuario}
+              Bienvenido de vuelta, {nombreVisible}
             </div>
             <div className="dsh-welcome-sub">
-              Gestiona tu portafolio, actualiza tus proyectos y conecta con empresas.
+              Gestiona tu portafolio, actualiza tus proyectos y manten tus redes al dia.
             </div>
           </div>
 
           <div className="dsh-welcome-badges">
             <div className="dsh-welcome-badge">
               <div>
-                <div className="dsh-welcome-badge-num">72%</div>
-                <div className="dsh-welcome-badge-lbl">Perfil<br />completo</div>
+                <div className="dsh-welcome-badge-num">{loadingSummary ? '...' : `${progress}%`}</div>
+                <div className="dsh-welcome-badge-lbl">Portafolio<br />completo</div>
               </div>
             </div>
             <div className="dsh-welcome-badge">
               <div>
-                <div className="dsh-welcome-badge-num">4</div>
-                <div className="dsh-welcome-badge-lbl">Proyectos<br />activos</div>
+                <div className="dsh-welcome-badge-num">{countText(counts.projects)}</div>
+                <div className="dsh-welcome-badge-lbl">Proyectos<br />registrados</div>
               </div>
             </div>
           </div>
         </div>
 
         <div className="dsh-stats-row">
-          {QUICK_STATS.map(({ num, lbl, color, bg, border }) => (
+          {QUICK_STATS.map(({ id, lbl, color, bg, border }) => (
             <div className="dsh-stat-card" key={lbl}>
               <div
                 className="dsh-stat-icon"
@@ -177,7 +200,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <div className="dsh-stat-num" style={{ color }}>{num}</div>
+                <div className="dsh-stat-num" style={{ color }}>{countText(getStatNumber(id))}</div>
                 <div className="dsh-stat-lbl">{lbl}</div>
               </div>
             </div>
@@ -190,52 +213,60 @@ export default function DashboardPage() {
         </div>
 
         <div className="dsh-links-grid">
-          {QUICK_LINKS.map((item) => (
-            <Link key={item.id} to={item.to} className="dsh-link-card">
-              <div className="dsh-link-card-top">
-                <div className="dsh-link-icon">{item.icon}</div>
-                <svg className="dsh-link-arrow" viewBox="0 0 14 14">
-                  <path d="M3 11L11 3M5 3h6v6" />
-                </svg>
-              </div>
+          {QUICK_LINKS.map((item) => {
+            const badge = getQuickBadge(item.id);
 
-              <div className="dsh-link-content">
-                <div className="dsh-link-name">{item.label}</div>
-                <div className="dsh-link-desc">{item.desc}</div>
-                {item.badge && (
-                  <span
-                    className="dsh-link-badge"
-                    style={{
-                      color: item.badgeColor,
-                      background: item.badgeBg,
-                      border: `1px solid ${item.badgeColor}33`,
-                      marginTop: 6,
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
+            return (
+              <Link key={item.id} to={item.to} className="dsh-link-card">
+                <div className="dsh-link-card-top">
+                  <div className="dsh-link-icon">{item.icon}</div>
+                  <svg className="dsh-link-arrow" viewBox="0 0 14 14">
+                    <path d="M3 11L11 3M5 3h6v6" />
+                  </svg>
+                </div>
+
+                <div className="dsh-link-content">
+                  <div className="dsh-link-name">{item.label}</div>
+                  <div className="dsh-link-desc">{item.desc}</div>
+                  {badge && (
+                    <span
+                      className="dsh-link-badge"
+                      style={{
+                        color: item.badgeColor,
+                        background: item.badgeBg,
+                        border: `1px solid ${item.badgeColor}33`,
+                        marginTop: 6,
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="dsh-profile-progress">
           <div className="dsh-pp-text">
-            <div className="dsh-pp-title">Completa tu perfil</div>
-            <div className="dsh-pp-sub">Mas completitud = mas visibilidad ante empresas</div>
+            <div className="dsh-pp-title">Completa tu portafolio</div>
+            <div className="dsh-pp-sub">Perfil, experiencia, proyectos, habilidades y redes en un solo avance</div>
           </div>
           <div className="dsh-pp-bar-wrap">
             <div className="dsh-pp-bar-labels">
               <span>Progreso</span>
-              <strong>72%</strong>
+              <strong>{loadingSummary ? '...' : `${progress}%`}</strong>
             </div>
             <div className="dsh-pp-bar">
-              <div className="dsh-pp-bar-fill" />
+              <div className="dsh-pp-bar-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
           <div className="dsh-pp-hint">
-            Faltan <span>28%</span> para completar
+            {missingCount > 0 ? (
+              <>Faltan <span>{missingCount}</span> requisitos</>
+            ) : (
+              <>Portafolio completo</>
+            )}
           </div>
         </div>
       </div>

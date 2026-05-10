@@ -245,7 +245,12 @@ export default function VincularCuenta() {
         {error ? <div style={errorStyle}>{error}</div> : null}
         {notice ? <div style={noticeStyle}>{notice}</div> : null}
 
-        {loading ? <div style={loadingStyle}>Cargando cuentas...</div> : null}
+        {loading ? (
+          <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+            <span className="dash-loading-spinner" />
+            <span>Cargando cuentas...</span>
+          </div>
+        ) : null}
 
         <div style={listStyle}>
           {accounts.map(account => (
@@ -357,7 +362,6 @@ const btnSyncStyle = { background: "#ecfeff", color: "#0e7490", border: "1.5px s
 const btnDesvinculaStyle = { background: "transparent", color: "#374151", border: "1.5px solid #d1d5db", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
 const btnUnlinkStyle = { background: "#fff1f2", color: "#be123c", border: "1.5px solid #fecdd3", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" };
 const btnVincularStyle = { background: "#0ea5e9", color: "#fff", border: "none", borderRadius: 9, padding: "9px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(14,165,233,0.3)" };
-const loadingStyle = { background: "#ffffff", border: "1px solid #e2e8f0", color: "#475569", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
 const errorStyle = { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
 const noticeStyle = { background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
 

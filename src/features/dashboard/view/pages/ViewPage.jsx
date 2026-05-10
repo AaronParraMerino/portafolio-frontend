@@ -54,9 +54,52 @@ export default function ViewPage() {
   };
   const selectedFont = FONTS.find(font => font.id === config?.fontId) || FONTS[0];
 
-    const resolvedTextColor = config?.textColorAuto
+  const resolvedTextColor = config?.textColorAuto
     ? getAutoTextColor(config?.cardBg || '#ffffff')
     : (config?.textColor || '#111827');
+
+  const hasPortfolioContent = Boolean(perfil)
+    || redes.length > 0
+    || stats.length > 0
+    || (habilidades?.tecnicas || []).length > 0
+    || (habilidades?.blandas || []).length > 0
+    || experiencias.length > 0
+    || proyectos.length > 0;
+
+  if (loading && !hasPortfolioContent) {
+    return (
+      <div className="vw-page">
+        <Header title="Vista Portafolio" />
+
+        <main className="page">
+          <div className="dash-loading dash-loading--page" role="status" aria-live="polite">
+            <span className="dash-loading-spinner" />
+            <span>Cargando vista portafolio...</span>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!loading && error && !hasPortfolioContent) {
+    return (
+      <div className="vw-page">
+        <Header title="Vista Portafolio" />
+
+        <main className="page">
+          <ViewPreviewNotice
+            loading={false}
+            dataSource={dataSource}
+            error={error}
+          />
+
+          <div className="dash-error-state dash-error-state--page">
+            No se pudo cargar la vista del portafolio.
+          </div>
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div
