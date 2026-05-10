@@ -6,6 +6,8 @@ import {
   clearStoredConfig,
   getPortfolioViewData,
   loadCachedPortfolioViewData,
+  mapConfigFromBackend,
+  mapConfigToBackend,
   normalizeConfig as normalizeServiceConfig,
   publicarPortafolio,
   saveConfig,
@@ -86,6 +88,10 @@ function getInitialViewState() {
   };
 }
 
+function getResponseData(response) {
+  return response?.data ?? response;
+}
+
 export function useView() {
   const [initialState] = useState(getInitialViewState);
   const [data, setData] = useState(initialState.data);
@@ -103,12 +109,6 @@ export function useView() {
       setToast(null);
     }, 2800);
   }, []);
-
-  const persistConfig = useCallback((config) => {
-    saveConfig(config).catch((err) => {
-      showToast(err.message || 'No se pudo guardar la configuracion local.', 'error');
-    });
-  }, [showToast]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -153,14 +153,12 @@ export function useView() {
           : currentConfig.visibilidad,
       });
 
-      persistConfig(nextConfig);
-
       return {
         ...prev,
         config: nextConfig,
       };
     });
-  }, [persistConfig]);
+  }, []);
 
   const updatePerfil = useCallback((patch) => {
     setData((prev) => ({
@@ -176,11 +174,9 @@ export function useView() {
     setData((prev) => {
       const next = normalizeViewData(patch, prev);
 
-      persistConfig(next.config);
-
       return next;
     });
-  }, [persistConfig]);
+  }, []);
 
   const resetConfig = useCallback(() => {
     try {
@@ -204,6 +200,31 @@ export function useView() {
     showToast('Configuracion visual restaurada', 'info');
   }, [showToast]);
 
+  const saveCurrentConfig = useCallback(async (config) => {
+    setGuardando(true);
+
+    try {
+      const payload = mapConfigToBackend(normalizeConfig(config));
+      const response = await saveConfig(payload);
+      const savedConfig = mapConfigFromBackend(getResponseData(response));
+
+      setData((prev) => ({
+        ...prev,
+        config: normalizeConfig({
+          ...prev.config,
+          ...savedConfig,
+        }),
+      }));
+
+      showToast('Personalizacion guardada correctamente', 'ok');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar la personalizacion.', 'error');
+      throw err;
+    } finally {
+      setGuardando(false);
+    }
+  }, [showToast]);
+
   const publicar = useCallback(async () => {
     setGuardando(true);
 
@@ -215,8 +236,6 @@ export function useView() {
           ...prev.config,
           publicado: true,
         });
-
-        persistConfig(nextConfig);
 
         return {
           ...prev,
@@ -230,7 +249,7 @@ export function useView() {
     } finally {
       setGuardando(false);
     }
-  }, [persistConfig, showToast]);
+  }, [showToast]);
 
   return useMemo(() => ({
     perfil: data.perfil,
@@ -250,6 +269,7 @@ export function useView() {
     updatePerfil,
     updateData,
     resetConfig,
+    saveCurrentConfig,
     publicar,
   }), [
     data,
@@ -263,6 +283,7 @@ export function useView() {
     updatePerfil,
     updateData,
     resetConfig,
+    saveCurrentConfig,
     publicar,
   ]);
 }
