@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const counterLabels = {
   updates: 'Actualizacion',
@@ -51,11 +51,13 @@ function counterValue(portfolio, variant) {
 }
 
 export default function PortfolioCard({ portfolio, variant }) {
+  const routerLocation = useLocation();
   const skills = Array.isArray(portfolio.skills_destacadas)
     ? portfolio.skills_destacadas.slice(0, 3)
     : [];
-  const location = locationFor(portfolio);
+  const portfolioLocation = locationFor(portfolio);
   const portfolioPath = portfolioPathFor(portfolio);
+  const backFallback = `${routerLocation.pathname}${routerLocation.search}${routerLocation.hash}` || '/';
 
   return (
     <article className="spk-portfolio-card">
@@ -74,7 +76,7 @@ export default function PortfolioCard({ portfolio, variant }) {
         </div>
       </div>
 
-      {location && <div className="spk-portfolio-location">{location}</div>}
+      {portfolioLocation && <div className="spk-portfolio-location">{portfolioLocation}</div>}
 
       <div className="spk-portfolio-skills" aria-label="Habilidades destacadas">
         {skills.length > 0 ? (
@@ -90,7 +92,11 @@ export default function PortfolioCard({ portfolio, variant }) {
           {variant !== 'updates' && <span>{counterLabels[variant]}</span>}
         </div>
 
-        <Link className="spk-portfolio-cta" to={portfolioPath}>
+        <Link
+          className="spk-portfolio-cta"
+          to={portfolioPath}
+          state={{ backLabel: 'Volver al Home', backFallback }}
+        >
           Ver portafolio
         </Link>
       </div>
