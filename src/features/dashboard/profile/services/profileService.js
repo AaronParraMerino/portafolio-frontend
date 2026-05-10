@@ -5,16 +5,14 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 // ── Helper: obtener usuario y token ──
 function getSessionUser() {
-  const storedUser = sessionStorage.getItem('usuario');
+  const storedUser = localStorage.getItem('usuario');
   if (!storedUser) throw new Error("No hay usuario en sesión");
 
   const user   = JSON.parse(storedUser);
   const userId = user.id || user.id_usuario || user.idUsuario;
   if (!userId) throw new Error("No se encontró el ID del usuario en sesión");
 
-  const token =
-    localStorage.getItem('tokenPORT') ||
-    sessionStorage.getItem('tokenPORT');
+  const token = localStorage.getItem('tokenPORT');
   if (!token) throw new Error("No se encontró el token");
 
   return { userId, token };
