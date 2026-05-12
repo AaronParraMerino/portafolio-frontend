@@ -556,16 +556,38 @@
 
 .prj-collab-row {
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-columns: minmax(118px, 132px) minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   min-height: 36px;
 }
 
 .prj-collab-label {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
   color: var(--gris-oscuro);
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 800;
+  line-height: 1.15;
+}
+
+.prj-collab-label span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.prj-collab-label span:last-child {
+  flex: 0 0 auto;
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-align: center;
+  color: var(--gris-texto);
+  background: var(--fondo);
+  border: 1px solid var(--gris-borde);
 }
 
 .prj-collab-avatar-stack {
@@ -2408,5 +2430,50 @@
     width: 100%;
     justify-content: center;
     margin-left: 0;
+  }
+}
+
+.prj-config-modal {
+  max-width: 700px;
+}
+
+.prj-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.prj-config-grid label {
+  min-width: 0;
+}
+
+.prj-config-checks {
+  display: grid;
+  gap: 8px;
+}
+
+.prj-config-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 8px;
+  background: var(--fondo);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gris-oscuro);
+}
+
+.prj-config-check input {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: var(--azul);
+}
+
+@media (max-width: 620px) {
+  .prj-config-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -111,7 +111,7 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
 
         <div className="prj-modal-foot">
           <button type="button" className="prj-btn-cancel" onClick={onClose} disabled={loading}>
-            Cancelar
+            <span>Cancelar</span>
           </button>
           <button
             type="button"
@@ -119,7 +119,8 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
             onClick={() => onConfirm({ rol: rol.trim(), descripcion_aporte: descripcion.trim() })}
             disabled={loading}
           >
-            {loading ? <><span className="prj-spinner" /> Vinculando...</> : 'Ser parte'}
+            {loading && <span className="prj-spinner" />}
+            <span>{loading ? 'Vinculando...' : 'Ser parte'}</span>
           </button>
         </div>
       </div>

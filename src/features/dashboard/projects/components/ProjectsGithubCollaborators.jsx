@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  getProyectoParticipantesCache,
   getProyectoParticipantes,
   normalizeProyectoParticipantes,
 } from '../services/projectsService';
-
-const githubParticipantsCache = new Map();
 
 function getProjectId(project = {}) {
   return project.id || project.id_proyecto || project.idProyecto || null;
@@ -43,53 +42,13 @@ function normalizeText(value = '') {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function normalizeRepoUrl(url = '') {
-  return String(url || '').trim().replace(/\/+$/, '');
-}
-
-function getProjectRepoUrls(project = {}) {
-  if (Array.isArray(project.url_repositorios)) {
-    return project.url_repositorios
-      .map(normalizeRepoUrl)
-      .filter(Boolean);
-  }
-
-  return normalizeRepoUrl(project.url_repositorio)
-    ? [normalizeRepoUrl(project.url_repositorio)]
-    : [];
-}
-
-function parseGithubRepoUrl(repoUrl = '') {
-  try {
-    const parsed = new URL(repoUrl);
-    const host = parsed.hostname.toLowerCase();
-
-    if (!['github.com', 'www.github.com'].includes(host)) {
-      return null;
-    }
-
-    const [owner, repo] = parsed.pathname
-      .split('/')
-      .map(part => part.trim())
-      .filter(Boolean);
-
-    if (!owner || !repo) return null;
-
-    return {
-      owner,
-      repo: repo.replace(/\.git$/i, ''),
-      url: `https://github.com/${owner}/${repo.replace(/\.git$/i, '')}`,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function githubAvatarUrl(login = '') {
-  return login ? `https://github.com/${encodeURIComponent(login)}.png?size=96` : '';
-}
-
 function participantKey(participante = {}) {
+  const userId = participante.id_usuario || participante.idUsuario;
+  if (userId) return `usuario:${userId}`;
+
+  const githubId = participante.github_id || participante.githubId;
+  if (githubId) return `github-id:${githubId}`;
+
   const github = participante.github_username || participante.login;
   if (github) return `github:${normalizeText(github)}`;
 
@@ -98,9 +57,6 @@ function participantKey(participante = {}) {
 
   const avatar = participante.avatar_url || participante.avatarUrl;
   if (avatar) return `avatar:${String(avatar).split('?')[0].toLowerCase()}`;
-
-  const userId = participante.id_usuario || participante.idUsuario;
-  if (userId) return `usuario:${userId}`;
 
   const id = participante.id || participante.id_participacion;
   if (id) return `id:${id}`;
@@ -118,8 +74,8 @@ function mergeParticipants(...groups) {
     const current = map.get(key);
 
     map.set(key, {
-      ...participante,
       ...current,
+      ...participante,
       nombre: current?.nombre || participante.nombre || participante.github_username || 'Participante',
       avatar_url: current?.avatar_url || participante.avatar_url || '',
       github_username: current?.github_username || participante.github_username || '',
@@ -142,73 +98,35 @@ function mergeParticipants(...groups) {
   });
 }
 
-async function fetchGithubRepoParticipants(repoInfo) {
-  if (!repoInfo?.owner || !repoInfo?.repo) return [];
+const PARTICIPANT_GROUPS = [
+  {
+    key: 'usuario_github_validado',
+    label: 'Validados',
+    match: (participante) => participante.tipo_participante === 'usuario_github_validado'
+      || (participante.tiene_cuenta && participante.validacion_github),
+  },
+  {
+    key: 'usuario_sin_validacion_github',
+    label: 'Sin validacion',
+    match: (participante) => participante.tipo_participante === 'usuario_sin_validacion_github'
+      || (participante.id_usuario && !participante.validacion_github),
+  },
+];
 
-  const ownerParticipant = {
-    id: `github-owner-${repoInfo.owner}`,
-    nombre: repoInfo.owner,
-    avatar_url: githubAvatarUrl(repoInfo.owner),
-    github_username: repoInfo.owner,
-    tipo_rol: 'owner',
-    rol_label: 'Owner',
-    source: 'github',
-    repositorios: [repoInfo.url],
-  };
+function groupParticipants(participantes = []) {
+  const assigned = new Set();
 
-  try {
-    const endpoint = `https://api.github.com/repos/${encodeURIComponent(repoInfo.owner)}/${encodeURIComponent(repoInfo.repo)}/contributors?per_page=100`;
-    const res = await fetch(endpoint, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-      },
+  const groups = PARTICIPANT_GROUPS.map((group) => {
+    const items = participantes.filter((participante, index) => {
+      if (assigned.has(index) || !group.match(participante)) return false;
+      assigned.add(index);
+      return true;
     });
 
-    if (!res.ok) {
-      return [ownerParticipant];
-    }
+    return { ...group, items };
+  }).filter(group => group.items.length > 0);
 
-    const payload = await res.json();
-    const contributors = Array.isArray(payload) ? payload : [];
-
-    return mergeParticipants(
-      [ownerParticipant],
-      contributors.map((item, index) => ({
-        id: item.id || `github-contributor-${repoInfo.owner}-${repoInfo.repo}-${index}`,
-        nombre: item.login || `Participante ${index + 1}`,
-        avatar_url: item.avatar_url || githubAvatarUrl(item.login),
-        github_username: item.login || '',
-        tipo_rol: item.login === repoInfo.owner ? 'owner' : 'colaborador',
-        rol_label: item.login === repoInfo.owner ? 'Owner' : 'Colaborador',
-        source: 'github',
-        contributions: item.contributions || 0,
-        repositorios: [repoInfo.url],
-      }))
-    );
-  } catch {
-    return [ownerParticipant];
-  }
-}
-
-async function getGithubParticipantsForRepos(repoUrls = []) {
-  const repos = repoUrls
-    .map(parseGithubRepoUrl)
-    .filter(Boolean);
-
-  if (repos.length === 0) return [];
-
-  const cacheKey = repos.map(repo => repo.url.toLowerCase()).sort().join('|');
-
-  if (githubParticipantsCache.has(cacheKey)) {
-    return githubParticipantsCache.get(cacheKey);
-  }
-
-  const request = Promise.all(repos.map(fetchGithubRepoParticipants))
-    .then((groups) => mergeParticipants(...groups));
-
-  githubParticipantsCache.set(cacheKey, request);
-
-  return request;
+  return groups;
 }
 
 function ParticipantAvatar({ participante }) {
@@ -254,6 +172,20 @@ function ParticipantsList({ participantes = [] }) {
   );
 }
 
+function ParticipantGroup({ label, participantes = [] }) {
+  if (participantes.length === 0) return null;
+
+  return (
+    <div className="prj-collab-row">
+      <div className="prj-collab-label">
+        <span>{label}</span>
+        <span>{participantes.length}</span>
+      </div>
+      <ParticipantsList participantes={participantes} />
+    </div>
+  );
+}
+
 export default function ProjectsGithubCollaborators({ proyecto = {}, detail = false }) {
   const directParticipants = useMemo(
     () => normalizeProyectoParticipantes(proyecto, { includeCurrentUserFallback: false }),
@@ -267,41 +199,40 @@ export default function ProjectsGithubCollaborators({ proyecto = {}, detail = fa
   );
   const [participantes, setParticipantes] = useState(initialParticipants);
   const [loading, setLoading] = useState(false);
-  const repoUrls = useMemo(() => getProjectRepoUrls(proyecto), [proyecto]);
 
   useEffect(() => {
     const projectId = getProjectId(proyecto);
-    const expectedCount = getExpectedCount(proyecto, initialParticipants.length);
-    const shouldFetchBackend = Boolean(projectId && expectedCount > initialParticipants.length);
-    const shouldFetchGithub = repoUrls.length > 0;
+    const shouldFetchBackend = Boolean(projectId);
 
     setParticipantes(initialParticipants);
 
-    if (!shouldFetchBackend && !shouldFetchGithub) {
+    if (!shouldFetchBackend) {
       setLoading(false);
       return undefined;
     }
 
     let isActive = true;
-    setLoading(true);
+    const cachedParticipants = getProyectoParticipantesCache(projectId);
+
+    if (cachedParticipants.length > 0) {
+      setParticipantes(cachedParticipants);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     const requests = [
-      shouldFetchBackend
-        ? getProyectoParticipantes(projectId).catch(() => [])
-        : Promise.resolve([]),
-      shouldFetchGithub
-        ? getGithubParticipantsForRepos(repoUrls).catch(() => [])
-        : Promise.resolve([]),
+      getProyectoParticipantes(projectId).catch(() => []),
     ];
 
     Promise.all(requests)
-      .then(([platformItems, githubItems]) => {
+      .then(([platformItems]) => {
         if (!isActive) return;
-        const baseParticipants = directParticipants.length === 0 && githubItems.length > 0
+        const baseParticipants = (directParticipants.length === 0 || cachedParticipants.length > 0) && platformItems.length > 0
           ? []
-          : initialParticipants;
-        const merged = mergeParticipants(baseParticipants, platformItems, githubItems);
-        setParticipantes(merged.length > 0 ? merged : initialParticipants);
+          : (cachedParticipants.length > 0 ? cachedParticipants : initialParticipants);
+        const merged = mergeParticipants(baseParticipants, platformItems);
+        setParticipantes(merged.length > 0 ? merged : baseParticipants);
       })
       .finally(() => {
         if (!isActive) return;
@@ -311,9 +242,10 @@ export default function ProjectsGithubCollaborators({ proyecto = {}, detail = fa
     return () => {
       isActive = false;
     };
-  }, [proyecto, initialParticipants, repoUrls, directParticipants.length]);
+  }, [proyecto, initialParticipants, directParticipants.length]);
 
   const visibles = participantes.length > 0 ? participantes : initialParticipants;
+  const groupedParticipants = useMemo(() => groupParticipants(visibles), [visibles]);
 
   if (visibles.length === 0 && !loading) {
     return null;
@@ -327,7 +259,13 @@ export default function ProjectsGithubCollaborators({ proyecto = {}, detail = fa
       </div>
 
       <div className="prj-collab-groups">
-        <ParticipantsList participantes={visibles} />
+        {groupedParticipants.map((group) => (
+          <ParticipantGroup
+            key={group.key}
+            label={group.label}
+            participantes={group.items}
+          />
+        ))}
 
         {loading && visibles.length === 0 && (
           <div className="prj-collab-loading">

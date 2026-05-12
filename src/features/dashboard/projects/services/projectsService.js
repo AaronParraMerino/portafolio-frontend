@@ -17,6 +17,7 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const TECNOLOGIAS_CACHE_KEY = 'projects_tecnologias_catalogo_cache_v1';
+const PARTICIPANTES_CACHE_PREFIX = 'projects_participantes_cache_v1';
 
 // ═══════════════════════════════════════════
 // CONSTANTES
@@ -59,6 +60,17 @@ function getSession() {
   if (!token) throw new Error('Token no encontrado');
 
   return { userId, token };
+}
+
+function getStoredUserId() {
+  try {
+    const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+    if (!raw) return 'anon';
+    const user = JSON.parse(raw);
+    return user.id || user.id_usuario || user.idUsuario || 'anon';
+  } catch {
+    return 'anon';
+  }
 }
 
 async function apiFetch(url, options = {}) {
@@ -497,6 +509,27 @@ function getParticipantSources(project = {}) {
 }
 
 function getParticipantAvatar(item = {}, usuario = {}, perfil = {}, githubAccount = {}) {
+  if (item.id_usuario || item.idUsuario || usuario.id_usuario || usuario.id) {
+    return formatUrl(
+      item.foto_perfil ||
+      item.fotoPerfil ||
+      perfil.foto_perfil ||
+      perfil.fotoPerfil ||
+      usuario.foto_perfil ||
+      usuario.fotoPerfil ||
+      item.avatar_url ||
+      item.avatarUrl ||
+      usuario.avatar_url ||
+      usuario.avatarUrl ||
+      githubAccount.foto_url ||
+      githubAccount.fotoUrl ||
+      githubAccount.avatar_url ||
+      githubAccount.avatarUrl ||
+      item.github_avatar_url ||
+      item.githubAvatarUrl
+    );
+  }
+
   return formatUrl(
     item.avatar_url ||
     item.avatarUrl ||
@@ -710,6 +743,40 @@ function extractParticipantsPayload(data = {}) {
   };
 }
 
+function participantesCacheKey(id) {
+  return `${PARTICIPANTES_CACHE_PREFIX}:${getStoredUserId()}:${id}`;
+}
+
+function sameParticipantes(a = [], b = []) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+export function getProyectoParticipantesCache(id) {
+  if (!id) return [];
+
+  try {
+    const raw = localStorage.getItem(participantesCacheKey(id));
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    const items = Array.isArray(parsed?.items) ? parsed.items : [];
+    return normalizeProyectoParticipantes({ participantes: items }, { includeCurrentUserFallback: false });
+  } catch {
+    return [];
+  }
+}
+
+function writeProyectoParticipantesCache(id, items = []) {
+  if (!id) return;
+
+  try {
+    localStorage.setItem(participantesCacheKey(id), JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      items: normalizeProyectoParticipantes({ participantes: items }, { includeCurrentUserFallback: false }),
+    }));
+  } catch {}
+}
+
 export async function getProyectoParticipantes(id) {
   if (!id) return [];
 
@@ -724,6 +791,11 @@ export async function getProyectoParticipantes(id) {
       const payload = extractParticipantsPayload(data);
 
       if (payload.hasPayload) {
+        const cached = getProyectoParticipantesCache(id);
+        if (!sameParticipantes(cached, payload.items)) {
+          writeProyectoParticipantesCache(id, payload.items);
+        }
+
         return payload.items;
       }
     } catch (err) {
@@ -734,7 +806,9 @@ export async function getProyectoParticipantes(id) {
   }
 
   const project = await getProyecto(id);
-  return normalizeProyectoParticipantes(project, { includeCurrentUserFallback: false });
+  const items = normalizeProyectoParticipantes(project, { includeCurrentUserFallback: false });
+  writeProyectoParticipantesCache(id, items);
+  return items;
 }
 
 // ═══════════════════════════════════════════
@@ -1028,6 +1102,7 @@ export function normalizeProyectoFromApi(project = {}) {
         : true;
 
   const id = getProjectId(project);
+  const permisos = project.permisos || {};
 
   return {
     ...project,
@@ -1078,6 +1153,13 @@ export function normalizeProyectoFromApi(project = {}) {
     colaboradores: participantes.filter(participante => participante.tipo_rol !== 'owner'),
     owners: participantes.filter(participante => participante.tipo_rol === 'owner'),
     participantes_count: participantesCount,
+
+    configuracion: project.configuracion || null,
+    permisos,
+    puede_editar: permisos.puede_editar ?? project.puede_editar ?? true,
+    puede_eliminar: permisos.puede_eliminar ?? project.puede_eliminar ?? true,
+    puede_configurar: permisos.puede_configurar ?? project.puede_configurar ?? false,
+    puede_desvincular_participacion: permisos.puede_desvincular_participacion ?? project.puede_desvincular_participacion ?? false,
   };
 }
 
@@ -1215,6 +1297,21 @@ export async function actualizarProyecto(id, datos) {
   const project = data?.data || data?.proyecto || data;
 
   return normalizeProyectoFromApi(project);
+}
+
+export async function getProyectoConfiguracion(id) {
+  const data = await apiFetch(`${API_URL}/projects/${id}/configuration`);
+  return data?.data || data;
+}
+
+export async function actualizarProyectoConfiguracion(id, configuracion) {
+  const data = await apiFetch(`${API_URL}/projects/${id}/configuration`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(configuracion),
+  });
+
+  return data?.data || data;
 }
 
 export async function eliminarProyecto(id) {

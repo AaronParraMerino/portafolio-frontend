@@ -6,6 +6,7 @@ import Header from '../../layout/Header';
 import ProjectsFilters     from '../components/ProjectsFilters';
 import ProjectsGrid        from '../components/ProjectsGrid';
 import ProjectsEdit        from '../components/ProjectsEdit';
+import ProjectsConfigModal from '../components/ProjectsConfigModal';
 import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
@@ -20,13 +21,14 @@ import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 export default function ProjectsPage() {
   const {
     proyectos, loading, guardando, toast,
-    crearNuevo, editarExistente, eliminar, desvincularParticipacion, refrescar,
+    crearNuevo, editarExistente, eliminar, desvincularParticipacion, actualizarConfiguracion, refrescar,
   } = useProjects();
 
   // ── Estado UI puro ──
   const [editando,   setEditando]   = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
   const [confirmDetach, setConfirmDetach] = useState(null);
+  const [configurando, setConfigurando] = useState(null);
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
@@ -79,6 +81,12 @@ export default function ProjectsPage() {
     if (guardando) return;
     setEditando(null);
     setReposIniciales(null);
+  };
+
+  const handleGuardarConfiguracion = async (configuracion) => {
+    if (!configurando) return;
+    await actualizarConfiguracion(configurando.id, configuracion);
+    setConfigurando(null);
   };
 
   // ── Derivados: filtrar + ordenar + contar ──
@@ -143,6 +151,7 @@ export default function ProjectsPage() {
           onEditar={handleEditar}
           onEliminar={(p)   => setConfirmDel(p)}
           onDesvincular={(p) => setConfirmDetach(p)}
+          onConfigurar={(p) => setConfigurando(p)}
           onAgregar={handleAgregarNuevo}
         />
 
@@ -157,6 +166,15 @@ export default function ProjectsPage() {
           onGuardar={handleGuardar}
           onCancelar={handleCancelarEdicion}
           guardando={guardando}
+        />
+      )}
+
+      {configurando && (
+        <ProjectsConfigModal
+          proyecto={configurando}
+          guardando={guardando}
+          onGuardar={handleGuardarConfiguracion}
+          onCancelar={() => !guardando && setConfigurando(null)}
         />
       )}
 
