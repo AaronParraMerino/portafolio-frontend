@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import BASE_URL from "../../../../services/http/const";
 
 export default function VincularCuenta() {
-  const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingProvider, setLoadingProvider] = useState("");
@@ -233,10 +231,6 @@ export default function VincularCuenta() {
   return (
     <div style={pageStyle}>
       <div style={innerStyle}>
-        <button onClick={() => navigate('/dashboard/settings')} style={backBtnStyle}>
-          ← Volver a Configuración
-        </button>
-
         <div style={badgeStyle}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -251,7 +245,12 @@ export default function VincularCuenta() {
         {error ? <div style={errorStyle}>{error}</div> : null}
         {notice ? <div style={noticeStyle}>{notice}</div> : null}
 
-        {loading ? <div style={loadingStyle}>Cargando cuentas...</div> : null}
+        {loading ? (
+          <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+            <span className="dash-loading-spinner" />
+            <span>Cargando cuentas...</span>
+          </div>
+        ) : null}
 
         <div style={listStyle}>
           {accounts.map(account => (
@@ -345,9 +344,8 @@ function iconWrapStyle(id) {
   return { width: 48, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...colors[id] };
 }
 
-const pageStyle = { fontFamily: "'Segoe UI','Inter',sans-serif", background: "#e8f4fd", minHeight: "100vh", padding: "36px 24px" };
+const pageStyle = { fontFamily: "'Segoe UI','Inter',sans-serif", background: "#ffffff", minHeight: "100vh", padding: "36px 24px" };
 const innerStyle = { maxWidth: 680, margin: '0 auto', width: '100%' };
-const backBtnStyle = { background: 'transparent', border: 'none', color: '#64748b', fontSize: 14, cursor: 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 };
 const badgeStyle = { display: "inline-flex", alignItems: "center", gap: 7, border: "1.5px solid #93c5fd", borderRadius: 999, padding: "5px 14px", background: "#eff8ff", fontSize: 12, fontWeight: 700, color: "#1e40af", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 18 };
 const titleStyle = { fontSize: 34, fontWeight: 900, color: "#0f172a", fontFamily: "Georgia,'Times New Roman',serif", marginBottom: 10, lineHeight: 1.1 };
 const subtitleStyle = { fontSize: 14, color: "#475569", marginBottom: 28 };
@@ -364,7 +362,6 @@ const btnSyncStyle = { background: "#ecfeff", color: "#0e7490", border: "1.5px s
 const btnDesvinculaStyle = { background: "transparent", color: "#374151", border: "1.5px solid #d1d5db", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" };
 const btnUnlinkStyle = { background: "#fff1f2", color: "#be123c", border: "1.5px solid #fecdd3", borderRadius: 9, padding: "7px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" };
 const btnVincularStyle = { background: "#0ea5e9", color: "#fff", border: "none", borderRadius: 9, padding: "9px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px rgba(14,165,233,0.3)" };
-const loadingStyle = { background: "#ffffff", border: "1px solid #e2e8f0", color: "#475569", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
 const errorStyle = { background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
 const noticeStyle = { background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: 12, padding: "12px 14px", marginBottom: 10, fontSize: 14 };
 

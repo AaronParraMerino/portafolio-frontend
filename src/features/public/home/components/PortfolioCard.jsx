@@ -1,11 +1,20 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const counterLabels = {
-  updates: '',
+  updates: 'Actualizacion',
   projects: 'Proyectos',
   experience: 'Experiencias',
-  skills: 'Habilidades publicas',
+  skills: 'Habilidades',
 };
+
+const pick = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+
+function portfolioPathFor(portfolio) {
+  const id = pick(portfolio?.id_usuario, portfolio?.usuario_id, portfolio?.user_id, portfolio?.id);
+  if (id) return `/portafolio/${id}`;
+
+  return String(portfolio?.ruta_portafolio || '#').replace(/^\/portfolio\//, '/portafolio/');
+}
 
 function initialsFor(portfolio) {
   const first = portfolio?.nombre?.trim()?.slice(0, 1) || 'C';
@@ -42,20 +51,13 @@ function counterValue(portfolio, variant) {
 }
 
 export default function PortfolioCard({ portfolio, variant }) {
+  const routerLocation = useLocation();
   const skills = Array.isArray(portfolio.skills_destacadas)
     ? portfolio.skills_destacadas.slice(0, 3)
     : [];
-  const projects = Array.isArray(portfolio.proyectos_destacados)
-    ? portfolio.proyectos_destacados.slice(0, 2).map((project) => project.titulo).filter(Boolean)
-    : [];
-  const location = locationFor(portfolio);
-  const remainingSkills = Number(portfolio.habilidades_restantes || 0);
-  const remainingProjects = Number(portfolio.proyectos_restantes || 0);
-  const previewItems = variant === 'projects' && projects.length > 0 ? projects : skills;
-  const remainingItems = variant === 'projects' && projects.length > 0 ? remainingProjects : remainingSkills;
-  const previewLabel = variant === 'projects'
-    ? 'Vista previa de proyectos publicos'
-    : 'Vista previa de habilidades destacadas';
+  const portfolioLocation = locationFor(portfolio);
+  const portfolioPath = portfolioPathFor(portfolio);
+  const backFallback = `${routerLocation.pathname}${routerLocation.search}${routerLocation.hash}` || '/';
 
   return (
     <article className="spk-portfolio-card">
@@ -74,14 +76,11 @@ export default function PortfolioCard({ portfolio, variant }) {
         </div>
       </div>
 
-      {location && <div className="spk-portfolio-location">{location}</div>}
+      {portfolioLocation && <div className="spk-portfolio-location">{portfolioLocation}</div>}
 
-      <div className="spk-portfolio-skills" aria-label={previewLabel}>
-        {previewItems.length > 0 ? (
-          <>
-            {previewItems.map((item) => <span key={item}>{item}</span>)}
-            {remainingItems > 0 && <span className="spk-chip-more">+{remainingItems} mas</span>}
-          </>
+      <div className="spk-portfolio-skills" aria-label="Habilidades destacadas">
+        {skills.length > 0 ? (
+          skills.map((skill) => <span key={skill}>{skill}</span>)
         ) : (
           <span>Perfil publico</span>
         )}
@@ -93,7 +92,11 @@ export default function PortfolioCard({ portfolio, variant }) {
           {variant !== 'updates' && <span>{counterLabels[variant]}</span>}
         </div>
 
-        <Link className="spk-portfolio-cta" to={portfolio.ruta_portafolio || '#'}>
+        <Link
+          className="spk-portfolio-cta"
+          to={portfolioPath}
+          state={{ backLabel: 'Volver al Home', backFallback }}
+        >
           Ver portafolio
         </Link>
       </div>

@@ -149,28 +149,28 @@ export default function ProjectsTechModal({
 
   return (
     <div
-      className="prj-modal-overlay"
+      className="dash-edit-overlay prj-modal-overlay"
       style={{ zIndex: 700 }}
       onClick={(e) => e.target === e.currentTarget && cerrar()}
     >
       <div
-        className="prj-modal"
+        className="dash-edit-modal dash-edit-modal--sm prj-modal"
         style={{ maxWidth: 420 }}
         role="dialog"
         aria-modal="true"
         aria-label="Nueva tecnología"
       >
-        <div className="prj-modal-head">
+        <div className="dash-edit-head prj-modal-head">
           <div>
-            <div className="prj-modal-title">Nueva tecnología</div>
-            <div className="prj-modal-sub">
+            <div className="dash-edit-title prj-modal-title">Nueva tecnología</div>
+            <div className="dash-edit-subtitle prj-modal-sub">
               Agrega una herramienta que no está en el catálogo
             </div>
           </div>
 
           <button
             type="button"
-            className="prj-modal-close"
+            className="dash-edit-close prj-modal-close"
             onClick={cerrar}
             title="Cerrar"
           >
@@ -180,7 +180,7 @@ export default function ProjectsTechModal({
           </button>
         </div>
 
-        <div className="prj-modal-body" style={{ padding: '18px 20px' }}>
+        <div className="dash-edit-body prj-modal-body" style={{ padding: '18px 20px' }}>
           <div className="row g-3">
             <div className="col-12">
               <label className="prj-label">
@@ -190,7 +190,7 @@ export default function ProjectsTechModal({
 
               <input
                 ref={inputRef}
-                className={`prj-input${errorMsg ? ' prj-input-error' : ''}`}
+                className={`dash-edit-input prj-input${errorMsg ? ' dash-edit-input-error prj-input-error' : ''}`}
                 value={nombre}
                 onChange={(e) => {
                   setNombre(e.target.value);
@@ -236,7 +236,7 @@ export default function ProjectsTechModal({
               <label className="prj-label">Categoría</label>
 
               <select
-                className="prj-select"
+                className="dash-edit-select prj-select"
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
               >
@@ -255,14 +255,14 @@ export default function ProjectsTechModal({
           </div>
         </div>
 
-        <div className="prj-modal-foot">
-          <button type="button" className="prj-btn-cancel" onClick={cerrar}>
+        <div className="dash-edit-footer prj-modal-foot">
+          <button type="button" className="dash-edit-btn dash-edit-btn--secondary prj-btn-cancel" onClick={cerrar}>
             Cancelar
           </button>
 
           <button
             type="button"
-            className="prj-btn-save"
+            className="dash-edit-btn dash-edit-btn--primary prj-btn-save"
             onClick={handleConfirmar}
             disabled={touched && !!errorMsg}
           >

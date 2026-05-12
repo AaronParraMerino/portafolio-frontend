@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../../shared/components/layout/MainLayout';
 import HomePage from '../../features/public/home/pages/HomePage';
-import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
+import PortfolioSearchPage from '../../features/public/portfolio-search/pages/PortfolioSearchPage';
+import DevelopersPage from '../../features/public/developers/pages/DevelopersPage';
 import LoginPage from '../../features/auth/pages/LoginPage';
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
@@ -22,6 +23,8 @@ import EliminarCuentaPage from '../../features/dashboard/configurate/pages/Elimi
 import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
 import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
+import ViewPage from '../../features/dashboard/view/pages/ViewPage';
+import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -31,21 +34,24 @@ export default function AppRouter({ isBackendAvailable = true }) {
         {/* ── CON Navbar y Footer ── */}
         <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
           <Route index element={<HomePage />} />
-          <Route path="portfolio/:userId" element={<PortfolioPage />} />
-            <Route path="dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="experience" element={<ExperiencePage />} />
-              <Route path="skills" element={<SkillsPage />} />
-               <Route path="settings" element={<ConfiguratePage />} />
-              <Route path="settings/vincular-cuenta" element={<VincularCuentaPage />} />
-              <Route path="settings/cambiar-contraseña" element={<CambiarContraPage />} />
-              <Route path="settings/sesiones-activas" element={<SesionesActivasPage />} />
-              <Route path="settings/eliminar-cuenta" element={<EliminarCuentaPage />} />
+          <Route path="portafolios" element={<PortfolioSearchPage />} />
+          <Route path="desarrolladores" element={<DevelopersPage />} />
+          <Route path="portafolio/:userId" element={<PortfolioPage />} />
+          <Route path="dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="experience" element={<ExperiencePage />} />
+            <Route path="skills" element={<SkillsPage />} />
+              <Route path="settings" element={<ConfiguratePage />} />
+            <Route path="settings/vincular-cuenta" element={<VincularCuentaPage />} />
+            <Route path="settings/cambiar-contraseña" element={<CambiarContraPage />} />
+            <Route path="settings/sesiones-activas" element={<SesionesActivasPage />} />
+            <Route path="settings/eliminar-cuenta" element={<EliminarCuentaPage />} />
+            <Route path="enlaces" element={<EnlacePage />} />
+            <Route path="projects" element={<ProjectsPage />} />
               <Route path="enlaces" element={<EnlacePage />} />
-              <Route path="projects" element={<ProjectsPage />} />
-            </Route>
-
+            <Route path="view" element={<ViewPage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
 

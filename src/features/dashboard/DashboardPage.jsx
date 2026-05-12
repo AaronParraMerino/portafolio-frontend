@@ -1,15 +1,13 @@
-/* ══════════════════════════════════════
-   DashboardPage.jsx — /dashboard (index)
-   Vista de bienvenida / resumen general.
-══════════════════════════════════════ */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Header from './layout/Header';
+import { useDashboardSummary } from './hooks/useDashboardSummary';
 
 const QUICK_STATS = [
-  { num: '4',   lbl: 'Proyectos',      color: 'var(--azul)',      bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { num: '8',   lbl: 'Habilidades',    color: 'var(--azul)',      bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { num: '3',   lbl: 'Experiencias',   color: 'var(--azul)',      bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { num: '95',  lbl: 'Contrataciones', color: 'var(--rojo-mid)',  bg: 'var(--rojo-bg)',    border: 'var(--rojo-borde)' },
+  { id: 'projects', lbl: 'Proyectos', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
+  { id: 'skills', lbl: 'Habilidades', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
+  { id: 'experiences', lbl: 'Experiencias', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
+  { id: 'links', lbl: 'Redes', color: 'var(--rojo-mid)', bg: 'var(--rojo-bg)', border: 'var(--rojo-borde)' },
 ];
 
 const QUICK_LINKS = [
@@ -18,7 +16,6 @@ const QUICK_LINKS = [
     label: 'Mis Proyectos',
     desc: 'Gestiona y publica tus proyectos en tu portafolio',
     to: '/dashboard/projects',
-    badge: '4 proyectos',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
     icon: (
@@ -31,9 +28,8 @@ const QUICK_LINKS = [
   {
     id: 'profile',
     label: 'Mi Perfil',
-    desc: 'Edita tu información personal y configuración pública',
+    desc: 'Edita tu informacion personal y configuracion publica',
     to: '/dashboard/profile',
-    badge: '72% completo',
     badgeColor: '#f59e0b',
     badgeBg: 'rgba(245,158,11,.1)',
     icon: (
@@ -46,9 +42,8 @@ const QUICK_LINKS = [
   {
     id: 'skills',
     label: 'Habilidades',
-    desc: 'Agrega o actualiza tus tecnologías y skills técnicos',
+    desc: 'Agrega o actualiza tus tecnologias y skills tecnicos',
     to: '/dashboard/skills',
-    badge: '8 habilidades',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
     icon: (
@@ -60,9 +55,8 @@ const QUICK_LINKS = [
   {
     id: 'experience',
     label: 'Experiencia',
-    desc: 'Registra tu experiencia laboral y formación académica',
+    desc: 'Registra tu experiencia laboral y formacion academica',
     to: '/dashboard/experience',
-    badge: '3 entradas',
     badgeColor: '#f59e0b',
     badgeBg: 'rgba(245,158,11,.1)',
     icon: (
@@ -73,26 +67,24 @@ const QUICK_LINKS = [
     ),
   },
   {
-  id: 'enlaces',
-  label: 'Redes Profesionales',
-  desc: 'Gestiona tus enlaces de LinkedIn, GitHub y otras redes',
-  to: '/dashboard/enlaces',   // ← la ruta donde montaste EnlacePage
-  badge: 'Nuevo',
-  badgeColor: 'var(--azul)',
-  badgeBg: 'var(--azul-light)',
-  icon: (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-      <path d="M13 10l4-4M7 10l-4 4M10 7V3M10 17v-4" />
-    </svg>
-  ),
+    id: 'enlaces',
+    label: 'Redes Profesionales',
+    desc: 'Gestiona tus enlaces de LinkedIn, GitHub y otras redes',
+    to: '/dashboard/enlaces',
+    badgeColor: 'var(--azul)',
+    badgeBg: 'var(--azul-light)',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <path d="M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+        <path d="M13 10l4-4M7 10l-4 4M10 7V3M10 17v-4" />
+      </svg>
+    ),
   },
   {
     id: 'preview',
     label: 'Vista Previa',
-    desc: 'Revisa cómo se verá tu portafolio antes de publicarlo',
-    to: '/dashboard/preview',
-    badge: '2 sugerencias',
+    desc: 'Revisa como se vera tu portafolio antes de publicarlo',
+    to: '/dashboard/view',
     badgeColor: 'var(--rojo-mid)',
     badgeBg: 'var(--rojo-bg)',
     icon: (
@@ -104,7 +96,7 @@ const QUICK_LINKS = [
   },
   {
     id: 'settings',
-    label: 'Configuración',
+    label: 'Configuracion',
     desc: 'Ajustes de cuenta, privacidad y preferencias',
     to: '/dashboard/settings',
     badge: null,
@@ -119,342 +111,84 @@ const QUICK_LINKS = [
 
 export default function DashboardPage() {
   const [nombreUsuario, setNombreUsuario] = useState('Desarrollador');
+  const summary = useDashboardSummary('dashboard');
+  const counts = summary.counts || {};
+  const loadingSummary = summary.loading && !summary.error;
+  const progress = summary.progress || 0;
+  const missingCount = summary.missingRequirements?.length || 0;
+  const nombreVisible = summary.profileName || nombreUsuario;
+
+  const countText = (value) => loadingSummary ? '...' : String(value ?? 0);
+
+  const getStatNumber = (id) => ({
+    projects: counts.projects,
+    skills: counts.skills,
+    experiences: counts.experiences,
+    links: counts.links,
+  }[id]);
+
+  const getQuickBadge = (id) => {
+    if (loadingSummary) return 'Cargando...';
+
+    if (id === 'projects') return `${counts.projects ?? 0} proyectos`;
+    if (id === 'profile') return `${progress}% completo`;
+    if (id === 'skills') return `${counts.skills ?? 0} habilidades`;
+    if (id === 'experience') return `${counts.experiences ?? 0} entradas`;
+    if (id === 'enlaces') return `${counts.links ?? 0} redes`;
+    if (id === 'preview') return missingCount > 0 ? `${missingCount} pendientes` : 'Listo';
+
+    return null;
+  };
+
   useEffect(() => {
     const userStr = localStorage.getItem('usuario');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      // Busca 'nombre' o 'name' (dependiendo de cómo lo guardaste)
-      const nombreReal = user.nombre || user.name;
-      if (nombreReal) {
-        setNombreUsuario(nombreReal);
-      }
+    if (!userStr) return;
+
+    const user = JSON.parse(userStr);
+    const nombreReal = user.nombre || user.name;
+    if (nombreReal) {
+      setNombreUsuario(nombreReal);
     }
   }, []);
+
   return (
     <>
-      <style>{`
-        /* ── OVERVIEW LAYOUT ── */
-        .dsh-overview { padding: 24px 28px; }
-
-        /* ── WELCOME ── */
-        .dsh-welcome {
-          background: linear-gradient(90deg, var(--azul-deep, #004f7c) 0%, var(--azul, #0077b7) 100%);
-          border-radius: 12px;
-          padding: 28px 32px;
-          display: flex; align-items: center;
-          justify-content: space-between; gap: 24px;
-          margin-bottom: 22px;
-          position: relative; overflow: hidden;
-        }
-        .dsh-welcome::before {
-          content: '';
-          position: absolute; inset: 0;
-          background-image:
-            linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
-          background-size: 32px 32px;
-          pointer-events: none;
-        }
-        .dsh-welcome-text { position: relative; z-index: 1; flex: 1; min-width: 0; }
-        .dsh-welcome-label {
-          font-family: var(--mono, monospace);
-          font-size: 10px; font-weight: 500;
-          color: rgba(255,255,255,.45);
-          letter-spacing: .12em; text-transform: uppercase;
-          margin-bottom: 6px;
-        }
-        .dsh-welcome-title {
-          font-size: 22px; font-weight: 700;
-          color: #fff; letter-spacing: -.02em; line-height: 1.2;
-          margin-bottom: 6px;
-        }
-        .dsh-welcome-sub {
-          font-size: 13px; color: rgba(255,255,255,.6);
-          line-height: 1.5;
-        }
-        .dsh-welcome-badges {
-          display: flex; gap: 12px;
-          position: relative; z-index: 1;
-          flex-shrink: 0;
-        }
-        .dsh-welcome-badge {
-          display: flex; align-items: center; gap: 8px;
-          background: rgba(255,255,255,.12);
-          border: 1px solid rgba(255,255,255,.2);
-          border-radius: 10px; padding: 12px 20px;
-        }
-        .dsh-welcome-badge-num {
-          font-size: 28px; font-weight: 800;
-          color: #fff; letter-spacing: -.03em; line-height: 1;
-        }
-        .dsh-welcome-badge-lbl {
-          font-size: 11px; color: rgba(255,255,255,.55);
-          text-transform: uppercase; letter-spacing: .07em;
-          line-height: 1.3;
-        }
-
-        /* ── QUICK STATS ── */
-        .dsh-stats-row {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 14px; margin-bottom: 26px;
-        }
-        .dsh-stat-card {
-          background: var(--blanco, #fff);
-          border: 1.5px solid var(--gris-borde, #d1d5db);
-          border-radius: 10px; padding: 18px 16px;
-          display: flex; align-items: center; gap: 14px;
-          transition: box-shadow .15s, transform .15s;
-        }
-        .dsh-stat-card:hover {
-          box-shadow: 0 4px 16px rgba(0,0,0,.08);
-          transform: translateY(-2px);
-        }
-        .dsh-stat-icon {
-          width: 40px; height: 40px; border-radius: 9px;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-        }
-        .dsh-stat-icon svg {
-          width: 18px; height: 18px;
-          fill: none; stroke: currentColor; stroke-width: 1.7;
-        }
-        .dsh-stat-num {
-          font-size: 24px; font-weight: 800;
-          letter-spacing: -.02em; line-height: 1;
-        }
-        .dsh-stat-lbl {
-          font-size: 11px; color: var(--gris-texto, #6b7280);
-          font-weight: 500; text-transform: uppercase;
-          letter-spacing: .06em; margin-top: 2px;
-        }
-
-        /* ── SECTION TITLE ── */
-        .dsh-section-header {
-          display: flex; align-items: center; gap: 10px;
-          margin-bottom: 16px;
-        }
-        .dsh-section-title {
-          font-size: 14px; font-weight: 700;
-          color: var(--negro-texto, #111827);
-          letter-spacing: -.01em; white-space: nowrap;
-        }
-        .dsh-section-line {
-          flex: 1; height: 1px;
-          background: var(--gris-borde, #d1d5db);
-        }
-
-        /* ── QUICK LINKS GRID ── */
-        .dsh-links-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 14px;
-        }
-        .dsh-link-card {
-          background: var(--blanco, #fff);
-          border: 1.5px solid var(--gris-borde, #d1d5db);
-          border-radius: 10px; padding: 18px;
-          display: flex; flex-direction: column; gap: 10px;
-          cursor: pointer; text-decoration: none;
-          transition: all .15s; position: relative;
-          overflow: hidden;
-        }
-        .dsh-link-card::before {
-          content: '';
-          position: absolute; top: 0; left: 0; right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, var(--azul, #0077b7), var(--azul-mid, #b8ddf0));
-          opacity: 0; transition: opacity .15s;
-        }
-        .dsh-link-card:hover {
-          border-color: var(--azul-mid, #b8ddf0);
-          box-shadow: 0 4px 16px rgba(0,119,183,.1);
-          transform: translateY(-2px);
-        }
-        .dsh-link-card:hover::before { opacity: 1; }
-
-        .dsh-link-card-top {
-          display: flex; align-items: flex-start;
-          justify-content: space-between;
-        }
-        .dsh-link-icon {
-          width: 36px; height: 36px; border-radius: 8px;
-          background: var(--azul-light, #e8f4fb);
-          border: 1px solid var(--azul-mid, #b8ddf0);
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
-        }
-        .dsh-link-icon svg {
-          width: 17px; height: 17px;
-          stroke: var(--azul, #0077b7); fill: none; stroke-width: 1.6;
-        }
-        .dsh-link-arrow {
-          width: 18px; height: 18px;
-          stroke: var(--gris-borde, #d1d5db); fill: none; stroke-width: 1.8;
-          transition: stroke .15s, transform .15s;
-        }
-        .dsh-link-card:hover .dsh-link-arrow {
-          stroke: var(--azul, #0077b7);
-          transform: translate(2px, -2px);
-        }
-        .dsh-link-name {
-          font-size: 14px; font-weight: 600;
-          color: var(--negro-texto, #111827);
-        }
-        .dsh-link-desc {
-          font-size: 12px; color: var(--gris-texto, #6b7280);
-          line-height: 1.5;
-        }
-        .dsh-link-badge {
-          display: inline-flex; align-items: center;
-          font-size: 10px; font-weight: 600;
-          padding: 2px 8px; border-radius: 10px;
-          letter-spacing: .04em;
-          align-self: flex-start;
-        }
-
-        /* ── PROGRESO PERFIL ── */
-        .dsh-profile-progress {
-          margin-top: 22px;
-          background: var(--blanco, #fff);
-          border: 1px solid var(--gris-borde, #d1d5db);
-          border-left: 4px solid #f59e0b;
-          border-radius: 10px; padding: 16px 20px;
-          display: flex; align-items: center; gap: 20px;
-          box-shadow: 0 1px 4px rgba(0,0,0,.04);
-        }
-        .dsh-pp-text { flex: 1; min-width: 0; }
-        .dsh-pp-title {
-          font-size: 13px; font-weight: 600;
-          color: var(--negro-texto, #111827); margin-bottom: 2px;
-        }
-        .dsh-pp-sub {
-          font-size: 11px; color: var(--gris-texto, #6b7280);
-        }
-        .dsh-pp-bar-wrap { flex: 2; min-width: 0; }
-        .dsh-pp-bar-labels {
-          display: flex; justify-content: space-between;
-          font-size: 10px; font-family: var(--mono, monospace);
-          color: var(--gris-texto, #6b7280);
-          margin-bottom: 5px;
-        }
-        .dsh-pp-bar-labels strong { color: #f59e0b; }
-        .dsh-pp-bar {
-          height: 5px; border-radius: 3px;
-          background: var(--gris-borde, #d1d5db); overflow: hidden;
-        }
-        .dsh-pp-bar-fill {
-          height: 100%; width: 72%;
-          background: linear-gradient(90deg, #f59e0b, #fbbf24);
-          border-radius: 3px;
-        }
-        .dsh-pp-hint {
-          font-size: 11px; color: var(--gris-texto, #6b7280);
-          flex-shrink: 0; white-space: nowrap;
-        }
-        .dsh-pp-hint span { color: #f59e0b; font-weight: 600; }
-
-        /* ══ RESPONSIVE ══ */
-
-        /* Tablet */
-        @media (max-width: 960px) {
-          .dsh-stats-row   { grid-template-columns: repeat(2, 1fr); }
-          .dsh-links-grid  { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        /* Móvil grande */
-        @media (max-width: 640px) {
-          .dsh-overview    { padding: 14px; }
-
-          /* Welcome: apila texto + badges */
-          .dsh-welcome     {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 20px 20px;
-            gap: 16px;
-          }
-          .dsh-welcome-title  { font-size: 18px; }
-          .dsh-welcome-sub    { font-size: 12px; }
-          .dsh-welcome-badges { width: 100%; }
-          .dsh-welcome-badge  {
-            flex: 1;
-            justify-content: center;
-            padding: 10px 12px;
-          }
-          .dsh-welcome-badge-num  { font-size: 22px; }
-
-          /* Stats: 1 columna en móvil para evitar distorsión */
-          .dsh-stats-row {
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-          }
-          .dsh-stat-card   { padding: 14px 12px; gap: 10px; }
-          .dsh-stat-icon   { width: 34px; height: 34px; border-radius: 8px; }
-          .dsh-stat-num    { font-size: 20px; }
-          .dsh-stat-lbl    { font-size: 10px; }
-
-          /* Quick links: 1 columna */
-          .dsh-links-grid  { grid-template-columns: 1fr; gap: 10px; }
-
-          /* Card horizontal en móvil */
-          .dsh-link-card   { flex-direction: row; align-items: center; padding: 14px; gap: 14px; }
-          .dsh-link-card-top { flex-direction: column; gap: 0; align-items: center; }
-          .dsh-link-arrow  { display: none; }
-          .dsh-link-content { flex: 1; min-width: 0; }
-          .dsh-link-name   { font-size: 13px; }
-          .dsh-link-desc   { font-size: 11px; }
-
-          /* Progreso: apila */
-          .dsh-profile-progress {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 16px;
-          }
-          .dsh-pp-bar-wrap { width: 100%; }
-          .dsh-pp-hint     { font-size: 12px; }
-        }
-
-        /* Móvil pequeño */
-        @media (max-width: 380px) {
-          .dsh-welcome-badges { flex-direction: column; gap: 8px; }
-          .dsh-stats-row      { grid-template-columns: 1fr; }
-        }
-      `}</style>
+      <Header
+        eyebrow="GENERAL"
+        title="Dashboard"
+        subtitle="Resumen de tu portafolio y accesos principales."
+      />
 
       <div className="dsh-overview">
-
-        {/* Welcome banner */}
         <div className="dsh-welcome">
           <div className="dsh-welcome-text">
             <div className="dsh-welcome-label">CreaFolio</div>
             <div className="dsh-welcome-title">
-                ¡Bienvenido de vuelta, {nombreUsuario}! 
+              Bienvenido de vuelta, {nombreVisible}
             </div>
             <div className="dsh-welcome-sub">
-                Gestiona tu portafolio, actualiza tus proyectos y conecta con empresas. 
+              Gestiona tu portafolio, actualiza tus proyectos y manten tus redes al dia.
             </div>
           </div>
+
           <div className="dsh-welcome-badges">
             <div className="dsh-welcome-badge">
               <div>
-                <div className="dsh-welcome-badge-num">72%</div>
-                <div className="dsh-welcome-badge-lbl">Perfil<br />completo</div>
+                <div className="dsh-welcome-badge-num">{loadingSummary ? '...' : `${progress}%`}</div>
+                <div className="dsh-welcome-badge-lbl">Portafolio<br />completo</div>
               </div>
             </div>
             <div className="dsh-welcome-badge">
               <div>
-                <div className="dsh-welcome-badge-num">4</div>
-                <div className="dsh-welcome-badge-lbl">Proyectos<br />activos</div>
+                <div className="dsh-welcome-badge-num">{countText(counts.projects)}</div>
+                <div className="dsh-welcome-badge-lbl">Proyectos<br />registrados</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick stats */}
         <div className="dsh-stats-row">
-          {QUICK_STATS.map(({ num, lbl, color, bg, border }) => (
+          {QUICK_STATS.map(({ id, lbl, color, bg, border }) => (
             <div className="dsh-stat-card" key={lbl}>
               <div
                 className="dsh-stat-icon"
@@ -466,69 +200,75 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <div className="dsh-stat-num" style={{ color }}>{num}</div>
+                <div className="dsh-stat-num" style={{ color }}>{countText(getStatNumber(id))}</div>
                 <div className="dsh-stat-lbl">{lbl}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Acceso rápido */}
         <div className="dsh-section-header">
-          <div className="dsh-section-title">Acceso rápido</div>
+          <div className="dsh-section-title">Acceso rapido</div>
           <div className="dsh-section-line" />
         </div>
 
         <div className="dsh-links-grid">
-          {QUICK_LINKS.map((item) => (
-            <Link key={item.id} to={item.to} className="dsh-link-card">
-              <div className="dsh-link-card-top">
-                <div className="dsh-link-icon">{item.icon}</div>
-                <svg className="dsh-link-arrow" viewBox="0 0 14 14">
-                  <path d="M3 11L11 3M5 3h6v6" />
-                </svg>
-              </div>
-              <div className="dsh-link-content">
-                <div className="dsh-link-name">{item.label}</div>
-                <div className="dsh-link-desc">{item.desc}</div>
-                {item.badge && (
-                  <span
-                    className="dsh-link-badge"
-                    style={{
-                      color: item.badgeColor,
-                      background: item.badgeBg,
-                      border: `1px solid ${item.badgeColor}33`,
-                      marginTop: 6,
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
+          {QUICK_LINKS.map((item) => {
+            const badge = getQuickBadge(item.id);
+
+            return (
+              <Link key={item.id} to={item.to} className="dsh-link-card">
+                <div className="dsh-link-card-top">
+                  <div className="dsh-link-icon">{item.icon}</div>
+                  <svg className="dsh-link-arrow" viewBox="0 0 14 14">
+                    <path d="M3 11L11 3M5 3h6v6" />
+                  </svg>
+                </div>
+
+                <div className="dsh-link-content">
+                  <div className="dsh-link-name">{item.label}</div>
+                  <div className="dsh-link-desc">{item.desc}</div>
+                  {badge && (
+                    <span
+                      className="dsh-link-badge"
+                      style={{
+                        color: item.badgeColor,
+                        background: item.badgeBg,
+                        border: `1px solid ${item.badgeColor}33`,
+                        marginTop: 6,
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
-        {/* Progreso del perfil */}
         <div className="dsh-profile-progress">
           <div className="dsh-pp-text">
-            <div className="dsh-pp-title">Completa tu perfil</div>
-            <div className="dsh-pp-sub">Más completitud = más visibilidad ante empresas</div>
+            <div className="dsh-pp-title">Completa tu portafolio</div>
+            <div className="dsh-pp-sub">Perfil, experiencia, proyectos, habilidades y redes en un solo avance</div>
           </div>
           <div className="dsh-pp-bar-wrap">
             <div className="dsh-pp-bar-labels">
               <span>Progreso</span>
-              <strong>72%</strong>
+              <strong>{loadingSummary ? '...' : `${progress}%`}</strong>
             </div>
             <div className="dsh-pp-bar">
-              <div className="dsh-pp-bar-fill" />
+              <div className="dsh-pp-bar-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
           <div className="dsh-pp-hint">
-            Faltan <span>28%</span> para completar
+            {missingCount > 0 ? (
+              <>Faltan <span>{missingCount}</span> requisitos</>
+            ) : (
+              <>Portafolio completo</>
+            )}
           </div>
         </div>
-
       </div>
     </>
   );

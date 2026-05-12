@@ -1,5 +1,11 @@
 import SesionesActivas from '../components/SesionesActivas';
+import Header from '../../layout/Header';
 
 export default function SesionesActivasPage() {
-  return <SesionesActivas />;
+  return (
+    <>
+      <Header eyebrow="CUENTA" title="Sesiones Activas" subtitle="Configuracion" />
+      <SesionesActivas />
+    </>
+  );
 }

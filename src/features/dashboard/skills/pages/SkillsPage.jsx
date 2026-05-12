@@ -9,6 +9,37 @@ import {
 } from "../services/skillService";
 import ExperienceToast from "../../experience/components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import Header from "../../layout/Header";
+import {
+  getSkillLevelColor,
+  getSkillLevelLabel,
+  getSkillLevelShortLabel,
+  getSkillProgress,
+} from "../model/skillLevel";
+
+const normalizeSkillName = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+
+const normalizeSkillType = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const getSkillName = (skill) =>
+  skill?.nombre ?? skill?.nombre_habilidad ?? skill?.habilidad?.nombre ?? "";
+
+const getSkillDescription = (skill) =>
+  skill?.descripcion ??
+  skill?.descripcion_habilidad ??
+  skill?.habilidad?.descripcion ??
+  "Sin descripción adicional.";
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
@@ -60,25 +91,42 @@ export default function SkillsPage() {
           formData.tipo,
           formData.descripcion_nueva || ""
         );
+
         skillIdFromCatalog = newCatalogSkill.id;
       }
 
-      if (modalMode === "edit") {
-        const updated = await updateUserSkill(
-          selectedSkill.id,
-          formData.nivel
+      if (modalMode !== "edit") {
+        const duplicateOwned = skills.some(
+          (skill) =>
+            normalizeSkillName(getSkillName(skill)) ===
+            normalizeSkillName(formData.nombre_habilidad)
         );
+
+        if (duplicateOwned) {
+          showToast(
+            `Ya tienes "${formData.nombre_habilidad}" registrada en tu perfil.`,
+            "error"
+          );
+          return;
+        }
+      }
+
+      if (modalMode === "edit") {
+        const updated = await updateUserSkill(selectedSkill.id, formData.nivel);
 
         setSkills((prev) => {
           const selectedId = Number(selectedSkill.id);
           const updatedId = Number(updated?.id);
 
           if (updatedId && updatedId === selectedId) {
-            return prev.map((s) => (Number(s.id) === selectedId ? updated : s));
+            return prev.map((s) =>
+              Number(s.id) === selectedId ? updated : s
+            );
           }
 
           return prev.map((s) => {
             if (Number(s.id) !== selectedId) return s;
+
             return {
               ...s,
               nivel: formData.nivel,
@@ -88,10 +136,8 @@ export default function SkillsPage() {
 
         showToast("Habilidad actualizada", "ok");
       } else {
-        const created = await addUserSkill(
-          skillIdFromCatalog,
-          formData.nivel
-        );
+        const created = await addUserSkill(skillIdFromCatalog, formData.nivel);
+
         setSkills((prev) => [created, ...prev]);
         showToast("Habilidad añadida", "ok");
       }
@@ -109,7 +155,9 @@ export default function SkillsPage() {
       open: true,
       title: "Eliminar habilidad",
       subtitle: "Esta acción no se puede deshacer.",
-      message: `Estás por quitar "${skill?.nombre || skill?.nombre_habilidad || "esta habilidad"}" de tu perfil. ¿Deseas continuar?`,
+      message: `Estás por quitar "${
+        getSkillName(skill) || "esta habilidad"
+      }" de tu perfil. ¿Deseas continuar?`,
       confirmLabel: "Sí, eliminar",
       cancelLabel: "Cancelar",
       variant: "red",
@@ -117,11 +165,16 @@ export default function SkillsPage() {
       onConfirm: async () => {
         try {
           await deleteUserSkill(id);
-          setSkills((prev) => prev.filter((s) => Number(s.id) !== Number(id)));
+
+          setSkills((prev) =>
+            prev.filter((s) => Number(s.id) !== Number(id))
+          );
+
           showToast("Habilidad eliminada", "ok");
         } catch (err) {
           showToast("Error al eliminar", "error");
         }
+
         setConfirmConfig((prev) => ({ ...prev, open: false }));
       },
     });
@@ -132,36 +185,17 @@ export default function SkillsPage() {
     setModalMode("add");
   };
 
-  const tecnicas = skills.filter((s) => s.tipo === "tecnica");
-  const blandas = skills.filter((s) => s.tipo === "blanda");
+  const tecnicas = skills.filter(
+    (s) => normalizeSkillType(s.tipo) === "tecnica"
+  );
+
+  const blandas = skills.filter(
+    (s) => normalizeSkillType(s.tipo) === "blanda"
+  );
 
   return (
     <>
       <style>{`
-        .custom-breadcrumb-bar {
-          background-color: var(--negro-texto);
-          padding: 1.2rem 2.5rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 4px solid var(--azul);
-          font-family: var(--font);
-        }
-        .bc-text {
-          color: var(--gris-texto);
-          font-size: 0.85rem;
-          margin: 0;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        .bc-active {
-          color: var(--blanco);
-          font-weight: 800;
-          font-size: 1.4rem;
-          margin: 0;
-        }
-
         .skill-page-body {
           min-height: calc(100vh - var(--nav-height, 60px));
           background: var(--fondo);
@@ -179,22 +213,38 @@ export default function SkillsPage() {
           background: var(--azul);
           color: var(--blanco);
           font-family: var(--font);
-          font-size: 0.9rem;
+          font-size: .9rem;
           font-weight: 700;
           cursor: pointer;
-          transition: all .15s ease;
+          transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
           white-space: nowrap;
           box-shadow: 0 2px 8px rgba(0, 119, 183, .18);
         }
+
         .skill-add-btn:hover {
           background: var(--azul-hover);
           color: var(--blanco);
           box-shadow: 0 4px 12px rgba(0, 119, 183, .3);
           transform: translateY(-1px);
         }
-        .skill-add-btn:focus-visible {
-          outline: none;
-          box-shadow: 0 0 0 3px var(--azul-glow), 0 4px 12px rgba(0, 119, 183, .25);
+
+        .skill-section-divider {
+          font-weight: 800;
+          color: var(--negro-texto);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin: 2rem 0 1rem;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: .95rem;
+        }
+
+        .skill-section-divider::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: var(--gris-borde);
         }
 
         .skill-long-card {
@@ -204,29 +254,22 @@ export default function SkillsPage() {
           border-left: 6px solid var(--azul);
           padding: 1.2rem;
           margin-bottom: 1rem;
-          transition: all 0.2s ease;
-          box-shadow: 0 1px 4px rgba(0,0,0,.04);
-        }
-        .skill-long-card:hover {
-          transform: translateX(4px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+          transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, .04);
         }
 
-        .section-divider {
-          font-weight: 800;
-          color: var(--negro-texto);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin: 2rem 0 1rem 0;
+        .skill-long-card:hover {
+          transform: translateX(4px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+          border-color: var(--azul-mid);
+        }
+
+        .skill-main-info {
+          min-width: 250px;
+          flex: 1;
           display: flex;
           align-items: center;
-          gap: 10px;
-        }
-        .section-divider::after {
-          content: "";
-          flex: 1;
-          height: 1px;
-          background: var(--gris-borde);
+          gap: 14px;
         }
 
         .level-circle-badge {
@@ -237,10 +280,82 @@ export default function SkillsPage() {
           justify-content: center;
           border-radius: 50%;
           color: var(--blanco);
+          font-family: var(--font);
           font-weight: 800;
-          font-size: 0.7rem;
+          font-size: .7rem;
+          letter-spacing: .04em;
           text-transform: uppercase;
           flex-shrink: 0;
+          box-shadow: 0 3px 10px rgba(0, 0, 0, .12);
+        }
+
+        .skill-name {
+          margin: 0;
+          color: var(--negro-texto);
+          font-size: .96rem;
+          font-weight: 800;
+          line-height: 1.25;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+
+        .skill-description {
+          margin: 3px 0 0;
+          color: var(--gris-texto);
+          font-size: .82rem;
+          line-height: 1.45;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+
+        .skill-progress-zone {
+          flex: 1;
+          min-width: 200px;
+          max-width: 400px;
+          margin-inline: 1.5rem;
+        }
+
+        .skill-progress-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 5px;
+        }
+
+        .skill-progress-label {
+          color: var(--gris-texto);
+          font-family: var(--mono);
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+        }
+
+        .skill-progress-value {
+          font-family: var(--mono);
+          font-size: 10px;
+          font-weight: 700;
+        }
+
+        .skill-progress-track {
+          height: 8px;
+          width: 100%;
+          background: var(--gris-borde);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        .skill-progress-bar {
+          height: 100%;
+          border-radius: 10px;
+          transition: width 1s ease;
+        }
+
+        .skill-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .btn-action-skill {
@@ -250,26 +365,39 @@ export default function SkillsPage() {
           background: var(--blanco);
           color: var(--gris-oscuro);
           font-family: var(--font);
-          font-size: 0.85rem;
+          font-size: .85rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: transform .15s ease, color .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
           white-space: nowrap;
         }
+
         .btn-action-skill:hover {
           transform: translateY(-1px);
         }
+
         .btn-edit:hover {
           color: var(--amarillo-hover);
           border-color: var(--amarillo);
           background: var(--amarillo-chip);
-          box-shadow: 0 3px 10px rgba(251,191,36,.18);
+          box-shadow: 0 3px 10px rgba(251, 191, 36, .18);
         }
+
         .btn-delete:hover {
           color: var(--rojo-soft);
           border-color: var(--rojo-soft);
           background: var(--rojo-chip);
-          box-shadow: 0 3px 10px rgba(232,85,85,.14);
+          box-shadow: 0 3px 10px rgba(232, 85, 85, .14);
+        }
+
+        .skill-empty-category {
+          background: var(--blanco);
+          border: 1.5px dashed var(--gris-borde);
+          border-radius: 12px;
+          color: var(--gris-texto);
+          font-size: .86rem;
+          padding: 18px;
+          margin-bottom: 1.2rem;
         }
 
         .skill-empty-state {
@@ -280,10 +408,11 @@ export default function SkillsPage() {
           border-radius: 18px;
           padding: 2.2rem 2rem;
           text-align: center;
-          box-shadow: 0 8px 24px rgba(0,0,0,.05);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
           position: relative;
           overflow: hidden;
         }
+
         .skill-empty-state::before {
           content: "";
           position: absolute;
@@ -291,6 +420,7 @@ export default function SkillsPage() {
           height: 5px;
           background: linear-gradient(90deg, var(--azul), var(--azul-mid));
         }
+
         .skill-empty-icon {
           width: 56px;
           height: 56px;
@@ -305,6 +435,7 @@ export default function SkillsPage() {
           font-size: 1.45rem;
           font-weight: 800;
         }
+
         .skill-empty-title {
           margin: 0;
           color: var(--negro-texto);
@@ -312,6 +443,7 @@ export default function SkillsPage() {
           font-weight: 800;
           letter-spacing: -.02em;
         }
+
         .skill-empty-text {
           max-width: 480px;
           margin: .55rem auto 1.35rem;
@@ -319,6 +451,7 @@ export default function SkillsPage() {
           font-size: .95rem;
           line-height: 1.55;
         }
+
         .skill-empty-chips {
           display: flex;
           justify-content: center;
@@ -326,6 +459,7 @@ export default function SkillsPage() {
           gap: 8px;
           margin-bottom: 1.45rem;
         }
+
         .skill-empty-chip {
           padding: 5px 10px;
           border-radius: 999px;
@@ -336,66 +470,102 @@ export default function SkillsPage() {
           font-weight: 700;
         }
 
-        @media (max-width: 640px) {
-          .custom-breadcrumb-bar {
-            padding: 1rem;
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 12px;
+        @media (max-width: 768px) {
+          .skill-long-card {
+            align-items: stretch !important;
           }
+
+          .skill-main-info {
+            min-width: 100%;
+          }
+
+          .skill-progress-zone {
+            min-width: 100%;
+            max-width: none;
+            margin-inline: 0;
+          }
+
+          .skill-actions {
+            width: 100%;
+          }
+
+          .btn-action-skill {
+            flex: 1;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .skill-page-body {
+            padding-inline: 1rem !important;
+          }
+
           .skill-add-btn {
             width: 100%;
+          }
+
+          .skill-long-card {
+            padding: 1rem;
           }
         }
       `}</style>
 
-      <div className="custom-breadcrumb-bar shadow">
-        <div>
-          <p className="bc-text">Portafolio</p>
-          <h2 className="bc-active">HABILIDADES</h2>
-        </div>
-        <button
-          className="skill-add-btn"
-          onClick={openAddModal}
-        >
-          + Agregar Habilidad
-        </button>
-      </div>
+      <Header
+        title="Habilidades"
+        actionLabel="Agregar habilidad"
+        onAction={openAddModal}
+      />
 
       <div className="container-fluid p-4 skill-page-body">
         <div className="row justify-content-center">
           <div className="col-12 col-xl-10">
             {loading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary"></div>
+              <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+                <span className="dash-loading-spinner" />
+                <span>Cargando habilidades...</span>
               </div>
             ) : skills.length === 0 ? (
               <SkillEmptyState onAdd={openAddModal} />
             ) : (
               <>
-                <h5 className="section-divider">Habilidades Técnicas</h5>
+                <h5 className="skill-section-divider">
+                  Habilidades Técnicas
+                </h5>
+
                 {tecnicas.length === 0 ? (
-                  <p className="text-muted small ms-2">No has registrado habilidades técnicas aún.</p>
+                  <div className="skill-empty-category">
+                    No has registrado habilidades técnicas aún.
+                  </div>
                 ) : (
                   tecnicas.map((s) => (
                     <SkillLongRow
                       key={s.id}
                       skill={s}
-                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }}
+                      onEdit={(sk) => {
+                        setSelectedSkill(sk);
+                        setModalMode("edit");
+                      }}
                       onDelete={handleDeleteRequest}
                     />
                   ))
                 )}
 
-                <h5 className="section-divider">Habilidades Blandas</h5>
+                <h5 className="skill-section-divider">
+                  Habilidades Blandas
+                </h5>
+
                 {blandas.length === 0 ? (
-                  <p className="text-muted small ms-2">No hay registros de habilidades blandas.</p>
+                  <div className="skill-empty-category">
+                    No hay registros de habilidades blandas.
+                  </div>
                 ) : (
                   blandas.map((s) => (
                     <SkillLongRow
                       key={s.id}
                       skill={s}
-                      onEdit={(sk) => { setSelectedSkill(sk); setModalMode("edit"); }}
+                      onEdit={(sk) => {
+                        setSelectedSkill(sk);
+                        setModalMode("edit");
+                      }}
                       onDelete={handleDeleteRequest}
                     />
                   ))
@@ -416,6 +586,7 @@ export default function SkillsPage() {
           onSave={handleSaveRequest}
           onCancel={() => setModalMode(null)}
           editData={selectedSkill}
+          userSkills={skills}
         />
       )}
 
@@ -428,15 +599,22 @@ function SkillEmptyState({ onAdd }) {
   return (
     <div className="skill-empty-state">
       <div className="skill-empty-icon">✦</div>
-      <h3 className="skill-empty-title">Aún no tienes habilidades registradas</h3>
+
+      <h3 className="skill-empty-title">
+        Aún no tienes habilidades registradas
+      </h3>
+
       <p className="skill-empty-text">
-        Agrega habilidades técnicas o blandas para completar tu perfil profesional y mostrar tus fortalezas.
+        Agrega habilidades técnicas o blandas para completar tu perfil
+        profesional y mostrar tus fortalezas.
       </p>
+
       <div className="skill-empty-chips" aria-hidden="true">
         <span className="skill-empty-chip">Técnicas</span>
         <span className="skill-empty-chip">Blandas</span>
         <span className="skill-empty-chip">Nivel de dominio</span>
       </div>
+
       <button type="button" className="skill-add-btn" onClick={onAdd}>
         + Agregar Habilidad
       </button>
@@ -445,50 +623,65 @@ function SkillEmptyState({ onAdd }) {
 }
 
 function SkillLongRow({ skill, onEdit, onDelete }) {
-  const levels = {
-    basico: { p: 30, c: "var(--gris-texto)", n: "BAS" },
-    intermedio: { p: 60, c: "var(--verde-hover)", n: "INT" },
-    avanzado: { p: 85, c: "var(--azul)", n: "AVZ" },
-    experto: { p: 100, c: "var(--violeta-hover)", n: "EXP" },
-  };
-  const current = levels[skill.nivel] || { p: 0, c: "var(--gris-borde)", n: "---" };
+  const progress = getSkillProgress(skill.nivel);
+  const color = getSkillLevelColor(skill.nivel);
+  const label = getSkillLevelLabel(skill.nivel);
+  const shortLabel = getSkillLevelShortLabel(skill.nivel);
 
   return (
-    <div className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3">
-      <div className="d-flex align-items-center gap-3" style={{ minWidth: "250px", flex: "1" }}>
-        <div className="level-circle-badge" style={{ backgroundColor: current.c }}>
-          {current.n}
+    <div
+      className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3"
+      style={{ borderLeftColor: color }}
+    >
+      <div className="skill-main-info">
+        <div
+          className="level-circle-badge"
+          style={{ backgroundColor: color }}
+          title={label}
+          aria-label={`Nivel ${label}`}
+        >
+          {shortLabel}
         </div>
+
         <div>
-          <h6 className="fw-bold mb-0" style={{ color: "var(--negro-texto)" }}>
-            {skill.nombre || skill.nombre_habilidad}
+          <h6 className="skill-name">
+            {getSkillName(skill)}
           </h6>
-          <p className="text-muted mb-0 small">
-            {skill.descripcion || "Sin descripción adicional."}
+
+          <p className="skill-description">
+            {getSkillDescription(skill)}
           </p>
         </div>
       </div>
 
-      <div className="flex-grow-1 mx-md-4" style={{ minWidth: "200px", maxWidth: "400px" }}>
-        <div className="d-flex justify-content-between align-items-center mb-1">
-          <span className="text-muted fw-bold" style={{ fontSize: "10px" }}>DOMINIO</span>
-          <span className="small fw-bold" style={{ color: "var(--gris-oscuro)" }}>{current.p}%</span>
+      <div className="skill-progress-zone">
+        <div className="skill-progress-top">
+          <span className="skill-progress-label">
+            Dominio
+          </span>
+
+          <span
+            className="skill-progress-value"
+            style={{ color }}
+          >
+            {progress}%
+          </span>
         </div>
-        <div className="progress" style={{ height: "8px", backgroundColor: "var(--gris-borde)", borderRadius: "10px" }}>
+
+        <div className="skill-progress-track">
           <div
-            className="progress-bar"
+            className="skill-progress-bar"
             style={{
-              width: `${current.p}%`,
-              backgroundColor: current.c,
-              borderRadius: "10px",
-              transition: "width 1s ease",
+              width: `${progress}%`,
+              backgroundColor: color,
             }}
-          ></div>
+          />
         </div>
       </div>
 
-      <div className="d-flex gap-2">
+      <div className="skill-actions">
         <button
+          type="button"
           onClick={() => onEdit(skill)}
           className="btn-action-skill btn-edit"
           title="Editar"
@@ -496,7 +689,9 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
         >
           Editar
         </button>
+
         <button
+          type="button"
           onClick={() => onDelete(skill.id)}
           className="btn-action-skill btn-delete"
           title="Eliminar"
@@ -508,4 +703,3 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
     </div>
   );
 }
-

@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { label: 'Inicio',          href: '/'                },
   { label: 'Cómo funciona',   href: '#como-funciona'   },
   { label: 'Proyectos',       href: '#proyectos'        },
-  { label: 'Desarrolladores', href: '#desarrolladores'  },
+  { label: 'Desarrolladores', href: '/desarrolladores'  },
 ];
 
 const NOTIFICACIONES = [

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiPlus } from "react-icons/fi";
+import Header from '../../layout/Header';
 import Card from './Card';
 import Pager from './Pager';
 import Modal from './Modal';
@@ -82,32 +84,33 @@ export default function RedesSociales() {
   const redAEliminar = redes.find(r => r.id === confirmarId);
 
   if (loading) return (
-    <div style={{ fontFamily:"'Segoe UI','Inter',sans-serif" }}>
-      <div style={{ background:"#0f172a",padding:"28px 40px" }}>
-        <p style={{ margin:0,fontSize:12,fontWeight:700,color:"#94a3b8",letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>PORTAFOLIO</p>
-        <h1 style={{ margin:0,fontSize:22,fontWeight:800,color:"#ffffff",letterSpacing:1,textTransform:"uppercase" }}>REDES PROFESIONALES</h1>
-      </div>
-      <div style={{ maxWidth:640,margin:"40px auto",textAlign:"center",color:"#6b7280",fontSize:14 }}>
-        Cargando enlaces...
+    <div style={{ fontFamily:"var(--font)" }}>
+      <Header title="Redes Profesionales" />
+      <div style={{ maxWidth:640,margin:"0 auto",padding:"24px 16px 40px" }}>
+        <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
+          <span className="dash-loading-spinner" />
+          <span>Cargando enlaces...</span>
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ fontFamily:"'Segoe UI','Inter',sans-serif" }}>
+    <div style={{ fontFamily:"var(--font)" }}>
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}*{box-sizing:border-box;}`}</style>
 
       {/* BANNER */}
-      <div style={{ background:"#0f172a",padding:"28px 40px",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
-        <div>
-          <p style={{ margin:0,fontSize:12,fontWeight:700,color:"#94a3b8",letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>PORTAFOLIO</p>
-          <h1 style={{ margin:0,fontSize:22,fontWeight:800,color:"#ffffff",letterSpacing:1,textTransform:"uppercase" }}>REDES PROFESIONALES</h1>
-        </div>
-        <button onClick={() => setModal(true)} style={{ display:"flex",alignItems:"center",gap:8,padding:"11px 20px",borderRadius:8,border:"none",background:"#0ea5e9",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
-          Agregar Nueva
-        </button>
-      </div>
+      <Header
+        title="Redes Profesionales"
+        actions={[
+          {
+            label: "Agregar nueva",
+            title: "Agregar nueva red profesional",
+            icon: <FiPlus />,
+            onClick: () => setModal(true),
+          },
+        ]}
+      />
 
       <div style={{ maxWidth:640,margin:"0 auto",padding:"24px 16px 40px" }}>
 
