@@ -996,6 +996,11 @@
   padding: 8px 12px !important; width: 100%; outline: none; cursor: pointer; transition: border-color .15s !important;
 }
 .prj-select:focus { border-color: var(--azul) !important; box-shadow: 0 0 0 3px var(--azul-glow) !important; }
+.prj-select.prj-input-error {
+  border-color: var(--rojo-soft) !important;
+  background: var(--rojo-bg) !important;
+  box-shadow: 0 0 0 3px rgba(232,85,85,.08) !important;
+}
 
 .prj-tags-input-wrap {
   border: 1.5px solid var(--gris-borde); border-radius: 7px; background: var(--blanco);
@@ -1321,6 +1326,11 @@
   transition: border-color .15s, box-shadow .15s; flex-wrap: wrap;
 }
 .prj-tech-trigger:hover, .prj-tech-trigger.open { border-color: var(--azul); box-shadow: 0 0 0 3px var(--azul-glow); }
+.prj-tech-picker-error .prj-tech-trigger {
+  border-color: var(--rojo-soft);
+  background: var(--rojo-bg);
+  box-shadow: 0 0 0 3px rgba(232,85,85,.08);
+}
 .prj-tech-placeholder { font-size: 13px; color: #9ca3af; align-self: center; }
 .prj-tech-chips { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
 .prj-tech-count { font-size: 11px; font-family: var(--mono); color: var(--gris-texto); align-self: center; white-space: nowrap; }
