@@ -1,7 +1,7 @@
 // src/features/dashboard/view/pages/ViewPage.jsx
 
-import { useState } from 'react';
-import { FiCheck, FiEyeOff, FiSettings } from 'react-icons/fi';
+import { useRef, useState } from 'react';
+import { FiCheck, FiDownload, FiEyeOff, FiSettings } from 'react-icons/fi';
 import '../styles/view.css';
 
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
@@ -20,6 +20,8 @@ import ViewProjects from '../components/ViewProjects';
 import ViewToast from '../components/ViewToast';
 import ViewPreviewNotice from '../components/ViewPreviewNotice';
 import ViewConfigModal from '../modal/ViewConfigModal';
+import ViewDownloadModal from '../modal/ViewDownloadModal';
+import { exportPortfolio } from '../services/portfolioExportService';
 
 export default function ViewPage() {
   const {
@@ -42,6 +44,10 @@ export default function ViewPage() {
 
   const [configOpen, setConfigOpen] = useState(false);
   const [publishTarget, setPublishTarget] = useState(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [exporting, setExporting] = useState('');
+  const [exportError, setExportError] = useState('');
+  const portfolioRef = useRef(null);
 
   const title = `${getFullName(perfil)} - Portafolio`;
   const visibilidad = config?.visibilidad || {};
@@ -50,6 +56,23 @@ export default function ViewPage() {
   const handlePublish = async () => {
     await publicar(publishTarget !== false);
     setPublishTarget(null);
+  };
+
+  const handleExport = async (format) => {
+    setExporting(format);
+    setExportError('');
+
+    try {
+      await exportPortfolio(portfolioRef.current, {
+        format,
+        title: getFullName(perfil),
+      });
+      setDownloadOpen(false);
+    } catch (err) {
+      setExportError(err.message || 'No se pudo descargar el portafolio.');
+    } finally {
+      setExporting('');
+    }
   };
 
   const selectedFont = FONTS.find(font => font.id === config?.fontId) || FONTS[0];
@@ -117,6 +140,17 @@ export default function ViewPage() {
         title="Vista Portafolio"
         actions={[
           {
+            label: 'Descargar',
+            title: 'Descargar portafolio',
+            icon: <FiDownload />,
+            variant: 'secondary',
+            disabled: !hasPortfolioContent,
+            onClick: () => {
+              setExportError('');
+              setDownloadOpen(true);
+            },
+          },
+          {
             label: 'Personalizar',
             title: 'Personalizar vista',
             icon: <FiSettings />,
@@ -142,37 +176,39 @@ export default function ViewPage() {
           error={error}
         />
 
-        <ViewOsFrame frameId={config?.frameId || 'mac'} title={title}>
-          <ViewHero perfil={perfil} config={config} />
+        <div ref={portfolioRef} className="portfolio-export-target">
+          <ViewOsFrame frameId={config?.frameId || 'mac'} title={title}>
+            <ViewHero perfil={perfil} config={config} />
 
-          <ViewIdentity
-            perfil={perfil}
-            redes={redes}
-            disponible={config?.disponible}
-            visibilidad={visibilidad}
-            onPerfilChange={updatePerfil}
-          />
+            <ViewIdentity
+              perfil={perfil}
+              redes={redes}
+              disponible={config?.disponible}
+              visibilidad={visibilidad}
+              onPerfilChange={updatePerfil}
+            />
 
-          <ViewStats
-            stats={stats}
-            visibilidad={visibilidad}
-          />
+            <ViewStats
+              stats={stats}
+              visibilidad={visibilidad}
+            />
 
-          <ViewSkills
-            habilidades={habilidades}
-            visibilidad={visibilidad}
-          />
+            <ViewSkills
+              habilidades={habilidades}
+              visibilidad={visibilidad}
+            />
 
-          <ViewExperience
-            experiencias={experiencias}
-            visibilidad={visibilidad}
-          />
+            <ViewExperience
+              experiencias={experiencias}
+              visibilidad={visibilidad}
+            />
 
-          <ViewProjects
-            proyectos={proyectos}
-            visibilidad={visibilidad}
-          />
-        </ViewOsFrame>
+            <ViewProjects
+              proyectos={proyectos}
+              visibilidad={visibilidad}
+            />
+          </ViewOsFrame>
+        </div>
       </main>
 
       <ViewConfigModal
@@ -207,6 +243,18 @@ export default function ViewPage() {
         loading={guardando}
         onConfirm={handlePublish}
         onClose={() => setPublishTarget(null)}
+      />
+
+      <ViewDownloadModal
+        open={downloadOpen}
+        exporting={exporting}
+        error={exportError}
+        onExport={handleExport}
+        onClose={() => {
+          if (!exporting) {
+            setDownloadOpen(false);
+          }
+        }}
       />
 
       <ViewToast toast={toast} />
