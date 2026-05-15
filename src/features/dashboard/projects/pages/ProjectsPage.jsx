@@ -122,8 +122,9 @@ export default function ProjectsPage() {
     return (
       <div className="prj-page">
         <Header title="Mis Proyectos" actions={headerActions} />
-        <div className="prj-page-loading">
-          <span className="prj-spinner prj-spinner-lg" />
+        <div className="dash-loading dash-loading--page" role="status" aria-live="polite">
+          <span className="dash-loading-spinner" />
+          <span>Cargando proyectos...</span>
         </div>
       </div>
     );

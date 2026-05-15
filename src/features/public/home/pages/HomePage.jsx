@@ -1,10 +1,11 @@
 import Hero from '../components/Hero';
+import FeaturedPortfolios from '../components/FeaturedPortfolios';
 
 export default function HomePage() {
   return (
     <>
       <Hero />
-      {/* Aquí irán las demás secciones: Features, HowItWorks, DevsPreview, etc. */}
+      <FeaturedPortfolios />
     </>
   );
 }

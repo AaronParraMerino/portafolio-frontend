@@ -28,6 +28,7 @@ const HOY = new Date().toISOString().split('T')[0];
 
 const DOCUMENT_ACCEPT = '.pdf,.doc,.docx,.txt,.rtf,.md,.odt';
 const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'md', 'odt'];
+const MIN_DIAS_DURACION_PROYECTO = 7;
 
 /* ════════════════════════════════════════
    Validaciones
@@ -78,8 +79,10 @@ function validate(form) {
   }
 
   if (!form.en_curso && form.fecha_fin) {
-    if (form.fecha_inicio && form.fecha_fin < form.fecha_inicio) {
-      e.fecha_fin = 'La fecha de fin no puede ser anterior a la de inicio.';
+    const minFechaFin = getMinFechaFin(form.fecha_inicio);
+
+    if (minFechaFin && form.fecha_fin < minFechaFin) {
+      e.fecha_fin = `La fecha de fin debe ser al menos una semana posterior a la fecha de inicio (${minFechaFin}).`;
     }
   }
 
@@ -101,6 +104,16 @@ function FieldError({ msg }) {
       {msg}
     </div>
   );
+}
+
+function getMinFechaFin(fechaInicio) {
+  if (!fechaInicio) return undefined;
+
+  const [year, month, day] = fechaInicio.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+
+  const date = new Date(Date.UTC(year, month - 1, day + MIN_DIAS_DURACION_PROYECTO));
+  return date.toISOString().split('T')[0];
 }
 
 function isYoutubeUrl(url) {
@@ -1252,7 +1265,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     setConfirmPending(null);
   };
 
-  const minFechaFin = form.fecha_inicio || undefined;
+  const minFechaFin = getMinFechaFin(form.fecha_inicio);
 
   const loadDetectedRepos = useCallback(async (refresh = false) => {
     try {
@@ -1859,7 +1872,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                     {!showErr('fecha_fin') && form.fecha_inicio && !form.en_curso && (
                       <div className="prj-field-hint">
-                        Debe ser igual o posterior al {form.fecha_inicio}.
+                        Debe ser igual o posterior al {minFechaFin}.
                       </div>
                     )}
 

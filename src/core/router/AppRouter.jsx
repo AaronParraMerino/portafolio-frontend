@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../../shared/components/layout/MainLayout';
 import HomePage from '../../features/public/home/pages/HomePage';
 import PortfolioSearchPage from '../../features/public/portfolio-search/pages/PortfolioSearchPage';
+import DevelopersPage from '../../features/public/developers/pages/DevelopersPage';
 import LoginPage from '../../features/auth/pages/LoginPage';
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
@@ -23,6 +24,7 @@ import EnlacePage from '../../features/dashboard/Links/pages/EnlacePage';
 import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 import ViewPage from '../../features/dashboard/view/pages/ViewPage';
+import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -33,6 +35,8 @@ export default function AppRouter({ isBackendAvailable = true }) {
         <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
           <Route index element={<HomePage />} />
           <Route path="portafolios" element={<PortfolioSearchPage />} />
+          <Route path="desarrolladores" element={<DevelopersPage />} />
+          <Route path="portafolio/:userId" element={<PortfolioPage />} />
           <Route path="dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
@@ -64,4 +68,3 @@ export default function AppRouter({ isBackendAvailable = true }) {
     </BrowserRouter>
   );
 }
-

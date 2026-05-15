@@ -5,9 +5,9 @@ export default function ViewPreviewNotice({
   dataSource = 'backend',
   error = null,
 }) {
-  const isMock = dataSource === 'mock';
   const isPartial = dataSource === 'partial';
   const isCache = dataSource === 'cache';
+  const isError = dataSource === 'error';
 
   if (!loading && dataSource === 'backend') return null;
   if (!loading && isCache && !error) return null;
@@ -16,15 +16,15 @@ export default function ViewPreviewNotice({
     ? isCache
       ? 'Mostrando datos en cache mientras se actualiza el perfil.'
       : 'Cargando datos reales del portafolio...'
-    : isMock
-      ? 'No se pudo conectar con backend. Se muestran datos mock para mantener la vista editable.'
-      : isCache
-        ? 'No se pudo actualizar desde backend. Se mantiene la información en cache.'
-        : 'Algunas secciones usan datos locales porque no respondieron todos los endpoints.';
+    : isCache
+      ? 'No se pudo actualizar desde backend. Se mantiene la informacion en cache.'
+      : isError
+        ? 'No se pudo cargar la vista del portafolio desde backend.'
+        : 'Algunas secciones no respondieron y se muestran solo los datos disponibles.';
 
   return (
     <div
-      className={`preview-notice ${loading ? 'loading' : ''} ${isMock ? 'mock' : ''} ${isPartial ? 'partial' : ''} ${isCache ? 'cache' : ''}`}
+      className={`preview-notice ${loading ? 'loading' : ''} ${isError ? 'error' : ''} ${isPartial ? 'partial' : ''} ${isCache ? 'cache' : ''}`}
       role="status"
       aria-live="polite"
     >
@@ -46,7 +46,7 @@ export default function ViewPreviewNotice({
 
       <span className="preview-notice-text">
         <strong>
-          {loading ? 'Sincronizando:' : 'Vista previa:'}
+          {loading ? 'Sincronizando:' : isError ? 'Error:' : 'Vista previa:'}
         </strong>{' '}
         {message}
 

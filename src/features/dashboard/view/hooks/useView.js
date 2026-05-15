@@ -1,11 +1,13 @@
 // src/features/dashboard/view/hooks/useView.js
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_CONFIG, DEFAULT_VISIBILITY, MOCK_VIEW } from '../model/viewModel';
+import { DEFAULT_CONFIG, DEFAULT_VISIBILITY, EMPTY_VIEW } from '../model/viewModel';
 import {
   clearStoredConfig,
   getPortfolioViewData,
   loadCachedPortfolioViewData,
+  mapConfigFromBackend,
+  mapConfigToBackend,
   normalizeConfig as normalizeServiceConfig,
   publicarPortafolio,
   saveConfig,
@@ -45,7 +47,7 @@ function normalizeConfig(config = {}) {
   });
 }
 
-function normalizeViewData(patch = {}, previous = clone(MOCK_VIEW)) {
+function normalizeViewData(patch = {}, previous = clone(EMPTY_VIEW)) {
   const has = (key) => Object.prototype.hasOwnProperty.call(patch, key);
   const next = {
     ...previous,
@@ -76,14 +78,18 @@ function getInitialViewState() {
       };
     }
   } catch {
-    // Session may not exist yet; fall back to mock until auth/backend responds.
+    // Session may not exist yet; keep an empty state until auth/backend responds.
   }
 
   return {
-    data: normalizeViewData(clone(MOCK_VIEW)),
-    dataSource: 'mock',
+    data: normalizeViewData(clone(EMPTY_VIEW)),
+    dataSource: 'empty',
     hasCache: false,
   };
+}
+
+function getResponseData(response) {
+  return response?.data ?? response;
 }
 
 export function useView() {
@@ -104,14 +110,8 @@ export function useView() {
     }, 2800);
   }, []);
 
-  const persistConfig = useCallback((config) => {
-    saveConfig(config).catch((err) => {
-      showToast(err.message || 'No se pudo guardar la configuracion local.', 'error');
-    });
-  }, [showToast]);
-
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setLoading(!initialState.hasCache);
     setError(null);
 
     try {
@@ -124,13 +124,12 @@ export function useView() {
         showToast('Algunas secciones no se pudieron cargar desde backend.', 'info');
       }
     } catch (err) {
-      setData((prev) => initialState.hasCache ? prev : normalizeViewData(clone(MOCK_VIEW)));
-      setDataSource(initialState.hasCache ? 'cache' : 'mock');
+      setDataSource(initialState.hasCache ? 'cache' : 'error');
       setError(err.message || 'No se pudo conectar con el backend.');
       showToast(
         initialState.hasCache
           ? 'Backend no disponible: mostrando datos en cache.'
-          : 'Backend no disponible: mostrando datos mock.',
+          : 'Backend no disponible: no se pudieron cargar los datos del portafolio.',
         'info'
       );
     } finally {
@@ -153,14 +152,12 @@ export function useView() {
           : currentConfig.visibilidad,
       });
 
-      persistConfig(nextConfig);
-
       return {
         ...prev,
         config: nextConfig,
       };
     });
-  }, [persistConfig]);
+  }, []);
 
   const updatePerfil = useCallback((patch) => {
     setData((prev) => ({
@@ -176,17 +173,15 @@ export function useView() {
     setData((prev) => {
       const next = normalizeViewData(patch, prev);
 
-      persistConfig(next.config);
-
       return next;
     });
-  }, [persistConfig]);
+  }, []);
 
   const resetConfig = useCallback(() => {
     try {
       clearStoredConfig();
     } catch {
-      // Mock mode can run without a persisted session.
+      // The session can be unavailable before auth finishes hydrating.
     }
 
     setData((prev) => {
@@ -204,6 +199,31 @@ export function useView() {
     showToast('Configuracion visual restaurada', 'info');
   }, [showToast]);
 
+  const saveCurrentConfig = useCallback(async (config) => {
+    setGuardando(true);
+
+    try {
+      const payload = mapConfigToBackend(normalizeConfig(config));
+      const response = await saveConfig(payload);
+      const savedConfig = mapConfigFromBackend(getResponseData(response));
+
+      setData((prev) => ({
+        ...prev,
+        config: normalizeConfig({
+          ...prev.config,
+          ...savedConfig,
+        }),
+      }));
+
+      showToast('Personalizacion guardada correctamente', 'ok');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar la personalizacion.', 'error');
+      throw err;
+    } finally {
+      setGuardando(false);
+    }
+  }, [showToast]);
+
   const publicar = useCallback(async () => {
     setGuardando(true);
 
@@ -215,8 +235,6 @@ export function useView() {
           ...prev.config,
           publicado: true,
         });
-
-        persistConfig(nextConfig);
 
         return {
           ...prev,
@@ -230,7 +248,7 @@ export function useView() {
     } finally {
       setGuardando(false);
     }
-  }, [persistConfig, showToast]);
+  }, [showToast]);
 
   return useMemo(() => ({
     perfil: data.perfil,
@@ -250,6 +268,7 @@ export function useView() {
     updatePerfil,
     updateData,
     resetConfig,
+    saveCurrentConfig,
     publicar,
   }), [
     data,
@@ -263,6 +282,7 @@ export function useView() {
     updatePerfil,
     updateData,
     resetConfig,
+    saveCurrentConfig,
     publicar,
   ]);
 }

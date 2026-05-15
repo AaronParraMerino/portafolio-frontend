@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { clearAuthStorage } from '../../../shared/utils/authStorage';
+import { useDashboardSummary } from '../hooks/useDashboardSummary';
 
 const NAV_SECTIONS = [
   {
@@ -29,7 +30,6 @@ const NAV_SECTIONS = [
         id: 'projects',
         label: 'Mis Proyectos',
         to: '/dashboard/projects',
-        badge: '4',
         badgeVariant: 'blue',
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V2M10 3V2M2 6.5h11" /></svg>),
       },
@@ -37,7 +37,6 @@ const NAV_SECTIONS = [
         id: 'skills',
         label: 'Habilidades',
         to: '/dashboard/skills',
-        badge: '8',
         badgeVariant: 'gray',
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4l-1.1-1.1a1 1 0 00-1.4 0L9 2.5 12.5 6l1-1z" /></svg>),
       },
@@ -45,7 +44,6 @@ const NAV_SECTIONS = [
         id: 'experience',
         label: 'Experiencia',
         to: '/dashboard/experience',
-        badge: '3',
         badgeVariant: 'amber',
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V1.5M10 3V1.5M2 6.5h11" /></svg>),
       },
@@ -53,7 +51,6 @@ const NAV_SECTIONS = [
         id: 'networks',
         label: 'Redes Profesionales',
         to: '/dashboard/enlaces',
-        badge: '3',
         badgeVariant: 'blue',
         icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="3" r="1.5" /><circle cx="2.5" cy="12" r="1.5" /><circle cx="12.5" cy="12" r="1.5" /><path d="M7.5 4.5v3M7.5 7.5L2.5 10.5M7.5 7.5l5 3" /></svg>),
       },
@@ -117,6 +114,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
   const activeId = getActiveId(location.pathname);
+  const summary = useDashboardSummary(location.pathname);
   const BASE_URL = process.env.REACT_APP_API_URL;
 
   const [logoutModal, setLogoutModal] = useState(false);
@@ -161,45 +159,62 @@ export default function Sidebar({ collapsed, onToggle }) {
     setMobileOpen(false);
   };
 
+  const getItemBadge = (id) => {
+    if (summary.loading && !summary.error) return '...';
+
+    const counts = summary.counts || {};
+
+    if (id === 'projects') return String(counts.projects ?? 0);
+    if (id === 'skills') return String(counts.skills ?? 0);
+    if (id === 'experience') return String(counts.experiences ?? 0);
+    if (id === 'networks') return String(counts.links ?? 0);
+
+    return null;
+  };
+
   const NavContent = ({ inDrawer = false }) => (
     <>
       {NAV_SECTIONS.map((section, si) => (
         <div className="dsh-nav-section" key={section.label} style={{ paddingTop: si === 0 ? 18 : undefined }}>
           <div className="dsh-nav-section-label">{section.label}</div>
 
-          {section.items.map((item) => (
-            <button
-              key={item.id}
-              className={['dsh-nav-item', activeId === item.id ? 'active' : '', item.danger ? 'danger' : ''].filter(Boolean).join(' ')}
-              data-tip={item.label}
-              onClick={() => {
-                if (item.id === 'logout') {
-                  handleLogoutClick();
-                } else {
-                  inDrawer ? handleNavClick(item.to) : navigate(item.to);
-                }
-              }}
-            >
-              <svg className="dsh-nav-icon" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-                {item.icon.props.children}
-              </svg>
-              <span className="dsh-nav-text">{item.label}</span>
-              {item.badge && (
-                <span className="dsh-nav-badge" style={BADGE_STYLES[item.badgeVariant]}>{item.badge}</span>
-              )}
-              {item.tag && <span className="dsh-nav-vtag">{item.tag}</span>}
-            </button>
-          ))}
+          {section.items.map((item) => {
+            const badge = getItemBadge(item.id);
+
+            return (
+              <button
+                key={item.id}
+                className={['dsh-nav-item', activeId === item.id ? 'active' : '', item.danger ? 'danger' : ''].filter(Boolean).join(' ')}
+                data-tip={item.label}
+                onClick={() => {
+                  if (item.id === 'logout') {
+                    handleLogoutClick();
+                  } else {
+                    inDrawer ? handleNavClick(item.to) : navigate(item.to);
+                  }
+                }}
+              >
+                <svg className="dsh-nav-icon" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  {item.icon.props.children}
+                </svg>
+                <span className="dsh-nav-text">{item.label}</span>
+                {badge !== null && (
+                  <span className="dsh-nav-badge" style={BADGE_STYLES[item.badgeVariant]}>{badge}</span>
+                )}
+                {item.tag && <span className="dsh-nav-vtag">{item.tag}</span>}
+              </button>
+            );
+          })}
         </div>
       ))}
 
       <div className="dsh-sidebar-footer">
         <div className="dsh-progress-label">
-          <span>Completitud del perfil</span>
-          <strong>72%</strong>
+          <span>Completitud del portafolio</span>
+          <strong>{summary.progress}%</strong>
         </div>
         <div className="dsh-progress-bar">
-          <div className="dsh-progress-fill" />
+          <div className="dsh-progress-fill" style={{ width: `${summary.progress}%` }} />
         </div>
       </div>
     </>

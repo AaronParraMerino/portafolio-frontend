@@ -16,8 +16,8 @@ export default function ProfilePage() {
       <>
         <Header eyebrow="GENERAL" title="Mi Perfil" />
         <div className="prf-page">
-          <div className="prf-loading">
-            <span className="prf-spinner" />
+          <div className="dash-loading">
+            <span className="dash-loading-spinner" />
             <span>Cargando perfil...</span>
           </div>
         </div>
