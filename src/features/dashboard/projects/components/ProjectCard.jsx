@@ -579,6 +579,8 @@ export default function ProjectCard({
             type="button"
             className="prj-cover-expand-btn"
             onClick={toggleMedia}
+            aria-pressed={mediaExpandida}
+            aria-label={mediaExpandida ? 'Reducir galeria del proyecto' : 'Ampliar galeria del proyecto'}
             title={mediaExpandida ? 'Reducir galería' : 'Ampliar galería'}
           >
             {mediaExpandida ? 'Reducir galería' : 'Ampliar galería'}

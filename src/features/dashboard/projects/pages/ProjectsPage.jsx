@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FiPlus } from 'react-icons/fi';
 import '../styles/projects.css';
 import { useProjects } from '../hooks/useProjects';
@@ -51,6 +51,17 @@ function isEstadoEnDesarrollo(estado) {
    Toda la lógica de datos vive en useProjects.
    Toda la lógica de presentación vive en sus componentes.
 ════════════════════════════════════════ */
+function ProjectsBackgroundActivity({ active, label }) {
+  if (!active) return null;
+
+  return (
+    <div className="prj-bg-activity" role="status" aria-live="polite">
+      <span className="prj-bg-activity-spinner" />
+      <span>{label}</span>
+    </div>
+  );
+}
+
 export default function ProjectsPage() {
   const {
     proyectos, loading, guardando, toast,
@@ -68,6 +79,7 @@ export default function ProjectsPage() {
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
   const [reposIniciales, setReposIniciales] = useState(null);
+  const [cargaInicialTerminada, setCargaInicialTerminada] = useState(false);
 
   const headerActions = [
     {
@@ -79,22 +91,30 @@ export default function ProjectsPage() {
     },
   ];
 
+  useEffect(() => {
+    if (!loading) {
+      setCargaInicialTerminada(true);
+    }
+  }, [loading]);
+
   // ── Callbacks ──
-  const handleGuardar = async (
+  const handleGuardar = (
     datos,
     imagenesNuevas = [],
     imagenesAEliminar = [],
     documentosNuevos = [],
     documentosAEliminar = []
   ) => {
-    if (editando === 'nuevo') {
-      await crearNuevo(datos, imagenesNuevas, imagenesAEliminar, documentosNuevos, documentosAEliminar);
-    } else {
-      await editarExistente(editando.id, datos, imagenesNuevas, imagenesAEliminar, documentosNuevos, documentosAEliminar);
-    }
+    const editandoActual = editando;
+    const tarea = editandoActual === 'nuevo'
+      ? crearNuevo(datos, imagenesNuevas, imagenesAEliminar, documentosNuevos, documentosAEliminar)
+      : editarExistente(editandoActual.id || editandoActual.id_proyecto, datos, imagenesNuevas, imagenesAEliminar, documentosNuevos, documentosAEliminar);
 
     setEditando(null);
     setReposIniciales(null);
+
+    tarea.catch(() => {});
+    return tarea;
   };
 
   const handleAgregarNuevo = () => {
@@ -113,15 +133,18 @@ export default function ProjectsPage() {
   };
 
   const handleCancelarEdicion = () => {
-    if (guardando) return;
     setEditando(null);
     setReposIniciales(null);
   };
 
-  const handleGuardarConfiguracion = async (configuracion) => {
+  const handleGuardarConfiguracion = (configuracion) => {
     if (!configurando) return;
-    await actualizarConfiguracion(configurando.id, configuracion);
+
+    const tarea = actualizarConfiguracion(configurando.id, configuracion);
     setConfigurando(null);
+
+    tarea.catch(() => {});
+    return tarea;
   };
 
   const handleAbrirEstadoProyecto = (proyecto) => {
@@ -130,22 +153,23 @@ export default function ProjectsPage() {
   };
 
   const handleCerrarEstadoProyecto = () => {
-    if (guardando) return;
     setEstadoProyecto(null);
     setEstadoSeleccionado('borrador');
   };
 
-  const handleGuardarEstadoProyecto = async () => {
+  const handleGuardarEstadoProyecto = () => {
     if (!estadoProyecto) return;
 
     const estadoActual = estadoProyecto.estado || 'borrador';
     const nuevoEstado = estadoSeleccionado || estadoActual;
 
     if (nuevoEstado !== estadoActual) {
-      await editarExistente(
+      const tarea = editarExistente(
         estadoProyecto.id || estadoProyecto.id_proyecto,
         { ...estadoProyecto, estado: nuevoEstado }
       );
+
+      tarea.catch(() => {});
     }
 
     setEstadoProyecto(null);
@@ -190,9 +214,15 @@ export default function ProjectsPage() {
 
   const estadoActualProyecto = estadoProyecto?.estado || 'borrador';
   const hayCambioEstado = estadoSeleccionado !== estadoActualProyecto;
+  const loadingInicial = loading && !cargaInicialTerminada && proyectos.length === 0;
+  const activityLabel = guardando
+    ? 'Guardando cambios...'
+    : loading
+      ? 'Actualizando proyectos...'
+      : '';
 
   // ── Loading ──
-  if (loading) {
+  if (loadingInicial) {
     return (
       <div className="prj-page">
         <Header title="Mis Proyectos" actions={headerActions} />
@@ -308,7 +338,6 @@ export default function ProjectsPage() {
         cancelLabel="Cancelar"
         variant="blue"
         icon="info"
-        loading={guardando}
         onConfirm={handleGuardarEstadoProyecto}
         onClose={handleCerrarEstadoProyecto}
       />
@@ -336,6 +365,7 @@ export default function ProjectsPage() {
       />
 
       <ProjectsToast toast={toast} />
+      <ProjectsBackgroundActivity active={!!activityLabel} label={activityLabel} />
 
     </div>
   );
