@@ -8,7 +8,7 @@ import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import Header from '../../layout/Header';
 
 import { useView } from '../hooks/useView';
-import { getFullName, FONTS, getAutoTextColor } from '../model/viewModel';
+import { getFullName, FONTS, getAutoTextColor, getLuminance } from '../model/viewModel';
 
 import ViewOsFrame from '../components/ViewOsFrame';
 import ViewHero from '../components/ViewHero';
@@ -80,6 +80,12 @@ export default function ViewPage() {
   const resolvedTextColor = config?.textColorAuto
     ? getAutoTextColor(config?.cardBg || '#ffffff')
     : (config?.textColor || '#111827');
+  const isDarkCard = getLuminance(config?.cardBg || '#ffffff') <= 0.45;
+  const isLightText = getLuminance(resolvedTextColor) > 0.45;
+  const mutedTextColor = isLightText ? '#d1d5db' : '#6b7280';
+  const softSurfaceBg = isDarkCard ? 'rgba(255,255,255,.08)' : '#f8fafc';
+  const softSurfaceHoverBg = isDarkCard ? 'rgba(255,255,255,.12)' : '#e8f4fb';
+  const softBorderColor = isDarkCard ? 'rgba(255,255,255,.16)' : '#e5e7eb';
 
   const hasPortfolioContent = Boolean(perfil)
     || redes.length > 0
@@ -134,6 +140,11 @@ export default function ViewPage() {
         '--card-bg': config?.cardBg || '#ffffff',
         '--pf-font': selectedFont.value,
         '--text-color': resolvedTextColor,
+        '--muted-text-color': mutedTextColor,
+        '--soft-surface-bg': softSurfaceBg,
+        '--soft-surface-hover-bg': softSurfaceHoverBg,
+        '--soft-border-color': softBorderColor,
+        '--github-link-color': isDarkCard ? '#f9fafb' : '#24292f',
       }}
     >
       <Header
@@ -177,7 +188,7 @@ export default function ViewPage() {
         />
 
         <div ref={portfolioRef} className="portfolio-export-target">
-          <ViewOsFrame frameId={config?.frameId || 'mac'} title={title}>
+          <ViewOsFrame frameId={config?.frameId || 'none'} title={title}>
             <ViewHero perfil={perfil} config={config} />
 
             <ViewIdentity

@@ -36,6 +36,10 @@ function mergeVisibility(current = {}) {
     proyectos: {
       ...(current.proyectos || {}),
     },
+    proyecto_detalles: {
+      ...DEFAULT_VISIBILITY.proyecto_detalles,
+      ...(current.proyecto_detalles || {}),
+    },
   };
 }
 

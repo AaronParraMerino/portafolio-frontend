@@ -24,6 +24,7 @@ export const ACCENT_COLORS = [
 
 export const CARD_COLORS = [
   '#ffffff',
+  '#000000',
   '#f0ede8',
   '#e8f4fb',
   '#fdf0f0',
@@ -38,11 +39,22 @@ export const CARD_COLORS = [
 ];
 
 export const PATTERNS = [
+  { id: 'none', label: 'Sin patron' },
   { id: 'dots', label: 'Puntos' },
   { id: 'grid', label: 'Cuadrícula' },
   { id: 'hex', label: 'Hexágonos' },
   { id: 'none', label: 'Sin patrón' },
-];
+  { id: 'waves', label: 'Ondas' },
+].filter((pattern, index, list) => (
+  list.findIndex(item => item.id === pattern.id) === index
+)).map(pattern => ({
+  ...pattern,
+  label: {
+    grid: 'Cuadricula',
+    hex: 'Hexagonos',
+    none: 'Sin patron',
+  }[pattern.id] || pattern.label,
+}));
 
 export const FONTS = [
   {
@@ -72,12 +84,14 @@ export const FONTS = [
 ];
 
 export const FRAMES = [
+  { id: 'none', label: 'Sin borde' },
   { id: 'thick', label: 'Grueso' },
   { id: 'mac', label: 'Mac OS' },
   { id: 'linux', label: 'Linux' },
   { id: 'windows', label: 'Windows' },
-  { id: 'none', label: 'Sin borde' },
-];
+].filter((frame, index, list) => (
+  list.findIndex(item => item.id === frame.id) === index
+));
 export const DEFAULT_VISIBILITY = {
   perfil: {
     nombre: true,
@@ -119,7 +133,7 @@ export const DEFAULT_VISIBILITY = {
 export const DEFAULT_CONFIG = {
   heroColor: '#0c1a2e',
   heroBgSource: 'custom',
-  heroPattern: 'dots',
+  heroPattern: 'none',
 
   avatarBgSource: 'custom',
   avatarColor: '#0077b7',
@@ -131,7 +145,7 @@ export const DEFAULT_CONFIG = {
   textColor: '#111827',
 
   fontId: 'inter',
-  frameId: 'mac',
+  frameId: 'none',
 
   disponible: true,
 

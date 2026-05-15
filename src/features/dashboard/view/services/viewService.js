@@ -227,6 +227,22 @@ function inferSocialType(nombre = '', link = '') {
   if (raw.includes('linkedin')) return 'linkedin';
   if (raw.includes('github')) return 'github';
   if (raw.includes('twitter') || raw.includes('x.com')) return 'twitter';
+  if (raw.includes('youtube') || raw.includes('youtu.be')) return 'youtube';
+  if (raw.includes('instagram')) return 'instagram';
+  if (raw.includes('facebook') || raw.includes('fb.com')) return 'facebook';
+  if (raw.includes('behance')) return 'behance';
+  if (raw.includes('dribbble')) return 'dribbble';
+  if (raw.includes('stackoverflow')) return 'stackoverflow';
+  if (raw.includes('discord')) return 'discord';
+  if (raw.includes('telegram') || raw.includes('t.me')) return 'telegram';
+  if (raw.includes('whatsapp') || raw.includes('wa.me')) return 'whatsapp';
+  if (raw.includes('tiktok')) return 'tiktok';
+  if (raw.includes('medium')) return 'medium';
+  if (raw.includes('dev.to') || raw.includes('devto')) return 'devto';
+  if (raw.includes('reddit')) return 'reddit';
+  if (raw.includes('pinterest')) return 'pinterest';
+  if (raw.includes('twitch')) return 'twitch';
+  if (raw.includes('spotify')) return 'spotify';
 
   return 'web';
 }
@@ -361,10 +377,19 @@ export function mapConfigToBackend(config = {}) {
 }
 
 export function normalizeConfig(config = {}) {
-  return {
+  const normalized = {
     ...DEFAULT_CONFIG,
     ...config,
     visibilidad: mergeVisibility(config.visibilidad),
+  };
+
+  return {
+    ...normalized,
+    textColorAuto: toBool(normalized.textColorAuto, DEFAULT_CONFIG.textColorAuto),
+    disponible: toBool(normalized.disponible, DEFAULT_CONFIG.disponible),
+    ...(normalized.publicado !== undefined
+      ? { publicado: toBool(normalized.publicado, false) }
+      : {}),
   };
 }
 
@@ -436,7 +461,7 @@ export function mapRedesFromBackend(lista = [], options = {}) {
     .filter((item) => includeHidden || toBool(item.es_visible ?? item.visible, true))
     .map((item) => {
       const href = ensureUrl(item.link ?? item.url);
-      const tipo = item.tipo || item.plataformaKey || inferSocialType(item.nombre, href);
+      const tipo = inferSocialType(`${item.tipo || ''} ${item.plataformaKey || ''} ${item.nombre || ''}`, href);
       const visible = toBool(item.es_visible ?? item.visible, true);
 
       return {
@@ -783,6 +808,9 @@ function buildRuntimeVisibility({ perfilRaw, redes, stats, habilidades, experien
     stats: {
       ...tableVisibility.stats,
       ...(storedVisibility?.stats || {}),
+    },
+    proyecto_detalles: {
+      ...(storedVisibility?.proyecto_detalles || {}),
     },
   });
 }
