@@ -336,6 +336,7 @@ function buildAllVisibleVisibility(visibilityItems = {}) {
     habilidades: idsToVisible(visibilityItems.habilidades),
     experiencias: idsToVisible(visibilityItems.experiencias),
     proyectos: idsToVisible(visibilityItems.proyectos),
+    proyecto_detalles: idsToVisible(visibilityItems.proyecto_detalles),
   };
 }
 
@@ -450,6 +451,22 @@ export default function ViewConfigModal({
         label: proyecto.titulo,
         sub: `${proyecto.tipo} · ${proyecto.anio}`,
       })),
+
+      proyecto_detalles: [
+        { id: 'media', label: 'Imagenes y videos destacados', sub: 'Carrusel superior de cada proyecto' },
+        { id: 'estado', label: 'Estado del proyecto', sub: 'Publicado, borrador, archivado o desarrollo' },
+        { id: 'tipo', label: 'Tipo o categoria', sub: 'Web, API, educativo, e-commerce, etc.' },
+        { id: 'descripcion', label: 'Descripcion principal', sub: 'Resumen publico del proyecto' },
+        { id: 'tecnologias', label: 'Tecnologias', sub: 'Stack y herramientas usadas' },
+        { id: 'repositorios', label: 'Repositorios', sub: 'Links y datos tecnicos' },
+        { id: 'demo', label: 'Demo o sitio web', sub: 'Enlace publico del producto' },
+        { id: 'videos', label: 'Videos', sub: 'Enlaces o evidencias de video' },
+        { id: 'documentos', label: 'Documentos', sub: 'PDF, documentacion o presentaciones' },
+        { id: 'fechas', label: 'Fechas', sub: 'Anio y periodo del proyecto' },
+        { id: 'rol', label: 'Rol propio', sub: 'Participacion dentro del proyecto' },
+        { id: 'aporte', label: 'Aporte realizado', sub: 'Descripcion de tu contribucion' },
+        { id: 'participantes', label: 'Cantidad de participantes', sub: 'Colaboradores visibles del proyecto' },
+      ],
     };
   }, [data]);
 
@@ -944,6 +961,22 @@ export default function ViewConfigModal({
                       <svg viewBox="0 0 14 14">
                         <rect x="2" y="2" width="10" height="10" rx="2" />
                         <path d="M4 5h6M4 8h4" />
+                      </svg>
+                    )}
+                  />
+
+                  <VisibilityGroup
+                    title="Detalles de proyectos"
+                    group="proyecto_detalles"
+                    items={visibilityItems.proyecto_detalles}
+                    config={safeConfig}
+                    onToggle={handleToggleVisibility}
+                    onToggleMany={handleToggleManyVisibility}
+                    defaultOpen
+                    icon={(
+                      <svg viewBox="0 0 14 14">
+                        <rect x="2" y="2" width="10" height="10" rx="2" />
+                        <path d="M5 5h4M5 7h4M5 9h2" />
                       </svg>
                     )}
                   />

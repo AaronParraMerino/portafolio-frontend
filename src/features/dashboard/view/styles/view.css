@@ -2293,12 +2293,46 @@
   line-height: 1.3;
 }
 
+.proj-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.proj-meta span {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--gris-texto);
+  background: var(--fondo);
+  border: 1px solid var(--gris-borde);
+  border-radius: 20px;
+  padding: 2px 7px;
+}
+
 .proj-desc {
   font-size: 11.5px;
   color: var(--gris-texto);
   line-height: 1.65;
   flex: 1;
   margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.proj-contribution {
+  font-size: 11px;
+  color: var(--gris-oscuro);
+  line-height: 1.55;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, #fff);
+  border-radius: 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -2412,6 +2446,17 @@
 
 .proj-link-demo:hover {
   background: color-mix(in srgb, var(--accent) 8%, #fff);
+}
+
+.proj-link-doc {
+  color: #6d28d9;
+  border-color: rgba(109,40,217,.22);
+}
+
+.proj-link-doc:hover {
+  border-color: #6d28d9;
+  background: #f5f3ff;
+  color: #5b21b6;
 }
 
 /* Responsive Etapas 2-4 */

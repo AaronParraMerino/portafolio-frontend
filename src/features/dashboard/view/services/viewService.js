@@ -6,6 +6,7 @@ import { normalizeProyectoFromApi } from '../../projects/services/projectsServic
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const CONFIG_STORAGE_PREFIX = 'portfolio-view-config';
 const DATA_CACHE_PREFIX = 'portfolio-view-data:v2';
+const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v1';
 
 const CATEGORY_LABELS = {
   sin_especificar: 'Proyecto',
@@ -113,6 +114,17 @@ function saveCachedPortfolioViewData(userId, data) {
     }));
   } catch {
     // Cache is an optimization; failing to write it should not block the view.
+  }
+}
+
+function clearPortfolioCaches(userId) {
+  if (!userId) return;
+
+  try {
+    sessionStorage.removeItem(dataCacheKey(userId));
+    sessionStorage.removeItem(`${PUBLIC_CACHE_PREFIX}:${userId}`);
+  } catch {
+    // Cache cleanup should never block publishing changes.
   }
 }
 
@@ -267,12 +279,17 @@ function mergeVisibility(...sources) {
       ...acc.proyectos,
       ...(current.proyectos || {}),
     },
+    proyecto_detalles: {
+      ...acc.proyecto_detalles,
+      ...(current.proyecto_detalles || {}),
+    },
   }), {
     perfil: { ...DEFAULT_VISIBILITY.perfil },
     stats: { ...DEFAULT_VISIBILITY.stats },
     habilidades: {},
     experiencias: {},
     proyectos: {},
+    proyecto_detalles: { ...DEFAULT_VISIBILITY.proyecto_detalles },
   });
 }
 
@@ -597,9 +614,52 @@ function getProjectVideos(project = {}) {
 function getProjectRepos(project = {}) {
   return uniqueNonEmpty([
     ...(Array.isArray(project.url_repositorios) ? project.url_repositorios : []),
+    ...(Array.isArray(project.repositorios_detalle)
+      ? project.repositorios_detalle.map(repo => repo?.url_repositorio)
+      : []),
     project.url_repositorio,
     project.githubUrl,
   ]);
+}
+
+function buildProjectFileUrl(value = '') {
+  const raw = String(value || '').trim();
+
+  if (!raw) return '';
+  if (/^(https?:\/\/|mailto:|tel:|blob:|data:)/i.test(raw)) return raw;
+
+  return buildImageUrl(raw);
+}
+
+function getProjectDocuments(project = {}) {
+  const evidencias = Array.isArray(project.evidencias) ? project.evidencias : [];
+  const documentos = Array.isArray(project.documentos) ? project.documentos : [];
+
+  return [
+    ...documentos,
+    ...evidencias.filter((item) => {
+      const tipo = String(item?.tipo || '').toLowerCase();
+      return ['pdf', 'documento', 'documentacion', 'presentacion'].includes(tipo)
+        && toBool(item?.es_visible, true);
+    }),
+  ]
+    .map((item) => {
+      if (typeof item === 'string') {
+        const url = ensureUrl(item);
+        return url ? { nombre: displayUrl(url), url } : null;
+      }
+
+      const url = buildProjectFileUrl(item?.url || item?.archivo_url || item?.archivo_path || '');
+
+      if (!url) return null;
+
+      return {
+        ...item,
+        nombre: item?.nombre || item?.titulo || displayUrl(url),
+        url,
+      };
+    })
+    .filter(Boolean);
 }
 
 function isPortfolioProjectVisible(project = {}) {
@@ -619,6 +679,7 @@ export function mapProyectosFromBackend(lista = [], options = {}) {
       const videos = getProjectVideos(project);
       const repositorios = getProjectRepos(project);
       const demoUrl = project.url_demo || findFirstUrl(evidencias, ['demo', 'sitio', 'sitio_web', 'web', 'link']);
+      const documentos = getProjectDocuments(project);
       const estado = getProjectStatus(project);
       const backendId = project.id_proyecto ?? project.id ?? index;
       const tecnologias = Array.isArray(project.etiquetas) && project.etiquetas.length > 0
@@ -644,8 +705,10 @@ export function mapProyectosFromBackend(lista = [], options = {}) {
         repositoriosGithub: repositorios,
         url_repositorios: repositorios,
         url_repositorio: project.url_repositorio || repositorios[0] || '',
+        repositorios_detalle: Array.isArray(project.repositorios_detalle) ? project.repositorios_detalle : [],
         demoUrl,
         url_demo: demoUrl,
+        documentos,
         videoUrl: project.url_video || videos[0] || '',
         url_video: project.url_video || videos[0] || '',
         url_videos: videos,
@@ -835,8 +898,12 @@ export async function getPortfolioViewData() {
 
 export async function publicarPortafolio(publicado = true) {
   const { userId } = getSession();
-  return apiFetch(`/profile/${userId}/portfolio-visibility`, {
+  const response = await apiFetch(`/profile/${userId}/portfolio-visibility`, {
     method: 'PATCH',
     body: JSON.stringify({ portfolio_publico: Boolean(publicado) }),
   });
+
+  clearPortfolioCaches(userId);
+
+  return response;
 }

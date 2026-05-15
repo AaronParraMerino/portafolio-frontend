@@ -131,12 +131,17 @@ function mergeVisibility(...sources) {
       ...acc.proyectos,
       ...(current.proyectos || {}),
     },
+    proyecto_detalles: {
+      ...acc.proyecto_detalles,
+      ...(current.proyecto_detalles || {}),
+    },
   }), {
     perfil: { ...DEFAULT_VISIBILITY.perfil },
     stats: { ...DEFAULT_VISIBILITY.stats },
     habilidades: {},
     experiencias: {},
     proyectos: {},
+    proyecto_detalles: { ...DEFAULT_VISIBILITY.proyecto_detalles },
   });
 }
 

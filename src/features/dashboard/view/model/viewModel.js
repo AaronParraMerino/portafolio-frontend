@@ -99,6 +99,21 @@ export const DEFAULT_VISIBILITY = {
   habilidades: {},
   experiencias: {},
   proyectos: {},
+  proyecto_detalles: {
+    media: true,
+    estado: true,
+    tipo: true,
+    descripcion: true,
+    tecnologias: true,
+    repositorios: true,
+    demo: true,
+    videos: true,
+    documentos: true,
+    fechas: true,
+    rol: true,
+    aporte: true,
+    participantes: true,
+  },
 };
 
 export const DEFAULT_CONFIG = {
