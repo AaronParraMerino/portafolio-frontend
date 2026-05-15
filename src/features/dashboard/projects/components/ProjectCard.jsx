@@ -218,6 +218,46 @@ function getDesarrolladoLabel(proyecto = {}) {
   );
 }
 
+function formatParticipationRole(value = '') {
+  const clean = String(value || '').trim().replace(/_/g, ' ').replace(/\s+/g, ' ');
+
+  if (!clean) return '';
+
+  return clean === clean.toLowerCase()
+    ? clean.replace(/\b\w/g, letter => letter.toUpperCase())
+    : clean;
+}
+
+function getMiParticipacion(proyecto = {}) {
+  const source =
+    proyecto.mi_participacion ||
+    proyecto.participacion_usuario ||
+    proyecto.participacionUsuario ||
+    proyecto.participacion ||
+    {};
+  const rawRol = source.rol || source.role || source.cargo || proyecto.rol || '';
+  const rawRolLabel = source.es_propietario || source.tipo_rol === 'owner'
+    ? source.rol_label || 'Owner'
+    : source.rol_label === 'Colaborador'
+      ? ''
+      : source.rol_label || '';
+  const rol = formatParticipationRole(rawRol || rawRolLabel);
+  const descripcionAporte = String(
+    source.descripcion_aporte ||
+    source.descripcionAporte ||
+    proyecto.descripcion_aporte ||
+    ''
+  ).trim();
+
+  if (!rol && !descripcionAporte) return null;
+
+  return {
+    ...source,
+    rol,
+    descripcion_aporte: descripcionAporte,
+  };
+}
+
 function normalizarTexto(value) {
   return String(value || '').trim().toLowerCase();
 }
@@ -399,6 +439,9 @@ export default function ProjectCard({
   const tipoLabel = getTipoLabel(proyecto);
   const desarrolladoLabel = getDesarrolladoLabel(proyecto);
   const sitioWebUrl = getSitioWebUrl(proyecto);
+  const miParticipacion = getMiParticipacion(proyecto);
+  const miRol = miParticipacion?.rol || '';
+  const miAporte = miParticipacion?.descripcion_aporte || '';
 
   const imagenes = (() => {
     if (Array.isArray(proyecto.imagenes) && proyecto.imagenes.length > 0) {
@@ -433,6 +476,7 @@ export default function ProjectCard({
     proyecto.etiquetas?.length > 0 ||
     tipoLabel ||
     desarrolladoLabel ||
+    miParticipacion ||
     periodoLabel ||
     repositoriosGithub.length > 0 ||
     sitioWebUrl ||
@@ -483,13 +527,22 @@ export default function ProjectCard({
                       />
                     ) : (
                       <div className="prj-carousel-video-wrap">
-                        <iframe
-                          className="prj-carousel-video"
-                          src={item.embedUrl}
-                          title={`${proyecto.titulo || 'Proyecto'} – video ${i + 1}`}
-                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                        />
+                        {i === idx ? (
+                          <iframe
+                            className="prj-carousel-video"
+                            src={item.embedUrl}
+                            title={`${proyecto.titulo || 'Proyecto'} – video ${i + 1}`}
+                            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
+                          />
+                        ) : (
+                          <div className="prj-carousel-video-placeholder" aria-hidden="true">
+                            <IconYouTube />
+                            <span>Video</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -616,6 +669,12 @@ export default function ProjectCard({
             </span>
           )}
 
+          {miRol && (
+            <span className="prj-pill prj-pill-role">
+              Rol: {miRol}
+            </span>
+          )}
+
           {proyecto.badges?.filter(b => b.variant === 'purple').map(b => (
             <span key={b.label} className="prj-pill prj-pill-type">{b.label}</span>
           ))}
@@ -625,6 +684,13 @@ export default function ProjectCard({
 
         {!detallesExpandidos && proyecto.descripcion && (
           <div className="prj-card-desc">{proyecto.descripcion}</div>
+        )}
+
+        {!detallesExpandidos && miAporte && (
+          <div className="prj-card-contribution">
+            <span>Mi aporte</span>
+            <p>{miAporte}</p>
+          </div>
         )}
 
         {!detallesExpandidos && proyecto.etiquetas?.length > 0 && (
@@ -730,6 +796,18 @@ export default function ProjectCard({
             <div className="prj-detail-grid">
               <DetailRow label="Estado">
                 <span className={pillClass}>{statusLabel}</span>
+              </DetailRow>
+
+              <DetailRow label="Mi rol">
+                {miRol}
+              </DetailRow>
+
+              <DetailRow label="Aporte">
+                {miAporte && (
+                  <span className="prj-detail-text">
+                    {miAporte}
+                  </span>
+                )}
               </DetailRow>
 
               <DetailRow label="Tipo">

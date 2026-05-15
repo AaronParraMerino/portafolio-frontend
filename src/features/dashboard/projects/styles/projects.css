@@ -433,6 +433,7 @@
 .prj-pill-draft { color: var(--gris-oscuro); background: var(--fondo); border: 1px solid var(--gris-borde); }
 .prj-pill-arch  { color: var(--azul);  background: var(--azul-light); border: 1px solid var(--azul-mid); }
 .prj-pill-type  { color: var(--gris-oscuro); background: var(--fondo); border: 1px solid var(--gris-borde); }
+.prj-pill-role  { max-width: 100%; color: var(--azul-deep); background: var(--azul-light); border: 1px solid var(--azul-mid); overflow: hidden; text-overflow: ellipsis; }
 
 /* Selector de estado dentro de ConfirmModal compartido */
 .prj-state-modal {
@@ -593,6 +594,37 @@
 }
 
 /* Stack chips — estilo HTML con color de acento */
+.prj-card-contribution {
+  margin: -2px 0 10px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--fondo);
+  border: 1px solid var(--gris-borde);
+}
+
+.prj-card-contribution span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--gris-texto);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.prj-card-contribution p {
+  margin: 0;
+  color: var(--gris-oscuro);
+  font-size: 11.5px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .prj-stack-tags {
   display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;
 }
@@ -1960,6 +1992,32 @@
   background: #000;
 }
 
+.prj-carousel-video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(255,255,255,.9);
+  background:
+    linear-gradient(135deg, rgba(0,0,0,.72), rgba(0,119,183,.5)),
+    #111827;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.prj-carousel-video-placeholder svg {
+  width: 34px;
+  height: 26px;
+  color: #ef4444;
+  filter: drop-shadow(0 5px 12px rgba(0,0,0,.28));
+}
+
 .prj-carousel-video-wrap,
 .prj-carousel-video {
   transform: none !important;
@@ -2174,6 +2232,14 @@
   color: var(--gris-texto);
   font-size: 10.5px;
   font-weight: 500;
+}
+
+.prj-detail-text {
+  display: block;
+  color: var(--gris-oscuro);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
 /* Secciones internas */
