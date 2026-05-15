@@ -12,18 +12,30 @@ function getStatusLabel(p = {}) {
 
   return {
     publicado: 'Publicado',
-    desarrollo: 'En desarrollo',
     borrador: 'Borrador',
     archivado: 'Archivado',
+    sin_especificar: 'Sin especificar',
+    en_desarrollo: 'En desarrollo',
+    pausado: 'Pausado',
+    terminado: 'Terminado',
+    mantenimiento: 'Mantenimiento',
+    versionado: 'Versionado',
+    cancelado: 'Cancelado',
   }[p.estado] || p.estado || 'Borrador';
 }
 
 function getStatusPillClass(estado) {
   return {
     publicado: 'prj-pill prj-pill-pub',
-    desarrollo: 'prj-pill prj-pill-dev',
     borrador: 'prj-pill prj-pill-draft',
     archivado: 'prj-pill prj-pill-arch',
+    sin_especificar: 'prj-pill prj-pill-draft',
+    en_desarrollo: 'prj-pill prj-pill-dev',
+    pausado: 'prj-pill prj-pill-dev',
+    terminado: 'prj-pill prj-pill-draft',
+    mantenimiento: 'prj-pill prj-pill-dev',
+    versionado: 'prj-pill prj-pill-dev',
+    cancelado: 'prj-pill prj-pill-arch',
   }[estado] || 'prj-pill prj-pill-draft';
 }
 

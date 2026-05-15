@@ -777,6 +777,14 @@ function writeProyectoParticipantesCache(id, items = []) {
   } catch {}
 }
 
+function clearProyectoParticipantesCache(id) {
+  if (!id) return;
+
+  try {
+    localStorage.removeItem(participantesCacheKey(id));
+  } catch {}
+}
+
 export async function getProyectoParticipantes(id) {
   if (!id) return [];
 
@@ -821,6 +829,7 @@ function getProjectId(project = {}) {
 
 function getTipoValue(project = {}) {
   if (project.tipo) return project.tipo;
+  if (project.categoria_proyecto) return project.categoria_proyecto;
 
   if (typeof project.tipo_proyecto === 'string') return project.tipo_proyecto;
 
@@ -857,7 +866,7 @@ function getParticipacionUsuario(project = {}) {
 }
 
 function mapEstadoToFront(project = {}) {
-  if (project.estado) return project.estado;
+  if (project.estado) return project.estado === 'desarrollo' ? 'en_desarrollo' : project.estado;
 
   const publicacion = project.estado_publicacion;
   const desarrollo = project.estado_desarrollo;
@@ -865,12 +874,16 @@ function mapEstadoToFront(project = {}) {
   if (publicacion === 'archivado') return 'archivado';
   if (publicacion === 'publicado') return 'publicado';
 
-  if (
-    desarrollo === 'en_desarrollo' ||
-    desarrollo === 'mantenimiento' ||
-    desarrollo === 'versionado'
-  ) {
-    return 'desarrollo';
+  if ([
+    'sin_especificar',
+    'en_desarrollo',
+    'pausado',
+    'terminado',
+    'mantenimiento',
+    'versionado',
+    'cancelado',
+  ].includes(desarrollo)) {
+    return desarrollo;
   }
 
   return 'borrador';
@@ -885,9 +898,21 @@ function mapEstadoToBackend(estado) {
       };
 
     case 'desarrollo':
+    case 'en_desarrollo':
       return {
         estado_publicacion: 'borrador',
         estado_desarrollo: 'en_desarrollo',
+      };
+
+    case 'pausado':
+    case 'terminado':
+    case 'mantenimiento':
+    case 'versionado':
+    case 'cancelado':
+    case 'sin_especificar':
+      return {
+        estado_publicacion: 'borrador',
+        estado_desarrollo: estado,
       };
 
     case 'archivado':
@@ -1122,7 +1147,7 @@ export function normalizeProyectoFromApi(project = {}) {
 
     id_tipo_proyecto: project.id_tipo_proyecto || project.tipo_proyecto?.id_tipo_proyecto || project.tipoProyecto?.id_tipo_proyecto || null,
 
-    desarrollado_para: project.desarrollado_para || '',
+    desarrollado_para: project.desarrollado_para || project.plataforma_objetivo || '',
 
     url_repositorios: repositorios,
     url_repositorio: project.url_repositorio || repositorios[0] || '',
@@ -1160,6 +1185,7 @@ export function normalizeProyectoFromApi(project = {}) {
     puede_eliminar: permisos.puede_eliminar ?? project.puede_eliminar ?? true,
     puede_configurar: permisos.puede_configurar ?? project.puede_configurar ?? false,
     puede_desvincular_participacion: permisos.puede_desvincular_participacion ?? project.puede_desvincular_participacion ?? false,
+    puede_remover_participantes_sin_validacion: permisos.puede_remover_participantes_sin_validacion ?? project.puede_remover_participantes_sin_validacion ?? false,
   };
 }
 
@@ -1324,6 +1350,15 @@ export async function desvincularParticipacionProyecto(id) {
   return apiFetch(`${API_URL}/projects/${id}/participation`, {
     method: 'DELETE',
   });
+}
+
+export async function removerParticipanteSinValidacion(idProyecto, idParticipacion) {
+  const result = await apiFetch(`${API_URL}/projects/${idProyecto}/participants/${idParticipacion}`, {
+    method: 'DELETE',
+  });
+
+  clearProyectoParticipantesCache(idProyecto);
+  return result;
 }
 
 // ═══════════════════════════════════════════

@@ -13,13 +13,34 @@ import { ESTADOS_PROYECTO } from '../model/projectsModel';
 
 const ESTADO_DETALLE = {
   publicado: 'Visible como proyecto publicado.',
-  desarrollo: 'Trabajo activo o en progreso.',
   borrador: 'Guardado sin publicarse todavia.',
   archivado: 'Fuera del listado activo.',
+  sin_especificar: 'Sin estado de desarrollo definido.',
+  en_desarrollo: 'Trabajo activo o en progreso.',
+  pausado: 'Temporalmente detenido.',
+  terminado: 'Desarrollo finalizado.',
+  mantenimiento: 'En soporte o mejoras continuas.',
+  versionado: 'Con versiones o entregas iterativas.',
+  cancelado: 'Proyecto cancelado.',
 };
+
+const ESTADO_SECCIONES = [
+  {
+    label: 'Publicacion',
+    estados: ['borrador', 'publicado', 'archivado'],
+  },
+  {
+    label: 'Desarrollo',
+    estados: ['sin_especificar', 'en_desarrollo', 'pausado', 'terminado', 'mantenimiento', 'versionado', 'cancelado'],
+  },
+];
 
 function getEstadoLabel(value) {
   return ESTADOS_PROYECTO.find((estado) => estado.value === value)?.label || value || 'Borrador';
+}
+
+function isEstadoEnDesarrollo(estado) {
+  return ['en_desarrollo', 'pausado', 'mantenimiento', 'versionado'].includes(estado);
 }
 
 /* ════════════════════════════════════════
@@ -134,7 +155,14 @@ export default function ProjectsPage() {
   // ── Derivados: filtrar + ordenar + contar ──
   const proyectosFiltrados = proyectos
     .filter(p => {
-      if (filtro !== 'todos' && p.estado !== filtro) return false;
+      if (filtro !== 'todos') {
+        if (filtro === 'desarrollo') {
+          if (!isEstadoEnDesarrollo(p.estado)) return false;
+        } else if (p.estado !== filtro) {
+          return false;
+        }
+      }
+
       if (busqueda) {
         const q = busqueda.toLowerCase();
         return (
@@ -155,7 +183,7 @@ export default function ProjectsPage() {
   const conteo = {
     todos:      proyectos.length,
     publicado:  proyectos.filter(p => p.estado === 'publicado').length,
-    desarrollo: proyectos.filter(p => p.estado === 'desarrollo').length,
+    desarrollo: proyectos.filter(p => isEstadoEnDesarrollo(p.estado)).length,
     borrador:   proyectos.filter(p => p.estado === 'borrador').length,
     archivado:  proyectos.filter(p => p.estado === 'archivado').length,
   };
@@ -237,31 +265,42 @@ export default function ProjectsPage() {
             </div>
 
             <div className="prj-state-options" role="radiogroup" aria-label="Estado del proyecto">
-              {ESTADOS_PROYECTO.map((estado) => {
-                const selected = estadoSeleccionado === estado.value;
-                const current = estadoActualProyecto === estado.value;
+              {ESTADO_SECCIONES.map((section) => (
+                <div key={section.label} className="prj-state-section">
+                  <div className="prj-state-section-title">{section.label}</div>
 
-                return (
-                  <button
-                    key={estado.value}
-                    type="button"
-                    className={`prj-state-option ${selected ? 'active' : ''}`}
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setEstadoSeleccionado(estado.value)}
-                    disabled={guardando}
-                  >
-                    <span className={`prj-state-dot ${estado.value}`} />
-                    <span className="prj-state-option-main">
-                      <span className="prj-state-label">{estado.label}</span>
-                      <span className="prj-state-description">
-                        {ESTADO_DETALLE[estado.value]}
-                      </span>
-                    </span>
-                    {current && <span className="prj-state-current-badge">Actual</span>}
-                  </button>
-                );
-              })}
+                  <div className="prj-state-section-options">
+                    {section.estados
+                      .map(value => ESTADOS_PROYECTO.find(estado => estado.value === value))
+                      .filter(Boolean)
+                      .map((estado) => {
+                        const selected = estadoSeleccionado === estado.value;
+                        const current = estadoActualProyecto === estado.value;
+
+                        return (
+                          <button
+                            key={estado.value}
+                            type="button"
+                            className={`prj-state-option ${selected ? 'active' : ''}`}
+                            role="radio"
+                            aria-checked={selected}
+                            onClick={() => setEstadoSeleccionado(estado.value)}
+                            disabled={guardando}
+                          >
+                            <span className={`prj-state-dot ${estado.value}`} />
+                            <span className="prj-state-option-main">
+                              <span className="prj-state-label">{estado.label}</span>
+                              <span className="prj-state-description">
+                                {ESTADO_DETALLE[estado.value]}
+                              </span>
+                            </span>
+                            {current && <span className="prj-state-current-badge">Actual</span>}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import '../styles/projects.css';
+import {
+  getProyectoParticipantes,
+  removerParticipanteSinValidacion,
+} from '../services/projectsService';
 
 const DEFAULT_CONFIG = {
   modo_union: 'github_validado',
@@ -29,14 +33,64 @@ function CheckRow({ name, checked, label, onChange }) {
   );
 }
 
+function getProjectId(project = {}) {
+  return project.id || project.id_proyecto || project.idProyecto || null;
+}
+
+function getInitials(name = '') {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
+}
+
+function isUnvalidatedParticipant(participante = {}) {
+  return participante.tipo_participante === 'usuario_sin_validacion_github'
+    || (participante.id_usuario && !participante.validacion_github);
+}
+
 export default function ProjectsConfigModal({ proyecto, guardando = false, onGuardar, onCancelar }) {
   const [form, setForm] = useState(DEFAULT_CONFIG);
+  const [participantesSinValidacion, setParticipantesSinValidacion] = useState([]);
+  const [loadingParticipantes, setLoadingParticipantes] = useState(false);
+  const [participantesError, setParticipantesError] = useState('');
+  const [removingId, setRemovingId] = useState(null);
 
   useEffect(() => {
     setForm({
       ...DEFAULT_CONFIG,
       ...(proyecto?.configuracion || {}),
     });
+  }, [proyecto]);
+
+  useEffect(() => {
+    const projectId = getProjectId(proyecto);
+
+    if (!projectId) {
+      setParticipantesSinValidacion([]);
+      return undefined;
+    }
+
+    let active = true;
+    setLoadingParticipantes(true);
+    setParticipantesError('');
+
+    getProyectoParticipantes(projectId)
+      .then((items) => {
+        if (!active) return;
+        setParticipantesSinValidacion((items || []).filter(isUnvalidatedParticipant));
+      })
+      .catch((error) => {
+        if (!active) return;
+        setParticipantesError(error.message || 'No se pudieron cargar participantes sin validacion.');
+        setParticipantesSinValidacion([]);
+      })
+      .finally(() => {
+        if (active) setLoadingParticipantes(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [proyecto]);
 
   if (!proyecto) return null;
@@ -48,6 +102,32 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
   const handleSubmit = (e) => {
     e.preventDefault();
     onGuardar?.(form);
+  };
+
+  const puedeRemoverSinValidacion = Boolean(
+    proyecto?.permisos?.puede_remover_participantes_sin_validacion
+    ?? proyecto?.puede_remover_participantes_sin_validacion
+  );
+
+  const handleRemoveParticipant = async (participante) => {
+    const projectId = getProjectId(proyecto);
+    const idParticipacion = participante?.id_participacion || participante?.id;
+    if (!projectId || !idParticipacion) return;
+
+    const nombre = participante.nombre || participante.github_username || 'este participante';
+    const confirmed = window.confirm(`Vas a quitar la participacion sin validacion de ${nombre}.`);
+    if (!confirmed) return;
+
+    try {
+      setParticipantesError('');
+      setRemovingId(idParticipacion);
+      await removerParticipanteSinValidacion(projectId, idParticipacion);
+      setParticipantesSinValidacion(prev => prev.filter(item => String(item.id_participacion || item.id) !== String(idParticipacion)));
+    } catch (error) {
+      setParticipantesError(error.message || 'No se pudo quitar la participacion.');
+    } finally {
+      setRemovingId(null);
+    }
   };
 
   return (
@@ -125,6 +205,18 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                   <option value="github_validado">GitHub validado</option>
                 </select>
               </label>
+
+              <label>
+                <span className="prj-label">Participantes sin validacion</span>
+                <select
+                  className="prj-select"
+                  value={form.visibilidad_usuario_sin_validacion}
+                  onChange={(e) => setValue('visibilidad_usuario_sin_validacion', e.target.value)}
+                >
+                  <option value="visible">Mostrar en participantes</option>
+                  <option value="oculto">Ocultar en participantes</option>
+                </select>
+              </label>
             </div>
           </div>
 
@@ -150,6 +242,56 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                 onChange={setValue}
               />
             </div>
+          </div>
+
+          <div className="prj-form-section">
+            <div className="prj-section-label">Participantes sin validacion</div>
+
+            {participantesError && (
+              <div className="prj-config-error">{participantesError}</div>
+            )}
+
+            {loadingParticipantes ? (
+              <div className="prj-config-muted">Cargando participantes...</div>
+            ) : participantesSinValidacion.length === 0 ? (
+              <div className="prj-config-muted">No hay participantes sin validacion.</div>
+            ) : (
+              <div className="prj-config-participants">
+                {participantesSinValidacion.map((participante) => {
+                  const idParticipacion = participante.id_participacion || participante.id;
+                  const nombre = participante.nombre || participante.github_username || 'Participante';
+
+                  return (
+                    <div key={idParticipacion || nombre} className="prj-config-participant">
+                      <div className="prj-config-participant-avatar">
+                        {participante.avatar_url ? (
+                          <img src={participante.avatar_url} alt="" />
+                        ) : (
+                          <span>{getInitials(nombre)}</span>
+                        )}
+                      </div>
+
+                      <div className="prj-config-participant-main">
+                        <div className="prj-config-participant-name">{nombre}</div>
+                        <div className="prj-config-participant-meta">
+                          {participante.email || participante.github_username || 'Sin validacion GitHub'}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="prj-config-remove-btn"
+                        disabled={!puedeRemoverSinValidacion || removingId === idParticipacion || guardando}
+                        onClick={() => handleRemoveParticipant(participante)}
+                        title={puedeRemoverSinValidacion ? 'Quitar participacion' : 'Activa y guarda la regla para remover participantes sin validacion'}
+                      >
+                        {removingId === idParticipacion ? 'Quitando...' : 'Quitar'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

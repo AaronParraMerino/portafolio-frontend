@@ -978,8 +978,8 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
         : [],
 
     estado: proyecto?.estado || 'borrador',
-    tipo: proyecto?.tipo || '',
-    desarrollado_para: proyecto?.desarrollado_para || '',
+    tipo: proyecto?.tipo || 'sin_especificar',
+    desarrollado_para: proyecto?.desarrollado_para || 'sin_especificar',
 
     fecha_inicio: proyecto?.fecha_inicio || '',
     fecha_fin: proyecto?.fecha_fin || '',
@@ -1557,7 +1557,6 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                   <div className="col-md-6">
                     <label className="prj-label">Tipo de proyecto</label>
                     <select className="prj-select" name="tipo" value={form.tipo} onChange={handleChange}>
-                      <option value="">Sin especificar</option>
                       {TIPOS_PROYECTO.map(t => (
                         <option key={t.value} value={t.value}>
                           {t.label}
@@ -1574,7 +1573,6 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                       value={form.desarrollado_para}
                       onChange={handleChange}
                     >
-                      <option value="">Sin especificar</option>
                       {DESARROLLADO_PARA.map(op => (
                         <option key={op.value} value={op.value}>
                           {op.label}
