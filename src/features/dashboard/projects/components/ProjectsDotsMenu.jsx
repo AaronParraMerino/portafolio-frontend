@@ -10,7 +10,14 @@ import '../styles/projects.css';
    ─ onEditar     fn(proyecto)
    ─ onEliminar   fn(proyecto)
 ════════════════════════════════════════ */
-export default function ProjectsDotsMenu({ proyecto, onEditar, onEliminar, onDesvincular, onConfigurar }) {
+export default function ProjectsDotsMenu({
+  proyecto,
+  onEditar,
+  onEliminar,
+  onDesvincular,
+  onConfigurar,
+  onEstadoProyecto,
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const permisos = proyecto?.permisos || {};
@@ -18,6 +25,7 @@ export default function ProjectsDotsMenu({ proyecto, onEditar, onEliminar, onDes
   const puedeEliminar = permisos.puede_eliminar ?? proyecto?.puede_eliminar ?? true;
   const puedeConfigurar = permisos.puede_configurar ?? proyecto?.puede_configurar ?? false;
   const puedeDesvincular = permisos.puede_desvincular_participacion ?? proyecto?.puede_desvincular_participacion ?? false;
+  const puedeCambiarEstado = puedeEditar && typeof onEstadoProyecto === 'function';
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -99,6 +107,23 @@ export default function ProjectsDotsMenu({ proyecto, onEditar, onEliminar, onDes
                 <circle cx="7" cy="7" r="2" />
               </svg>
               Configurar
+            </button>
+          )}
+
+          {puedeCambiarEstado && (
+            <button
+              className="prj-menu-item"
+              type="button"
+              role="menuitem"
+              onClick={action(onEstadoProyecto)}
+            >
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <path d="M2 3.5h10M2 7h10M2 10.5h10" />
+                <circle cx="3.5" cy="3.5" r=".7" fill="currentColor" stroke="none" />
+                <circle cx="3.5" cy="7" r=".7" fill="currentColor" stroke="none" />
+                <circle cx="3.5" cy="10.5" r=".7" fill="currentColor" stroke="none" />
+              </svg>
+              Estado del proyecto
             </button>
           )}
 

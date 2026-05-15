@@ -368,7 +368,14 @@ function DetailLink({ href, children, className = '' }) {
 /* ════════════════════════════════════════
    ProjectCard
 ════════════════════════════════════════ */
-export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDesvincular, onConfigurar }) {
+export default function ProjectCard({
+  proyecto = {},
+  onEditar,
+  onEliminar,
+  onDesvincular,
+  onConfigurar,
+  onEstadoProyecto,
+}) {
   const [idx, setIdx] = useState(0);
   const [mediaExpandida, setMediaExpandida] = useState(false);
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
@@ -574,6 +581,7 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDes
             onEliminar={onEliminar}
             onDesvincular={onDesvincular}
             onConfigurar={onConfigurar}
+            onEstadoProyecto={onEstadoProyecto}
           />
         </div>
       </div>

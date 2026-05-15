@@ -9,6 +9,18 @@ import ProjectsEdit        from '../components/ProjectsEdit';
 import ProjectsConfigModal from '../components/ProjectsConfigModal';
 import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import { ESTADOS_PROYECTO } from '../model/projectsModel';
+
+const ESTADO_DETALLE = {
+  publicado: 'Visible como proyecto publicado.',
+  desarrollo: 'Trabajo activo o en progreso.',
+  borrador: 'Guardado sin publicarse todavia.',
+  archivado: 'Fuera del listado activo.',
+};
+
+function getEstadoLabel(value) {
+  return ESTADOS_PROYECTO.find((estado) => estado.value === value)?.label || value || 'Borrador';
+}
 
 /* ════════════════════════════════════════
    ProjectsPage
@@ -29,6 +41,8 @@ export default function ProjectsPage() {
   const [confirmDel, setConfirmDel] = useState(null);
   const [confirmDetach, setConfirmDetach] = useState(null);
   const [configurando, setConfigurando] = useState(null);
+  const [estadoProyecto, setEstadoProyecto] = useState(null);
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState('borrador');
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
@@ -89,6 +103,34 @@ export default function ProjectsPage() {
     setConfigurando(null);
   };
 
+  const handleAbrirEstadoProyecto = (proyecto) => {
+    setEstadoProyecto(proyecto);
+    setEstadoSeleccionado(proyecto?.estado || 'borrador');
+  };
+
+  const handleCerrarEstadoProyecto = () => {
+    if (guardando) return;
+    setEstadoProyecto(null);
+    setEstadoSeleccionado('borrador');
+  };
+
+  const handleGuardarEstadoProyecto = async () => {
+    if (!estadoProyecto) return;
+
+    const estadoActual = estadoProyecto.estado || 'borrador';
+    const nuevoEstado = estadoSeleccionado || estadoActual;
+
+    if (nuevoEstado !== estadoActual) {
+      await editarExistente(
+        estadoProyecto.id || estadoProyecto.id_proyecto,
+        { ...estadoProyecto, estado: nuevoEstado }
+      );
+    }
+
+    setEstadoProyecto(null);
+    setEstadoSeleccionado('borrador');
+  };
+
   // ── Derivados: filtrar + ordenar + contar ──
   const proyectosFiltrados = proyectos
     .filter(p => {
@@ -115,7 +157,11 @@ export default function ProjectsPage() {
     publicado:  proyectos.filter(p => p.estado === 'publicado').length,
     desarrollo: proyectos.filter(p => p.estado === 'desarrollo').length,
     borrador:   proyectos.filter(p => p.estado === 'borrador').length,
+    archivado:  proyectos.filter(p => p.estado === 'archivado').length,
   };
+
+  const estadoActualProyecto = estadoProyecto?.estado || 'borrador';
+  const hayCambioEstado = estadoSeleccionado !== estadoActualProyecto;
 
   // ── Loading ──
   if (loading) {
@@ -153,6 +199,7 @@ export default function ProjectsPage() {
           onEliminar={(p)   => setConfirmDel(p)}
           onDesvincular={(p) => setConfirmDetach(p)}
           onConfigurar={(p) => setConfigurando(p)}
+          onEstadoProyecto={handleAbrirEstadoProyecto}
           onAgregar={handleAgregarNuevo}
         />
 
@@ -178,6 +225,54 @@ export default function ProjectsPage() {
           onCancelar={() => !guardando && setConfigurando(null)}
         />
       )}
+
+      <ConfirmModal
+        open={!!estadoProyecto}
+        title="Estado del proyecto"
+        subtitle={estadoProyecto?.titulo || 'Proyecto'}
+        message={(
+          <div className="prj-state-modal">
+            <div className="prj-state-summary">
+              Estado actual: <strong>{getEstadoLabel(estadoActualProyecto)}</strong>
+            </div>
+
+            <div className="prj-state-options" role="radiogroup" aria-label="Estado del proyecto">
+              {ESTADOS_PROYECTO.map((estado) => {
+                const selected = estadoSeleccionado === estado.value;
+                const current = estadoActualProyecto === estado.value;
+
+                return (
+                  <button
+                    key={estado.value}
+                    type="button"
+                    className={`prj-state-option ${selected ? 'active' : ''}`}
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setEstadoSeleccionado(estado.value)}
+                    disabled={guardando}
+                  >
+                    <span className={`prj-state-dot ${estado.value}`} />
+                    <span className="prj-state-option-main">
+                      <span className="prj-state-label">{estado.label}</span>
+                      <span className="prj-state-description">
+                        {ESTADO_DETALLE[estado.value]}
+                      </span>
+                    </span>
+                    {current && <span className="prj-state-current-badge">Actual</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        confirmLabel={hayCambioEstado ? 'Guardar estado' : 'Mantener estado'}
+        cancelLabel="Cancelar"
+        variant="blue"
+        icon="info"
+        loading={guardando}
+        onConfirm={handleGuardarEstadoProyecto}
+        onClose={handleCerrarEstadoProyecto}
+      />
 
       <ConfirmModal
         open={!!confirmDel}
