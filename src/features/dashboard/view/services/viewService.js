@@ -148,11 +148,30 @@ async function apiFetch(endpoint, options = {}) {
   const data = await safeJson(res);
 
   if (!res.ok) {
-    const details = data?.errors ? ` ${JSON.stringify(data.errors)}` : '';
-    throw new Error(`${data?.message || `Error ${res.status}`}${details}`);
+    throw new Error(getApiErrorMessage(res, data));
   }
 
   return data;
+}
+
+function getApiErrorMessage(res, data) {
+  if (res.status === 401) {
+    return 'Tu sesion expiro. Inicia sesion nuevamente.';
+  }
+
+  if (res.status === 403) {
+    return 'No tienes permisos para realizar esta accion.';
+  }
+
+  if (res.status === 422) {
+    return 'Revisa los datos e intenta guardar nuevamente.';
+  }
+
+  if (res.status >= 500) {
+    return 'No se pudo completar la accion. Intenta nuevamente.';
+  }
+
+  return data?.message || `No se pudo completar la accion (${res.status}).`;
 }
 
 function unwrapList(response) {
@@ -218,9 +237,11 @@ function normalizeProfileVisibility(raw = {}) {
 }
 
 function createVisibility(items = [], value = true) {
+  const resolveValue = typeof value === 'function' ? value : () => value;
+
   return items.reduce((acc, item) => ({
     ...acc,
-    [item.id]: value,
+    [item.id]: Boolean(resolveValue(item)),
   }), {});
 }
 
@@ -273,6 +294,10 @@ export function buildImageUrl(path) {
 
 export function mapConfigFromBackend(raw = {}) {
   const source = raw?.config && typeof raw.config === 'object' ? raw.config : raw;
+  const rawVisibility = source.visibilidad;
+  const parsedVisibility = typeof rawVisibility === 'string'
+    ? parseJsonStorage(rawVisibility, undefined)
+    : rawVisibility;
 
   const mapped = {
     heroColor: source.hero_color ?? source.heroColor,
@@ -288,7 +313,7 @@ export function mapConfigFromBackend(raw = {}) {
     frameId: source.frame_id ?? source.frameId,
     disponible: source.disponible,
     publicado: source.publicado ?? source.portfolio_publico,
-    visibilidad: source.visibilidad,
+    visibilidad: parsedVisibility,
   };
 
   return Object.fromEntries(
@@ -310,6 +335,7 @@ export function mapConfigToBackend(config = {}) {
     font_id: config.fontId,
     frame_id: config.frameId,
     disponible: config.disponible,
+    visibilidad: config.visibilidad,
   };
 
   return Object.fromEntries(
@@ -386,12 +412,15 @@ export function mapPerfilFromBackend(raw) {
   };
 }
 
-export function mapRedesFromBackend(lista = []) {
+export function mapRedesFromBackend(lista = [], options = {}) {
+  const { includeHidden = false } = options;
+
   return lista
-    .filter((item) => toBool(item.es_visible ?? item.visible, true))
+    .filter((item) => includeHidden || toBool(item.es_visible ?? item.visible, true))
     .map((item) => {
       const href = ensureUrl(item.link ?? item.url);
       const tipo = item.tipo || item.plataformaKey || inferSocialType(item.nombre, href);
+      const visible = toBool(item.es_visible ?? item.visible, true);
 
       return {
         id: `enlace-${item.id_enlace ?? item.id}`,
@@ -401,17 +430,21 @@ export function mapRedesFromBackend(lista = []) {
         href,
         tipo,
         descripcion: item.descripcion || '',
+        visible,
       };
     });
 }
 
-export function mapHabilidadesFromBackend(lista = []) {
+export function mapHabilidadesFromBackend(lista = [], options = {}) {
+  const { includeHidden = false } = options;
+
   const normalized = lista
-    .filter((item) => toBool(item.es_visible ?? item.es_publico, true))
+    .filter((item) => includeHidden || toBool(item.es_visible ?? item.es_publico, true))
     .map((item) => {
       const catalog = item.habilidad || item.catalogo_habilidad || {};
       const level = normalizeSkillLevel(item.nivel);
       const tipo = catalog.tipo || item.tipo || 'tecnica';
+      const visible = toBool(item.es_visible ?? item.es_publico, true);
 
       return {
         id: `habilidad-${item.id_habilidad_usuario ?? item.id}`,
@@ -422,6 +455,7 @@ export function mapHabilidadesFromBackend(lista = []) {
         nivel: level,
         porcentaje: Number(item.porcentaje ?? getSkillProgress(level)),
         descripcion: catalog.descripcion || item.descripcion || '',
+        visible,
       };
     });
 
@@ -448,12 +482,15 @@ function formatDateRange(start, end, current) {
   return from || to || '';
 }
 
-export function mapExperienciasFromBackend(lista = []) {
+export function mapExperienciasFromBackend(lista = [], options = {}) {
+  const { includeHidden = false } = options;
+
   return lista
-    .filter((item) => toBool(item.es_publico, true))
+    .filter((item) => includeHidden || toBool(item.es_publico, true))
     .map((item) => {
       const isCurrent = toBool(item.es_actual ?? item.actual, false);
       const tipo = item.tipo === 'academica' ? 'academico' : 'laboral';
+      const visible = toBool(item.es_publico, true);
 
       return {
         id: `experiencia-${item.id_experiencia ?? item.id}`,
@@ -466,6 +503,7 @@ export function mapExperienciasFromBackend(lista = []) {
         fechaInicio: item.fecha_inicio || '',
         fechaFin: item.fecha_fin || '',
         descripcion: item.descripcion || '',
+        visible,
       };
     });
 }
@@ -569,10 +607,12 @@ function isPortfolioProjectVisible(project = {}) {
   return toBool(visibility, true);
 }
 
-export function mapProyectosFromBackend(lista = []) {
+export function mapProyectosFromBackend(lista = [], options = {}) {
+  const { includeHidden = false } = options;
+
   return lista
     .map((project) => normalizeProyectoFromApi(project))
-    .filter(isPortfolioProjectVisible)
+    .filter((project) => includeHidden || isPortfolioProjectVisible(project))
     .map((project, index) => {
       const evidencias = Array.isArray(project.evidencias) ? project.evidencias : [];
       const imagenes = getProjectImages(project);
@@ -584,6 +624,7 @@ export function mapProyectosFromBackend(lista = []) {
       const tecnologias = Array.isArray(project.etiquetas) && project.etiquetas.length > 0
         ? project.etiquetas
         : (project.tecnologias || []);
+      const visible = isPortfolioProjectVisible(project);
 
       return {
         ...project,
@@ -612,6 +653,7 @@ export function mapProyectosFromBackend(lista = []) {
         imagenUrl: buildImageUrl(project.imagen_portada) || imagenes[0] || null,
         imagen_portada: buildImageUrl(project.imagen_portada) || imagenes[0] || null,
         participacion: project.participacion || null,
+        visible,
       };
     });
 }
@@ -624,8 +666,11 @@ export function separarHabilidades(lista = []) {
 }
 
 export function buildStats({ habilidades, experiencias, proyectos }) {
-  const tecnicas = habilidades?.tecnicas || [];
-  const tecnologiasProyecto = proyectos.flatMap((project) => project.tecnologias || []);
+  const visible = (item) => item?.visible !== false;
+  const tecnicas = (habilidades?.tecnicas || []).filter(visible);
+  const visibleExperiencias = (experiencias || []).filter(visible);
+  const visibleProyectos = (proyectos || []).filter(visible);
+  const tecnologiasProyecto = visibleProyectos.flatMap((project) => project.tecnologias || []);
   const tecnologias = new Set(
     [...tecnicas.map((skill) => skill.nombre), ...tecnologiasProyecto]
       .map((value) => String(value || '').trim().toLowerCase())
@@ -633,37 +678,50 @@ export function buildStats({ habilidades, experiencias, proyectos }) {
   );
 
   return [
-    { id: 'proyectos', valor: String(proyectos.length), label: 'Proyectos' },
+    { id: 'proyectos', valor: String(visibleProyectos.length), label: 'Proyectos' },
     { id: 'tecnologias', valor: String(tecnologias.size), label: 'Tecnologias' },
     {
       id: 'academica',
-      valor: String(experiencias.filter((item) => item.tipo === 'academico').length),
+      valor: String(visibleExperiencias.filter((item) => item.tipo === 'academico').length),
       label: 'Exp. Academica',
     },
     {
       id: 'laboral',
-      valor: String(experiencias.filter((item) => item.tipo === 'laboral').length),
+      valor: String(visibleExperiencias.filter((item) => item.tipo === 'laboral').length),
       label: 'Exp. Laboral',
     },
   ];
 }
 
-function buildRuntimeVisibility({ perfilRaw, stats, habilidades, experiencias, proyectos, storedVisibility }) {
+function buildRuntimeVisibility({ perfilRaw, redes, stats, habilidades, experiencias, proyectos, storedVisibility }) {
   const habilidadesLista = [
     ...(habilidades?.tecnicas || []),
     ...(habilidades?.blandas || []),
   ];
+  const itemIsVisible = (item) => item?.visible !== false;
+  const perfilVisibility = normalizeProfileVisibility(perfilRaw);
 
-  return mergeVisibility(
-    {
-      perfil: normalizeProfileVisibility(perfilRaw),
-      stats: createVisibility(stats),
-      habilidades: createVisibility(habilidadesLista),
-      experiencias: createVisibility(experiencias),
-      proyectos: createVisibility(proyectos),
+  if (Array.isArray(redes) && redes.length > 0) {
+    perfilVisibility.redes = redes.some(itemIsVisible);
+  }
+
+  const tableVisibility = {
+    perfil: perfilVisibility,
+    stats: createVisibility(stats),
+    habilidades: createVisibility(habilidadesLista, itemIsVisible),
+    experiencias: createVisibility(experiencias, itemIsVisible),
+    proyectos: createVisibility(proyectos, itemIsVisible),
+  };
+
+  return mergeVisibility(tableVisibility, {
+    perfil: {
+      nombre: storedVisibility?.perfil?.nombre ?? tableVisibility.perfil.nombre,
     },
-    storedVisibility
-  );
+    stats: {
+      ...tableVisibility.stats,
+      ...(storedVisibility?.stats || {}),
+    },
+  });
 }
 
 export async function getPerfil() {
@@ -717,30 +775,32 @@ export async function getPortfolioViewData() {
   const backendConfig = configResult.status === 'fulfilled'
     ? mapConfigFromBackend(configResult.value)
     : {};
+  const savedVisibility = backendConfig.visibilidad || storedConfig.visibilidad;
   const hasBackendHeroSource = Object.prototype.hasOwnProperty.call(backendConfig, 'heroBgSource');
   const hasBackendAvatarSource = Object.prototype.hasOwnProperty.call(backendConfig, 'avatarBgSource');
   const perfilRaw = perfilResult.status === 'fulfilled' ? perfilResult.value : null;
   const perfil = mapPerfilFromBackend(perfilRaw);
   const redes = redesResult.status === 'fulfilled'
-    ? mapRedesFromBackend(unwrapList(redesResult.value))
+    ? mapRedesFromBackend(unwrapList(redesResult.value), { includeHidden: true })
     : [];
   const experiencias = experienciasResult.status === 'fulfilled'
-    ? mapExperienciasFromBackend(unwrapList(experienciasResult.value))
+    ? mapExperienciasFromBackend(unwrapList(experienciasResult.value), { includeHidden: true })
     : [];
   const habilidades = habilidadesResult.status === 'fulfilled'
-    ? mapHabilidadesFromBackend(unwrapList(habilidadesResult.value))
+    ? mapHabilidadesFromBackend(unwrapList(habilidadesResult.value), { includeHidden: true })
     : separarHabilidades([]);
   const proyectos = proyectosResult.status === 'fulfilled'
-    ? mapProyectosFromBackend(unwrapList(proyectosResult.value))
+    ? mapProyectosFromBackend(unwrapList(proyectosResult.value), { includeHidden: true })
     : [];
   const stats = buildStats({ habilidades, experiencias, proyectos });
   const visibilidad = buildRuntimeVisibility({
     perfilRaw,
+    redes,
     stats,
     habilidades,
     experiencias,
     proyectos,
-    storedVisibility: storedConfig.visibilidad,
+    storedVisibility: savedVisibility,
   });
   const imageSourceDefaults = {
     ...(!hasBackendHeroSource && !stored.hasHeroSource && perfil?.bannerUrl ? { heroBgSource: 'foto' } : {}),

@@ -1,7 +1,7 @@
 // src/features/dashboard/view/pages/ViewPage.jsx
 
 import { useState } from 'react';
-import { FiCheck, FiSettings } from 'react-icons/fi';
+import { FiCheck, FiEyeOff, FiSettings } from 'react-icons/fi';
 import '../styles/view.css';
 
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
@@ -35,23 +35,23 @@ export default function ViewPage() {
     loading,
     dataSource,
     error,
-    updateConfig,
     updatePerfil,
-    resetConfig,
     saveCurrentConfig,
     publicar,
   } = useView();
 
   const [configOpen, setConfigOpen] = useState(false);
-  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishTarget, setPublishTarget] = useState(null);
 
-  const title = `${getFullName(perfil)} — Portafolio`;
+  const title = `${getFullName(perfil)} - Portafolio`;
   const visibilidad = config?.visibilidad || {};
+  const isPublished = Boolean(config?.publicado);
 
   const handlePublish = async () => {
-    await publicar();
-    setPublishOpen(false);
+    await publicar(publishTarget !== false);
+    setPublishTarget(null);
   };
+
   const selectedFont = FONTS.find(font => font.id === config?.fontId) || FONTS[0];
 
   const resolvedTextColor = config?.textColorAuto
@@ -100,7 +100,7 @@ export default function ViewPage() {
       </div>
     );
   }
-  
+
   return (
     <div
       className="vw-page"
@@ -124,12 +124,13 @@ export default function ViewPage() {
             onClick: () => setConfigOpen(true),
           },
           {
-            label: 'Publicar',
-            loadingLabel: 'Publicando...',
-            title: 'Publicar portafolio',
-            icon: <FiCheck />,
+            label: isPublished ? 'Ocultar' : 'Publicar',
+            loadingLabel: isPublished ? 'Ocultando...' : 'Publicando...',
+            title: isPublished ? 'Ocultar portafolio' : 'Publicar portafolio',
+            icon: isPublished ? <FiEyeOff /> : <FiCheck />,
             loading: guardando,
-            onClick: () => setPublishOpen(true),
+            variant: isPublished ? 'secondary' : undefined,
+            onClick: () => setPublishTarget(!isPublished),
           },
         ]}
       />
@@ -185,25 +186,27 @@ export default function ViewPage() {
           experiencias,
           proyectos,
         }}
-        onChange={updateConfig}
-        onReset={resetConfig}
-        onSave={() => saveCurrentConfig(config)}
+        onSave={saveCurrentConfig}
         saving={guardando}
         onClose={() => setConfigOpen(false)}
       />
 
       <ConfirmModal
-        open={publishOpen}
-        variant="green"
-        icon="check"
-        title="Publicar portafolio"
-        subtitle="Confirmación de publicación"
-        message="¿Deseas publicar esta vista del portafolio con la visibilidad configurada?"
-        confirmLabel="Sí, publicar"
+        open={publishTarget !== null}
+        variant={publishTarget === false ? 'yellow' : 'green'}
+        icon={publishTarget === false ? 'warning' : 'check'}
+        title={publishTarget === false ? 'Ocultar portafolio' : 'Publicar portafolio'}
+        subtitle={publishTarget === false ? 'Confirmacion de privacidad' : 'Confirmacion de publicacion'}
+        message={
+          publishTarget === false
+            ? 'El portafolio dejara de estar disponible en la vista publica y en los listados.'
+            : 'Deseas publicar esta vista del portafolio con la visibilidad configurada?'
+        }
+        confirmLabel={publishTarget === false ? 'Si, ocultar' : 'Si, publicar'}
         cancelLabel="Cancelar"
         loading={guardando}
         onConfirm={handlePublish}
-        onClose={() => setPublishOpen(false)}
+        onClose={() => setPublishTarget(null)}
       />
 
       <ViewToast toast={toast} />

@@ -1,6 +1,6 @@
 // src/features/dashboard/view/modal/ViewConfigModal.jsx
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
@@ -8,6 +8,7 @@ import {
   ACCENT_COLORS,
   AVATAR_COLORS,
   CARD_COLORS,
+  DEFAULT_CONFIG,
   FONTS,
   FRAMES,
   HERO_COLORS,
@@ -313,21 +314,66 @@ function VisibilityGroup({
   );
 }
 
+function cloneConfig(config = DEFAULT_CONFIG) {
+  return JSON.parse(JSON.stringify(config || DEFAULT_CONFIG));
+}
+
+function configsEqual(left, right) {
+  return JSON.stringify(left || {}) === JSON.stringify(right || {});
+}
+
+function idsToVisible(items = []) {
+  return items.reduce((acc, item) => ({
+    ...acc,
+    [item.id]: true,
+  }), {});
+}
+
+function buildAllVisibleVisibility(visibilityItems = {}) {
+  return {
+    perfil: idsToVisible(visibilityItems.perfil),
+    stats: idsToVisible(visibilityItems.stats),
+    habilidades: idsToVisible(visibilityItems.habilidades),
+    experiencias: idsToVisible(visibilityItems.experiencias),
+    proyectos: idsToVisible(visibilityItems.proyectos),
+  };
+}
+
 export default function ViewConfigModal({
   open,
   config,
   data,
-  onChange,
-  onReset,
   onSave,
   saving = false,
   onClose,
 }) {
   const [tab, setTab] = useState('apariencia');
   const [resetOpen, setResetOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [draftConfig, setDraftConfig] = useState(() => cloneConfig(config));
+  const wasOpen = useRef(false);
 
-  const safeConfig = config || {};
+  useEffect(() => {
+    if (!open) {
+      wasOpen.current = false;
+      return;
+    }
+
+    if (wasOpen.current) return;
+
+    setDraftConfig(cloneConfig(config));
+    setResetOpen(false);
+    setDiscardOpen(false);
+    setSaveConfirmOpen(false);
+    setSaveError('');
+    wasOpen.current = true;
+  }, [open, config]);
+
+  const safeConfig = draftConfig || {};
   const safeVisibility = safeConfig.visibilidad || {};
+  const hasUnsavedChanges = !configsEqual(draftConfig, config || {});
 
   const visibilityItems = useMemo(() => {
     const habilidadesTec = data?.habilidades?.tecnicas || [];
@@ -407,7 +453,32 @@ export default function ViewConfigModal({
     };
   }, [data]);
 
+  const allVisibleVisibility = useMemo(
+    () => buildAllVisibleVisibility(visibilityItems),
+    [visibilityItems]
+  );
+
+  const patchConfig = (patch) => {
+    setSaveError('');
+    setDraftConfig(prev => ({
+      ...prev,
+      ...patch,
+      visibilidad: patch.visibilidad ?? prev.visibilidad,
+    }));
+  };
+
   if (!open) return null;
+
+  const requestClose = () => {
+    if (saving) return;
+
+    if (hasUnsavedChanges) {
+      setDiscardOpen(true);
+      return;
+    }
+
+    onClose();
+  };
 
   const handleToggleVisibility = (group, id, value) => {
     const nextVisibility = {
@@ -418,7 +489,7 @@ export default function ViewConfigModal({
       },
     };
 
-    onChange({ visibilidad: nextVisibility });
+    patchConfig({ visibilidad: nextVisibility });
   };
 
   const handleToggleManyVisibility = (group, ids, value) => {
@@ -437,18 +508,26 @@ export default function ViewConfigModal({
       [group]: nextGroup,
     };
 
-    onChange({ visibilidad: nextVisibility });
+    patchConfig({ visibilidad: nextVisibility });
   };
 
-  const handleSave = async () => {
+  const requestSave = () => {
+    setSaveError('');
+    setSaveConfirmOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
     try {
       if (onSave) {
-        await onSave();
+        await onSave(draftConfig);
       }
 
+      setSaveConfirmOpen(false);
+      setSaveError('');
       onClose();
-    } catch {
-      // El hook muestra el toast de error y el modal queda abierto.
+    } catch (error) {
+      setSaveConfirmOpen(false);
+      setSaveError(error?.message || 'No se pudieron guardar los cambios. Revisa tu conexion e intenta nuevamente.');
     }
   };
 
@@ -458,7 +537,7 @@ export default function ViewConfigModal({
         className="cfg-overlay open"
         onClick={event => {
           if (event.target === event.currentTarget) {
-            onClose();
+            requestClose();
           }
         }}
       >
@@ -479,8 +558,9 @@ export default function ViewConfigModal({
             <button
               type="button"
               className="cfg-close"
-              onClick={onClose}
+              onClick={requestClose}
               aria-label="Cerrar modal"
+              disabled={saving}
             >
               <svg viewBox="0 0 11 11">
                 <path d="M1 1l9 9M10 1L1 10" />
@@ -526,13 +606,13 @@ export default function ViewConfigModal({
                     />
 
                     <SourceToggle
-                    value={config.heroBgSource || 'custom'}
-                    onChange={value => onChange({ heroBgSource: value })}
+                    value={safeConfig.heroBgSource || 'custom'}
+                    onChange={value => patchConfig({ heroBgSource: value })}
                     leftLabel="Usar banner"
                     rightLabel="Personalizar"
                     />
 
-                    <div className={`cfg-block ${config.heroBgSource === 'foto' ? 'disabled' : ''}`}>
+                    <div className={`cfg-block ${safeConfig.heroBgSource === 'foto' ? 'disabled' : ''}`}>
                     <MiniLabel>Color de fondo</MiniLabel>
 
                     <div className="swatch-row cfg-space-bottom">
@@ -540,8 +620,8 @@ export default function ViewConfigModal({
                         <Swatch
                             key={color}
                             color={color}
-                            active={config.heroColor === color}
-                            onClick={() => onChange({ heroColor: color })}
+                            active={safeConfig.heroColor === color}
+                            onClick={() => patchConfig({ heroColor: color })}
                         />
                         ))}
                     </div>
@@ -553,8 +633,8 @@ export default function ViewConfigModal({
                         <PatternButton
                             key={pattern.id}
                             pattern={pattern}
-                            active={config.heroPattern === pattern.id}
-                            onClick={() => onChange({ heroPattern: pattern.id })}
+                            active={safeConfig.heroPattern === pattern.id}
+                            onClick={() => patchConfig({ heroPattern: pattern.id })}
                         />
                         ))}
                     </div>
@@ -575,20 +655,20 @@ export default function ViewConfigModal({
                     />
 
                     <SourceToggle
-                    value={config.avatarBgSource || 'custom'}
-                    onChange={value => onChange({ avatarBgSource: value })}
+                    value={safeConfig.avatarBgSource || 'custom'}
+                    onChange={value => patchConfig({ avatarBgSource: value })}
                     leftLabel="Usar avatar"
                     rightLabel="Personalizar"
                     />
 
-                    <div className={`cfg-block ${config.avatarBgSource === 'foto' ? 'disabled' : ''}`}>
+                    <div className={`cfg-block ${safeConfig.avatarBgSource === 'foto' ? 'disabled' : ''}`}>
                     <div className="swatch-row">
                         {AVATAR_COLORS.map(color => (
                         <Swatch
                             key={color}
                             color={color}
-                            active={config.avatarColor === color}
-                            onClick={() => onChange({ avatarColor: color })}
+                            active={safeConfig.avatarColor === color}
+                            onClick={() => patchConfig({ avatarColor: color })}
                         />
                         ))}
                     </div>
@@ -612,8 +692,8 @@ export default function ViewConfigModal({
                         <Swatch
                         key={color}
                         color={color}
-                        active={config.accentColor === color}
-                        onClick={() => onChange({ accentColor: color })}
+                        active={safeConfig.accentColor === color}
+                        onClick={() => patchConfig({ accentColor: color })}
                         />
                     ))}
                     </div>
@@ -637,8 +717,8 @@ export default function ViewConfigModal({
                         <Swatch
                         key={color}
                         color={color}
-                        active={config.cardBg === color}
-                        onClick={() => onChange({ cardBg: color })}
+                        active={safeConfig.cardBg === color}
+                        onClick={() => patchConfig({ cardBg: color })}
                         />
                     ))}
                     </div>
@@ -671,13 +751,13 @@ export default function ViewConfigModal({
 
                     <button
                     type="button"
-                    className={`cfg-toggle ${config.textColorAuto ? '' : 'off'}`}
-                    onClick={() => onChange({ textColorAuto: !config.textColorAuto })}
+                    className={`cfg-toggle ${safeConfig.textColorAuto ? '' : 'off'}`}
+                    onClick={() => patchConfig({ textColorAuto: !safeConfig.textColorAuto })}
                     aria-label="Cambiar modo automático del color de texto"
                     />
                 </div>
 
-                <div className={`cfg-block ${config.textColorAuto ? 'disabled' : ''}`}>
+                <div className={`cfg-block ${safeConfig.textColorAuto ? 'disabled' : ''}`}>
                     <MiniLabel space>Color personalizado</MiniLabel>
 
                     <div className="swatch-row">
@@ -685,8 +765,8 @@ export default function ViewConfigModal({
                         <Swatch
                         key={color}
                         color={color}
-                        active={(config.textColor || '#111827') === color}
-                        onClick={() => onChange({ textColor: color })}
+                        active={(safeConfig.textColor || '#111827') === color}
+                        onClick={() => patchConfig({ textColor: color })}
                         />
                     ))}
                     </div>
@@ -710,8 +790,8 @@ export default function ViewConfigModal({
                         <FontOption
                         key={font.id}
                         font={font}
-                        active={(config.fontId || 'inter') === font.id}
-                        onClick={() => onChange({ fontId: font.id })}
+                        active={(safeConfig.fontId || 'inter') === font.id}
+                        onClick={() => patchConfig({ fontId: font.id })}
                         />
                     ))}
                     </div>
@@ -735,8 +815,8 @@ export default function ViewConfigModal({
                         <button
                         key={frame.id}
                         type="button"
-                        className={`border-opt ${config.frameId === frame.id ? 'active' : ''}`}
-                        onClick={() => onChange({ frameId: frame.id })}
+                        className={`border-opt ${safeConfig.frameId === frame.id ? 'active' : ''}`}
+                        onClick={() => patchConfig({ frameId: frame.id })}
                         >
                         <FramePreview frameId={frame.id} />
                         <span className="border-opt-label">{frame.label}</span>
@@ -771,8 +851,8 @@ export default function ViewConfigModal({
 
                     <button
                         type="button"
-                        className={`cfg-toggle ${config.disponible ? '' : 'off'}`}
-                        onClick={() => onChange({ disponible: !config.disponible })}
+                        className={`cfg-toggle ${safeConfig.disponible ? '' : 'off'}`}
+                        onClick={() => patchConfig({ disponible: !safeConfig.disponible })}
                         aria-label="Cambiar disponibilidad"
                     />
                     </div>
@@ -785,8 +865,7 @@ export default function ViewConfigModal({
                 <div className="cfg-section full">
                   <p className="vis-intro">
                     Elige qué información se mostrará en la vista pública de tu
-                    portafolio. Los cambios se aplican inmediatamente sobre la
-                    previsualización.
+                    portafolio. Los cambios se aplican al guardar.
                   </p>
 
                   <VisibilityGroup
@@ -874,10 +953,20 @@ export default function ViewConfigModal({
           </div>
 
           <div className="cfg-foot">
+            {saveError && (
+              <div
+                className="cfg-save-error"
+                role="alert"
+              >
+                {saveError}
+              </div>
+            )}
+
             <button
               type="button"
               className="cfg-btn-cancel"
               onClick={() => setResetOpen(true)}
+              disabled={saving}
             >
               Restaurar
             </button>
@@ -885,7 +974,7 @@ export default function ViewConfigModal({
             <button
               type="button"
               className="cfg-btn-save"
-              onClick={handleSave}
+              onClick={requestSave}
               disabled={saving}
             >
               {saving ? 'Guardando...' : 'Aplicar cambios'}
@@ -904,10 +993,48 @@ export default function ViewConfigModal({
         confirmLabel="Restaurar"
         cancelLabel="Cancelar"
         onConfirm={() => {
-          onReset();
+          setDraftConfig(cloneConfig({
+            ...DEFAULT_CONFIG,
+            visibilidad: allVisibleVisibility,
+          }));
           setResetOpen(false);
         }}
         onClose={() => setResetOpen(false)}
+      />
+
+      <ConfirmModal
+        open={saveConfirmOpen}
+        variant="green"
+        icon="check"
+        title="Aplicar cambios"
+        subtitle="Confirmacion de guardado"
+        message={
+          hasUnsavedChanges
+            ? 'Deseas guardar la personalizacion y aplicar esta visibilidad al portafolio publico?'
+            : 'No detectamos cambios nuevos, pero puedes confirmar para sincronizar nuevamente la configuracion.'
+        }
+        confirmLabel="Si, guardar"
+        cancelLabel="Cancelar"
+        loading={saving}
+        onConfirm={handleConfirmSave}
+        onClose={() => !saving && setSaveConfirmOpen(false)}
+      />
+
+      <ConfirmModal
+        open={discardOpen}
+        variant="yellow"
+        icon="warning"
+        title="Salir sin guardar"
+        subtitle="Cambios pendientes"
+        message="Si sales ahora, los cambios de personalizacion y visibilidad no se guardaran ni se veran en el portafolio publico."
+        confirmLabel="Salir sin guardar"
+        cancelLabel="Seguir editando"
+        onConfirm={() => {
+          setDiscardOpen(false);
+          setDraftConfig(cloneConfig(config));
+          onClose();
+        }}
+        onClose={() => setDiscardOpen(false)}
       />
     </>
   );

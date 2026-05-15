@@ -55,7 +55,7 @@ const BASE_STYLES = `
   position: fixed; inset: 0;
   background: rgba(0,0,0,.48);
   backdrop-filter: blur(3px);
-  z-index: 9000;
+  z-index: 2147483600;
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
   animation: cm-fade .18s ease;

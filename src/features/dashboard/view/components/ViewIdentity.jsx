@@ -71,6 +71,7 @@ export default function ViewIdentity({ perfil, redes = [], disponible = false, v
   const showBiografia = isVisible(visibilidad, 'perfil', 'biografia');
 
   const ubicacion = [perfil?.ciudad, perfil?.pais].filter(Boolean).join(', ');
+  const redesVisibles = redes.filter(red => red?.visible !== false);
   const showContact = (showTelefono && perfil?.telefono) || (showCorreo && perfil?.correo);
 
   return (
@@ -124,9 +125,9 @@ export default function ViewIdentity({ perfil, redes = [], disponible = false, v
         </div>
       )}
 
-      {showRedes && !!redes.length && (
+      {showRedes && !!redesVisibles.length && (
         <div className="pf-social">
-          {redes.map(red => (
+          {redesVisibles.map(red => (
             <a
               key={red.id}
               className={`pf-soc-btn soc-${red.tipo}`}

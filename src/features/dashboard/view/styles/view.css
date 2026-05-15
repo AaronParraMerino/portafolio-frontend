@@ -1340,8 +1340,22 @@
   padding: 14px 20px;
   border-top: 1px solid var(--gris-borde);
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.cfg-save-error {
+  flex: 0 0 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--rojo-borde, rgba(232,85,85,.22));
+  border-radius: 7px;
+  background: var(--rojo-bg, rgba(232,85,85,.08));
+  color: var(--rojo-soft, #e85555);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .cfg-btn-save,

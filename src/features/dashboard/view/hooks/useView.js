@@ -217,23 +217,24 @@ export function useView() {
 
       showToast('Personalizacion guardada correctamente', 'ok');
     } catch (err) {
-      showToast(err.message || 'No se pudo guardar la personalizacion.', 'error');
-      throw err;
+      const message = err.message || 'No se pudieron aplicar los cambios. Intenta nuevamente.';
+      showToast(message, 'error');
+      throw new Error(message);
     } finally {
       setGuardando(false);
     }
   }, [showToast]);
 
-  const publicar = useCallback(async () => {
+  const publicar = useCallback(async (publicado = true) => {
     setGuardando(true);
 
     try {
-      await publicarPortafolio(true);
+      await publicarPortafolio(Boolean(publicado));
 
       setData((prev) => {
         const nextConfig = normalizeConfig({
           ...prev.config,
-          publicado: true,
+          publicado: Boolean(publicado),
         });
 
         return {
@@ -242,9 +243,19 @@ export function useView() {
         };
       });
 
-      showToast('Portafolio publicado correctamente', 'ok');
+      showToast(
+        publicado
+          ? 'Portafolio publicado correctamente'
+          : 'Portafolio ocultado correctamente',
+        'ok'
+      );
     } catch (err) {
-      showToast(err.message || 'No se pudo publicar el portafolio.', 'error');
+      showToast(
+        err.message || (publicado
+          ? 'No se pudo publicar el portafolio.'
+          : 'No se pudo ocultar el portafolio.'),
+        'error'
+      );
     } finally {
       setGuardando(false);
     }
