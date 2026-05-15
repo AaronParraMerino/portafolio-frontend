@@ -83,7 +83,7 @@ export default function CambiarContraseña() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "Error al solicitar recuperación.");
       sessionStorage.setItem("correo_recuperacion", recovEmail);
-      sessionStorage.setItem("redirect_after_recovery", "/dashboard");
+      sessionStorage.setItem("redirect_after_recovery", "/dashboard/settings");
       setRecovMsg(data.message || "Código enviado. Redirigiendo…");
       setTimeout(() => navigate("/auth/Codigo"), 1200);
     } catch (e) {

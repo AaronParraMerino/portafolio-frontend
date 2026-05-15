@@ -1,4 +1,5 @@
 import '../styles/projects.css';
+import ProjectsGithubSyncPanel from './ProjectsGithubSyncPanel';
 
 /* ════════════════════════════════════════
    ProjectsFilters
@@ -32,6 +33,9 @@ export default function ProjectsFilters({
   orden = 'recientes',
   onOrden,
   conteo = {},
+  githubSyncSignal = 0,
+  onAgregarConRepos,
+  onReposChanged,
 }) {
   const handleBusqueda = (value) => {
     if (typeof onBusqueda === 'function') {
@@ -85,6 +89,12 @@ export default function ProjectsFilters({
       </div>
 
       {/* ── Tabs + Orden ── */}
+      <ProjectsGithubSyncPanel
+        expandSignal={githubSyncSignal}
+        onAgregarConRepos={onAgregarConRepos}
+        onReposChanged={onReposChanged}
+      />
+
       <div className="prj-filter-row">
         <div className="prj-tab-grp">
           {TABS.map(tab => {
