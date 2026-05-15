@@ -6,6 +6,7 @@ import Header from '../../layout/Header';
 import ProjectsFilters     from '../components/ProjectsFilters';
 import ProjectsGrid        from '../components/ProjectsGrid';
 import ProjectsEdit        from '../components/ProjectsEdit';
+import ProjectsConfigModal from '../components/ProjectsConfigModal';
 import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
@@ -20,16 +21,18 @@ import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 export default function ProjectsPage() {
   const {
     proyectos, loading, guardando, toast,
-    crearNuevo, editarExistente, eliminar, desvincularParticipacion,
+    crearNuevo, editarExistente, eliminar, desvincularParticipacion, actualizarConfiguracion, refrescar,
   } = useProjects();
 
   // ── Estado UI puro ──
   const [editando,   setEditando]   = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
   const [confirmDetach, setConfirmDetach] = useState(null);
+  const [configurando, setConfigurando] = useState(null);
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
+  const [reposIniciales, setReposIniciales] = useState(null);
 
   const headerActions = [
     {
@@ -56,6 +59,34 @@ export default function ProjectsPage() {
     }
 
     setEditando(null);
+    setReposIniciales(null);
+  };
+
+  const handleAgregarNuevo = () => {
+    setReposIniciales(null);
+    setEditando('nuevo');
+  };
+
+  const handleAgregarConRepos = (selection) => {
+    setReposIniciales(selection || null);
+    setEditando('nuevo');
+  };
+
+  const handleEditar = (proyecto) => {
+    setReposIniciales(null);
+    setEditando(proyecto);
+  };
+
+  const handleCancelarEdicion = () => {
+    if (guardando) return;
+    setEditando(null);
+    setReposIniciales(null);
+  };
+
+  const handleGuardarConfiguracion = async (configuracion) => {
+    if (!configurando) return;
+    await actualizarConfiguracion(configurando.id, configuracion);
+    setConfigurando(null);
   };
 
   // ── Derivados: filtrar + ordenar + contar ──
@@ -111,15 +142,18 @@ export default function ProjectsPage() {
           filtro={filtro}       onFiltro={setFiltro}
           orden={orden}         onOrden={setOrden}
           conteo={conteo}
+          onAgregarConRepos={handleAgregarConRepos}
+          onReposChanged={refrescar}
         />
 
         <ProjectsGrid
           proyectos={proyectosFiltrados}
           busqueda={busqueda}
-          onEditar={(p)     => setEditando(p)}
+          onEditar={handleEditar}
           onEliminar={(p)   => setConfirmDel(p)}
           onDesvincular={(p) => setConfirmDetach(p)}
-          onAgregar={() => setEditando('nuevo')}
+          onConfigurar={(p) => setConfigurando(p)}
+          onAgregar={handleAgregarNuevo}
         />
 
       </div>
@@ -129,9 +163,19 @@ export default function ProjectsPage() {
       {editando !== null && (
         <ProjectsEdit
           proyecto={editando === 'nuevo' ? null : editando}
+          initialGithubRepos={editando === 'nuevo' ? reposIniciales : null}
           onGuardar={handleGuardar}
-          onCancelar={() => !guardando && setEditando(null)}
+          onCancelar={handleCancelarEdicion}
           guardando={guardando}
+        />
+      )}
+
+      {configurando && (
+        <ProjectsConfigModal
+          proyecto={configurando}
+          guardando={guardando}
+          onGuardar={handleGuardarConfiguracion}
+          onCancelar={() => !guardando && setConfigurando(null)}
         />
       )}
 

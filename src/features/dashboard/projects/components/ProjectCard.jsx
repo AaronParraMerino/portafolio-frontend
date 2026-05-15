@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ProjectsDotsMenu from './ProjectsDotsMenu';
+import ProjectsGithubCollaborators from './ProjectsGithubCollaborators';
 import '../styles/projects.css';
 import { TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/projectsModel';
 
@@ -367,7 +368,7 @@ function DetailLink({ href, children, className = '' }) {
 /* ════════════════════════════════════════
    ProjectCard
 ════════════════════════════════════════ */
-export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDesvincular }) {
+export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDesvincular, onConfigurar }) {
   const [idx, setIdx] = useState(0);
   const [mediaExpandida, setMediaExpandida] = useState(false);
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
@@ -572,6 +573,7 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDes
             onEditar={onEditar}
             onEliminar={onEliminar}
             onDesvincular={onDesvincular}
+            onConfigurar={onConfigurar}
           />
         </div>
       </div>
@@ -676,6 +678,10 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDes
               </span>
             )}
           </div>
+        )}
+
+        {!detallesExpandidos && (
+          <ProjectsGithubCollaborators proyecto={proyecto} />
         )}
 
         {hayDetallesExtra && (
@@ -784,6 +790,8 @@ export default function ProjectCard({ proyecto = {}, onEditar, onEliminar, onDes
                 </div>
               </div>
             )}
+
+            <ProjectsGithubCollaborators proyecto={proyecto} detail />
           </div>
         )}
       </div>
