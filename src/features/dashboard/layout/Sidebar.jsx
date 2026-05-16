@@ -4,6 +4,14 @@ import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { clearAuthStorage } from '../../../shared/utils/authStorage';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
 
+const ICON_PROPS = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
 const NAV_SECTIONS = [
   {
     label: 'General',
@@ -13,13 +21,13 @@ const NAV_SECTIONS = [
         label: 'Dashboard',
         to: '/dashboard',
         exact: true,
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="1.5" y="1.5" width="5" height="5" rx="1" /><rect x="8.5" y="1.5" width="5" height="5" rx="1" /><rect x="1.5" y="8.5" width="5" height="5" rx="1" /><rect x="8.5" y="8.5" width="5" height="5" rx="1" /></svg>),
+        icon: (<><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="5" rx="2" /><rect x="14" y="12" width="7" height="9" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /></>),
       },
       {
         id: 'profile',
         label: 'Mi Perfil',
         to: '/dashboard/profile',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="5" r="3" /><path d="M1.5 14c0-3.3 2.7-6 6-6s6 2.7 6 6" /></svg>),
+        icon: (<><path d="M19 21a7 7 0 0 0-14 0" /><circle cx="12" cy="8" r="4" /></>),
       },
     ],
   },
@@ -31,35 +39,35 @@ const NAV_SECTIONS = [
         label: 'Mis Proyectos',
         to: '/dashboard/projects',
         badgeVariant: 'blue',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V2M10 3V2M2 6.5h11" /></svg>),
+        icon: (<><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" /><path d="M3 9h18l-1.3 9.2A2 2 0 0 1 17.7 20H6.3a2 2 0 0 1-2-1.8L3 9Z" /><path d="m10 14-1.5 1.5L10 17" /><path d="m14 14 1.5 1.5L14 17" /></>),
       },
       {
         id: 'skills',
         label: 'Habilidades',
         to: '/dashboard/skills',
         badgeVariant: 'gray',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4l-1.1-1.1a1 1 0 00-1.4 0L9 2.5 12.5 6l1-1z" /></svg>),
+        icon: (<><path d="M12 3v4" /><path d="M12 17v4" /><path d="M5 10v4" /><path d="M19 10v4" /><path d="M3 12h4" /><path d="M17 12h4" /><path d="M10 5h4" /><path d="M10 19h4" /><circle cx="12" cy="12" r="3" /></>),
       },
       {
         id: 'experience',
         label: 'Experiencia',
         to: '/dashboard/experience',
         badgeVariant: 'amber',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="2" y="3" width="11" height="10" rx="1.5" /><path d="M5 3V1.5M10 3V1.5M2 6.5h11" /></svg>),
+        icon: (<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M3 12h18" /><path d="M12 12v2" /></>),
       },
       {
         id: 'networks',
         label: 'Redes Profesionales',
         to: '/dashboard/enlaces',
         badgeVariant: 'blue',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="3" r="1.5" /><circle cx="2.5" cy="12" r="1.5" /><circle cx="12.5" cy="12" r="1.5" /><path d="M7.5 4.5v3M7.5 7.5L2.5 10.5M7.5 7.5l5 3" /></svg>),
+        icon: (<><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-.9.9" /><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l.9-.9" /></>),
       },
       {
         id: 'preview',
         label: 'Vista Portafolio',
         to: '/dashboard/view',
         badgeVariant: 'amber',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M.5 7.5S3 2 7.5 2 14.5 7.5 14.5 7.5 12 13 7.5 13 .5 7.5.5 7.5z" /><circle cx="7.5" cy="7.5" r="2.5" /></svg>),
+        icon: (<><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 18v3" /><path d="M8 11s1.4-3 4-3 4 3 4 3-1.4 3-4 3-4-3-4-3Z" /><circle cx="12" cy="11" r="1" /></>),
       },
     ],
   },
@@ -70,14 +78,14 @@ const NAV_SECTIONS = [
         id: 'settings',
         label: 'Configuracion',
         to: '/dashboard/settings',
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="7.5" cy="7.5" r="2" /><path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M2.9 2.9l1.4 1.4M10.7 10.7l1.4 1.4M2.9 12.1l1.4-1.4M10.7 4.3l1.4-1.4" /></svg>),
+        icon: (<><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" /></>),
       },
       {
         id: 'logout',
         label: 'Cerrar sesion',
         to: '/',
         danger: true,
-        icon: (<svg viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5.5 13H3a1 1 0 01-1-1V3a1 1 0 011-1h2.5M10 10.5l3.5-3-3.5-3M13.5 7.5H5.5" /></svg>),
+        icon: (<><path d="M10 17 15 12 10 7" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-5" /></>),
       },
     ],
   },
@@ -120,6 +128,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [footerInset, setFooterInset] = useState(0);
 
   const doLogout = async () => {
     setLoggingOut(true);
@@ -153,6 +162,57 @@ export default function Sidebar({ collapsed, onToggle }) {
       document.body.style.overflow = '';
     };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    let frameId = null;
+
+    const readNavHeight = () => {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue('--nav-height');
+      const parsed = Number.parseFloat(raw);
+      return Number.isFinite(parsed) ? parsed : 60;
+    };
+
+    const updateFooterInset = () => {
+      frameId = null;
+
+      if (window.innerWidth <= 767) {
+        setFooterInset(0);
+        return;
+      }
+
+      const footer = document.querySelector('.spk-footer');
+
+      if (!footer) {
+        setFooterInset(0);
+        return;
+      }
+
+      const footerTop = footer.getBoundingClientRect().top;
+      const visibleFooter = Math.max(0, window.innerHeight - footerTop);
+      const minSidebarHeight = collapsed ? 160 : 230;
+      const maxInset = Math.max(0, window.innerHeight - readNavHeight() - minSidebarHeight);
+      const nextInset = Math.round(Math.min(visibleFooter, maxInset));
+
+      setFooterInset((prev) => (Math.abs(prev - nextInset) > 1 ? nextInset : prev));
+    };
+
+    const scheduleUpdate = () => {
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(updateFooterInset);
+    };
+
+    scheduleUpdate();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, [collapsed]);
 
   const handleNavClick = (to) => {
     navigate(to);
@@ -194,8 +254,8 @@ export default function Sidebar({ collapsed, onToggle }) {
                   }
                 }}
               >
-                <svg className="dsh-nav-icon" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  {item.icon.props.children}
+                <svg className="dsh-nav-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
+                  {item.icon}
                 </svg>
                 <span className="dsh-nav-text">{item.label}</span>
                 {badge !== null && (
@@ -222,7 +282,10 @@ export default function Sidebar({ collapsed, onToggle }) {
 
   return (
     <>
-      <aside className={`dsh-sidebar${collapsed ? ' collapsed' : ''}`}>
+      <aside
+        className={`dsh-sidebar${collapsed ? ' collapsed' : ''}${footerInset > 4 ? ' footer-near' : ''}`}
+        style={{ '--dsh-sidebar-footer-inset': `${footerInset}px` }}
+      >
         <NavContent inDrawer={false} />
       </aside>
 

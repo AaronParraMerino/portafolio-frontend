@@ -1,0 +1,266 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.login-container {
+  min-height: calc(100vh - var(--nav-height));
+  margin-top: var(--nav-height);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--fondo);
+  padding: 20px;
+  font-family: var(--font);
+}
+
+.login-card {
+  display: flex;
+  width: 780px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.login-left {
+  width: 42%;
+  background: linear-gradient(120deg, var(--azul-deep), var(--azul), #38bdf8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-left h2 {
+  color: var(--blanco);
+  font-size: 32px;
+}
+
+.logo-img {
+  width: 150px;
+  margin-top: 15px;
+}
+
+.login-right {
+  flex: 1;
+  background: var(--blanco);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-title {
+  font-size: 24px;
+  color: var(--azul);
+  margin-bottom: 10px;
+}
+
+.login-avatar {
+  margin-bottom: 15px;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+}
+
+.login-form label {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--gris-oscuro);
+  font-family: var(--font);
+}
+
+.login-form input {
+  padding: 12px 14px;
+  margin-top: 5px;
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: var(--font);
+  outline: none;
+  transition: 0.2s;
+}
+
+.login-form input:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 2px var(--azul-glow);
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding-right: 40px;
+  appearance: none;
+}
+
+.eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--gris-texto);
+  z-index: 2;
+  background: var(--blanco);
+  padding-left: 5px;
+}
+
+.eye:hover {
+  color: var(--azul);
+}
+
+.login-form input::-ms-reveal,
+.login-form input::-ms-clear {
+  display: none;
+}
+
+.login-form input::-webkit-credentials-auto-fill-button,
+.login-form input::-webkit-password-toggle-button {
+  display: none !important;
+}
+
+.forgot {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--azul);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+  color: var(--azul-hover);
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.btn-primary {
+  margin-top: 14px;
+  padding: 11px;
+  background: var(--azul);
+  color: var(--blanco);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--azul-hover);
+}
+
+.btn-google {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: var(--font);
+  background: var(--blanco);
+  transition: background 0.2s;
+}
+
+.btn-google:hover {
+  background: var(--azul-light);
+}
+
+.oauth-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-oauth {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 6px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-oauth:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.btn-oauth:active {
+  transform: translateY(0);
+}
+
+.btn-oauth--github {
+  background: #24292e;
+}
+
+.btn-oauth--gitlab {
+  background: #fc6d26;
+}
+
+.btn-oauth--discord {
+  background: #5865f2;
+}
+
+.register {
+  margin-top: 12px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--gris-texto);
+  font-family: var(--font);
+}
+
+.register span {
+  color: var(--azul);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.register span:hover {
+  color: var(--azul-hover);
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .login-card {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .login-left {
+    width: 100%;
+    padding: 25px;
+  }
+
+  .login-right {
+    padding: 25px;
+  }
+}

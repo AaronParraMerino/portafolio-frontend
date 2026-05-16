@@ -13,7 +13,7 @@ export default function ViewHero({ perfil, config }) {
   const useAvatarPhoto = config?.avatarBgSource === 'foto' && avatarUrl;
 
   return (
-    <div className={`pf-hero pattern-${config?.heroPattern || 'dots'}`}>
+    <div className={`pf-hero pattern-${config?.heroPattern || 'none'}`}>
       <div
         className="pf-hero-bg"
         style={useHeroPhoto

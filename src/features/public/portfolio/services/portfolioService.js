@@ -1,4 +1,5 @@
 import BASE_URL from '../../../../services/http/const';
+import { normalizeProyectoParticipantes } from '../../../dashboard/projects/services/projectsService';
 import { DEFAULT_VISIBILITY } from '../../../dashboard/view/model/viewModel';
 import {
   buildStats,
@@ -12,7 +13,147 @@ import {
   separarHabilidades,
 } from '../../../dashboard/view/services/viewService';
 
-const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v1';
+const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v2';
+
+function cleanString(value = '') {
+  return String(value || '').trim();
+}
+
+function formatParticipationRole(value = '') {
+  const clean = cleanString(value).replace(/_/g, ' ').replace(/\s+/g, ' ');
+
+  if (!clean) return '';
+
+  return clean === clean.toLowerCase()
+    ? clean.replace(/\b\w/g, letter => letter.toUpperCase())
+    : clean;
+}
+
+function getRawProjectId(project = {}) {
+  return project.id_proyecto ?? project.idProyecto ?? project.backendId ?? project.id ?? null;
+}
+
+function getProjectParticipantsCount(project = {}, fallback = 0) {
+  const raw =
+    project.participantes_count ??
+    project.participants_count ??
+    project.colaboradores_count ??
+    project.collaborators_count;
+  const count = Number(raw);
+
+  return Number.isFinite(count) && count > 0 ? count : fallback;
+}
+
+function getPublicParticipationSource(project = {}) {
+  const direct =
+    project.mi_participacion ||
+    project.participacion_usuario ||
+    project.participacionUsuario ||
+    project.my_participation ||
+    project.participacion;
+
+  if (direct && typeof direct === 'object') return direct;
+
+  if (Array.isArray(project.participaciones) && project.participaciones.length > 0) {
+    return project.participaciones.find(item =>
+      item?.es_propietario ||
+      item?.tipo_rol === 'owner' ||
+      item?.relacion_github === 'owner'
+    ) || project.participaciones[0];
+  }
+
+  if (project.rol || project.descripcion_aporte || project.descripcionAporte) {
+    return {
+      rol: project.rol,
+      descripcion_aporte: project.descripcion_aporte || project.descripcionAporte,
+    };
+  }
+
+  return null;
+}
+
+function normalizePublicParticipation(project = {}) {
+  const source = getPublicParticipationSource(project);
+
+  if (!source) return null;
+
+  const rawRol =
+    source.rol ||
+    source.role ||
+    source.cargo ||
+    source.titulo_rol ||
+    source.tituloRol ||
+    '';
+  const rawRolLabel = source.es_propietario || source.tipo_rol === 'owner'
+    ? source.rol_label || 'Owner'
+    : source.rol_label === 'Colaborador'
+      ? ''
+      : source.rol_label || '';
+  const rol = formatParticipationRole(rawRol || rawRolLabel);
+  const descripcionAporte = cleanString(
+    source.descripcion_aporte ||
+    source.descripcionAporte ||
+    source.aporte ||
+    ''
+  );
+
+  if (!rol && !descripcionAporte) return null;
+
+  return {
+    ...source,
+    rol,
+    descripcion_aporte: descripcionAporte,
+  };
+}
+
+function getRawProjectForNormalized(project = {}, rawById = new Map()) {
+  const normalizedId = String(project.id || '').replace(/^proyecto-/, '');
+  const possibleIds = [
+    project.backendId,
+    project.id_proyecto,
+    project.idProyecto,
+    normalizedId,
+  ].filter(value => value !== undefined && value !== null && value !== '');
+
+  for (const id of possibleIds) {
+    const raw = rawById.get(String(id));
+    if (raw) return raw;
+  }
+
+  return null;
+}
+
+function mapPublicProyectosFromBackend(response) {
+  const rawProjects = unwrapList(response);
+  const rawById = rawProjects.reduce((acc, project) => {
+    const id = getRawProjectId(project);
+    if (id !== null) acc.set(String(id), project);
+    return acc;
+  }, new Map());
+
+  return mapProyectosFromBackend(rawProjects).map((project) => {
+    const rawProject = getRawProjectForNormalized(project, rawById) || {};
+    const participantes = normalizeProyectoParticipantes(rawProject, { includeCurrentUserFallback: false });
+    const participacion = normalizePublicParticipation(rawProject);
+    const participantesCount = getProjectParticipantsCount(
+      rawProject,
+      Math.max(getProjectParticipantsCount(project, 0), participantes.length)
+    );
+
+    return {
+      ...project,
+      participacion,
+      mi_participacion: participacion,
+      participacion_usuario: participacion,
+      rol: participacion?.rol || '',
+      descripcion_aporte: participacion?.descripcion_aporte || '',
+      participantes,
+      colaboradores: participantes.filter(participante => participante.tipo_rol !== 'owner'),
+      owners: participantes.filter(participante => participante.tipo_rol === 'owner'),
+      participantes_count: participantesCount,
+    };
+  });
+}
 
 function parseJsonStorage(value, fallback) {
   if (!value) return fallback;
@@ -48,6 +189,16 @@ function saveCachedPublicPortfolio(userId, data) {
   }
 }
 
+export function clearCachedPublicPortfolio(userId) {
+  if (!userId) return;
+
+  try {
+    sessionStorage.removeItem(cacheKey(userId));
+  } catch {
+    // Cache cleanup should not block the public view.
+  }
+}
+
 async function safeJson(res) {
   const contentType = res.headers.get('content-type') || '';
   const text = await res.text();
@@ -75,7 +226,9 @@ async function publicFetch(endpoint) {
   const data = await safeJson(res);
 
   if (!res.ok) {
-    throw new Error(data?.message || `Error ${res.status}`);
+    const error = new Error(data?.message || `Error ${res.status}`);
+    error.status = res.status;
+    throw error;
   }
 
   return data;
@@ -119,12 +272,17 @@ function mergeVisibility(...sources) {
       ...acc.proyectos,
       ...(current.proyectos || {}),
     },
+    proyecto_detalles: {
+      ...acc.proyecto_detalles,
+      ...(current.proyecto_detalles || {}),
+    },
   }), {
     perfil: { ...DEFAULT_VISIBILITY.perfil },
     stats: { ...DEFAULT_VISIBILITY.stats },
     habilidades: {},
     experiencias: {},
     proyectos: {},
+    proyecto_detalles: { ...DEFAULT_VISIBILITY.proyecto_detalles },
   });
 }
 
@@ -158,7 +316,7 @@ function normalizePublicPortfolio(raw = {}) {
         blandas: source.habilidades?.blandas || [],
       }
     : mapHabilidadesFromBackend(unwrapList(source.habilidades));
-  const proyectos = mapProyectosFromBackend(unwrapList(source.proyectos));
+  const proyectos = mapPublicProyectosFromBackend(source.proyectos);
   const stats = buildStats({ habilidades, experiencias, proyectos });
   const visibilidad = buildPublicVisibility({
     perfil,

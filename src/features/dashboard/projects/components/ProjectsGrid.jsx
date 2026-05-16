@@ -26,6 +26,8 @@ export default function ProjectsGrid({
   onEditar,
   onEliminar,
   onDesvincular,
+  onConfigurar,
+  onEstadoProyecto,
   onAgregar,
 }) {
   const handleAgregar = () => {
@@ -82,6 +84,8 @@ export default function ProjectsGrid({
           onEditar={onEditar}
           onEliminar={onEliminar}
           onDesvincular={onDesvincular}
+          onConfigurar={onConfigurar}
+          onEstadoProyecto={onEstadoProyecto}
         />
       ))}
 
