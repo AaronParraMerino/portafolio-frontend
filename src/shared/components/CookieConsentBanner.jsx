@@ -11,6 +11,7 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const [entering, setEntering] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const autoHideRef = useRef(null);
 
@@ -32,6 +33,7 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
     setVisible(true);
     setClosing(false);
     setEntering(true);
+    setCollapsed(true);
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setEntering(false));
@@ -45,16 +47,22 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
 
     showBannerWithDrop();
 
-    startAutoHide();
-
     return () => clearAutoHide();
   }, []);
 
   useEffect(() => {
     if (onVisibilityChange) {
-      onVisibilityChange(visible && !closing);
+      onVisibilityChange(visible && !closing && !collapsed);
     }
-  }, [visible, closing, onVisibilityChange]);
+  }, [visible, closing, collapsed, onVisibilityChange]);
+
+  const openBanner = () => {
+    clearAutoHide();
+    setClosing(false);
+    setEntering(false);
+    setCollapsed(false);
+    startAutoHide();
+  };
 
   const closeBanner = (persistNo = false) => {
     clearAutoHide();
@@ -69,7 +77,8 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
 
   const openPolicyModal = () => {
     clearAutoHide();
-    setClosing(true); // se oculta hacia la derecha
+    setClosing(true);
+    setCollapsed(true);
     setShowPolicyModal(true);
   };
 
@@ -81,9 +90,8 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
       return;
     }
 
-    // Reaparece el banner con entrada desde arriba-derecha.
+    // Reaparece escondido en el borde.
     showBannerWithDrop();
-    startAutoHide();
   };
 
   const handleAccept = async () => {
@@ -102,6 +110,19 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
 
   return (
     <>
+      {!showPolicyModal && collapsed && (
+        <button
+          type="button"
+          style={styles.tab}
+          onClick={openBanner}
+          aria-label="Abrir aviso de cookies"
+          title="Abrir cookies"
+        >
+          <span style={styles.tabLabel}>Cookies</span>
+        </button>
+      )}
+
+      {!collapsed && (
       <div style={styles.rail}>
       <div
         style={{
@@ -133,6 +154,7 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
         </div>
       </div>
       </div>
+      )}
 
       {showPolicyModal && <PoliticaCookies onClose={onPolicyModalClose} />}
     </>
@@ -142,34 +164,62 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
 const styles = {
   rail: {
     position: 'fixed',
-    right: '16px',
-    bottom: '16px',
+    right: '10px',
+    bottom: '74px',
+    transform: 'translateX(0)',
     display: 'flex',
     flexDirection: 'column-reverse',
     gap: '10px',
     zIndex: 10000,
     pointerEvents: 'none',
+    width: 'min(360px, calc(100vw - 34px))',
   },
   banner: {
     pointerEvents: 'auto',
-    width: 'min(360px, calc(100vw - 32px))',
+    width: '100%',
     background: '#0d1b2a',
     color: '#e0e7ff',
     border: '1px solid #1b263b',
     borderRadius: '12px',
     boxShadow: '0 14px 40px rgba(0,0,0,0.35)',
     padding: '14px',
-    transform: 'translateX(0)',
+    transform: 'translateY(0)',
     opacity: 1,
     transition: 'transform 200ms ease, opacity 200ms ease',
   },
   bannerEntering: {
-    transform: 'translate3d(0, -85vh, 0)',
+    transform: 'translateY(18px)',
     opacity: 0,
   },
   bannerClosing: {
-    transform: 'translateX(120%)',
+    transform: 'translateX(110%)',
     opacity: 0,
+  },
+  tab: {
+    position: 'fixed',
+    right: 0,
+    bottom: '86px',
+    zIndex: 10000,
+    border: '1px solid rgba(255,255,255,0.22)',
+    borderRight: 0,
+    background: '#0077b7',
+    color: '#ffffff',
+    borderRadius: '10px 0 0 10px',
+    width: '20px',
+    minHeight: '70px',
+    padding: '6px 2px',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '-8px 10px 22px rgba(0,0,0,0.2)',
+  },
+  tabLabel: {
+    writingMode: 'vertical-rl',
+    fontSize: '8px',
+    fontWeight: 800,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
   title: {
     margin: '0 0 8px',
@@ -198,6 +248,7 @@ const styles = {
     marginTop: '12px',
     display: 'flex',
     justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: '8px',
   },
   primaryBtn: {
