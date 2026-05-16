@@ -678,7 +678,7 @@ function getCurrentUserParticipant(project = {}) {
 
   if (!user) return null;
 
-  const participacion = project.participacion || project.mi_participacion || project.my_participation || {};
+  const participacion = getParticipacionUsuario(project) || {};
   const fallbackOwner = getProjectParticipantsCount(project) <= 1;
 
   return normalizeParticipant({
@@ -688,6 +688,59 @@ function getCurrentUserParticipant(project = {}) {
     id_usuario: user.id || user.id_usuario || user.idUsuario,
     es_propietario: participacion.es_propietario ?? project.es_propietario ?? fallbackOwner,
   }, 0);
+}
+
+function getCurrentUserParticipation(project = {}, participantes = []) {
+  const currentUserId = getStoredUserId();
+  const currentParticipant = currentUserId && currentUserId !== 'anon'
+    ? participantes.find(participante => String(participante.id_usuario || participante.idUsuario || '') === String(currentUserId))
+    : null;
+  const directParticipation =
+    project.mi_participacion ||
+    project.participacion_usuario ||
+    project.participacionUsuario ||
+    project.my_participation ||
+    project.participacion ||
+    null;
+  const rawParticipation = directParticipation || (currentParticipant ? null : getParticipacionUsuario(project));
+  const topLevelParticipation = (project.rol || project.descripcion_aporte)
+    ? {
+        rol: project.rol,
+        descripcion_aporte: project.descripcion_aporte,
+      }
+    : null;
+  const source = directParticipation || currentParticipant || rawParticipation || topLevelParticipation;
+
+  if (!source) return null;
+
+  const normalized = normalizeParticipant({
+    ...source,
+    id_usuario: source.id_usuario || source.idUsuario || currentParticipant?.id_usuario || currentParticipant?.idUsuario || (currentUserId !== 'anon' ? currentUserId : null),
+    es_propietario: source.es_propietario ?? currentParticipant?.es_propietario ?? project.es_propietario,
+  }, 0);
+  const rol = cleanString(source.rol || source.role || source.cargo || source.titulo_rol || source.tituloRol || currentParticipant?.rol || normalized.rol);
+  const descripcionAporte = cleanString(
+    source.descripcion_aporte ||
+    source.descripcionAporte ||
+    currentParticipant?.descripcion_aporte ||
+    topLevelParticipation?.descripcion_aporte ||
+    normalized.descripcion_aporte
+  );
+
+  if (!rol && !descripcionAporte && !normalized.es_propietario) {
+    return null;
+  }
+
+  return {
+    ...normalized,
+    ...source,
+    id_usuario: normalized.id_usuario,
+    rol,
+    descripcion_aporte: descripcionAporte,
+    tipo_rol: normalized.tipo_rol,
+    rol_label: normalized.rol_label,
+    es_propietario: normalized.es_propietario,
+  };
 }
 
 export function normalizeProyectoParticipantes(project = {}, options = {}) {
@@ -777,6 +830,14 @@ function writeProyectoParticipantesCache(id, items = []) {
   } catch {}
 }
 
+function clearProyectoParticipantesCache(id) {
+  if (!id) return;
+
+  try {
+    localStorage.removeItem(participantesCacheKey(id));
+  } catch {}
+}
+
 export async function getProyectoParticipantes(id) {
   if (!id) return [];
 
@@ -821,6 +882,7 @@ function getProjectId(project = {}) {
 
 function getTipoValue(project = {}) {
   if (project.tipo) return project.tipo;
+  if (project.categoria_proyecto) return project.categoria_proyecto;
 
   if (typeof project.tipo_proyecto === 'string') return project.tipo_proyecto;
 
@@ -847,6 +909,10 @@ function getTipoLabel(project = {}) {
 }
 
 function getParticipacionUsuario(project = {}) {
+  if (project.mi_participacion) return project.mi_participacion;
+  if (project.participacion_usuario) return project.participacion_usuario;
+  if (project.participacionUsuario) return project.participacionUsuario;
+  if (project.my_participation) return project.my_participation;
   if (project.participacion) return project.participacion;
 
   if (Array.isArray(project.participaciones) && project.participaciones.length > 0) {
@@ -857,7 +923,7 @@ function getParticipacionUsuario(project = {}) {
 }
 
 function mapEstadoToFront(project = {}) {
-  if (project.estado) return project.estado;
+  if (project.estado) return project.estado === 'desarrollo' ? 'en_desarrollo' : project.estado;
 
   const publicacion = project.estado_publicacion;
   const desarrollo = project.estado_desarrollo;
@@ -865,12 +931,16 @@ function mapEstadoToFront(project = {}) {
   if (publicacion === 'archivado') return 'archivado';
   if (publicacion === 'publicado') return 'publicado';
 
-  if (
-    desarrollo === 'en_desarrollo' ||
-    desarrollo === 'mantenimiento' ||
-    desarrollo === 'versionado'
-  ) {
-    return 'desarrollo';
+  if ([
+    'sin_especificar',
+    'en_desarrollo',
+    'pausado',
+    'terminado',
+    'mantenimiento',
+    'versionado',
+    'cancelado',
+  ].includes(desarrollo)) {
+    return desarrollo;
   }
 
   return 'borrador';
@@ -885,9 +955,21 @@ function mapEstadoToBackend(estado) {
       };
 
     case 'desarrollo':
+    case 'en_desarrollo':
       return {
         estado_publicacion: 'borrador',
         estado_desarrollo: 'en_desarrollo',
+      };
+
+    case 'pausado':
+    case 'terminado':
+    case 'mantenimiento':
+    case 'versionado':
+    case 'cancelado':
+    case 'sin_especificar':
+      return {
+        estado_publicacion: 'borrador',
+        estado_desarrollo: estado,
       };
 
     case 'archivado':
@@ -1088,6 +1170,7 @@ export function normalizeProyectoFromApi(project = {}) {
 
   const participacion = getParticipacionUsuario(project);
   const participantes = normalizeProyectoParticipantes(project);
+  const miParticipacion = getCurrentUserParticipation(project, participantes);
   const participantesCountRaw = project.participantes_count ?? project.participants_count ?? project.colaboradores_count;
   const participantesCount = Number.isFinite(Number(participantesCountRaw))
     ? Number(participantesCountRaw)
@@ -1095,8 +1178,8 @@ export function normalizeProyectoFromApi(project = {}) {
 
   const esPublico = project.es_publico !== undefined
     ? Boolean(project.es_publico)
-    : participacion?.visibilidad
-      ? participacion.visibilidad === 'publico'
+    : (miParticipacion?.visibilidad || participacion?.visibilidad)
+      ? (miParticipacion?.visibilidad || participacion?.visibilidad) === 'publico'
       : project.estado_publicacion
         ? project.estado_publicacion === 'publicado'
         : true;
@@ -1122,7 +1205,7 @@ export function normalizeProyectoFromApi(project = {}) {
 
     id_tipo_proyecto: project.id_tipo_proyecto || project.tipo_proyecto?.id_tipo_proyecto || project.tipoProyecto?.id_tipo_proyecto || null,
 
-    desarrollado_para: project.desarrollado_para || '',
+    desarrollado_para: project.desarrollado_para || project.plataforma_objetivo || '',
 
     url_repositorios: repositorios,
     url_repositorio: project.url_repositorio || repositorios[0] || '',
@@ -1138,13 +1221,19 @@ export function normalizeProyectoFromApi(project = {}) {
 
     documentos,
 
-    fecha_inicio: project.fecha_inicio || participacion?.fecha_inicio || '',
-    fecha_fin: project.fecha_fin || participacion?.fecha_fin || null,
+    fecha_inicio: project.fecha_inicio || miParticipacion?.fecha_inicio || participacion?.fecha_inicio || '',
+    fecha_fin: project.fecha_fin || miParticipacion?.fecha_fin || participacion?.fecha_fin || null,
     en_curso: project.en_curso !== undefined
       ? Boolean(project.en_curso)
-      : !(project.fecha_fin || participacion?.fecha_fin),
+      : !(project.fecha_fin || miParticipacion?.fecha_fin || participacion?.fecha_fin),
 
     es_publico: esPublico,
+
+    participacion: miParticipacion || participacion || null,
+    mi_participacion: miParticipacion,
+    participacion_usuario: miParticipacion,
+    rol: miParticipacion?.rol || cleanString(project.rol || participacion?.rol),
+    descripcion_aporte: miParticipacion?.descripcion_aporte || cleanString(project.descripcion_aporte || participacion?.descripcion_aporte || participacion?.descripcionAporte),
 
     etiquetas: getEtiquetasFromProject(project),
     tecnologias_detalle: Array.isArray(project.tecnologias_detalle) ? project.tecnologias_detalle : [],
@@ -1160,6 +1249,7 @@ export function normalizeProyectoFromApi(project = {}) {
     puede_eliminar: permisos.puede_eliminar ?? project.puede_eliminar ?? true,
     puede_configurar: permisos.puede_configurar ?? project.puede_configurar ?? false,
     puede_desvincular_participacion: permisos.puede_desvincular_participacion ?? project.puede_desvincular_participacion ?? false,
+    puede_remover_participantes_sin_validacion: permisos.puede_remover_participantes_sin_validacion ?? project.puede_remover_participantes_sin_validacion ?? false,
   };
 }
 
@@ -1324,6 +1414,15 @@ export async function desvincularParticipacionProyecto(id) {
   return apiFetch(`${API_URL}/projects/${id}/participation`, {
     method: 'DELETE',
   });
+}
+
+export async function removerParticipanteSinValidacion(idProyecto, idParticipacion) {
+  const result = await apiFetch(`${API_URL}/projects/${idProyecto}/participants/${idParticipacion}`, {
+    method: 'DELETE',
+  });
+
+  clearProyectoParticipantesCache(idProyecto);
+  return result;
 }
 
 // ═══════════════════════════════════════════

@@ -5,60 +5,55 @@
 
 // ── Estados disponibles ──
 export const ESTADOS_PROYECTO = [
-  { value: 'publicado', label: 'Publicado' },
-  { value: 'desarrollo', label: 'En desarrollo' },
   { value: 'borrador', label: 'Borrador' },
+  { value: 'publicado', label: 'Publicado' },
   { value: 'archivado', label: 'Archivado' },
+  { value: 'sin_especificar', label: 'Sin especificar' },
+  { value: 'en_desarrollo', label: 'En desarrollo' },
+  { value: 'pausado', label: 'Pausado' },
+  { value: 'terminado', label: 'Terminado' },
+  { value: 'mantenimiento', label: 'Mantenimiento' },
+  { value: 'versionado', label: 'Versionado' },
+  { value: 'cancelado', label: 'Cancelado' },
 ];
 
 // ── Tipos de proyecto ──
 // IMPORTANTE:
-// El value debe coincidir con el slug/código que use el backend.
+// El value debe coincidir con proyectos.categoria_proyecto.
 export const TIPOS_PROYECTO = [
-  { value: 'web', label: 'Sitio web / Landing page' },
-  { value: 'app_web', label: 'Aplicación web' },
-  { value: 'movil', label: 'Aplicación móvil' },
-  { value: 'desktop', label: 'Aplicación de escritorio' },
-  { value: 'videojuego', label: 'Videojuego' },
-  { value: 'api', label: 'API / Backend' },
-  { value: 'microservicio', label: 'Microservicio' },
-  { value: 'ecommerce', label: 'E-commerce' },
-  { value: 'dashboard', label: 'Dashboard / Panel administrativo' },
-  { value: 'sistema_gestion', label: 'Sistema de gestión' },
-  { value: 'saas', label: 'SaaS' },
-  { value: 'ia_ml', label: 'Inteligencia artificial / Machine Learning' },
-  { value: 'data_bi', label: 'Data / BI / Analítica' },
-  { value: 'iot', label: 'IoT / Hardware' },
-  { value: 'automatizacion', label: 'Automatización / Scripts' },
-  { value: 'plugin', label: 'Plugin / Extensión' },
-  { value: 'libreria', label: 'Librería / Paquete' },
-  { value: 'bot', label: 'Bot / Chatbot' },
-  { value: 'blockchain', label: 'Blockchain / Web3' },
-  { value: 'ar_vr', label: 'AR / VR / XR' },
+  { value: 'sin_especificar', label: 'Sin especificar' },
+  { value: 'portafolio', label: 'Portafolio' },
   { value: 'educativo', label: 'Proyecto educativo' },
-  { value: 'investigacion', label: 'Investigación / Prototipo' },
+  { value: 'financiero', label: 'Financiero' },
+  { value: 'ecommerce', label: 'E-commerce' },
+  { value: 'marketplace', label: 'Marketplace' },
+  { value: 'videojuego', label: 'Videojuego' },
+  { value: 'salud', label: 'Salud' },
+  { value: 'administrativo', label: 'Administrativo' },
+  { value: 'red_social', label: 'Red social' },
+  { value: 'dashboard_bi', label: 'Dashboard / BI' },
+  { value: 'gestion_empresarial', label: 'Gestión empresarial' },
+  { value: 'productividad', label: 'Productividad' },
+  { value: 'seguridad', label: 'Seguridad' },
+  { value: 'entretenimiento', label: 'Entretenimiento' },
+  { value: 'herramienta_desarrollo', label: 'Herramienta de desarrollo' },
   { value: 'otro', label: 'Otros' },
 ];
 
 // ── Plataforma objetivo ──
 // IMPORTANTE:
-// El value debe coincidir con lo que acepte el backend en desarrollado_para.
+// El value debe coincidir con proyectos.plataforma_objetivo.
 export const DESARROLLADO_PARA = [
-  { value: 'movil', label: 'Móvil' },
-  { value: 'tablet', label: 'Tablet' },
+  { value: 'sin_especificar', label: 'Sin especificar' },
   { value: 'web', label: 'Web' },
+  { value: 'movil', label: 'Móvil' },
   { value: 'web_movil', label: 'Web + Móvil' },
-  { value: 'desktop', label: 'Escritorio' },
-  { value: 'tablet_web', label: 'Tablet + Web' },
+  { value: 'escritorio', label: 'Escritorio' },
   { value: 'multiplataforma', label: 'Multiplataforma' },
-  { value: 'televisor', label: 'Televisor / Smart TV' },
-  { value: 'reloj', label: 'Reloj / Wearable' },
-  { value: 'consola', label: 'Consola' },
-  { value: 'terminal', label: 'Terminal / CLI' },
-  { value: 'kiosko', label: 'Kiosko / Pantalla pública' },
-  { value: 'auto', label: 'Auto / Sistema embebido' },
-  { value: 'iot', label: 'Dispositivo IoT' },
-  { value: 'servidor', label: 'Servidor / Backend' },
+  { value: 'api_backend', label: 'API / Backend' },
+  { value: 'datos_ml', label: 'Datos / Machine Learning' },
+  { value: 'iot', label: 'IoT' },
+  { value: 'cli', label: 'CLI / Terminal' },
   { value: 'otro', label: 'Otros' },
 ];
 
@@ -172,7 +167,7 @@ export const MOCK_PROYECTOS = [
     fecha_fin: '2024-01-15',
     en_curso: false,
 
-    tipo: 'sistema_gestion',
+    tipo: 'gestion_empresarial',
     desarrollado_para: 'web',
 
     etiquetas: ['PHP', 'MySQL', 'Apache', 'Bootstrap'],
@@ -223,7 +218,7 @@ export const MOCK_PROYECTOS = [
     fecha_fin: '2024-02-20',
     en_curso: false,
 
-    tipo: 'sistema_gestion',
+    tipo: 'gestion_empresarial',
     desarrollado_para: 'web',
 
     etiquetas: ['Java', 'PostgreSQL', 'Tomcat', 'JSP'],
@@ -281,7 +276,7 @@ export const MOCK_PROYECTOS = [
 
     etiquetas: ['Laravel', 'PHP', 'Redis', 'Docker'],
 
-    estado: 'desarrollo',
+    estado: 'en_desarrollo',
     estadoLabel: 'En desarrollo',
 
     badges: [

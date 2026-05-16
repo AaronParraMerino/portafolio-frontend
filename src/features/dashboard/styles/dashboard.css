@@ -286,15 +286,35 @@
   position: fixed;
   top: var(--nav-height, 60px);
   left: 0;
-  bottom: 0;
+  bottom: var(--dsh-sidebar-footer-inset, 0px);
   width: 240px;
   background: #0c1220;
   border-right: 1px solid rgba(255, 255, 255, .06);
   display: flex;
   flex-direction: column;
   z-index: 100;
-  transition: width .22s cubic-bezier(.4, 0, .2, 1);
+  transition:
+    width .22s cubic-bezier(.4, 0, .2, 1),
+    bottom .26s cubic-bezier(.4, 0, .2, 1),
+    border-radius .22s ease,
+    box-shadow .22s ease;
   overflow: hidden;
+}
+
+.dsh-sidebar.footer-near {
+  border-bottom-right-radius: 18px;
+  box-shadow: 12px 0 28px rgba(12, 18, 32, .16), 0 16px 30px rgba(12, 18, 32, .2);
+}
+
+.dsh-sidebar.footer-near::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 44px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(12, 18, 32, 0), rgba(12, 18, 32, .96));
 }
 
 .dsh-sidebar.collapsed {
@@ -376,12 +396,14 @@
 .dsh-nav-item:hover {
   background: rgba(255, 255, 255, .07);
   color: rgba(255, 255, 255, .82);
+  transform: translateX(2px);
 }
 
 .dsh-nav-item.active {
   background: rgba(0, 119, 183, .22);
   color: #7ec8e8;
   font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--azul, #0077b7);
 }
 
 .dsh-nav-item.danger {
@@ -394,9 +416,17 @@
 }
 
 .dsh-nav-icon {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .15s ease, color .15s ease;
+}
+
+.dsh-nav-item:hover .dsh-nav-icon,
+.dsh-nav-item.active .dsh-nav-icon {
+  transform: translateY(-1px);
 }
 
 .dsh-nav-text {

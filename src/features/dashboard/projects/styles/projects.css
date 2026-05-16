@@ -433,6 +433,7 @@
 .prj-pill-draft { color: var(--gris-oscuro); background: var(--fondo); border: 1px solid var(--gris-borde); }
 .prj-pill-arch  { color: var(--azul);  background: var(--azul-light); border: 1px solid var(--azul-mid); }
 .prj-pill-type  { color: var(--gris-oscuro); background: var(--fondo); border: 1px solid var(--gris-borde); }
+.prj-pill-role  { max-width: 100%; color: var(--azul-deep); background: var(--azul-light); border: 1px solid var(--azul-mid); overflow: hidden; text-overflow: ellipsis; }
 
 /* Selector de estado dentro de ConfirmModal compartido */
 .prj-state-modal {
@@ -453,11 +454,38 @@
 }
 .prj-state-options {
   display: grid;
+  gap: 12px;
+  max-height: min(54vh, 430px);
+  overflow-y: auto;
+  padding-right: 4px;
+  overscroll-behavior: contain;
+}
+.prj-state-options::-webkit-scrollbar {
+  width: 7px;
+}
+.prj-state-options::-webkit-scrollbar-thumb {
+  background: var(--gris-borde);
+  border-radius: 999px;
+}
+.prj-state-section {
+  display: grid;
+  gap: 7px;
+}
+.prj-state-section-title {
+  color: var(--gris-texto);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.prj-state-section-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 .prj-state-option {
   width: 100%;
-  min-height: 58px;
+  min-height: 46px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -493,15 +521,22 @@
   background: var(--verde);
   box-shadow: 0 0 0 4px var(--verde-bg);
 }
-.prj-state-dot.desarrollo {
+.prj-state-dot.desarrollo,
+.prj-state-dot.en_desarrollo,
+.prj-state-dot.pausado,
+.prj-state-dot.mantenimiento,
+.prj-state-dot.versionado {
   background: var(--amarillo);
   box-shadow: 0 0 0 4px var(--amarillo-bg);
 }
-.prj-state-dot.borrador {
+.prj-state-dot.borrador,
+.prj-state-dot.sin_especificar,
+.prj-state-dot.terminado {
   background: var(--gris-texto);
   box-shadow: 0 0 0 4px var(--fondo);
 }
-.prj-state-dot.archivado {
+.prj-state-dot.archivado,
+.prj-state-dot.cancelado {
   background: var(--azul);
   box-shadow: 0 0 0 4px var(--azul-light);
 }
@@ -514,13 +549,13 @@
 }
 .prj-state-label {
   color: var(--negro-texto);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 .prj-state-description {
   color: var(--gris-texto);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 10.5px;
+  line-height: 1.25;
 }
 .prj-state-current-badge {
   border: 1px solid var(--azul-mid);
@@ -532,6 +567,16 @@
   font-size: 9px;
   font-weight: 600;
   padding: 2px 7px;
+}
+
+@media (max-width: 520px) {
+  .prj-state-options {
+    max-height: 56vh;
+  }
+
+  .prj-state-section-options {
+    grid-template-columns: 1fr;
+  }
 }
 
 .prj-card-title {
@@ -549,6 +594,37 @@
 }
 
 /* Stack chips — estilo HTML con color de acento */
+.prj-card-contribution {
+  margin: -2px 0 10px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--fondo);
+  border: 1px solid var(--gris-borde);
+}
+
+.prj-card-contribution span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--gris-texto);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.prj-card-contribution p {
+  margin: 0;
+  color: var(--gris-oscuro);
+  font-size: 11.5px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .prj-stack-tags {
   display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;
 }
@@ -699,11 +775,20 @@
   row-gap: 6px;
 }
 
+.prj-collab-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  margin-left: -6px;
+}
+
+.prj-collab-avatar-wrap:first-child {
+  margin-left: 0;
+}
+
 .prj-collab-avatar-btn {
   position: relative;
   width: 34px;
   height: 34px;
-  margin-left: -6px;
   padding: 0;
   border: 2px solid var(--blanco);
   border-radius: 50%;
@@ -716,10 +801,6 @@
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,.12);
   transition: transform .15s, box-shadow .15s, border-color .15s;
-}
-
-.prj-collab-avatar-btn:first-child {
-  margin-left: 0;
 }
 
 .prj-collab-avatar-btn:hover,
@@ -752,6 +833,42 @@
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 900;
+}
+
+.prj-collab-remove-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  z-index: 3;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--blanco);
+  border-radius: 50%;
+  background: var(--rojo);
+  color: var(--blanco);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,.18);
+}
+
+.prj-collab-remove-btn:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.prj-collab-error {
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--rojo-bg);
+  border: 1px solid var(--rojo-mid);
+  color: var(--rojo);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .prj-collab-loading {
@@ -1210,6 +1327,48 @@
 .prj-toast.ok    { background: #ecfdf5; color: #059669; border: 1px solid rgba(16,185,129,.25); }
 .prj-toast.error { background: var(--rojo-chip); color: var(--rojo-mid); border: 1px solid var(--rojo-borde); }
 .prj-toast svg   { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; flex-shrink: 0; }
+
+.prj-bg-activity {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 650;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 9px 15px 9px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--azul-mid);
+  background: rgba(255,255,255,.94);
+  color: var(--azul-deep);
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 12px 34px rgba(0,0,0,.14);
+  backdrop-filter: blur(8px);
+  animation: prj-activityIn .18s ease;
+}
+.prj-bg-activity-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--azul-mid);
+  border-top-color: var(--azul);
+  animation: prj-spin .7s linear infinite;
+  flex: 0 0 16px;
+}
+@keyframes prj-activityIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 640px) {
+  .prj-bg-activity {
+    right: 16px;
+    bottom: 16px;
+    max-width: calc(100vw - 32px);
+  }
+}
 
 /* ════════════════════════════════════════
    RESPONSIVE
@@ -1833,6 +1992,32 @@
   background: #000;
 }
 
+.prj-carousel-video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(255,255,255,.9);
+  background:
+    linear-gradient(135deg, rgba(0,0,0,.72), rgba(0,119,183,.5)),
+    #111827;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.prj-carousel-video-placeholder svg {
+  width: 34px;
+  height: 26px;
+  color: #ef4444;
+  filter: drop-shadow(0 5px 12px rgba(0,0,0,.28));
+}
+
 .prj-carousel-video-wrap,
 .prj-carousel-video {
   transform: none !important;
@@ -1887,12 +2072,17 @@
 
 /* Cuando se expande la galería */
 .prj-card.media-open .prj-card-cover {
-  height: 320px;
+  height: 360px;
+}
+
+.prj-card.media-open {
+  border-color: var(--azul-mid);
+  box-shadow: 0 14px 38px rgba(0,119,183,.13);
 }
 
 @media (max-width: 640px) {
   .prj-card.media-open .prj-card-cover {
-    height: 260px;
+    height: 290px;
   }
 }
 
@@ -1922,6 +2112,10 @@
   background: rgba(0,0,0,.66);
   border-color: rgba(255,255,255,.28);
   transform: translateY(-1px);
+}
+.prj-card.media-open .prj-cover-expand-btn {
+  background: rgba(0,119,183,.82);
+  border-color: rgba(255,255,255,.36);
 }
 
 .prj-cover-expand-btn svg {
@@ -2038,6 +2232,14 @@
   color: var(--gris-texto);
   font-size: 10.5px;
   font-weight: 500;
+}
+
+.prj-detail-text {
+  display: block;
+  color: var(--gris-oscuro);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
 /* Secciones internas */
@@ -2582,8 +2784,116 @@
   accent-color: var(--azul);
 }
 
+.prj-config-muted,
+.prj-config-error {
+  padding: 9px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.prj-config-muted {
+  color: var(--gris-texto);
+  background: var(--fondo);
+  border: 1px dashed var(--gris-borde);
+}
+
+.prj-config-error {
+  color: var(--rojo);
+  background: var(--rojo-bg);
+  border: 1px solid var(--rojo-mid);
+  margin-bottom: 8px;
+}
+
+.prj-config-participants {
+  display: grid;
+  gap: 8px;
+}
+
+.prj-config-participant {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--gris-borde);
+  border-radius: 8px;
+  background: var(--blanco);
+}
+
+.prj-config-participant-avatar,
+.prj-config-participant-avatar img,
+.prj-config-participant-avatar span {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.prj-config-participant-avatar {
+  overflow: hidden;
+  background: var(--fondo);
+}
+
+.prj-config-participant-avatar img {
+  object-fit: cover;
+  display: block;
+}
+
+.prj-config-participant-avatar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--azul-deep);
+  background: linear-gradient(135deg, #f8fafc, #dbeafe);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.prj-config-participant-main {
+  min-width: 0;
+}
+
+.prj-config-participant-name {
+  color: var(--negro-texto);
+  font-size: 13px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.prj-config-participant-meta {
+  color: var(--gris-texto);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.prj-config-remove-btn {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--rojo-mid);
+  border-radius: 8px;
+  color: var(--rojo);
+  background: var(--rojo-bg);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.prj-config-remove-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 620px) {
   .prj-config-grid {
     grid-template-columns: 1fr;
+  }
+
+  .prj-config-participant {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .prj-config-remove-btn {
+    grid-column: 1 / -1;
   }
 }
