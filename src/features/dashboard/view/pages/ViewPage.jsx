@@ -1,14 +1,14 @@
 // src/features/dashboard/view/pages/ViewPage.jsx
 
-import { useState } from 'react';
-import { FiCheck, FiSettings } from 'react-icons/fi';
+import { useRef, useState } from 'react';
+import { FiCheck, FiDownload, FiEyeOff, FiSettings } from 'react-icons/fi';
 import '../styles/view.css';
 
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import Header from '../../layout/Header';
 
 import { useView } from '../hooks/useView';
-import { getFullName, FONTS, getAutoTextColor } from '../model/viewModel';
+import { getFullName, FONTS, getAutoTextColor, getLuminance } from '../model/viewModel';
 
 import ViewOsFrame from '../components/ViewOsFrame';
 import ViewHero from '../components/ViewHero';
@@ -20,6 +20,8 @@ import ViewProjects from '../components/ViewProjects';
 import ViewToast from '../components/ViewToast';
 import ViewPreviewNotice from '../components/ViewPreviewNotice';
 import ViewConfigModal from '../modal/ViewConfigModal';
+import ViewDownloadModal from '../modal/ViewDownloadModal';
+import { exportPortfolio } from '../services/portfolioExportService';
 
 export default function ViewPage() {
   const {
@@ -35,28 +37,55 @@ export default function ViewPage() {
     loading,
     dataSource,
     error,
-    updateConfig,
     updatePerfil,
-    resetConfig,
     saveCurrentConfig,
     publicar,
   } = useView();
 
   const [configOpen, setConfigOpen] = useState(false);
-  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishTarget, setPublishTarget] = useState(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const [exporting, setExporting] = useState('');
+  const [exportError, setExportError] = useState('');
+  const portfolioRef = useRef(null);
 
-  const title = `${getFullName(perfil)} — Portafolio`;
+  const title = `${getFullName(perfil)} - Portafolio`;
   const visibilidad = config?.visibilidad || {};
+  const isPublished = Boolean(config?.publicado);
 
   const handlePublish = async () => {
-    await publicar();
-    setPublishOpen(false);
+    await publicar(publishTarget !== false);
+    setPublishTarget(null);
   };
+
+  const handleExport = async (format) => {
+    setExporting(format);
+    setExportError('');
+
+    try {
+      await exportPortfolio(portfolioRef.current, {
+        format,
+        title: getFullName(perfil),
+      });
+      setDownloadOpen(false);
+    } catch (err) {
+      setExportError(err.message || 'No se pudo descargar el portafolio.');
+    } finally {
+      setExporting('');
+    }
+  };
+
   const selectedFont = FONTS.find(font => font.id === config?.fontId) || FONTS[0];
 
   const resolvedTextColor = config?.textColorAuto
     ? getAutoTextColor(config?.cardBg || '#ffffff')
     : (config?.textColor || '#111827');
+  const isDarkCard = getLuminance(config?.cardBg || '#ffffff') <= 0.45;
+  const isLightText = getLuminance(resolvedTextColor) > 0.45;
+  const mutedTextColor = isLightText ? '#d1d5db' : '#6b7280';
+  const softSurfaceBg = isDarkCard ? 'rgba(255,255,255,.08)' : '#f8fafc';
+  const softSurfaceHoverBg = isDarkCard ? 'rgba(255,255,255,.12)' : '#e8f4fb';
+  const softBorderColor = isDarkCard ? 'rgba(255,255,255,.16)' : '#e5e7eb';
 
   const hasPortfolioContent = Boolean(perfil)
     || redes.length > 0
@@ -100,7 +129,7 @@ export default function ViewPage() {
       </div>
     );
   }
-  
+
   return (
     <div
       className="vw-page"
@@ -111,11 +140,27 @@ export default function ViewPage() {
         '--card-bg': config?.cardBg || '#ffffff',
         '--pf-font': selectedFont.value,
         '--text-color': resolvedTextColor,
+        '--muted-text-color': mutedTextColor,
+        '--soft-surface-bg': softSurfaceBg,
+        '--soft-surface-hover-bg': softSurfaceHoverBg,
+        '--soft-border-color': softBorderColor,
+        '--github-link-color': isDarkCard ? '#f9fafb' : '#24292f',
       }}
     >
       <Header
         title="Vista Portafolio"
         actions={[
+          {
+            label: 'Descargar',
+            title: 'Descargar portafolio',
+            icon: <FiDownload />,
+            variant: 'secondary',
+            disabled: !hasPortfolioContent,
+            onClick: () => {
+              setExportError('');
+              setDownloadOpen(true);
+            },
+          },
           {
             label: 'Personalizar',
             title: 'Personalizar vista',
@@ -124,12 +169,13 @@ export default function ViewPage() {
             onClick: () => setConfigOpen(true),
           },
           {
-            label: 'Publicar',
-            loadingLabel: 'Publicando...',
-            title: 'Publicar portafolio',
-            icon: <FiCheck />,
+            label: isPublished ? 'Ocultar' : 'Publicar',
+            loadingLabel: isPublished ? 'Ocultando...' : 'Publicando...',
+            title: isPublished ? 'Ocultar portafolio' : 'Publicar portafolio',
+            icon: isPublished ? <FiEyeOff /> : <FiCheck />,
             loading: guardando,
-            onClick: () => setPublishOpen(true),
+            variant: isPublished ? 'secondary' : undefined,
+            onClick: () => setPublishTarget(!isPublished),
           },
         ]}
       />
@@ -141,37 +187,39 @@ export default function ViewPage() {
           error={error}
         />
 
-        <ViewOsFrame frameId={config?.frameId || 'mac'} title={title}>
-          <ViewHero perfil={perfil} config={config} />
+        <div ref={portfolioRef} className="portfolio-export-target">
+          <ViewOsFrame frameId={config?.frameId || 'none'} title={title}>
+            <ViewHero perfil={perfil} config={config} />
 
-          <ViewIdentity
-            perfil={perfil}
-            redes={redes}
-            disponible={config?.disponible}
-            visibilidad={visibilidad}
-            onPerfilChange={updatePerfil}
-          />
+            <ViewIdentity
+              perfil={perfil}
+              redes={redes}
+              disponible={config?.disponible}
+              visibilidad={visibilidad}
+              onPerfilChange={updatePerfil}
+            />
 
-          <ViewStats
-            stats={stats}
-            visibilidad={visibilidad}
-          />
+            <ViewStats
+              stats={stats}
+              visibilidad={visibilidad}
+            />
 
-          <ViewSkills
-            habilidades={habilidades}
-            visibilidad={visibilidad}
-          />
+            <ViewSkills
+              habilidades={habilidades}
+              visibilidad={visibilidad}
+            />
 
-          <ViewExperience
-            experiencias={experiencias}
-            visibilidad={visibilidad}
-          />
+            <ViewExperience
+              experiencias={experiencias}
+              visibilidad={visibilidad}
+            />
 
-          <ViewProjects
-            proyectos={proyectos}
-            visibilidad={visibilidad}
-          />
-        </ViewOsFrame>
+            <ViewProjects
+              proyectos={proyectos}
+              visibilidad={visibilidad}
+            />
+          </ViewOsFrame>
+        </div>
       </main>
 
       <ViewConfigModal
@@ -185,25 +233,39 @@ export default function ViewPage() {
           experiencias,
           proyectos,
         }}
-        onChange={updateConfig}
-        onReset={resetConfig}
-        onSave={() => saveCurrentConfig(config)}
+        onSave={saveCurrentConfig}
         saving={guardando}
         onClose={() => setConfigOpen(false)}
       />
 
       <ConfirmModal
-        open={publishOpen}
-        variant="green"
-        icon="check"
-        title="Publicar portafolio"
-        subtitle="Confirmación de publicación"
-        message="¿Deseas publicar esta vista del portafolio con la visibilidad configurada?"
-        confirmLabel="Sí, publicar"
+        open={publishTarget !== null}
+        variant={publishTarget === false ? 'yellow' : 'green'}
+        icon={publishTarget === false ? 'warning' : 'check'}
+        title={publishTarget === false ? 'Ocultar portafolio' : 'Publicar portafolio'}
+        subtitle={publishTarget === false ? 'Confirmacion de privacidad' : 'Confirmacion de publicacion'}
+        message={
+          publishTarget === false
+            ? 'El portafolio dejara de estar disponible en la vista publica y en los listados.'
+            : 'Deseas publicar esta vista del portafolio con la visibilidad configurada?'
+        }
+        confirmLabel={publishTarget === false ? 'Si, ocultar' : 'Si, publicar'}
         cancelLabel="Cancelar"
         loading={guardando}
         onConfirm={handlePublish}
-        onClose={() => setPublishOpen(false)}
+        onClose={() => setPublishTarget(null)}
+      />
+
+      <ViewDownloadModal
+        open={downloadOpen}
+        exporting={exporting}
+        error={exportError}
+        onExport={handleExport}
+        onClose={() => {
+          if (!exporting) {
+            setDownloadOpen(false);
+          }
+        }}
       />
 
       <ViewToast toast={toast} />
