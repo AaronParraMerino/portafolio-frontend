@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearAuthStorage } from "../../../../shared/utils/authStorage";
 
 export default function EliminarCuenta() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ confirmacion: "", contrasena: "" });
   const [toast, setToast] = useState(null); // { type: 'error' | 'success', message: string }
+  const [loading, setLoading] = useState(false);
+  const API = process.env.REACT_APP_API_URL;
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -15,7 +18,7 @@ export default function EliminarCuenta() {
     }
   };
 
-  const handleEliminar = () => {
+  const handleEliminar = async () => {
     const sinConfirmacion = form.confirmacion.trim() === "";
     const sinContrasena = form.contrasena.trim() === "";
 
@@ -43,11 +46,38 @@ export default function EliminarCuenta() {
       return;
     }
 
-    // Todo correcto → mostrar éxito
-    showToast('success', '✓ Tu cuenta ha sido eliminada correctamente. Lamentamos verte partir.');
-    // Aquí conectas tu API y luego redirige:
-    // await deleteAccount(form.contrasena);
-    // setTimeout(() => navigate('/'), 3000);
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+    const userId = usuario.id_usuario || usuario.id || usuario.idUsuario;
+    const token = localStorage.getItem("tokenPORT");
+
+    if (!userId || !token) {
+      showToast('error', 'No se pudo identificar la sesion actual.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${API}/usuarios/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: form.contrasena }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "No se pudo desactivar la cuenta.");
+
+      showToast('success', 'Tu cuenta fue desactivada. Todo tu portafolio publico quedo oculto.');
+      clearAuthStorage();
+      setTimeout(() => navigate('/auth/login'), 2500);
+    } catch (e) {
+      showToast('error', e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,7 +119,7 @@ export default function EliminarCuenta() {
         </div>
 
         <h1 style={titleStyle}>Eliminar cuenta</h1>
-        <p style={subtitleStyle}>Una vez eliminada tu cuenta, no hay vuelta atrás. Esta acción es permanente.</p>
+        <p style={subtitleStyle}>Tu cuenta quedara inactiva y tu portafolio publico se ocultara. Podras restablecerla verificando tu correo.</p>
 
         <div style={warningCardStyle}>
           <div style={warnIconWrapStyle}>
@@ -100,13 +130,13 @@ export default function EliminarCuenta() {
             </svg>
           </div>
           <div>
-            <p style={warningTitleStyle}>Esto eliminará permanentemente:</p>
+            <p style={warningTitleStyle}>Al desactivar tu cuenta:</p>
             <ul style={warningListStyle}>
               {[
-                "Tu cuenta y toda tu información personal",
-                "Todos tus proyectos y habilidades registradas",
-                "Tu experiencia laboral en la plataforma",
-                "Tu portafolio público y su URL única",
+                "No podras iniciar sesion hasta restablecerla",
+                "Tu perfil publico quedara oculto",
+                "Tus proyectos, habilidades, enlaces y evidencias visibles pasaran a privado",
+                "Tus datos se conservaran para una reactivacion segura",
               ].map((item, i) => (
                 <li key={i} style={{ fontSize: 13, color: "#374151" }}>{item}</li>
               ))}
@@ -155,14 +185,14 @@ export default function EliminarCuenta() {
         </div>
 
         <div style={actionsStyle}>
-          <button style={btnDangerStyle} onClick={handleEliminar}>
+          <button style={btnDangerStyle} onClick={handleEliminar} disabled={loading}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6" />
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
               <path d="M10 11v6M14 11v6" />
               <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
             </svg>
-            Eliminar mi cuenta
+            {loading ? "Desactivando..." : "Desactivar mi cuenta"}
           </button>
           <button style={btnCancelStyle} onClick={() => navigate('/dashboard/settings')}>
             Cancelar

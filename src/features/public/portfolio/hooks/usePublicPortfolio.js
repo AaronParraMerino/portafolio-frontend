@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EMPTY_VIEW } from '../../../dashboard/view/model/viewModel';
 import {
+  clearCachedPublicPortfolio,
   getPublicPortfolio,
   loadCachedPublicPortfolio,
 } from '../services/portfolioService';
@@ -35,8 +36,12 @@ export function usePublicPortfolio(userId) {
       .catch((error) => {
         if (!active) return;
 
+        if (error?.status === 403 || error?.status === 404) {
+          clearCachedPublicPortfolio(userId);
+        }
+
         setState((prev) => ({
-          ...prev,
+          data: (error?.status === 403 || error?.status === 404) ? EMPTY_VIEW : prev.data,
           loading: false,
           error: error?.message || 'No se pudo cargar el portafolio.',
         }));

@@ -48,6 +48,16 @@ function saveCachedPublicPortfolio(userId, data) {
   }
 }
 
+export function clearCachedPublicPortfolio(userId) {
+  if (!userId) return;
+
+  try {
+    sessionStorage.removeItem(cacheKey(userId));
+  } catch {
+    // Cache cleanup should not block the public view.
+  }
+}
+
 async function safeJson(res) {
   const contentType = res.headers.get('content-type') || '';
   const text = await res.text();
@@ -75,7 +85,9 @@ async function publicFetch(endpoint) {
   const data = await safeJson(res);
 
   if (!res.ok) {
-    throw new Error(data?.message || `Error ${res.status}`);
+    const error = new Error(data?.message || `Error ${res.status}`);
+    error.status = res.status;
+    throw error;
   }
 
   return data;
@@ -119,12 +131,17 @@ function mergeVisibility(...sources) {
       ...acc.proyectos,
       ...(current.proyectos || {}),
     },
+    proyecto_detalles: {
+      ...acc.proyecto_detalles,
+      ...(current.proyecto_detalles || {}),
+    },
   }), {
     perfil: { ...DEFAULT_VISIBILITY.perfil },
     stats: { ...DEFAULT_VISIBILITY.stats },
     habilidades: {},
     experiencias: {},
     proyectos: {},
+    proyecto_detalles: { ...DEFAULT_VISIBILITY.proyecto_detalles },
   });
 }
 

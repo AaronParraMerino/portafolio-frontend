@@ -77,6 +77,7 @@ function ProjectLink({ href, type, children }) {
     type === 'github' ? 'proj-link-gh' : '',
     type === 'youtube' ? 'proj-link-yt' : '',
     type === 'demo' ? 'proj-link-demo' : '',
+    type === 'doc' ? 'proj-link-doc' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -150,6 +151,21 @@ function getProjectMedia(proyecto = {}) {
   ];
 }
 
+function getProjectDocuments(proyecto = {}) {
+  return (Array.isArray(proyecto.documentos) ? proyecto.documentos : [])
+    .map((doc) => {
+      if (typeof doc === 'string') {
+        return { url: doc, nombre: 'Documento' };
+      }
+
+      return {
+        url: doc?.url || doc?.archivo_url || doc?.archivo_path || '',
+        nombre: doc?.nombre || doc?.titulo || 'Documento',
+      };
+    })
+    .filter(doc => doc.url);
+}
+
 function getProjectRepos(proyecto = {}) {
   return uniqueNonEmpty([
     ...(Array.isArray(proyecto.repositoriosGithub) ? proyecto.repositoriosGithub : []),
@@ -176,9 +192,11 @@ function getStatusClass(estado) {
   }[estado] || 'pb-dev';
 }
 
-function ProjectMedia({ proyecto }) {
+function ProjectMedia({ proyecto, showMedia = true, showVideos = true }) {
   const [idx, setIdx] = useState(0);
-  const media = getProjectMedia(proyecto);
+  const media = showMedia
+    ? getProjectMedia(proyecto).filter(item => showVideos || item.tipo !== 'youtube')
+    : [];
   const safeIdx = media.length ? Math.min(idx, media.length - 1) : 0;
   const current = media[safeIdx] || media[0];
   const hasMedia = media.length > 0;
@@ -287,7 +305,11 @@ function ProjectMedia({ proyecto }) {
   );
 }
 
-function ViewProjectCard({ proyecto }) {
+function detailVisible(visibilidad, id) {
+  return isVisible(visibilidad, 'proyecto_detalles', id);
+}
+
+function ViewProjectCard({ proyecto, visibilidad }) {
   const isPublished = proyecto.estado === 'publicado';
   const statusClass = getStatusClass(proyecto.estado);
   const techs = (proyecto.tecnologias || proyecto.etiquetas || [])
@@ -295,34 +317,96 @@ function ViewProjectCard({ proyecto }) {
     .filter(Boolean);
   const repos = getProjectRepos(proyecto);
   const videos = getProjectVideos(proyecto);
+  const documents = getProjectDocuments(proyecto);
   const demoUrl = proyecto.demoUrl || proyecto.url_demo || '';
+  const participacion = proyecto.participacion || {};
+  const showMedia = detailVisible(visibilidad, 'media');
+  const showEstado = detailVisible(visibilidad, 'estado');
+  const showTipo = detailVisible(visibilidad, 'tipo');
+  const showDescripcion = detailVisible(visibilidad, 'descripcion');
+  const showTecnologias = detailVisible(visibilidad, 'tecnologias');
+  const showRepositorios = detailVisible(visibilidad, 'repositorios');
+  const showDemo = detailVisible(visibilidad, 'demo');
+  const showVideos = detailVisible(visibilidad, 'videos');
+  const showDocumentos = detailVisible(visibilidad, 'documentos');
+  const showFechas = detailVisible(visibilidad, 'fechas');
+  const showRol = detailVisible(visibilidad, 'rol');
+  const showAporte = detailVisible(visibilidad, 'aporte');
+  const showParticipantes = detailVisible(visibilidad, 'participantes');
+  const hasBadges = showEstado || showTipo;
+  const hasMeta = (showRol && participacion.rol)
+    || (showParticipantes && proyecto.participantes_count)
+    || (showFechas && (proyecto.fecha_inicio || proyecto.fecha_fin));
+  const aporte = participacion.descripcion_aporte || proyecto.descripcion_aporte;
+  const hasFooter = (showRepositorios && repos.length > 0)
+    || (showDemo && demoUrl)
+    || (showVideos && videos.length > 0)
+    || (showDocumentos && documents.length > 0)
+    || (showFechas && proyecto.anio);
 
   return (
     <article className="proj-card">
-      <ProjectMedia proyecto={proyecto} />
+      <ProjectMedia
+        proyecto={proyecto}
+        showMedia={showMedia}
+        showVideos={showVideos}
+      />
 
       <div className="proj-body">
-        <div className="proj-badges">
-          <span className={`pb ${statusClass}`}>
-            {proyecto.estadoLabel || (isPublished ? 'Publicado' : 'Desarrollo')}
-          </span>
+        {hasBadges && (
+          <div className="proj-badges">
+            {showEstado && (
+              <span className={`pb ${statusClass}`}>
+                {proyecto.estadoLabel || (isPublished ? 'Publicado' : 'Desarrollo')}
+              </span>
+            )}
 
-          <span className="pb pb-type">
-            {proyecto.tipo || 'Proyecto'}
-          </span>
-        </div>
+            {showTipo && (
+              <span className="pb pb-type">
+                {proyecto.tipo || 'Proyecto'}
+              </span>
+            )}
+          </div>
+        )}
 
         <h3 className="proj-name">
           {proyecto.titulo || 'Proyecto'}
         </h3>
 
-        {proyecto.descripcion && (
+        {hasMeta && (
+          <div className="proj-meta">
+            {showRol && participacion.rol && (
+              <span>{participacion.rol}</span>
+            )}
+
+            {showParticipantes && proyecto.participantes_count > 0 && (
+              <span>{proyecto.participantes_count} participantes</span>
+            )}
+
+            {showFechas && (proyecto.fecha_inicio || proyecto.fecha_fin) && (
+              <span>
+                {[proyecto.fecha_inicio, proyecto.fecha_fin || 'Actualidad']
+                  .filter(Boolean)
+                  .map(value => String(value).slice(0, 4))
+                  .join(' - ')}
+              </span>
+            )}
+          </div>
+        )}
+
+        {showDescripcion && proyecto.descripcion && (
           <p className="proj-desc">
             {proyecto.descripcion}
           </p>
         )}
 
-        {techs.length > 0 && (
+        {showAporte && aporte && (
+          <p className="proj-contribution">
+            {aporte}
+          </p>
+        )}
+
+        {showTecnologias && techs.length > 0 && (
           <div className="proj-stack">
             {techs.map(tech => (
               <span key={tech} className="chip">
@@ -332,31 +416,41 @@ function ViewProjectCard({ proyecto }) {
           </div>
         )}
 
-        <div className="proj-footer">
-          <div className="proj-links">
-            {repos.map((url, index) => (
-              <ProjectLink key={`repo-${url}`} href={url} type="github">
-                GitHub{repos.length > 1 ? ` ${index + 1}` : ''}
-              </ProjectLink>
-            ))}
+        {hasFooter && (
+          <div className="proj-footer">
+            <div className="proj-links">
+              {showRepositorios && repos.map((url, index) => (
+                <ProjectLink key={`repo-${url}`} href={url} type="github">
+                  GitHub{repos.length > 1 ? ` ${index + 1}` : ''}
+                </ProjectLink>
+              ))}
 
-            <ProjectLink href={demoUrl} type="demo">
-              Sitio web
-            </ProjectLink>
+              {showDemo && (
+                <ProjectLink href={demoUrl} type="demo">
+                  Sitio web
+                </ProjectLink>
+              )}
 
-            {videos.map((url, index) => (
-              <ProjectLink key={`video-${url}`} href={url} type="youtube">
-                Video{videos.length > 1 ? ` ${index + 1}` : ''}
-              </ProjectLink>
-            ))}
+              {showVideos && videos.map((url, index) => (
+                <ProjectLink key={`video-${url}`} href={url} type="youtube">
+                  Video{videos.length > 1 ? ` ${index + 1}` : ''}
+                </ProjectLink>
+              ))}
+
+              {showDocumentos && documents.map((doc, index) => (
+                <ProjectLink key={`doc-${doc.url}`} href={doc.url} type="doc">
+                  {documents.length > 1 ? `Doc ${index + 1}` : doc.nombre}
+                </ProjectLink>
+              ))}
+            </div>
+
+            {showFechas && proyecto.anio && (
+              <span className="proj-year">
+                {proyecto.anio}
+              </span>
+            )}
           </div>
-
-          {proyecto.anio && (
-            <span className="proj-year">
-              {proyecto.anio}
-            </span>
-          )}
-        </div>
+        )}
       </div>
     </article>
   );
@@ -383,6 +477,7 @@ export default function ViewProjects({ proyectos = [], visibilidad }) {
           <ViewProjectCard
             key={proyecto.id || proyecto.backendId || index}
             proyecto={proyecto}
+            visibilidad={visibilidad}
           />
         ))}
       </div>

@@ -2,12 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import ConfirmModal from '../../ui/ConfirmModal'
 import { clearAuthStorage } from '../../utils/authStorage';
 
+const ICON_PROPS = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
 /* ── Links de navegación pública ── */
 const NAV_LINKS = [
-  { label: 'Inicio',          href: '/'                },
+  { label: 'Inicio', href: '/', icon: (<><path d="M3 10.8 12 3l9 7.8" /><path d="M5 10v10h5v-6h4v6h5V10" /></>) },
   { label: 'Cómo funciona',   href: '#como-funciona'   },
-  { label: 'Proyectos',       href: '#proyectos'        },
-  { label: 'Desarrolladores', href: '/desarrolladores'  },
+  { label: 'Proyectos', href: '#proyectos', icon: (<><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" /><path d="M3 9h18l-1.3 9.2A2 2 0 0 1 17.7 20H6.3a2 2 0 0 1-2-1.8L3 9Z" /></>) },
+  { label: 'Desarrolladores', href: '/desarrolladores', icon: (<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></>) },
 ];
 
 const NOTIFICACIONES = [
@@ -15,6 +23,21 @@ const NOTIFICACIONES = [
   { red: false, text: 'Nuevo match con stack React + Laravel', time: 'hace 1 h'  },
   { red: false, text: 'Tu proyecto tiene 12 nuevas vistas',    time: 'ayer'       },
 ];
+
+function getNavIcon(href) {
+  if (href === '#como-funciona') {
+    return (
+      <>
+        <circle cx="6" cy="7" r="3" />
+        <circle cx="18" cy="17" r="3" />
+        <path d="M9 8.5c3.6.8 5.7 2.9 6.5 5.5" />
+        <path d="M14 4h5v5" />
+      </>
+    );
+  }
+
+  return null;
+}
 
 export default function Navbar() {
   const BASE_URL = process.env.REACT_APP_API_URL;
@@ -109,8 +132,10 @@ export default function Navbar() {
         .spk-nav-tagline { font-family: var(--mono, monospace); font-size: 10px; font-weight: 400; color: rgba(255,255,255,.35); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
         .spk-nav-links { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; margin-left: auto; }
         .spk-nav-links li { display: flex; align-items: center; }
-        .spk-nav-links a { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65); text-decoration: none; padding: 6px 13px; border-radius: 5px; transition: color .15s, background .15s; white-space: nowrap; letter-spacing: .01em; display: block; }
-        .spk-nav-links a:hover { color: rgba(255,255,255,.97); background: rgba(255,255,255,.1); }
+        .spk-nav-links a { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65); text-decoration: none; padding: 6px 13px; border-radius: 5px; transition: color .15s, background .15s, transform .15s; white-space: nowrap; letter-spacing: .01em; display: inline-flex; align-items: center; gap: 7px; }
+        .spk-nav-links a:hover { color: rgba(255,255,255,.97); background: rgba(255,255,255,.1); transform: translateY(-1px); }
+        .spk-nav-link-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: .82; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s, opacity .15s; }
+        .spk-nav-links a:hover .spk-nav-link-icon { opacity: 1; transform: translateY(-1px); }
         .spk-nav-right { display: flex; align-items: center; gap: 8px; margin-left: 20px; }
         .spk-nav-user { position: relative; }
         .spk-user-toggle { all: unset; display: flex; align-items: center; gap: 9px; padding: 5px 10px 5px 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); cursor: pointer; transition: all .15s; user-select: none; box-sizing: border-box; }
@@ -134,7 +159,7 @@ export default function Navbar() {
         .spk-dd-label { font-size: 10px; font-weight: 600; color: #d1d5db; text-transform: uppercase; letter-spacing: .08em; padding: 4px 8px 2px; }
         .spk-dd-item { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 6px; font-size: 13px; color: #374151; cursor: pointer; transition: all .12s; text-decoration: none; background: none; border: none; width: 100%; text-align: left; }
         .spk-dd-item:hover { background: #f0ede8; color: #111827; }
-        .spk-dd-item svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+        .spk-dd-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
         .spk-dd-item.highlight { color: #0077b7; font-weight: 600; }
         .spk-dd-item.highlight:hover { background: #e8f4fb; }
         .spk-dd-item.highlight svg { stroke: #0077b7; }
@@ -144,7 +169,7 @@ export default function Navbar() {
         .spk-bell-wrap { position: relative; }
         .spk-bell { width: 34px; height: 34px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all .15s; }
         .spk-bell:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.35); }
-        .spk-bell svg { width: 15px; height: 15px; stroke: rgba(255,255,255,.8); fill: none; stroke-width: 1.9; }
+        .spk-bell svg { width: 16px; height: 16px; stroke: rgba(255,255,255,.86); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
         .spk-bell-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--rojo-soft, #ef4444); border: 1.5px solid var(--azul, #0077b7); pointer-events: none; }
         .spk-notif-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 284px; background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.13); overflow: hidden; animation: fadeUp .18s ease both; z-index: 300; }
         .spk-notif-header { padding: 11px 16px; border-bottom: 1px solid #d1d5db; font-size: 12px; font-weight: 700; color: #111827; display: flex; justify-content: space-between; align-items: center; }
@@ -170,7 +195,8 @@ export default function Navbar() {
         .spk-hamburger.open span:nth-child(3) { transform: rotate(-45deg) translateY(-6px); }
         .spk-mobile-menu { position: fixed; top: var(--nav-height, 60px); left: 0; right: 0; background: #004f7c; border-bottom: 2px solid rgba(255,255,255,.1); padding: 14px 24px 22px; box-shadow: 0 8px 24px rgba(0,0,0,.22); z-index: 199; animation: fadeDown .2s ease both; }
         .spk-mobile-links { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
-        .spk-mobile-links a { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.72); text-decoration: none; padding: 10px 12px; border-radius: 6px; transition: all .12s; display: block; }
+        .spk-mobile-links a { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.72); text-decoration: none; padding: 10px 12px; border-radius: 6px; transition: all .12s; display: flex; align-items: center; gap: 9px; }
+        .spk-mobile-link-icon { width: 17px; height: 17px; flex-shrink: 0; stroke-linecap: round; stroke-linejoin: round; }
         .spk-mobile-links a:hover { color: #ffffff; background: rgba(255,255,255,.1); }
         .spk-mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
         .spk-mobile-actions .spk-btn-login, .spk-mobile-actions .spk-btn-register { flex: 1; justify-content: center; }
@@ -190,8 +216,15 @@ export default function Navbar() {
         <span className="spk-nav-tagline">CreaFolio</span>
 
         <ul className="spk-nav-links">
-          {NAV_LINKS.map(({ label, href }) => (
-            <li key={label}><a href={href}>{label}</a></li>
+          {NAV_LINKS.map(({ label, href, icon }) => (
+            <li key={label}>
+              <a href={href}>
+                <svg className="spk-nav-link-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
+                  {icon || getNavIcon(href)}
+                </svg>
+                <span>{label}</span>
+              </a>
+            </li>
           ))}
         </ul>
 
@@ -200,8 +233,9 @@ export default function Navbar() {
           {/* Campana */}
           <div className="spk-bell-wrap" ref={notifRef}>
             <button className="spk-bell" title="Notificaciones" onClick={() => setNotifOpen(v => !v)}>
-              <svg viewBox="0 0 18 18">
-                <path d="M9 1a4 4 0 014 4c0 5 2 6.5 2 6.5H3S5 10 5 5a4 4 0 014-4zM7 12.5a2 2 0 004 0" />
+              <svg viewBox="0 0 24 24">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+                <path d="M10 20a2.3 2.3 0 0 0 4 0" />
               </svg>
               <div className="spk-bell-dot" />
             </button>
@@ -254,25 +288,25 @@ export default function Navbar() {
                   <div className="spk-dd-section">
                     <div className="spk-dd-label">Mi cuenta</div>
                     <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard/profile'; }}>
-                      <svg viewBox="0 0 14 14"><circle cx="7" cy="5" r="3"/><path d="M1 13c0-3 2.7-5 6-5s6 2 6 5"/></svg>
+                      <svg viewBox="0 0 24 24"><path d="M19 21a7 7 0 0 0-14 0" /><circle cx="12" cy="8" r="4" /></svg>
                       Ver mi perfil
                     </button>
                     <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard'; }}>
-                      <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="2"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.9 2.9l1 1M10.1 10.1l1 1M2.9 11.1l1-1M10.1 3.9l1-1"/></svg>
+                      <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" /></svg>
                       Configuración
                     </button>
                   </div>
                   <div className="spk-dd-section">
                     <div className="spk-dd-label">Portafolio</div>
                     <button className="spk-dd-item highlight" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard'; }}>
-                      <svg viewBox="0 0 14 14"><rect x="2" y="3" width="10" height="9" rx="1.5"/><path d="M5 3V2M9 3V2M2 6h10"/></svg>
+                      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 18v3" /><path d="M8 11s1.4-3 4-3 4 3 4 3-1.4 3-4 3-4-3-4-3Z" /><circle cx="12" cy="11" r="1" /></svg>
                       Gestionar portafolio
                     </button>
                   </div>
                   <div className="spk-dd-section">
                     {/* CAMBIO: abre modal en vez de cerrar sesión directo */}
                     <button className="spk-dd-item danger" type="button" onClick={handleLogoutClick}>
-                      <svg viewBox="0 0 14 14"><path d="M10 1L13 4 10 7M13 4H5c-2 0-4 1-4 3v6"/></svg>
+                      <svg viewBox="0 0 24 24"><path d="M10 17 15 12 10 7" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-5" /></svg>
                       Cerrar sesión
                     </button>
                   </div>
@@ -296,8 +330,13 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="spk-mobile-menu">
           <div className="spk-mobile-links">
-            {NAV_LINKS.map(({ label, href }) => (
-              <a key={label} href={href} onClick={() => setMobileOpen(false)}>{label}</a>
+            {NAV_LINKS.map(({ label, href, icon }) => (
+              <a key={label} href={href} onClick={() => setMobileOpen(false)}>
+                <svg className="spk-mobile-link-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
+                  {icon || getNavIcon(href)}
+                </svg>
+                <span>{label}</span>
+              </a>
             ))}
           </div>
           <div className="spk-mobile-actions">

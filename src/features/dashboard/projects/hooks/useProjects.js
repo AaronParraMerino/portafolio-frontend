@@ -17,6 +17,7 @@ import {
   getProyectos,
   crearProyecto,
   actualizarProyecto,
+  actualizarProyectoConfiguracion,
   eliminarProyecto,
   desvincularParticipacionProyecto,
   uploadImagenes,
@@ -265,9 +266,15 @@ function normalizarResultadoDocumentos(resultado) {
 function generarBadge(datos) {
   const map = {
     publicado: { label: 'Publicado', variant: 'green' },
-    desarrollo: { label: 'En desarrollo', variant: 'amber' },
     borrador: { label: 'Borrador', variant: 'gray' },
     archivado: { label: 'Archivado', variant: 'blue' },
+    sin_especificar: { label: 'Sin especificar', variant: 'gray' },
+    en_desarrollo: { label: 'En desarrollo', variant: 'amber' },
+    pausado: { label: 'Pausado', variant: 'amber' },
+    terminado: { label: 'Terminado', variant: 'gray' },
+    mantenimiento: { label: 'Mantenimiento', variant: 'amber' },
+    versionado: { label: 'Versionado', variant: 'amber' },
+    cancelado: { label: 'Cancelado', variant: 'blue' },
   };
 
   return map[datos.estado] || { label: datos.estado, variant: 'gray' };
@@ -629,6 +636,39 @@ export function useProjects() {
   // ════════════════════════════════════════
   // REFRESCAR MANUALMENTE
   // ════════════════════════════════════════
+  const actualizarConfiguracion = async (id, configuracion) => {
+    setGuardando(true);
+
+    try {
+      const data = await actualizarProyectoConfiguracion(id, configuracion);
+      const actualizados = proyectos.map(p => {
+        if (p.id !== id && p.id_proyecto !== id) return p;
+
+        return mapearProyecto({
+          ...p,
+          configuracion: data.configuracion || configuracion,
+          permisos: data.permisos || p.permisos,
+          puede_editar: data.permisos?.puede_editar ?? p.puede_editar,
+          puede_eliminar: data.permisos?.puede_eliminar ?? p.puede_eliminar,
+          puede_configurar: data.permisos?.puede_configurar ?? p.puede_configurar,
+          puede_desvincular_participacion: data.permisos?.puede_desvincular_participacion ?? p.puede_desvincular_participacion,
+        });
+      });
+
+      setProyectos(actualizados);
+      guardarEnCache(actualizados);
+      mostrarToast('Configuracion actualizada correctamente');
+
+      return actualizados.find(p => p.id === id || p.id_proyecto === id);
+    } catch (err) {
+      console.error('[useProjects] Error actualizando configuracion:', err.message);
+      mostrarToast(err.message || 'Error al actualizar la configuracion', 'error');
+      throw err;
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const refrescar = async () => {
     if (USAR_MOCK) return proyectos;
 
@@ -670,6 +710,7 @@ export function useProjects() {
     editarExistente,
     eliminar,
     desvincularParticipacion,
+    actualizarConfiguracion,
     refrescar,
 
     limpiarCacheProjects,

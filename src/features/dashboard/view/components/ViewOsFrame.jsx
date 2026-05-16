@@ -1,7 +1,7 @@
 // src/features/dashboard/view/components/ViewOsFrame.jsx
 
 export default function ViewOsFrame({
-  frameId = 'mac',
+  frameId = 'none',
   title = 'Mi Portafolio',
   children,
 }) {

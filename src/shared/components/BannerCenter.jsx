@@ -43,7 +43,7 @@ const persistOrder = (list) => {
 };
 
 const MOCK_NOTICES = [
-    {
+  {
     id: 'notice-ddddd',
     title: 'Bienvddenido',
     description: 'Estas son nuevas funcionalidades que pueden gustarte.',
@@ -52,8 +52,8 @@ const MOCK_NOTICES = [
     primaryLabel: 'Abrir',
     secondaryLabel: 'limpiar',
     autoHideMs: 35000,
-    },
-    {
+  },
+  {
     id: 'notice-welcome',
     title: 'Bienvenido',
     description: 'Estas son nuevas funcionalidades que pueden gustarte.',
@@ -360,13 +360,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
           aria-label={collapsed ? 'Abrir banners' : 'Cerrar banners'}
           title={collapsed ? 'Mostrar banners' : 'Colapsar banners'}
         >
-          <span style={styles.tabIcon} aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 5 6 9H3v6h3l5 4V5z" />
-              <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-              <path d="M18 6a8.5 8.5 0 0 1 0 12" />
-            </svg>
-          </span>
+          <span style={styles.tabLabel}>Avisos</span>
           <span style={styles.tabBadge}>{pendingCount}</span>
         </button>
       )}
@@ -386,22 +380,23 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
 const styles = {
   rail: {
     position: 'fixed',
-    right: '16px',
-    bottom: '16px',
+    right: '10px',
+    bottom: '74px',
     zIndex: 10000,
     overflowX: 'hidden',
-    transition: 'transform 320ms ease',
+    transform: 'translateX(0)',
+    transition: 'transform 260ms ease, opacity 200ms ease',
   },
   glassViewport: {
-    width: 'min(390px, calc(100vw - 24px))',
-    maxHeight: '62vh',
+    width: 'min(350px, calc(100vw - 34px))',
+    maxHeight: '44vh',
     overflowY: 'auto',
     overflowX: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
-    padding: '10px',
-    borderRadius: '16px',
+    gap: '8px',
+    padding: '8px',
+    borderRadius: '13px',
     border: '1px solid rgba(148, 163, 184, 0.28)',
     background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.34), rgba(15, 23, 42, 0.18))',
     backdropFilter: 'blur(12px)',
@@ -409,7 +404,9 @@ const styles = {
     boxShadow: '0 16px 40px rgba(0,0,0,0.24)',
   },
   railCollapsed: {
-    transform: 'translateX(120%)',
+    transform: 'translateX(calc(100% + 24px))',
+    opacity: 0,
+    pointerEvents: 'none',
   },
   banner: {
     width: '100%',
@@ -418,8 +415,8 @@ const styles = {
     border: '1px solid #1b263b',
     borderRadius: '12px',
     boxShadow: '0 14px 40px rgba(0,0,0,0.35)',
-    padding: '14px',
-    maxHeight: '320px',
+    padding: '12px',
+    maxHeight: '240px',
     overflow: 'hidden',
     transform: 'translateX(0)',
     opacity: 1,
@@ -427,38 +424,38 @@ const styles = {
   },
   bannerStacked: {
     marginTop: '0',
-    padding: '10px 12px',
-    maxHeight: '44px',
+    padding: '7px 10px',
+    maxHeight: '34px',
     opacity: 0.96,
     transition: `margin-top ${PROMOTE_ANIMATION_MS}ms linear, padding ${PROMOTE_ANIMATION_MS}ms linear, max-height ${PROMOTE_ANIMATION_MS}ms linear`,
   },
   bannerPromotingFromTitle: {
     marginTop: '0',
-    padding: '10px 12px',
-    maxHeight: '44px',
+    padding: '7px 10px',
+    maxHeight: '34px',
     opacity: 0.94,
     transition: `margin-top ${PROMOTE_ANIMATION_MS}ms linear, padding ${PROMOTE_ANIMATION_MS}ms linear, max-height ${PROMOTE_ANIMATION_MS}ms linear`,
   },
   bannerPromotingToMain: {
     marginTop: 0,
-    padding: '14px',
-    maxHeight: '320px',
+    padding: '12px',
+    maxHeight: '240px',
     opacity: 1,
     boxShadow: '0 16px 42px rgba(0,0,0,0.38)',
   },
   bannerClosing: {
-    transform: 'translateX(120%)',
+    transform: 'translateX(110%)',
     opacity: 0,
   },
   title: {
-    margin: '0 0 8px',
-    fontSize: '16px',
+    margin: '0 0 6px',
+    fontSize: '14px',
     fontWeight: 700,
   },
   text: {
     margin: 0,
-    fontSize: '13px',
-    lineHeight: 1.4,
+    fontSize: '12px',
+    lineHeight: 1.45,
     color: '#c8d5f4',
   },
   mainContent: {
@@ -480,7 +477,7 @@ const styles = {
   },
   linkBtn: {
     display: 'inline-block',
-    marginTop: '10px',
+    marginTop: '7px',
     color: '#93c5fd',
     fontSize: '12px',
     textDecoration: 'underline',
@@ -491,9 +488,10 @@ const styles = {
     textAlign: 'left',
   },
   actions: {
-    marginTop: '12px',
+    marginTop: '9px',
     display: 'flex',
     justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: '8px',
   },
   primaryBtn: {
@@ -501,7 +499,7 @@ const styles = {
     background: '#1d4ed8',
     color: '#fff',
     borderRadius: '8px',
-    padding: '8px 12px',
+    padding: '7px 10px',
     fontSize: '12px',
     cursor: 'pointer',
   },
@@ -510,45 +508,46 @@ const styles = {
     background: '#111827',
     color: '#cbd5e1',
     borderRadius: '8px',
-    padding: '8px 12px',
+    padding: '7px 10px',
     fontSize: '12px',
     cursor: 'pointer',
   },
   tab: {
     position: 'fixed',
-    right: '14px',
-    bottom: '16px',
+    right: 0,
+    bottom: '86px',
     zIndex: 10001,
     border: '1px solid rgba(255,255,255,0.22)',
+    borderRight: 0,
     background: '#0077b7',
     color: '#ffffff',
-    borderRadius: '999px',
-    width: '44px',
-    height: '44px',
-    padding: 0,
+    borderRadius: '10px 0 0 10px',
+    width: '20px',
+    minHeight: '64px',
+    padding: '6px 2px',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 10px 24px rgba(0,0,0,0.28)',
+    boxShadow: '-8px 10px 22px rgba(0,0,0,0.2)',
   },
-  tabIcon: {
-    fontSize: '18px',
-    lineHeight: 1,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  tabLabel: {
+    writingMode: 'vertical-rl',
+    fontSize: '8px',
+    fontWeight: 800,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
   tabBadge: {
     position: 'absolute',
     top: '-6px',
-    right: '-4px',
-    minWidth: '18px',
-    height: '18px',
+    left: '-7px',
+    minWidth: '15px',
+    height: '15px',
     borderRadius: '999px',
     background: '#ffffff',
     color: '#004f7c',
-    fontSize: '11px',
+    fontSize: '9px',
     fontWeight: 700,
     display: 'inline-flex',
     alignItems: 'center',

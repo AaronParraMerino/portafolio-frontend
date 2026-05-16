@@ -66,6 +66,7 @@ export default function Footer({ isBackendAvailable = true }) {
 
         .spk-footer {
           position: relative;
+          z-index: 180;
           background: #0c1220;          /* mismo color que el sidebar */
           overflow: hidden;
         }
