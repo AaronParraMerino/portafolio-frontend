@@ -126,6 +126,22 @@ function groupParticipants(participantes = []) {
     return { ...group, items };
   }).filter(group => group.items.length > 0);
 
+  const unassigned = participantes.filter((_, index) => !assigned.has(index));
+
+  if (unassigned.length > 0) {
+    const sinValidacion = groups.find(group => group.key === 'usuario_sin_validacion_github');
+
+    if (sinValidacion) {
+      sinValidacion.items = [...sinValidacion.items, ...unassigned];
+    } else {
+      groups.push({
+        key: 'usuario_sin_validacion_github',
+        label: 'Sin validacion',
+        items: unassigned,
+      });
+    }
+  }
+
   return groups;
 }
 

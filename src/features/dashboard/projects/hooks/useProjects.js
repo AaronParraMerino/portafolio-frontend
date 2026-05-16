@@ -266,9 +266,15 @@ function normalizarResultadoDocumentos(resultado) {
 function generarBadge(datos) {
   const map = {
     publicado: { label: 'Publicado', variant: 'green' },
-    desarrollo: { label: 'En desarrollo', variant: 'amber' },
     borrador: { label: 'Borrador', variant: 'gray' },
     archivado: { label: 'Archivado', variant: 'blue' },
+    sin_especificar: { label: 'Sin especificar', variant: 'gray' },
+    en_desarrollo: { label: 'En desarrollo', variant: 'amber' },
+    pausado: { label: 'Pausado', variant: 'amber' },
+    terminado: { label: 'Terminado', variant: 'gray' },
+    mantenimiento: { label: 'Mantenimiento', variant: 'amber' },
+    versionado: { label: 'Versionado', variant: 'amber' },
+    cancelado: { label: 'Cancelado', variant: 'blue' },
   };
 
   return map[datos.estado] || { label: datos.estado, variant: 'gray' };
