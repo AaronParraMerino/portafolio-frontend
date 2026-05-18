@@ -730,6 +730,24 @@
   gap: 7px;
 }
 
+.prj-collaborators.compact .prj-collab-head {
+  margin-bottom: 7px;
+}
+
+.prj-collab-compact-row {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.prj-collaborators.compact .prj-collab-avatar-stack {
+  padding-left: 0;
+}
+
+.prj-collaborators.compact .prj-collab-avatar-wrap:first-child {
+  margin-left: 0;
+}
+
 .prj-collab-row {
   display: grid;
   grid-template-columns: minmax(118px, 132px) minmax(0, 1fr);

@@ -19,7 +19,7 @@ const SECTION_CONFIG = [
   {
     key: 'mas_experiencia',
     label: 'Mas experiencia',
-    description: 'Profesionales con mas experiencia laboral visible.',
+    description: 'Profesionales con mas experiencia publica visible.',
     variant: 'experience',
   },
   {
@@ -31,10 +31,25 @@ const SECTION_CONFIG = [
 ];
 
 export default function FeaturedPortfolios() {
-  const { sections, loading, error } = useFeaturedPortfolios();
+  const [draftSearch, setDraftSearch] = useState('');
+  const [search, setSearch] = useState('');
+  const { sections, loading, error } = useFeaturedPortfolios(search);
   const [activeKey, setActiveKey] = useState(SECTION_CONFIG[0].key);
   const activeSection = SECTION_CONFIG.find((section) => section.key === activeKey) || SECTION_CONFIG[0];
-  const portfolios = sections[activeSection.key] || [];
+  const isSearchMode = Boolean(search);
+  const portfolios = isSearchMode
+    ? sections.resultados_busqueda || []
+    : sections[activeSection.key] || [];
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    setSearch(draftSearch.trim());
+  };
+
+  const clearSearch = () => {
+    setDraftSearch('');
+    setSearch('');
+  };
 
   return (
     <>
@@ -67,6 +82,35 @@ export default function FeaturedPortfolios() {
           white-space: nowrap; transition: background .15s, border-color .15s;
         }
         .spk-featured-link:hover { background: var(--azul-light); border-color: var(--azul); color: var(--azul); }
+        .spk-featured-search {
+          display: flex; align-items: center; gap: 10px; margin: 0 0 22px;
+        }
+        .spk-featured-search-input {
+          flex: 1; min-width: 0; height: 44px; border: 1.5px solid var(--gris-borde);
+          border-radius: 8px; background: var(--blanco); color: var(--negro-texto);
+          font-family: var(--font); font-size: 14px; outline: none; padding: 0 14px;
+          transition: border-color .15s, box-shadow .15s;
+        }
+        .spk-featured-search-input:focus {
+          border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,119,183,.12);
+        }
+        .spk-featured-search-btn,
+        .spk-featured-clear-btn {
+          height: 44px; border-radius: 8px; font-family: var(--font); font-size: 13px;
+          font-weight: 800; padding: 0 15px; cursor: pointer; white-space: nowrap;
+        }
+        .spk-featured-search-btn {
+          background: var(--azul); border: 1.5px solid var(--azul); color: var(--blanco);
+        }
+        .spk-featured-search-btn:hover { background: var(--azul-hover); border-color: var(--azul-hover); }
+        .spk-featured-clear-btn {
+          background: var(--blanco); border: 1.5px solid var(--azul-mid); color: var(--azul-deep);
+        }
+        .spk-featured-search-state {
+          align-items: center; display: flex; justify-content: space-between;
+          gap: 14px; margin: -4px 0 22px; color: var(--gris-texto); font-size: 13px;
+        }
+        .spk-featured-search-state strong { color: var(--negro-texto); }
         .spk-featured-tabs {
           display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 10px; margin-bottom: 26px;
@@ -164,6 +208,10 @@ export default function FeaturedPortfolios() {
         }
         @media (max-width: 620px) {
           .spk-featured-portfolios { padding: 56px 18px 64px; }
+          .spk-featured-search { align-items: stretch; flex-direction: column; }
+          .spk-featured-search-btn,
+          .spk-featured-clear-btn { width: 100%; }
+          .spk-featured-search-state { align-items: flex-start; flex-direction: column; }
           .spk-featured-tabs,
           .spk-portfolio-grid { grid-template-columns: 1fr; }
           .spk-featured-tab { padding: 12px; }
@@ -185,19 +233,46 @@ export default function FeaturedPortfolios() {
             </Link>
           </div>
 
-          <div className="spk-featured-tabs" role="tablist" aria-label="Rankings de portafolios">
-            {SECTION_CONFIG.map((section) => (
-              <button
-                key={section.key}
-                type="button"
-                className={`spk-featured-tab${section.key === activeKey ? ' active' : ''}`}
-                onClick={() => setActiveKey(section.key)}
-              >
-                <strong>{section.label}</strong>
-                <span>{section.description}</span>
+          <form className="spk-featured-search" onSubmit={handleSearchSubmit}>
+            <input
+              className="spk-featured-search-input"
+              type="search"
+              value={draftSearch}
+              onChange={(event) => setDraftSearch(event.target.value)}
+              placeholder="Buscar por habilidad, tecnologia, proyecto o experiencia..."
+              aria-label="Buscar portafolios destacados"
+            />
+            <button className="spk-featured-search-btn" type="submit" disabled={loading}>
+              {loading && isSearchMode ? 'Buscando...' : 'Buscar'}
+            </button>
+            {isSearchMode && (
+              <button className="spk-featured-clear-btn" type="button" onClick={clearSearch}>
+                Limpiar
               </button>
-            ))}
-          </div>
+            )}
+          </form>
+
+          {isSearchMode ? (
+            <div className="spk-featured-search-state">
+              <span>
+                Resultados relevantes para <strong>{search}</strong>, ordenados por coincidencia y completitud del portafolio.
+              </span>
+            </div>
+          ) : (
+            <div className="spk-featured-tabs" role="tablist" aria-label="Rankings de portafolios">
+              {SECTION_CONFIG.map((section) => (
+                <button
+                  key={section.key}
+                  type="button"
+                  className={`spk-featured-tab${section.key === activeKey ? ' active' : ''}`}
+                  onClick={() => setActiveKey(section.key)}
+                >
+                  <strong>{section.label}</strong>
+                  <span>{section.description}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="spk-portfolio-grid">
             {loading && (
@@ -216,16 +291,20 @@ export default function FeaturedPortfolios() {
 
             {!loading && !error && portfolios.length === 0 && (
               <div className="spk-featured-empty">
-                <strong>Aun no hay resultados</strong>
-                <span>Cuando existan datos publicos suficientes, este bloque mostrara portafolios destacados.</span>
+                <strong>{isSearchMode ? 'Sin coincidencias publicas' : 'Aun no hay resultados'}</strong>
+                <span>
+                  {isSearchMode
+                    ? 'Prueba con otra habilidad, tecnologia o termino relacionado al portafolio.'
+                    : 'Cuando existan datos publicos suficientes, este bloque mostrara portafolios destacados.'}
+                </span>
               </div>
             )}
 
             {!loading && !error && portfolios.map((portfolio) => (
               <PortfolioCard
-                key={`${activeSection.key}-${portfolio.id_usuario}`}
+                key={`${isSearchMode ? 'search' : activeSection.key}-${portfolio.id_usuario}`}
                 portfolio={portfolio}
-                variant={activeSection.variant}
+                variant={isSearchMode ? 'projects' : activeSection.variant}
               />
             ))}
           </div>

@@ -6,10 +6,11 @@ const initialState = {
   mas_proyectos: [],
   mas_experiencia: [],
   mas_habilidades: [],
+  resultados_busqueda: [],
   meta: {},
 };
 
-export default function useFeaturedPortfolios() {
+export default function useFeaturedPortfolios(search = '') {
   const [sections, setSections] = useState(initialState);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,7 +21,7 @@ export default function useFeaturedPortfolios() {
     async function loadPortfolios() {
       try {
         setLoading(true);
-        const data = await getFeaturedPortfolios();
+        const data = await getFeaturedPortfolios(search);
         if (mounted) {
           setSections({ ...initialState, ...data });
           setError('');
@@ -41,7 +42,7 @@ export default function useFeaturedPortfolios() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [search]);
 
   return { sections, loading, error };
 }
