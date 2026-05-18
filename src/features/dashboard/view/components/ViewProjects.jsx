@@ -1,9 +1,8 @@
 // src/features/dashboard/view/components/ViewProjects.jsx
 
 import { useState } from 'react';
-import ProjectParticipantAvatar from '../../projects/components/ProjectParticipantAvatar';
+import ProjectsGithubCollaborators from '../../projects/components/ProjectsGithubCollaborators';
 import { DESARROLLADO_PARA, TIPOS_PROYECTO } from '../../projects/model/projectsModel';
-import { normalizeProyectoParticipantes } from '../../projects/services/projectsService';
 import '../../projects/styles/projects.css';
 import { isVisible } from '../model/viewModel';
 
@@ -313,68 +312,6 @@ function getTecnologiaDetalle(proyecto = {}, nombre = '') {
   };
 }
 
-function getExpectedCount(project = {}, fallback = 0) {
-  const raw =
-    project.participantes_count ??
-    project.participants_count ??
-    project.colaboradores_count ??
-    project.collaborators_count;
-  const count = Number(raw);
-
-  return Number.isFinite(count) && count > 0 ? count : fallback;
-}
-
-const PARTICIPANT_GROUPS = [
-  {
-    key: 'usuario_github_validado',
-    label: 'Validados',
-    match: (participante) => participante.tipo_participante === 'usuario_github_validado'
-      || (participante.tiene_cuenta && participante.validacion_github),
-  },
-  {
-    key: 'usuario_sin_validacion_github',
-    label: 'Sin validacion',
-    match: (participante) => participante.tipo_participante === 'usuario_sin_validacion_github'
-      || (participante.id_usuario && !participante.validacion_github),
-  },
-];
-
-function groupParticipants(participantes = []) {
-  const assigned = new Set();
-
-  const groups = PARTICIPANT_GROUPS.map((group) => {
-    const items = participantes.filter((participante, index) => {
-      if (assigned.has(index) || !group.match(participante)) return false;
-      assigned.add(index);
-      return true;
-    });
-
-    return { ...group, items };
-  }).filter(group => group.items.length > 0);
-
-  const unassigned = participantes.filter((_, index) => !assigned.has(index));
-
-  if (unassigned.length > 0) {
-    const sinValidacion = groups.find(group => group.key === 'usuario_sin_validacion_github');
-
-    if (sinValidacion) {
-      sinValidacion.items = [...sinValidacion.items, ...unassigned];
-    } else {
-      groups.push({
-        key: 'usuario_sin_validacion_github',
-        label: 'Sin validacion',
-        items: unassigned,
-      });
-    }
-  }
-
-  return groups;
-}
-
-function getVisibleParticipants(proyecto = {}) {
-  return normalizeProyectoParticipantes(proyecto, { includeCurrentUserFallback: false });
-}
-
 function TechChip({ proyecto, tag, detail = false }) {
   const tech = getTecnologiaDetalle(proyecto, tag);
   const dark = isDarkColor(tech.color);
@@ -485,60 +422,6 @@ function DetailLink({ href, children, className = '' }) {
     >
       {children}
     </a>
-  );
-}
-
-function ParticipantsList({ participantes = [] }) {
-  if (participantes.length === 0) return null;
-
-  return (
-    <div className="prj-collab-avatar-stack">
-      {participantes.map((participante, index) => (
-        <ProjectParticipantAvatar
-          key={`${participante.id || participante.id_usuario || participante.github_username || index}`}
-          participante={participante}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ParticipantGroup({ label, participantes = [] }) {
-  if (participantes.length === 0) return null;
-
-  return (
-    <div className="prj-collab-row">
-      <div className="prj-collab-label">
-        <span>{label}</span>
-        <span>{participantes.length}</span>
-      </div>
-      <ParticipantsList participantes={participantes} />
-    </div>
-  );
-}
-
-function ViewProjectParticipants({ proyecto = {}, participantes = [], detail = false }) {
-  if (participantes.length === 0) return null;
-
-  const groupedParticipants = groupParticipants(participantes);
-
-  return (
-    <div className={`prj-collaborators${detail ? ' detail' : ''}`}>
-      <div className="prj-collab-head">
-        <span>Participantes</span>
-        <span>{Math.max(getExpectedCount(proyecto, participantes.length), participantes.length)}</span>
-      </div>
-
-      <div className="prj-collab-groups">
-        {groupedParticipants.map((group) => (
-          <ParticipantGroup
-            key={group.key}
-            label={group.label}
-            participantes={group.items}
-          />
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -692,7 +575,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
   };
 }
 
-function ViewProjectCard({ proyecto, visibilidad }) {
+function ViewProjectCard({ proyecto, visibilidad, fetchParticipants }) {
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
   const showMedia = detailVisible(visibilidad, 'media');
   const showEstado = detailVisible(visibilidad, 'estado');
@@ -725,7 +608,6 @@ function ViewProjectCard({ proyecto, visibilidad }) {
   const miParticipacion = getMiParticipacion(proyecto);
   const miRol = miParticipacion?.rol || '';
   const miAporte = miParticipacion?.descripcion_aporte || '';
-  const participantes = getVisibleParticipants(proyecto);
 
   const hasBadges = showEstado || showTipo || (showRol && miRol);
   const hasFooter = (showRepositorios && repositorios.length > 0)
@@ -733,7 +615,7 @@ function ViewProjectCard({ proyecto, visibilidad }) {
     || (showVideos && videos.length > 0)
     || (showDocumentos && documentos.length > 0)
     || (showFechas && periodoLabel);
-  const hasParticipants = showParticipantes && participantes.length > 0;
+  const hasParticipants = showParticipantes;
   const hasDetails = (showDescripcion && proyecto.descripcion)
     || (showAporte && miAporte)
     || (showEstado && statusLabel)
@@ -841,7 +723,13 @@ function ViewProjectCard({ proyecto, visibilidad }) {
         )}
 
         {!detallesExpandidos && hasParticipants && (
-          <ViewProjectParticipants proyecto={proyecto} participantes={participantes} />
+          <ProjectsGithubCollaborators
+            proyecto={proyecto}
+            fetchRemote={fetchParticipants}
+            fallbackToCurrentUser={fetchParticipants}
+            validatedOnly
+            compact
+          />
         )}
 
         {hasDetails && (
@@ -964,7 +852,14 @@ function ViewProjectCard({ proyecto, visibilidad }) {
               ) : null}
 
             {hasParticipants && (
-              <ViewProjectParticipants proyecto={proyecto} participantes={participantes} detail />
+              <ProjectsGithubCollaborators
+                proyecto={proyecto}
+                detail
+                fetchRemote={fetchParticipants}
+                fallbackToCurrentUser={fetchParticipants}
+                validatedOnly
+                compact
+              />
             )}
           </div>
         )}
@@ -973,7 +868,7 @@ function ViewProjectCard({ proyecto, visibilidad }) {
   );
 }
 
-export default function ViewProjects({ proyectos = [], visibilidad }) {
+export default function ViewProjects({ proyectos = [], visibilidad, fetchParticipants = false }) {
   const visibles = proyectos.filter(proyecto =>
     isVisible(visibilidad, 'proyectos', proyecto.id)
   );
@@ -995,6 +890,7 @@ export default function ViewProjects({ proyectos = [], visibilidad }) {
             key={proyecto.id || proyecto.backendId || index}
             proyecto={proyecto}
             visibilidad={visibilidad}
+            fetchParticipants={fetchParticipants}
           />
         ))}
       </div>
