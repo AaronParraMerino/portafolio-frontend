@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
+import { getDashboardHomePath } from "../../../shared/utils/authStorage";
 
 const PROVIDER_NAMES = { github: "GitHub", gitlab: "GitLab", discord: "Discord", google: "Google" };
 
@@ -35,7 +36,7 @@ export default function OAuthCallbackPage() {
         const usuario = JSON.parse(decodeURIComponent(usuarioRaw));
         localStorage.setItem("tokenPORT", token);
         localStorage.setItem("usuario", JSON.stringify(usuario));
-        window.location.replace("/");
+        window.location.replace(getDashboardHomePath(usuario));
       } catch {
         window.location.replace("/auth/login?oauth_error=parse");
       }
@@ -79,7 +80,7 @@ export default function OAuthCallbackPage() {
       }
       localStorage.setItem("tokenPORT", result.token);
       localStorage.setItem("usuario", JSON.stringify(result.data));
-      window.location.replace("/");
+      window.location.replace(getDashboardHomePath(result.data));
     } catch {
       setCredError("Error de conexión. Intente nuevamente.");
     } finally {

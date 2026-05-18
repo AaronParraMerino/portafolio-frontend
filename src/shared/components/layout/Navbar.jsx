@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import ConfirmModal from '../../ui/ConfirmModal'
-import { clearAuthStorage } from '../../utils/authStorage';
+import { clearAuthStorage, getDashboardHomePath, isAdminUser } from '../../utils/authStorage';
 
 const ICON_PROPS = {
   fill: 'none',
@@ -110,7 +110,17 @@ export default function Navbar() {
         .map(name => String(name || ' ').trim().slice(0, 1).toUpperCase())
         .join('').padEnd(2, 'U')
     : 'U';
-  const userRole = user?.rol || user?.role || 'ADMIN / DEV';
+  const isAdmin = isAdminUser(user);
+  const rawUserRole = user?.rol || user?.role || (isAdmin ? 'admin' : 'usuario');
+  const userRole = isAdmin
+    ? 'Administrador'
+    : String(rawUserRole || 'Usuario').replace(/^usuario$/i, 'Usuario');
+  const dashboardPath = getDashboardHomePath(user);
+  const profilePath = isAdmin ? '/admin/profile' : '/dashboard/profile';
+  const settingsPath = isAdmin ? '/admin/settings' : '/dashboard/settings';
+  const accountAreaLabel = isAdmin ? 'Sistema' : 'Portafolio';
+  const managementLabel = isAdmin ? 'Gestion del sistema' : 'Gestionar portafolio';
+  const mobileManagementLabel = isAdmin ? 'Gestion del sistema' : 'Mi portafolio';
 
   return (
     <>
@@ -287,20 +297,20 @@ export default function Navbar() {
                   </div>
                   <div className="spk-dd-section">
                     <div className="spk-dd-label">Mi cuenta</div>
-                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard/profile'; }}>
+                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = profilePath; }}>
                       <svg viewBox="0 0 24 24"><path d="M19 21a7 7 0 0 0-14 0" /><circle cx="12" cy="8" r="4" /></svg>
                       Ver mi perfil
                     </button>
-                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard'; }}>
+                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = settingsPath; }}>
                       <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" /></svg>
                       Configuración
                     </button>
                   </div>
                   <div className="spk-dd-section">
-                    <div className="spk-dd-label">Portafolio</div>
-                    <button className="spk-dd-item highlight" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard'; }}>
+                    <div className="spk-dd-label">{accountAreaLabel}</div>
+                    <button className="spk-dd-item highlight" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = dashboardPath; }}>
                       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 18v3" /><path d="M8 11s1.4-3 4-3 4 3 4 3-1.4 3-4 3-4-3-4-3Z" /><circle cx="12" cy="11" r="1" /></svg>
-                      Gestionar portafolio
+                      {managementLabel}
                     </button>
                   </div>
                   <div className="spk-dd-section">
@@ -342,7 +352,7 @@ export default function Navbar() {
           <div className="spk-mobile-actions">
             {user ? (
               <>
-                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = '/dashboard'; }}>Mi portafolio</button>
+                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = dashboardPath; }}>{mobileManagementLabel}</button>
                 {/* CAMBIO: también abre modal desde móvil */}
                 <button className="spk-btn-register" onClick={handleLogoutClick}>Cerrar sesión</button>
               </>

@@ -7,6 +7,8 @@ import LoginPage from '../../features/auth/pages/LoginPage';
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
 import DashboardPage from '../../features/dashboard/DashboardPage';
+import AdminDashboardLayout from '../../features/admin/layout/AdminDashboardLayout';
+import AdminDashboardPage from '../../features/admin/dashboard/AdminDashboardPage';
 import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
 import CookiesPage from '../../features/auth/pages/CookiesPage';
@@ -25,6 +27,25 @@ import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
+import { getStoredUser, isAdminUser } from '../../shared/utils/authStorage';
+
+function RoleGate({ children, adminOnly = false, userOnly = false }) {
+  const user = getStoredUser();
+
+  if (!user) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
+  if (adminOnly && !isAdminUser(user)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (userOnly && isAdminUser(user)) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return children;
+}
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
@@ -37,7 +58,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
           <Route path="portafolios" element={<PortfolioSearchPage />} />
           <Route path="desarrolladores" element={<DevelopersPage />} />
           <Route path="portafolio/:userId" element={<PortfolioPage />} />
-          <Route path="dashboard" element={<DashboardLayout />}>
+          <Route path="dashboard" element={<RoleGate userOnly><DashboardLayout /></RoleGate>}>
             <Route index element={<DashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="experience" element={<ExperiencePage />} />
@@ -51,6 +72,17 @@ export default function AppRouter({ isBackendAvailable = true }) {
             <Route path="projects" element={<ProjectsPage />} />
               <Route path="enlaces" element={<EnlacePage />} />
             <Route path="view" element={<ViewPage />} />
+          </Route>
+          <Route path="admin" element={<RoleGate adminOnly><AdminDashboardLayout /></RoleGate>}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="profile" element={<AdminDashboardPage section="profile" />} />
+            <Route path="users" element={<AdminDashboardPage section="users" />} />
+            <Route path="events" element={<AdminDashboardPage section="events" />} />
+            <Route path="notices" element={<AdminDashboardPage section="notices" />} />
+            <Route path="reports" element={<AdminDashboardPage section="reports" />} />
+            <Route path="audit" element={<AdminDashboardPage section="audit" />} />
+            <Route path="backups" element={<AdminDashboardPage section="backups" />} />
+            <Route path="settings" element={<AdminDashboardPage section="settings" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
