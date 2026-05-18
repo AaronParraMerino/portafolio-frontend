@@ -13,7 +13,7 @@ import {
   separarHabilidades,
 } from '../../../dashboard/view/services/viewService';
 
-const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v2';
+const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v3';
 
 function cleanString(value = '') {
   return String(value || '').trim();

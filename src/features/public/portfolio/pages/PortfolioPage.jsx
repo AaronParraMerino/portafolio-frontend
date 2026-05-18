@@ -186,6 +186,7 @@ export default function PortfolioPage() {
           <ViewProjects
             proyectos={proyectos}
             visibilidad={visibilidad}
+            fetchParticipants
           />
         </ViewOsFrame>
       </div>

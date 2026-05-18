@@ -4,9 +4,25 @@ import {
   getProyectoParticipantes,
   normalizeProyectoParticipantes,
 } from '../services/projectsService';
+import ProjectParticipantAvatar from './ProjectParticipantAvatar';
 
 function getProjectId(project = {}) {
-  return project.id || project.id_proyecto || project.idProyecto || null;
+  const candidates = [
+    project.id_proyecto,
+    project.backendId,
+    project.idProyecto,
+    project.id,
+  ];
+
+  for (const value of candidates) {
+    if (!value) continue;
+
+    const clean = String(value).trim();
+    const syntheticMatch = clean.match(/^proyecto-(.+)$/i);
+    return syntheticMatch?.[1] || value;
+  }
+
+  return null;
 }
 
 function getExpectedCount(project = {}, fallback = 0) {
@@ -20,26 +36,57 @@ function getExpectedCount(project = {}, fallback = 0) {
   return Number.isFinite(count) && count > 0 ? count : fallback;
 }
 
-function getInitials(name = '') {
-  const parts = String(name)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) return '?';
-
-  return parts
-    .slice(0, 2)
-    .map(part => part.charAt(0).toUpperCase())
-    .join('');
-}
-
 function normalizeText(value = '') {
   return String(value || '')
     .trim()
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function isTruthy(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value === null || value === undefined) return false;
+
+  if (typeof value === 'string') {
+    const normalized = normalizeText(value);
+    return [
+      '1',
+      'true',
+      'si',
+      'validado',
+      'validated',
+      'verificado',
+      'verified',
+      'aprobado',
+      'approved',
+      'github_validado',
+    ].includes(normalized);
+  }
+
+  if (typeof value === 'object') {
+    return Object.keys(value).length > 0;
+  }
+
+  return Boolean(value);
+}
+
+function isValidatedParticipant(participante = {}) {
+  const tipo = normalizeText(participante.tipo_participante || participante.tipoParticipante || '');
+
+  return tipo === 'usuario_github_validado'
+    || tipo === 'github_validado'
+    || tipo === 'validado'
+    || isTruthy(participante.validacion_github)
+    || isTruthy(participante.validacionGithub)
+    || isTruthy(participante.github_validado)
+    || isTruthy(participante.githubValidated)
+    || isTruthy(participante.validacion?.validado)
+    || isTruthy(participante.validacion?.estado)
+    || isTruthy(participante.estado_validacion)
+    || isTruthy(participante.estadoValidacion)
+    || isTruthy(participante.github_validation_status)
+    || isTruthy(participante.usuario_repositorio_validacion);
 }
 
 function participantKey(participante = {}) {
@@ -145,41 +192,13 @@ function groupParticipants(participantes = []) {
   return groups;
 }
 
-function ParticipantAvatar({ participante }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const nombre = participante.nombre || participante.github_username || 'Participante';
-  const roleDetail = participante.rol ? ` - ${participante.rol}` : '';
-  const githubDetail = participante.github_username ? ` (@${participante.github_username})` : '';
-  const label = `${nombre}${githubDetail}${roleDetail}`;
-
-  return (
-    <button
-      type="button"
-      className="prj-collab-avatar-btn"
-      title={label}
-      aria-label={label}
-    >
-      {participante.avatar_url && !imageFailed ? (
-        <img
-          src={participante.avatar_url}
-          alt=""
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <span className="prj-collab-initials">{getInitials(nombre)}</span>
-      )}
-    </button>
-  );
-}
-
 function ParticipantsList({ participantes = [] }) {
   if (participantes.length === 0) return null;
 
   return (
     <div className="prj-collab-avatar-stack">
       {participantes.map((participante, index) => (
-        <ParticipantAvatar
+        <ProjectParticipantAvatar
           key={`${participante.id || participante.id_usuario || participante.github_username || index}`}
           participante={participante}
         />
@@ -202,7 +221,14 @@ function ParticipantGroup({ label, participantes = [] }) {
   );
 }
 
-export default function ProjectsGithubCollaborators({ proyecto = {}, detail = false }) {
+export default function ProjectsGithubCollaborators({
+  proyecto = {},
+  detail = false,
+  fetchRemote = true,
+  fallbackToCurrentUser = true,
+  validatedOnly = false,
+  compact = false,
+}) {
   const directParticipants = useMemo(
     () => normalizeProyectoParticipantes(proyecto, { includeCurrentUserFallback: false }),
     [proyecto]
@@ -210,15 +236,15 @@ export default function ProjectsGithubCollaborators({ proyecto = {}, detail = fa
   const initialParticipants = useMemo(
     () => directParticipants.length > 0
       ? directParticipants
-      : normalizeProyectoParticipantes(proyecto),
-    [directParticipants, proyecto]
+      : normalizeProyectoParticipantes(proyecto, { includeCurrentUserFallback: fallbackToCurrentUser }),
+    [directParticipants, proyecto, fallbackToCurrentUser]
   );
   const [participantes, setParticipantes] = useState(initialParticipants);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const projectId = getProjectId(proyecto);
-    const shouldFetchBackend = Boolean(projectId);
+    const shouldFetchBackend = Boolean(projectId) && fetchRemote;
 
     setParticipantes(initialParticipants);
 
@@ -258,39 +284,65 @@ export default function ProjectsGithubCollaborators({ proyecto = {}, detail = fa
     return () => {
       isActive = false;
     };
-  }, [proyecto, initialParticipants, directParticipants.length]);
+  }, [proyecto, initialParticipants, directParticipants.length, fetchRemote]);
 
   const visibles = participantes.length > 0 ? participantes : initialParticipants;
-  const groupedParticipants = useMemo(() => groupParticipants(visibles), [visibles]);
+  const displayParticipants = useMemo(
+    () => validatedOnly
+      ? visibles.filter(isValidatedParticipant)
+      : visibles,
+    [visibles, validatedOnly]
+  );
+  const groupedParticipants = useMemo(
+    () => groupParticipants(displayParticipants),
+    [displayParticipants]
+  );
+  const counter = compact || validatedOnly
+    ? displayParticipants.length
+    : Math.max(getExpectedCount(proyecto, displayParticipants.length), displayParticipants.length);
 
-  if (visibles.length === 0 && !loading) {
+  if (displayParticipants.length === 0 && !loading) {
     return null;
   }
 
   return (
-    <div className={`prj-collaborators${detail ? ' detail' : ''}`} aria-busy={loading}>
+    <div className={`prj-collaborators${detail ? ' detail' : ''}${compact ? ' compact' : ''}`} aria-busy={loading}>
       <div className="prj-collab-head">
         <span>Participantes</span>
-        <span>{Math.max(getExpectedCount(proyecto, visibles.length), visibles.length)}</span>
+        <span>{counter}</span>
       </div>
 
-      <div className="prj-collab-groups">
-        {groupedParticipants.map((group) => (
-          <ParticipantGroup
-            key={group.key}
-            label={group.label}
-            participantes={group.items}
-          />
-        ))}
+      {compact ? (
+        <div className="prj-collab-compact-row">
+          <ParticipantsList participantes={displayParticipants} />
+          {loading && displayParticipants.length === 0 && (
+            <div className="prj-collab-loading">
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="prj-collab-groups">
+          {groupedParticipants.map((group) => (
+            <ParticipantGroup
+              key={group.key}
+              label={group.label}
+              participantes={group.items}
+            />
+          ))}
 
-        {loading && visibles.length === 0 && (
-          <div className="prj-collab-loading">
-            <span />
-            <span />
-            <span />
-          </div>
-        )}
-      </div>
+          {loading && displayParticipants.length === 0 && (
+            <div className="prj-collab-loading">
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
