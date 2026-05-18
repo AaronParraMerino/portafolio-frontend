@@ -115,7 +115,8 @@ function injectExportStyles(clonedDocument) {
       display: none !important;
     }
 
-    .portfolio-export-mode .proj-video-wrap::before {
+    .portfolio-export-mode .proj-video-wrap::before,
+    .portfolio-export-mode .prj-carousel-video-wrap::before {
       content: 'Video';
       width: 100%;
       height: 100%;
@@ -137,6 +138,10 @@ function injectExportStyles(clonedDocument) {
     .portfolio-export-mode .proj-year,
     .portfolio-export-mode .proj-link-demo,
     .portfolio-export-mode .proj-contribution,
+    .portfolio-export-mode .prj-year-pill,
+    .portfolio-export-mode .prj-proj-link-demo,
+    .portfolio-export-mode .prj-card-contribution,
+    .portfolio-export-mode .prj-pill-arch,
     .portfolio-export-mode .sk-level-badge,
     .portfolio-export-mode .sk-soft-level,
     .portfolio-export-mode .sk-meter-fill {
@@ -149,7 +154,10 @@ function injectExportStyles(clonedDocument) {
     .portfolio-export-mode .sk-item-desc,
     .portfolio-export-mode .sk-soft-desc,
     .portfolio-export-mode .exp-desc,
-    .portfolio-export-mode .proj-desc {
+    .portfolio-export-mode .proj-desc,
+    .portfolio-export-mode .prj-card-desc,
+    .portfolio-export-mode .prj-detail-description,
+    .portfolio-export-mode .prj-card-contribution p {
       color: #4b5563 !important;
     }
   `;
