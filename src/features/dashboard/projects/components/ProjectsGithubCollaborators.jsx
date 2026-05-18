@@ -4,6 +4,7 @@ import {
   getProyectoParticipantes,
   normalizeProyectoParticipantes,
 } from '../services/projectsService';
+import ProjectParticipantAvatar from './ProjectParticipantAvatar';
 
 function getProjectId(project = {}) {
   return project.id || project.id_proyecto || project.idProyecto || null;
@@ -18,20 +19,6 @@ function getExpectedCount(project = {}, fallback = 0) {
   const count = Number(raw);
 
   return Number.isFinite(count) && count > 0 ? count : fallback;
-}
-
-function getInitials(name = '') {
-  const parts = String(name)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) return '?';
-
-  return parts
-    .slice(0, 2)
-    .map(part => part.charAt(0).toUpperCase())
-    .join('');
 }
 
 function normalizeText(value = '') {
@@ -145,41 +132,13 @@ function groupParticipants(participantes = []) {
   return groups;
 }
 
-function ParticipantAvatar({ participante }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const nombre = participante.nombre || participante.github_username || 'Participante';
-  const roleDetail = participante.rol ? ` - ${participante.rol}` : '';
-  const githubDetail = participante.github_username ? ` (@${participante.github_username})` : '';
-  const label = `${nombre}${githubDetail}${roleDetail}`;
-
-  return (
-    <button
-      type="button"
-      className="prj-collab-avatar-btn"
-      title={label}
-      aria-label={label}
-    >
-      {participante.avatar_url && !imageFailed ? (
-        <img
-          src={participante.avatar_url}
-          alt=""
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <span className="prj-collab-initials">{getInitials(nombre)}</span>
-      )}
-    </button>
-  );
-}
-
 function ParticipantsList({ participantes = [] }) {
   if (participantes.length === 0) return null;
 
   return (
     <div className="prj-collab-avatar-stack">
       {participantes.map((participante, index) => (
-        <ParticipantAvatar
+        <ProjectParticipantAvatar
           key={`${participante.id || participante.id_usuario || participante.github_username || index}`}
           participante={participante}
         />

@@ -1,6 +1,7 @@
 // src/features/dashboard/view/components/ViewProjects.jsx
 
 import { useState } from 'react';
+import ProjectParticipantAvatar from '../../projects/components/ProjectParticipantAvatar';
 import { DESARROLLADO_PARA, TIPOS_PROYECTO } from '../../projects/model/projectsModel';
 import { normalizeProyectoParticipantes } from '../../projects/services/projectsService';
 import '../../projects/styles/projects.css';
@@ -323,20 +324,6 @@ function getExpectedCount(project = {}, fallback = 0) {
   return Number.isFinite(count) && count > 0 ? count : fallback;
 }
 
-function getInitials(name = '') {
-  const parts = String(name)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) return '?';
-
-  return parts
-    .slice(0, 2)
-    .map(part => part.charAt(0).toUpperCase())
-    .join('');
-}
-
 const PARTICIPANT_GROUPS = [
   {
     key: 'usuario_github_validado',
@@ -501,41 +488,13 @@ function DetailLink({ href, children, className = '' }) {
   );
 }
 
-function ParticipantAvatar({ participante }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const nombre = participante.nombre || participante.github_username || 'Participante';
-  const roleDetail = participante.rol ? ` - ${participante.rol}` : '';
-  const githubDetail = participante.github_username ? ` (@${participante.github_username})` : '';
-  const label = `${nombre}${githubDetail}${roleDetail}`;
-
-  return (
-    <button
-      type="button"
-      className="prj-collab-avatar-btn"
-      title={label}
-      aria-label={label}
-    >
-      {participante.avatar_url && !imageFailed ? (
-        <img
-          src={participante.avatar_url}
-          alt=""
-          loading="lazy"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <span className="prj-collab-initials">{getInitials(nombre)}</span>
-      )}
-    </button>
-  );
-}
-
 function ParticipantsList({ participantes = [] }) {
   if (participantes.length === 0) return null;
 
   return (
     <div className="prj-collab-avatar-stack">
       {participantes.map((participante, index) => (
-        <ParticipantAvatar
+        <ProjectParticipantAvatar
           key={`${participante.id || participante.id_usuario || participante.github_username || index}`}
           participante={participante}
         />
