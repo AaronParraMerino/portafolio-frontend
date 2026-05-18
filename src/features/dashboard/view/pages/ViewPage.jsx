@@ -217,6 +217,7 @@ export default function ViewPage() {
             <ViewProjects
               proyectos={proyectos}
               visibilidad={visibilidad}
+              fetchParticipants
             />
           </ViewOsFrame>
         </div>

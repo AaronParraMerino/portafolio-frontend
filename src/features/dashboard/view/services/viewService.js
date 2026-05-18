@@ -6,7 +6,7 @@ import { normalizeProyectoFromApi } from '../../projects/services/projectsServic
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const CONFIG_STORAGE_PREFIX = 'portfolio-view-config';
 const DATA_CACHE_PREFIX = 'portfolio-view-data:v2';
-const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v1';
+const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v3';
 
 const CATEGORY_LABELS = {
   sin_especificar: 'Proyecto',
