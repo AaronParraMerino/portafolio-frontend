@@ -95,6 +95,13 @@ export default function ProjectsFilters({
         onReposChanged={onReposChanged}
       />
 
+      <ProjectsGithubSyncPanel
+        provider="gitlab"
+        actionLabel="Agregar proyecto con repos GitLab"
+        onAgregarConRepos={onAgregarConRepos}
+        onReposChanged={onReposChanged}
+      />
+
       <div className="prj-filter-row">
         <div className="prj-tab-grp">
           {TABS.map(tab => {

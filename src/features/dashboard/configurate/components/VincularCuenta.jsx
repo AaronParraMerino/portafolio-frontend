@@ -11,8 +11,8 @@ export default function VincularCuenta() {
   const [unlinkingProvider, setUnlinkingProvider] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [githubSyncing, setGithubSyncing] = useState(false);
-  const [githubDetectedCount, setGithubDetectedCount] = useState(0);
+  const [repoSyncingProvider, setRepoSyncingProvider] = useState("");
+  const [detectedCounts, setDetectedCounts] = useState({ github: 0, gitlab: 0 });
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   const meta = useMemo(
@@ -103,14 +103,14 @@ export default function VincularCuenta() {
     }
   }, [meta]);
 
-  const loadGithubDetectedCount = useCallback(async (refresh = false) => {
+  const loadProviderDetectedCount = useCallback(async (provider, refresh = false) => {
     try {
       const token = localStorage.getItem("tokenPORT");
       if (!token) return;
 
       const qs = refresh ? "?refresh=true" : "";
 
-      const res = await fetch(`${BASE_URL}/auth/github/repos/detected/count${qs}`, {
+      const res = await fetch(`${BASE_URL}/auth/${provider}/repos/detected/count${qs}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ export default function VincularCuenta() {
 
       if (!res.ok) {
         if (res.status === 404) {
-          setGithubDetectedCount(0);
+          setDetectedCounts((current) => ({ ...current, [provider]: 0 }));
           return;
         }
 
@@ -131,7 +131,10 @@ export default function VincularCuenta() {
       }
 
       const count = Number(payload?.count ?? payload?.data?.count ?? 0);
-      setGithubDetectedCount(Number.isFinite(count) ? count : 0);
+      setDetectedCounts((current) => ({
+        ...current,
+        [provider]: Number.isFinite(count) ? count : 0,
+      }));
     } catch (e) {
       setError(e.message);
     }
@@ -142,15 +145,17 @@ export default function VincularCuenta() {
   }, [loadLinkedProviders]);
 
   useEffect(() => {
-    const github = accounts.find((item) => item.id === "github");
+    ["github", "gitlab"].forEach((provider) => {
+      const account = accounts.find((item) => item.id === provider);
 
-    if (github?.connected) {
-      loadGithubDetectedCount(false);
-      return;
-    }
+      if (account?.connected) {
+        loadProviderDetectedCount(provider, false);
+        return;
+      }
 
-    setGithubDetectedCount(0);
-  }, [accounts, loadGithubDetectedCount]);
+      setDetectedCounts((current) => ({ ...current, [provider]: 0 }));
+    });
+  }, [accounts, loadProviderDetectedCount]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -254,9 +259,11 @@ export default function VincularCuenta() {
     }
   };
 
-  const handleSyncGithub = async () => {
+  const handleSyncProviderRepos = async (provider) => {
+    const providerName = meta[provider]?.name || provider;
+
     try {
-      setGithubSyncing(true);
+      setRepoSyncingProvider(provider);
       setError("");
       setNotice("");
 
@@ -265,7 +272,7 @@ export default function VincularCuenta() {
         throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
       }
 
-      const syncRes = await fetch(`${BASE_URL}/auth/github/repos/sync`, {
+      const syncRes = await fetch(`${BASE_URL}/auth/${provider}/repos/sync`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -277,17 +284,17 @@ export default function VincularCuenta() {
 
       if (!syncRes.ok) {
         throw new Error(
-          syncPayload.message || "No se pudo sincronizar con GitHub."
+          syncPayload.message || `No se pudo sincronizar con ${providerName}.`
         );
       }
 
-      await loadGithubDetectedCount(false);
+      await loadProviderDetectedCount(provider, false);
 
-      setNotice(formatGithubSyncNotice(syncPayload?.stats));
+      setNotice(formatGithubSyncNotice(syncPayload?.stats, providerName));
     } catch (e) {
       setError(e.message);
     } finally {
-      setGithubSyncing(false);
+      setRepoSyncingProvider("");
     }
   };
 
@@ -386,23 +393,23 @@ export default function VincularCuenta() {
                   <>
                     <span style={connectedBadgeStyle}>● Conectado</span>
 
-                    {account.id === "github" ? (
+                    {["github", "gitlab"].includes(account.id) ? (
                       <>
                         <span style={miniInfoStyle}>
-                          Repos detectados: {githubDetectedCount}
+                          Repos detectados: {detectedCounts[account.id] ?? 0}
                         </span>
 
                         <button
                           style={btnSyncStyle}
-                          onClick={handleSyncGithub}
+                          onClick={() => handleSyncProviderRepos(account.id)}
                           disabled={
-                            githubSyncing ||
+                            repoSyncingProvider === account.id ||
                             loadingProvider === account.id ||
                             unlinkingProvider === account.id
                           }
                           type="button"
                         >
-                          {githubSyncing
+                          {repoSyncingProvider === account.id
                             ? "Sincronizando..."
                             : "Sincronizar repos"}
                         </button>
@@ -559,14 +566,14 @@ function getConnectErrorMessage(code, provider) {
   return `No se pudo vincular la cuenta de ${provider}. Inténtalo nuevamente.`;
 }
 
-function formatGithubSyncNotice(stats = {}) {
+function formatGithubSyncNotice(stats = {}, providerName = "GitHub") {
   const creados = Number(stats?.creados ?? 0);
   const actualizados = Number(stats?.actualizados ?? 0);
   const detalles = Number(stats?.detalles_actualizados ?? 0);
   const pendientes = Number(stats?.detalles_omitidos_por_limite ?? 0);
 
   const parts = [
-    "Sincronización lista.",
+    `Sincronización de ${providerName} lista.`,
     `Repos nuevos: ${Number.isFinite(creados) ? creados : 0}.`,
     `Repos actualizados: ${Number.isFinite(actualizados) ? actualizados : 0}.`,
   ];

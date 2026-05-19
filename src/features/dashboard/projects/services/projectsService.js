@@ -181,7 +181,7 @@ async function apiFetchFormData(url, formData, options = {}) {
 // GITHUB VINCULADO / REPOS DETECTADOS
 // ═══════════════════════════════════════════
 
-export async function isGithubLinked({ force = false } = {}) {
+export async function isGithubLinked({ force = false, provider = 'github' } = {}) {
   const { userId } = getSession();
   const endpoint = '/auth/oauth/linked-providers';
   const data = await getCachedDashboardEndpoint(
@@ -196,14 +196,14 @@ export async function isGithubLinked({ force = false } = {}) {
       ? data.data
       : [];
 
-  const github = providers.find((item) => item.provider === 'github');
-  return Boolean(github?.connected);
+  const account = providers.find((item) => item.provider === provider);
+  return Boolean(account?.connected);
 }
 
-export async function getGithubDetectedRepos({ refresh = false } = {}) {
+export async function getGithubDetectedRepos({ refresh = false, provider = 'github' } = {}) {
   const { userId } = getSession();
   const qs = refresh ? '?refresh=true' : '';
-  const endpoint = `/auth/github/repos/detected${qs}`;
+  const endpoint = `/auth/${provider}/repos/detected${qs}`;
   const data = await getCachedDashboardEndpoint(
     endpoint,
     () => apiFetch(`${API_URL}${endpoint}`),
@@ -211,23 +211,23 @@ export async function getGithubDetectedRepos({ refresh = false } = {}) {
   );
 
   if (refresh) {
-    writeCachedDashboardEndpoint('/auth/github/repos/detected', data, { userId });
+    writeCachedDashboardEndpoint(`/auth/${provider}/repos/detected`, data, { userId });
   }
 
   return Array.isArray(data?.data) ? data.data : [];
 }
 
-export async function syncGithubRepos() {
-  const result = await apiFetch(`${API_URL}/auth/github/repos/sync`, {
+export async function syncGithubRepos({ provider = 'github' } = {}) {
+  const result = await apiFetch(`${API_URL}/auth/${provider}/repos/sync`, {
     method: 'POST',
   });
 
   try {
     const { userId } = getSession();
-    removeCachedDashboardEndpoint('/auth/github/repos/detected', { userId });
-    removeCachedDashboardEndpoint('/auth/github/repos/detected?refresh=true', { userId });
-    removeCachedDashboardEndpoint('/auth/github/repos/detected/count', { userId });
-    removeCachedDashboardEndpoint('/auth/github/repos/detected/count?refresh=true', { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected?refresh=true`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected/count`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected/count?refresh=true`, { userId });
   } catch {
     // no-op
   }
@@ -235,8 +235,8 @@ export async function syncGithubRepos() {
   return result;
 }
 
-export async function getGithubConnectUrl() {
-  const data = await apiFetch(`${API_URL}/auth/github/connect-url`, {
+export async function getGithubConnectUrl({ provider = 'github' } = {}) {
+  const data = await apiFetch(`${API_URL}/auth/${provider}/connect-url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
@@ -370,14 +370,14 @@ export async function ensureTecnologia(nombre, tipo = null) {
   return tecnologia;
 }
 
-export async function getGithubRepoLanguages(repoUrl) {
+export async function getGithubRepoLanguages(repoUrl, { provider = 'github' } = {}) {
   const cleanUrl = typeof repoUrl === 'string' ? repoUrl.trim() : '';
 
   if (!cleanUrl) {
     return [];
   }
 
-  const data = await apiFetch(`${API_URL}/auth/github/repos/languages`, {
+  const data = await apiFetch(`${API_URL}/auth/${provider}/repos/languages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ repo_url: cleanUrl }),
@@ -386,7 +386,7 @@ export async function getGithubRepoLanguages(repoUrl) {
   return Array.isArray(data?.languages) ? data.languages : [];
 }
 
-export async function attachDetectedReposToProject(idProyecto, repositoriosIds = [], participacionData = {}) {
+export async function attachDetectedReposToProject(idProyecto, repositoriosIds = [], participacionData = {}, { provider = 'github' } = {}) {
   const ids = Array.isArray(repositoriosIds)
     ? repositoriosIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
     : [];
@@ -411,7 +411,7 @@ export async function attachDetectedReposToProject(idProyecto, repositoriosIds =
     }
   }
 
-  return apiFetch(`${API_URL}/auth/github/repos/attach-to-project`, {
+  return apiFetch(`${API_URL}/auth/${provider}/repos/attach-to-project`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
