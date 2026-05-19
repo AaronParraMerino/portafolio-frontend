@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   attachDetectedReposToProject,
+  ensureTecnologiasDetectadas,
   getGithubConnectUrl,
   getGithubDetectedRepos,
+  getGithubRepoLanguages,
   isGithubLinked,
   syncGithubRepos,
 } from '../services/projectsService';
@@ -151,6 +153,7 @@ export default function ProjectsGithubSyncPanel({
   const [loadingRepos, setLoadingRepos] = useState(false);
   const [syncingRepos, setSyncingRepos] = useState(false);
   const [connectingGithub, setConnectingGithub] = useState(false);
+  const [preparingProject, setPreparingProject] = useState(false);
   const [joiningRepo, setJoiningRepo] = useState(null);
   const [joinLoading, setJoinLoading] = useState(false);
   const [error, setError] = useState('');
@@ -293,7 +296,9 @@ export default function ProjectsGithubSyncPanel({
     setSelectedRepos((prev) => prev.filter((repo) => normalizarGithubUrl(repo.url) !== key));
   }, []);
 
-  const handleAgregarProyecto = useCallback(() => {
+  const handleAgregarProyecto = useCallback(async () => {
+    if (selectedRepos.length === 0 || preparingProject) return;
+
     const selection = {
       repositorios: selectedRepos.map((repo) => repo.url),
       detected_repo_ids: selectedRepos
@@ -301,6 +306,30 @@ export default function ProjectsGithubSyncPanel({
         .filter((id) => Number.isInteger(id) && id > 0),
       detected_repos: selectedRepos,
     };
+
+    try {
+      setPreparingProject(true);
+      setError('');
+
+      const languageGroups = await Promise.all(
+        selection.repositorios.map((url) => getGithubRepoLanguages(url).catch(() => []))
+      );
+      const languages = [...new Set(languageGroups.flat().map(lang => String(lang || '').trim()).filter(Boolean))];
+      const tecnologias = languages.length > 0
+        ? await ensureTecnologiasDetectadas(languages, 'lenguaje').catch(() => [])
+        : [];
+
+      if (tecnologias.length > 0) {
+        selection.tecnologias = tecnologias.map(tech => tech.nombre).filter(Boolean);
+        selection.etiquetas = selection.tecnologias;
+        selection.tecnologias_detalle = tecnologias;
+      } else if (languages.length > 0) {
+        selection.tecnologias = languages;
+        selection.etiquetas = languages;
+      }
+    } finally {
+      setPreparingProject(false);
+    }
 
     if (typeof onSelectRepos === 'function') {
       onSelectRepos(selection);
@@ -310,7 +339,7 @@ export default function ProjectsGithubSyncPanel({
     if (typeof onAgregarConRepos === 'function') {
       onAgregarConRepos(selection);
     }
-  }, [onAgregarConRepos, onSelectRepos, selectedRepos]);
+  }, [onAgregarConRepos, onSelectRepos, preparingProject, selectedRepos]);
 
   const handleJoinRepo = useCallback(async (participacionData) => {
     if (!joiningRepo) return;
@@ -420,12 +449,12 @@ export default function ProjectsGithubSyncPanel({
                 type="button"
                 className="prj-btn-add prj-github-create-btn"
                 onClick={handleAgregarProyecto}
-                disabled={selectedRepos.length === 0}
+                disabled={selectedRepos.length === 0 || preparingProject}
               >
                 <svg viewBox="0 0 12 12">
                   <path d="M6 1v10M1 6h10" />
                 </svg>
-                <span>{actionLabel}</span>
+                <span>{preparingProject ? 'Detectando tecnologias...' : actionLabel}</span>
               </button>
             </div>
 

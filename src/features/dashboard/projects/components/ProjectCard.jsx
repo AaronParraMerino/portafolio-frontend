@@ -14,7 +14,7 @@ function getStatusLabel(p = {}) {
     publicado: 'Publicado',
     borrador: 'Borrador',
     archivado: 'Archivado',
-    sin_especificar: 'Sin especificar',
+    sin_especificar: 'Borrador',
     en_desarrollo: 'En desarrollo',
     pausado: 'Pausado',
     terminado: 'Terminado',

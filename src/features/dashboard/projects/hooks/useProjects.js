@@ -27,13 +27,8 @@ import {
   attachDetectedReposToProject,
   normalizeProyectoFromApi,
 } from '../services/projectsService';
-import { MOCK_PROYECTOS } from '../model/projectsModel';
-
 const BASE_STORAGE = (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage') + '/';
 const CACHE_KEY = 'projects_cache';
-
-// ── MODO MOCK: cambiar a false cuando el backend esté listo ──
-const USAR_MOCK = false;
 
 // Guard anti-doble-fetch
 let _cargaIniciada = false;
@@ -122,7 +117,7 @@ function formatDocumento(doc) {
 // ════════════════════════════════════════
 // Normalización local
 // Nota: el service ya normaliza, pero este helper deja seguro
-// el estado interno del hook, cache y modo mock.
+// el estado interno del hook y cache.
 // ════════════════════════════════════════
 function mapearProyecto(p = {}) {
   const normalizado = normalizeProyectoFromApi
@@ -261,33 +256,13 @@ function normalizarResultadoDocumentos(resultado) {
 }
 
 // ════════════════════════════════════════
-// Helper interno: genera badge desde datos del form
-// ════════════════════════════════════════
-function generarBadge(datos) {
-  const map = {
-    publicado: { label: 'Publicado', variant: 'green' },
-    borrador: { label: 'Borrador', variant: 'gray' },
-    archivado: { label: 'Archivado', variant: 'blue' },
-    sin_especificar: { label: 'Sin especificar', variant: 'gray' },
-    en_desarrollo: { label: 'En desarrollo', variant: 'amber' },
-    pausado: { label: 'Pausado', variant: 'amber' },
-    terminado: { label: 'Terminado', variant: 'gray' },
-    mantenimiento: { label: 'Mantenimiento', variant: 'amber' },
-    versionado: { label: 'Versionado', variant: 'amber' },
-    cancelado: { label: 'Cancelado', variant: 'blue' },
-  };
-
-  return map[datos.estado] || { label: datos.estado, variant: 'gray' };
-}
-
-// ════════════════════════════════════════
 // Hook principal
 // ════════════════════════════════════════
 export function useProjects() {
   const cache = leerCache();
 
   const [proyectos, setProyectos] = useState(() =>
-    cache?.proyectos ?? (USAR_MOCK ? MOCK_PROYECTOS.map(mapearProyecto) : [])
+    cache?.proyectos ?? []
   );
 
   const [loading, setLoading] = useState(!cache);
@@ -307,11 +282,6 @@ export function useProjects() {
   // Carga inicial
   // ════════════════════════════════════════
   useEffect(() => {
-    if (USAR_MOCK) {
-      setLoading(false);
-      return;
-    }
-
     if (_cargaIniciada) return;
     _cargaIniciada = true;
 
@@ -344,36 +314,6 @@ export function useProjects() {
     setGuardando(true);
 
     try {
-      if (USAR_MOCK) {
-        await new Promise(r => setTimeout(r, 600));
-
-        const previewUrls = imagenesNuevas.map(f => URL.createObjectURL(f));
-        const docsPreview = documentosNuevos.map(f => ({
-          url: URL.createObjectURL(f),
-          nombre: f.name,
-        }));
-
-        const nuevo = mapearProyecto({
-          ...datos,
-          id: Date.now(),
-          id_proyecto: Date.now(),
-          imagenes: previewUrls,
-          documentos: docsPreview,
-          imagenUrl: previewUrls[0] || null,
-          imagen_portada: previewUrls[0] || null,
-          estadoLabel: null,
-          badges: [generarBadge(datos)],
-          fecha_modificacion: new Date().toISOString(),
-        });
-
-        const actualizados = [nuevo, ...proyectos];
-        setProyectos(actualizados);
-        guardarEnCache(actualizados);
-        mostrarToast('Proyecto agregado correctamente');
-
-        return nuevo;
-      }
-
       // 1. Crear proyecto sin archivos.
       const creado = await crearProyecto(datos);
       const creadoMapeado = mapearProyecto(creado);
@@ -466,47 +406,6 @@ export function useProjects() {
         documentosAEliminar
       );
 
-      if (USAR_MOCK) {
-        await new Promise(r => setTimeout(r, 600));
-
-        const imagenesBase = (proyectoActual?.imagenes || [])
-          .filter(url => !urlsImagenesAEliminar.includes(url));
-
-        const nuevasUrls = imagenesNuevas.map(f => URL.createObjectURL(f));
-        const imagenes = [...imagenesBase, ...nuevasUrls].slice(0, 5);
-
-        const documentosBase = (proyectoActual?.documentos || [])
-          .filter(doc => !urlsDocumentosAEliminar.includes(getDocumentoUrl(doc)));
-
-        const nuevosDocs = documentosNuevos.map(f => ({
-          url: URL.createObjectURL(f),
-          nombre: f.name,
-        }));
-
-        const documentos = [...documentosBase, ...nuevosDocs].slice(0, 2);
-
-        const actualizados = proyectos.map(p =>
-          p.id === id || p.id_proyecto === id
-            ? mapearProyecto({
-                ...p,
-                ...datos,
-                imagenes,
-                imagenUrl: imagenes[0] || null,
-                imagen_portada: imagenes[0] || null,
-                documentos,
-                badges: [generarBadge(datos)],
-                fecha_modificacion: new Date().toISOString(),
-              })
-            : p
-        );
-
-        setProyectos(actualizados);
-        guardarEnCache(actualizados);
-        mostrarToast('Proyecto actualizado correctamente');
-
-        return actualizados.find(p => p.id === id || p.id_proyecto === id);
-      }
-
       // 1. Actualizar datos principales del proyecto.
       const actualizado = await actualizarProyecto(proyectoId, datos);
       let mapeado = mapearProyecto(actualizado);
@@ -591,11 +490,7 @@ export function useProjects() {
     guardarEnCache(actualizados);
 
     try {
-      if (!USAR_MOCK) {
-        await eliminarProyecto(id);
-      } else {
-        await new Promise(r => setTimeout(r, 400));
-      }
+      await eliminarProyecto(id);
 
       mostrarToast('Proyecto eliminado');
 
@@ -616,11 +511,7 @@ export function useProjects() {
     guardarEnCache(actualizados);
 
     try {
-      if (!USAR_MOCK) {
-        await desvincularParticipacionProyecto(id);
-      } else {
-        await new Promise(r => setTimeout(r, 400));
-      }
+      await desvincularParticipacionProyecto(id);
 
       mostrarToast('Participacion desvinculada');
 
@@ -652,6 +543,7 @@ export function useProjects() {
           puede_eliminar: data.permisos?.puede_eliminar ?? p.puede_eliminar,
           puede_configurar: data.permisos?.puede_configurar ?? p.puede_configurar,
           puede_desvincular_participacion: data.permisos?.puede_desvincular_participacion ?? p.puede_desvincular_participacion,
+          puede_remover_participantes_sin_validacion: data.permisos?.puede_remover_participantes_sin_validacion ?? p.puede_remover_participantes_sin_validacion,
         });
       });
 
@@ -670,8 +562,6 @@ export function useProjects() {
   };
 
   const refrescar = async () => {
-    if (USAR_MOCK) return proyectos;
-
     setLoading(true);
 
     try {

@@ -18,6 +18,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const TECNOLOGIAS_CACHE_KEY = 'projects_tecnologias_catalogo_cache_v1';
 const PARTICIPANTES_CACHE_PREFIX = 'projects_participantes_cache_v1';
+const githubRepoLanguagesMemoryCache = new Map();
 
 // ═══════════════════════════════════════════
 // CONSTANTES
@@ -190,14 +191,68 @@ function mapTecnologiaTipoToCategoria(tipo = '') {
   }
 }
 
+const TECHNOLOGY_DISPLAY_OVERRIDES = {
+  html: {
+    nombre: 'HTML',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg',
+    color: '#E34F26',
+  },
+  html5: {
+    nombre: 'HTML',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg',
+    color: '#E34F26',
+  },
+  css: {
+    nombre: 'CSS',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg',
+    color: '#1572B6',
+  },
+  css3: {
+    nombre: 'CSS',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg',
+    color: '#1572B6',
+  },
+  javascript: {
+    nombre: 'JavaScript',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg',
+    color: '#F7DF1E',
+  },
+  js: {
+    nombre: 'JavaScript',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg',
+    color: '#F7DF1E',
+  },
+};
+
+function normalizeTechnologyKey(value = '') {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
 function normalizeTecnologiaFromApi(tech = {}) {
+  const override = TECHNOLOGY_DISPLAY_OVERRIDES[normalizeTechnologyKey(tech.nombre)];
+
   return {
-    id: tech.id_tecnologia || tech.id || tech.nombre,
-    nombre: tech.nombre,
-    tipo: tech.tipo || 'otro',
-    categoria: mapTecnologiaTipoToCategoria(tech.tipo || 'otro'),
-    icono_url: tech.icono_url || null,
-    color: tech.color || null,
+    id: tech.id_tecnologia || tech.id || override?.nombre || tech.nombre,
+    nombre: override?.nombre || tech.nombre,
+    tipo: override?.tipo || tech.tipo || 'otro',
+    categoria: override?.categoria || mapTecnologiaTipoToCategoria(tech.tipo || 'otro'),
+    icono_url: override?.icono_url || tech.icono_url || null,
+    color: override?.color || tech.color || null,
   };
 }
 
@@ -294,11 +349,46 @@ export async function ensureTecnologia(nombre, tipo = null) {
   return tecnologia;
 }
 
+export async function ensureTecnologiasDetectadas(nombres = [], tipo = 'lenguaje') {
+  const tecnologias = [...new Set(
+    (Array.isArray(nombres) ? nombres : [])
+      .map(nombre => String(nombre || '').trim())
+      .filter(Boolean)
+  )];
+
+  if (tecnologias.length === 0) {
+    return [];
+  }
+
+  const data = await apiFetch(`${API_URL}/tecno/detectadas/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tecnologias, tipo }),
+  });
+
+  const items = Array.isArray(data?.data) ? data.data : [];
+  const normalized = normalizeTecnologiasCatalogo(items);
+
+  if (normalized.length > 0) {
+    const cached = readTecnologiasCatalogoCache();
+    writeTecnologiasCatalogoCache([...cached, ...normalized]);
+  }
+
+  return normalized;
+}
+
 export async function getGithubRepoLanguages(repoUrl) {
   const cleanUrl = typeof repoUrl === 'string' ? repoUrl.trim() : '';
 
   if (!cleanUrl) {
     return [];
+  }
+
+  const cacheKey = cleanUrl.replace(/\/+$/, '').toLowerCase();
+  const cached = githubRepoLanguagesMemoryCache.get(cacheKey);
+
+  if (Array.isArray(cached)) {
+    return cached;
   }
 
   const data = await apiFetch(`${API_URL}/auth/github/repos/languages`, {
@@ -307,7 +397,10 @@ export async function getGithubRepoLanguages(repoUrl) {
     body: JSON.stringify({ repo_url: cleanUrl }),
   });
 
-  return Array.isArray(data?.languages) ? data.languages : [];
+  const languages = Array.isArray(data?.languages) ? data.languages : [];
+  githubRepoLanguagesMemoryCache.set(cacheKey, languages);
+
+  return languages;
 }
 
 export async function attachDetectedReposToProject(idProyecto, repositoriosIds = [], participacionData = {}) {
@@ -830,12 +923,24 @@ function writeProyectoParticipantesCache(id, items = []) {
   } catch {}
 }
 
+function notifyProyectoParticipantesChanged(id) {
+  if (!id || typeof window === 'undefined') return;
+
+  try {
+    window.dispatchEvent(new CustomEvent('projects:participants-changed', {
+      detail: { id: String(id) },
+    }));
+  } catch {}
+}
+
 function clearProyectoParticipantesCache(id) {
   if (!id) return;
 
   try {
     localStorage.removeItem(participantesCacheKey(id));
   } catch {}
+
+  notifyProyectoParticipantesChanged(id);
 }
 
 export async function getProyectoParticipantes(id) {
@@ -923,16 +1028,16 @@ function getParticipacionUsuario(project = {}) {
 }
 
 function mapEstadoToFront(project = {}) {
-  if (project.estado) return project.estado === 'desarrollo' ? 'en_desarrollo' : project.estado;
-
   const publicacion = project.estado_publicacion;
   const desarrollo = project.estado_desarrollo;
 
   if (publicacion === 'archivado') return 'archivado';
   if (publicacion === 'publicado') return 'publicado';
+  if (publicacion === 'borrador' && (!desarrollo || desarrollo === 'sin_especificar')) {
+    return 'borrador';
+  }
 
   if ([
-    'sin_especificar',
     'en_desarrollo',
     'pausado',
     'terminado',
@@ -942,6 +1047,8 @@ function mapEstadoToFront(project = {}) {
   ].includes(desarrollo)) {
     return desarrollo;
   }
+
+  if (project.estado) return project.estado === 'desarrollo' ? 'en_desarrollo' : project.estado;
 
   return 'borrador';
 }
@@ -966,7 +1073,6 @@ function mapEstadoToBackend(estado) {
     case 'mantenimiento':
     case 'versionado':
     case 'cancelado':
-    case 'sin_especificar':
       return {
         estado_publicacion: 'borrador',
         estado_desarrollo: estado,
@@ -979,12 +1085,32 @@ function mapEstadoToBackend(estado) {
       };
 
     case 'borrador':
-    default:
       return {
         estado_publicacion: 'borrador',
         estado_desarrollo: 'sin_especificar',
       };
+
+    default:
+      return null;
   }
+}
+
+function normalizeEstadoProyecto(value) {
+  const estado = cleanString(value);
+  const permitidos = [
+    'borrador',
+    'publicado',
+    'archivado',
+    'en_desarrollo',
+    'desarrollo',
+    'pausado',
+    'terminado',
+    'mantenimiento',
+    'versionado',
+    'cancelado',
+  ];
+
+  return permitidos.includes(estado) ? estado : '';
 }
 
 function getEvidencias(project = {}) {
@@ -1264,7 +1390,8 @@ export function normalizeProyectoFromApi(project = {}) {
 export function normalizeProyectoPayload(datos = {}) {
   const repositorios = normalizeRepositorios(datos).slice(0, PROJECT_LIMITS.repositoriosGithub);
   const videos = normalizeVideos(datos).slice(0, PROJECT_LIMITS.videosYoutube);
-  const estadoBackend = mapEstadoToBackend(datos.estado || 'borrador');
+  const estado = normalizeEstadoProyecto(datos.estado);
+  const estadoBackend = mapEstadoToBackend(estado);
 
   const sitioWeb = cleanString(datos.url_demo);
 
@@ -1297,8 +1424,7 @@ export function normalizeProyectoPayload(datos = {}) {
     titulo: cleanString(datos.titulo),
     descripcion: cleanString(datos.descripcion),
 
-    estado: datos.estado || 'borrador',
-    ...estadoBackend,
+    ...(estado ? { estado, ...estadoBackend } : {}),
 
     tipo: cleanString(datos.tipo),
     tipo_slug: cleanString(datos.tipo),
@@ -1401,6 +1527,7 @@ export async function actualizarProyectoConfiguracion(id, configuracion) {
     body: JSON.stringify(configuracion),
   });
 
+  clearProyectoParticipantesCache(id);
   return data?.data || data;
 }
 
@@ -1411,9 +1538,12 @@ export async function eliminarProyecto(id) {
 }
 
 export async function desvincularParticipacionProyecto(id) {
-  return apiFetch(`${API_URL}/projects/${id}/participation`, {
+  const result = await apiFetch(`${API_URL}/projects/${id}/participation`, {
     method: 'DELETE',
   });
+
+  clearProyectoParticipantesCache(id);
+  return result;
 }
 
 export async function removerParticipanteSinValidacion(idProyecto, idParticipacion) {

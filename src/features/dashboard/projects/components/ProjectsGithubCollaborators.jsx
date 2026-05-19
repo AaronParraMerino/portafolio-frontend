@@ -270,7 +270,7 @@ export default function ProjectsGithubCollaborators({
     Promise.all(requests)
       .then(([platformItems]) => {
         if (!isActive) return;
-        const baseParticipants = (directParticipants.length === 0 || cachedParticipants.length > 0) && platformItems.length > 0
+        const baseParticipants = platformItems.length > 0
           ? []
           : (cachedParticipants.length > 0 ? cachedParticipants : initialParticipants);
         const merged = mergeParticipants(baseParticipants, platformItems);
@@ -285,6 +285,39 @@ export default function ProjectsGithubCollaborators({
       isActive = false;
     };
   }, [proyecto, initialParticipants, directParticipants.length, fetchRemote]);
+
+  useEffect(() => {
+    const projectId = getProjectId(proyecto);
+    if (!projectId || !fetchRemote) return undefined;
+
+    let isActive = true;
+
+    const handleParticipantsChanged = (event) => {
+      const changedProjectId = event?.detail?.id;
+      if (changedProjectId && String(changedProjectId) !== String(projectId)) return;
+
+      setLoading(true);
+
+      getProyectoParticipantes(projectId)
+        .then((items) => {
+          if (!isActive) return;
+          const baseParticipants = items.length > 0 ? [] : initialParticipants;
+          const merged = mergeParticipants(baseParticipants, items);
+          setParticipantes(merged.length > 0 ? merged : baseParticipants);
+        })
+        .finally(() => {
+          if (!isActive) return;
+          setLoading(false);
+        });
+    };
+
+    window.addEventListener('projects:participants-changed', handleParticipantsChanged);
+
+    return () => {
+      isActive = false;
+      window.removeEventListener('projects:participants-changed', handleParticipantsChanged);
+    };
+  }, [proyecto, initialParticipants, fetchRemote]);
 
   const visibles = participantes.length > 0 ? participantes : initialParticipants;
   const displayParticipants = useMemo(
