@@ -63,6 +63,7 @@ function getRepoSelection(repo = {}) {
     url,
     nombre: getRepoTitle(repo),
     isPrivate: Boolean(repo?.repo_github?.is_private),
+    provider: repo?.proveedor || 'github',
   };
 }
 
@@ -148,8 +149,11 @@ export default function ProjectsGithubSyncPanel({
   initialSelectedRepos = EMPTY_SELECTED_REPOS,
   actionLabel = 'Agregar proyecto con repos',
   connectInNewTab = false,
+  selectedRepos: controlledSelectedRepos = null,
+  showCreateButton = true,
   onAgregarConRepos,
   onSelectRepos,
+  onSelectionChange,
   onReposChanged,
 }) {
   const providerMeta = PROVIDER_META[provider] || PROVIDER_META.github;
@@ -171,6 +175,26 @@ export default function ProjectsGithubSyncPanel({
   const [joinLoading, setJoinLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const effectiveSelectedRepos = Array.isArray(controlledSelectedRepos)
+    ? controlledSelectedRepos
+    : selectedRepos;
+
+  const updateSelectedRepos = useCallback((updater) => {
+    const base = effectiveSelectedRepos;
+    const next = typeof updater === 'function' ? updater(base) : updater;
+
+    if (Array.isArray(controlledSelectedRepos)) {
+      if (typeof onSelectionChange === 'function') {
+        onSelectionChange(next);
+      }
+      return;
+    }
+
+    setSelectedRepos(next);
+    if (typeof onSelectionChange === 'function') {
+      onSelectionChange(next);
+    }
+  }, [controlledSelectedRepos, effectiveSelectedRepos, onSelectionChange]);
 
   const loadDetectedRepos = useCallback(async (refresh = false) => {
     try {
@@ -231,8 +255,8 @@ export default function ProjectsGithubSyncPanel({
   }, [normalizedInitialSelectedRepos]);
 
   const selectedByUrl = useMemo(() => new Set(
-    selectedRepos.map((repo) => normalizarGithubUrl(repo.url))
-  ), [selectedRepos]);
+    effectiveSelectedRepos.map((repo) => normalizarGithubUrl(repo.url))
+  ), [effectiveSelectedRepos]);
 
   const reposFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -296,7 +320,7 @@ export default function ProjectsGithubSyncPanel({
     const item = getRepoSelection(repo);
     if (!item.url) return;
 
-    setSelectedRepos((prev) => {
+    updateSelectedRepos((prev) => {
       const key = normalizarGithubUrl(item.url);
       const exists = prev.some((current) => normalizarGithubUrl(current.url) === key);
 
@@ -307,20 +331,20 @@ export default function ProjectsGithubSyncPanel({
       if (prev.length >= MAX_REPOSITORIOS_GITHUB) return prev;
       return [...prev, item];
     });
-  }, []);
+  }, [updateSelectedRepos]);
 
   const removeSelectedRepo = useCallback((url) => {
     const key = normalizarGithubUrl(url);
-    setSelectedRepos((prev) => prev.filter((repo) => normalizarGithubUrl(repo.url) !== key));
-  }, []);
+    updateSelectedRepos((prev) => prev.filter((repo) => normalizarGithubUrl(repo.url) !== key));
+  }, [updateSelectedRepos]);
 
   const handleAgregarProyecto = useCallback(() => {
     const selection = {
-      repositorios: selectedRepos.map((repo) => repo.url),
-      detected_repo_ids: selectedRepos
+      repositorios: effectiveSelectedRepos.map((repo) => repo.url),
+      detected_repo_ids: effectiveSelectedRepos
         .map((repo) => Number(repo.id))
         .filter((id) => Number.isInteger(id) && id > 0),
-      detected_repos: selectedRepos,
+      detected_repos: effectiveSelectedRepos,
     };
 
     if (typeof onSelectRepos === 'function') {
@@ -331,7 +355,7 @@ export default function ProjectsGithubSyncPanel({
     if (typeof onAgregarConRepos === 'function') {
       onAgregarConRepos(selection);
     }
-  }, [onAgregarConRepos, onSelectRepos, selectedRepos]);
+  }, [effectiveSelectedRepos, onAgregarConRepos, onSelectRepos]);
 
   const handleJoinRepo = useCallback(async (participacionData) => {
     if (!joiningRepo) return;
@@ -418,12 +442,12 @@ export default function ProjectsGithubSyncPanel({
           <>
             <div className="prj-github-selected-strip">
               <div className="prj-detected-muted">
-                Seleccionados {selectedRepos.length}/{MAX_REPOSITORIOS_GITHUB}
+                Seleccionados {effectiveSelectedRepos.length}/{MAX_REPOSITORIOS_GITHUB}
               </div>
 
-              {selectedRepos.length > 0 && (
+              {effectiveSelectedRepos.length > 0 && (
                 <div className="prj-github-selected-list">
-                  {selectedRepos.map((repo) => (
+                  {effectiveSelectedRepos.map((repo) => (
                     <button
                       key={repo.url}
                       type="button"
@@ -438,17 +462,19 @@ export default function ProjectsGithubSyncPanel({
                 </div>
               )}
 
-              <button
-                type="button"
-                className="prj-btn-add prj-github-create-btn"
-                onClick={handleAgregarProyecto}
-                disabled={selectedRepos.length === 0}
-              >
-                <svg viewBox="0 0 12 12">
-                  <path d="M6 1v10M1 6h10" />
-                </svg>
-                <span>{actionLabel}</span>
-              </button>
+              {showCreateButton && (
+                <button
+                  type="button"
+                  className="prj-btn-add prj-github-create-btn"
+                  onClick={handleAgregarProyecto}
+                  disabled={effectiveSelectedRepos.length === 0}
+                >
+                  <svg viewBox="0 0 12 12">
+                    <path d="M6 1v10M1 6h10" />
+                  </svg>
+                  <span>{actionLabel}</span>
+                </button>
+              )}
             </div>
 
             {mostrarRepos && (
@@ -490,7 +516,7 @@ export default function ProjectsGithubSyncPanel({
                       const url = repo?.url_repositorio || '';
                       const enUso = repo?.estado_vinculacion === 'en_uso';
                       const selected = selectedByUrl.has(normalizarGithubUrl(url));
-                      const limitReached = selectedRepos.length >= MAX_REPOSITORIOS_GITHUB && !selected;
+                      const limitReached = effectiveSelectedRepos.length >= MAX_REPOSITORIOS_GITHUB && !selected;
 
                       return (
                         <div

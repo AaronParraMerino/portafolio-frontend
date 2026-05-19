@@ -85,6 +85,31 @@ function cacheKey() {
   }
 }
 
+async function attachDetectedReposByProvider(proyectoId, datos = {}) {
+  if (Array.isArray(datos?.detected_repos) && datos.detected_repos.length > 0) {
+    const reposByProvider = datos.detected_repos.reduce((acc, repo) => {
+      const provider = repo?.provider || 'github';
+      const id = Number(repo?.id || repo?.id_proyecto_repositorio);
+      if (!Number.isInteger(id) || id <= 0) return acc;
+      acc[provider] = [...(acc[provider] || []), id];
+      return acc;
+    }, {});
+
+    for (const [provider, ids] of Object.entries(reposByProvider)) {
+      await attachDetectedReposToProject(proyectoId, ids, datos.detected_participacion ?? {}, { provider }).catch(err =>
+        console.warn(`[useProjects] Error vinculando repos detectados ${provider}:`, err.message)
+      );
+    }
+    return;
+  }
+
+  if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
+    await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
+      console.warn('[useProjects] Error vinculando repos detectados:', err.message)
+    );
+  }
+}
+
 // ════════════════════════════════════════
 // URL helpers
 // ════════════════════════════════════════
@@ -436,11 +461,7 @@ export function useProjects() {
       }
 
       // 4. Vincular repos detectados (cuenta GitHub vinculada) a proyecto/participación.
-      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
-        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
-          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
-        );
-      }
+      await attachDetectedReposByProvider(proyectoId, datos);
 
       const actualizados = [mapeado, ...proyectos];
       setProyectos(actualizados);
@@ -579,11 +600,7 @@ export function useProjects() {
         documentos: documentosFinales,
       };
 
-      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
-        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
-          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
-        );
-      }
+      await attachDetectedReposByProvider(proyectoId, datos);
 
       const actualizados = proyectos.map(p =>
         p.id === proyectoId || p.id_proyecto === proyectoId
