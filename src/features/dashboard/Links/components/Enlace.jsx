@@ -125,7 +125,7 @@ export default function RedesSociales() {
 
         <div style={{ border:"1.5px solid #93c5fd",borderRadius:8,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#fff" }}>
           <div>
-            <p style={{ margin:0,fontWeight:700,fontSize:13,color:"#1d4ed8" }}>Redes profesionales visibles en portafolio publico</p>
+            <p style={{ margin:0,fontWeight:700,fontSize:13,color:"#0077b7" }}>Redes profesionales visibles en portafolio publico</p>
             <p style={{ margin:"2px 0 0",fontSize:12,color:"#6b7280" }}>{secActiva ? "Los visitantes veran los enlaces a tu perfil" : "Sección desactivada — no visible en portafolio"}</p>
           </div>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>

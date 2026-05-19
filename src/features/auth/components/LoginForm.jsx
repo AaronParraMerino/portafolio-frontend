@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaDiscord, FaGithub, FaGitlab, FaUserCircle } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { GoogleLogin } from "@react-oauth/google";
@@ -34,6 +34,9 @@ export default function LoginForm() {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const baseUrl = process.env.REACT_APP_API_URL;
 
+  const googleButtonRef = useRef(null);
+
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(320);
   const [showPassword, setShowPassword] = useState(false);
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
@@ -56,11 +59,44 @@ export default function LoginForm() {
     if (!oauthState) return;
 
     if (oauthState.oauthError === "inactive") {
-      setReactivate({ correo: oauthState.correo, step: INITIAL_REACTIVATION_STEP });
+      setReactivate({
+        correo: oauthState.correo,
+        step: INITIAL_REACTIVATION_STEP,
+      });
       return;
     }
 
-    setError(OAUTH_ERROR_MESSAGES[oauthState.oauthError] || "No se pudo completar la autenticacion.");
+    setError(
+      OAUTH_ERROR_MESSAGES[oauthState.oauthError] ||
+        "No se pudo completar la autenticacion."
+    );
+  }, []);
+
+  useEffect(() => {
+    const element = googleButtonRef.current;
+    if (!element) return;
+
+    const updateWidth = () => {
+      const width = Math.floor(element.getBoundingClientRect().width);
+
+      /*
+        GoogleLogin no maneja bien width="100%" en algunos casos.
+        Por eso calculamos un ancho real en pixeles.
+      */
+      setGoogleButtonWidth(Math.max(240, Math.min(width, 360)));
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+      return () => window.removeEventListener("resize", updateWidth);
+    }
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
   }, []);
 
   const closeError = () => setError("");
@@ -141,7 +177,11 @@ export default function LoginForm() {
 
     if (!linkCredential.trim()) {
       const isPassword = linkConfirm.verificationMethod === "password";
-      setLinkCredError(isPassword ? "Ingresa tu contrasena." : "Ingresa el codigo de 6 digitos.");
+      setLinkCredError(
+        isPassword
+          ? "Ingresa tu contrasena."
+          : "Ingresa el codigo de 6 digitos."
+      );
       return;
     }
 
@@ -149,7 +189,11 @@ export default function LoginForm() {
     setLinkCredError("");
 
     try {
-      const result = await confirmOauthLink(baseUrl, linkConfirm, linkCredential);
+      const result = await confirmOauthLink(
+        baseUrl,
+        linkConfirm,
+        linkCredential
+      );
       handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
@@ -209,7 +253,9 @@ export default function LoginForm() {
       await requestAccountReactivation(baseUrl, email);
       setReactivate({ correo: email, step: "code" });
     } catch (err) {
-      setReactivationError(err.payload?.message || err.message || CONNECTION_ERROR);
+      setReactivationError(
+        err.payload?.message || err.message || CONNECTION_ERROR
+      );
     } finally {
       setReactivationLoading(false);
     }
@@ -225,13 +271,22 @@ export default function LoginForm() {
     setReactivationError("");
 
     try {
-      const result = await confirmAccountReactivation(baseUrl, reactivate.correo, reactivationCode);
+      const result = await confirmAccountReactivation(
+        baseUrl,
+        reactivate.correo,
+        reactivationCode
+      );
+
       setReactivate(null);
       setReactivationCode("");
       setError("");
-      setSuccess(result.message || "Cuenta restablecida. Inicia sesion nuevamente.");
+      setSuccess(
+        result.message || "Cuenta restablecida. Inicia sesion nuevamente."
+      );
     } catch (err) {
-      setReactivationError(err.payload?.message || err.message || CONNECTION_ERROR);
+      setReactivationError(
+        err.payload?.message || err.message || CONNECTION_ERROR
+      );
     } finally {
       setReactivationLoading(false);
     }
@@ -245,7 +300,11 @@ export default function LoginForm() {
         <div className="login-card">
           <div className="login-left">
             <h2>Bienvenido!</h2>
-            <img src="/img/logo sansimon.png" alt="Logo" className="logo-img" />
+            <img
+              src="/img/logo sansimon.png"
+              alt="Logo"
+              className="logo-img"
+            />
           </div>
 
           <div className="login-right">
@@ -255,30 +314,49 @@ export default function LoginForm() {
               <FaUserCircle size={80} color="#0077b7" />
             </div>
 
-            <form className="login-form" onSubmit={(e) => e.preventDefault()}>
-              <label>Correo Electronico:</label>
+            <form
+              className="login-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleLogin();
+              }}
+            >
+              <label htmlFor="correo">Correo Electronico:</label>
               <input
+                id="correo"
                 type="email"
                 placeholder="example@gmail.com"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
+                autoComplete="email"
               />
 
-              <label>Contrasena:</label>
+              <label htmlFor="password">Contrasena:</label>
               <div className="password-container">
                 <input
+                  id="password"
                   className="password-input"
                   type={showPassword ? "text" : "password"}
                   placeholder="***********"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                 />
 
-                <span className="eye" onClick={() => setShowPassword((current) => !current)}>
-                  {showPassword ? <HiEyeOff size={20} /> : <HiEye size={20} />}
-                </span>
+                <button
+                  className="eye"
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={
+                    showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
+                  }
+                >
+                  {showPassword ? (
+                    <HiEyeOff size={20} />
+                  ) : (
+                    <HiEye size={20} />
+                  )}
+                </button>
               </div>
 
               <div className="login-actions">
@@ -286,40 +364,64 @@ export default function LoginForm() {
                   Olvidaste Contrasena?
                 </Link>
 
-                <button className="btn-primary" type="button" onClick={handleLogin}>
+                <button className="login-btn-primary" type="submit">
                   Iniciar Sesion
                 </button>
 
                 {googleClientId ? (
-                  <GoogleLogin
-                    onSuccess={handleGoogleLogin}
-                    onError={() => setError("La autenticacion con Google fue cancelada o fallo")}
-                    text="continue_with"
-                    shape="rectangular"
-                    width="100%"
-                    auto_select={false}
-                    useOneTap={false}
-                  />
+                  <div className="google-login-wrapper" ref={googleButtonRef}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleLogin}
+                      onError={() =>
+                        setError(
+                          "La autenticacion con Google fue cancelada o fallo"
+                        )
+                      }
+                      text="continue_with"
+                      shape="rectangular"
+                      width={`${googleButtonWidth}`}
+                      auto_select={false}
+                      useOneTap={false}
+                    />
+                  </div>
                 ) : (
                   <button
                     className="btn-google"
                     type="button"
-                    onClick={() => setError("Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google")}
+                    onClick={() =>
+                      setError(
+                        "Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google"
+                      )
+                    }
                   >
                     Continuar con Google
                   </button>
                 )}
 
                 <div className="oauth-row">
-                  <button className="btn-oauth btn-oauth--github" type="button" onClick={() => handleOAuthRedirect("github")}>
+                  <button
+                    className="btn-oauth btn-oauth--github"
+                    type="button"
+                    onClick={() => handleOAuthRedirect("github")}
+                  >
                     <FaGithub size={18} />
                     <span>GitHub</span>
                   </button>
-                  <button className="btn-oauth btn-oauth--gitlab" type="button" onClick={() => handleOAuthRedirect("gitlab")}>
+
+                  <button
+                    className="btn-oauth btn-oauth--gitlab"
+                    type="button"
+                    onClick={() => handleOAuthRedirect("gitlab")}
+                  >
                     <FaGitlab size={18} />
                     <span>GitLab</span>
                   </button>
-                  <button className="btn-oauth btn-oauth--discord" type="button" onClick={() => handleOAuthRedirect("discord")}>
+
+                  <button
+                    className="btn-oauth btn-oauth--discord"
+                    type="button"
+                    onClick={() => handleOAuthRedirect("discord")}
+                  >
                     <FaDiscord size={18} />
                     <span>Discord</span>
                   </button>
@@ -328,7 +430,9 @@ export default function LoginForm() {
 
               <p className="register">
                 No tienes una cuenta?{" "}
-                <span onClick={() => (window.location.href = "/auth/Register")}>Registrate</span>
+                <span onClick={() => (window.location.href = "/auth/Register")}>
+                  Registrate
+                </span>
               </p>
             </form>
           </div>
