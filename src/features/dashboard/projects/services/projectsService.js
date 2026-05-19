@@ -226,6 +226,8 @@ export async function syncGithubRepos() {
     const { userId } = getSession();
     removeCachedDashboardEndpoint('/auth/github/repos/detected', { userId });
     removeCachedDashboardEndpoint('/auth/github/repos/detected?refresh=true', { userId });
+    removeCachedDashboardEndpoint('/auth/github/repos/detected/count', { userId });
+    removeCachedDashboardEndpoint('/auth/github/repos/detected/count?refresh=true', { userId });
   } catch {
     // no-op
   }

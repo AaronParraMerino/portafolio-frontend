@@ -182,9 +182,6 @@ export default function ProjectsGithubSyncPanel({
         if (!mounted) return;
 
         setGithubLinked(linked);
-        if (linked) {
-          await loadDetectedRepos(false);
-        }
       } catch {
         if (mounted) setGithubLinked(false);
       } finally {
@@ -197,7 +194,15 @@ export default function ProjectsGithubSyncPanel({
     return () => {
       mounted = false;
     };
-  }, [loadDetectedRepos]);
+  }, []);
+
+  useEffect(() => {
+    if (!githubLinked || !mostrarRepos || loadingRepos || detectedRepos.length > 0) {
+      return;
+    }
+
+    loadDetectedRepos(false);
+  }, [detectedRepos.length, githubLinked, loadDetectedRepos, loadingRepos, mostrarRepos]);
 
   useEffect(() => {
     if (!expandSignal) return;
@@ -239,10 +244,10 @@ export default function ProjectsGithubSyncPanel({
       setSyncingRepos(true);
       setError('');
       setNotice('');
-      await syncGithubRepos();
+      const result = await syncGithubRepos();
       await loadDetectedRepos(false);
       setMostrarRepos(true);
-      setNotice('Repositorios sincronizados con GitHub.');
+      setNotice(formatGithubSyncNotice(result?.stats));
     } catch (e) {
       setError(e.message || 'No se pudo sincronizar con GitHub.');
     } finally {
@@ -538,4 +543,27 @@ export default function ProjectsGithubSyncPanel({
       )}
     </div>
   );
+}
+
+function formatGithubSyncNotice(stats = {}) {
+  const creados = Number(stats?.creados ?? 0);
+  const actualizados = Number(stats?.actualizados ?? 0);
+  const detalles = Number(stats?.detalles_actualizados ?? 0);
+  const pendientes = Number(stats?.detalles_omitidos_por_limite ?? 0);
+
+  const parts = [
+    'Repositorios sincronizados con GitHub.',
+    `Nuevos: ${Number.isFinite(creados) ? creados : 0}.`,
+    `Actualizados: ${Number.isFinite(actualizados) ? actualizados : 0}.`,
+  ];
+
+  if (Number.isFinite(detalles) && detalles > 0) {
+    parts.push(`Detalles completados: ${detalles}.`);
+  }
+
+  if (Number.isFinite(pendientes) && pendientes > 0) {
+    parts.push(`Detalles pendientes por limite: ${pendientes}.`);
+  }
+
+  return parts.join(' ');
 }

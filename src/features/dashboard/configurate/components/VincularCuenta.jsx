@@ -103,14 +103,14 @@ export default function VincularCuenta() {
     }
   }, [meta]);
 
-  const loadGithubDetected = useCallback(async (refresh = false) => {
+  const loadGithubDetectedCount = useCallback(async (refresh = false) => {
     try {
       const token = localStorage.getItem("tokenPORT");
       if (!token) return;
 
       const qs = refresh ? "?refresh=true" : "";
 
-      const res = await fetch(`${BASE_URL}/auth/github/repos/detected${qs}`, {
+      const res = await fetch(`${BASE_URL}/auth/github/repos/detected/count${qs}`, {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
@@ -130,8 +130,8 @@ export default function VincularCuenta() {
         );
       }
 
-      const rows = Array.isArray(payload?.data) ? payload.data : [];
-      setGithubDetectedCount(rows.length);
+      const count = Number(payload?.count ?? payload?.data?.count ?? 0);
+      setGithubDetectedCount(Number.isFinite(count) ? count : 0);
     } catch (e) {
       setError(e.message);
     }
@@ -145,12 +145,12 @@ export default function VincularCuenta() {
     const github = accounts.find((item) => item.id === "github");
 
     if (github?.connected) {
-      loadGithubDetected(false);
+      loadGithubDetectedCount(false);
       return;
     }
 
     setGithubDetectedCount(0);
-  }, [accounts, loadGithubDetected]);
+  }, [accounts, loadGithubDetectedCount]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -281,15 +281,9 @@ export default function VincularCuenta() {
         );
       }
 
-      await loadGithubDetected(false);
+      await loadGithubDetectedCount(false);
 
-      const stats = syncPayload?.stats || {};
-      const creados = stats.creados ?? 0;
-      const actualizados = stats.actualizados ?? 0;
-
-      setNotice(
-        `Sincronización lista. Repos nuevos: ${creados}. Repos actualizados: ${actualizados}.`
-      );
+      setNotice(formatGithubSyncNotice(syncPayload?.stats));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -563,6 +557,29 @@ function getConnectErrorMessage(code, provider) {
   }
 
   return `No se pudo vincular la cuenta de ${provider}. Inténtalo nuevamente.`;
+}
+
+function formatGithubSyncNotice(stats = {}) {
+  const creados = Number(stats?.creados ?? 0);
+  const actualizados = Number(stats?.actualizados ?? 0);
+  const detalles = Number(stats?.detalles_actualizados ?? 0);
+  const pendientes = Number(stats?.detalles_omitidos_por_limite ?? 0);
+
+  const parts = [
+    "Sincronización lista.",
+    `Repos nuevos: ${Number.isFinite(creados) ? creados : 0}.`,
+    `Repos actualizados: ${Number.isFinite(actualizados) ? actualizados : 0}.`,
+  ];
+
+  if (Number.isFinite(detalles) && detalles > 0) {
+    parts.push(`Detalles completados: ${detalles}.`);
+  }
+
+  if (Number.isFinite(pendientes) && pendientes > 0) {
+    parts.push(`Detalles pendientes por límite: ${pendientes}.`);
+  }
+
+  return parts.join(" ");
 }
 
 const pageStyle = {
