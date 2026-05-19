@@ -14,10 +14,19 @@
 // participaciones, proyecto_evidencias/evidencias, tipos_proyecto, etc.
 // ═══════════════════════════════════════════
 
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  removeCachedDashboardEndpoint,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const TECNOLOGIAS_CACHE_KEY = 'projects_tecnologias_catalogo_cache_v1';
 const PARTICIPANTES_CACHE_PREFIX = 'projects_participantes_cache_v1';
+const githubRepoLanguagesMemoryCache = new Map();
 
 // ═══════════════════════════════════════════
 // CONSTANTES
@@ -70,6 +79,46 @@ function getStoredUserId() {
     return user.id || user.id_usuario || user.idUsuario || 'anon';
   } catch {
     return 'anon';
+  }
+}
+
+function userProjectsEndpoint(userId) {
+  return `/projects/usuario/${userId}`;
+}
+
+function projectEndpoint(id) {
+  return `/projects/${id}`;
+}
+
+function unwrapProjectsPayload(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.proyectos)) return data.proyectos;
+  return [];
+}
+
+function getCachedProjectId(project = {}) {
+  return project.id_proyecto || project.id || project.idProyecto || null;
+}
+
+function readUserProjectsCache(userId) {
+  return unwrapProjectsPayload(readCachedDashboardEndpoint(userProjectsEndpoint(userId), { userId }));
+}
+
+function writeUserProjectsCache(userId, projects = [], { invalidate = true } = {}) {
+  writeCachedDashboardEndpoint(userProjectsEndpoint(userId), { data: projects }, { userId });
+  if (invalidate) {
+    invalidateDashboardDerivedCaches(userId);
+  }
+}
+
+function updateUserProjectsCache(updater) {
+  try {
+    const { userId } = getSession();
+    const current = readUserProjectsCache(userId);
+    writeUserProjectsCache(userId, updater(current));
+  } catch {
+    // Cache updates should never block the CRUD flow.
   }
 }
 
@@ -133,8 +182,14 @@ async function apiFetchFormData(url, formData, options = {}) {
 // GITHUB VINCULADO / REPOS DETECTADOS
 // ═══════════════════════════════════════════
 
-export async function isGithubLinked() {
-  const data = await apiFetch(`${API_URL}/auth/oauth/linked-providers`);
+export async function isGithubLinked({ force = false, provider = 'github' } = {}) {
+  const { userId } = getSession();
+  const endpoint = '/auth/oauth/linked-providers';
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force, userId },
+  );
 
   const providers = Array.isArray(data)
     ? data
@@ -142,25 +197,47 @@ export async function isGithubLinked() {
       ? data.data
       : [];
 
-  const github = providers.find((item) => item.provider === 'github');
-  return Boolean(github?.connected);
+  const account = providers.find((item) => item.provider === provider);
+  return Boolean(account?.connected);
 }
 
-export async function getGithubDetectedRepos({ refresh = false } = {}) {
+export async function getGithubDetectedRepos({ refresh = false, provider = 'github' } = {}) {
+  const { userId } = getSession();
   const qs = refresh ? '?refresh=true' : '';
-  const data = await apiFetch(`${API_URL}/auth/github/repos/detected${qs}`);
+  const endpoint = `/auth/${provider}/repos/detected${qs}`;
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force: refresh, userId },
+  );
+
+  if (refresh) {
+    writeCachedDashboardEndpoint(`/auth/${provider}/repos/detected`, data, { userId });
+  }
 
   return Array.isArray(data?.data) ? data.data : [];
 }
 
-export async function syncGithubRepos() {
-  return apiFetch(`${API_URL}/auth/github/repos/sync`, {
+export async function syncGithubRepos({ provider = 'github' } = {}) {
+  const result = await apiFetch(`${API_URL}/auth/${provider}/repos/sync`, {
     method: 'POST',
   });
+
+  try {
+    const { userId } = getSession();
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected?refresh=true`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected/count`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected/count?refresh=true`, { userId });
+  } catch {
+    // no-op
+  }
+
+  return result;
 }
 
-export async function getGithubConnectUrl() {
-  const data = await apiFetch(`${API_URL}/auth/github/connect-url`, {
+export async function getGithubConnectUrl({ provider = 'github' } = {}) {
+  const data = await apiFetch(`${API_URL}/auth/${provider}/connect-url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
@@ -190,14 +267,68 @@ function mapTecnologiaTipoToCategoria(tipo = '') {
   }
 }
 
+const TECHNOLOGY_DISPLAY_OVERRIDES = {
+  html: {
+    nombre: 'HTML',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg',
+    color: '#E34F26',
+  },
+  html5: {
+    nombre: 'HTML',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg',
+    color: '#E34F26',
+  },
+  css: {
+    nombre: 'CSS',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg',
+    color: '#1572B6',
+  },
+  css3: {
+    nombre: 'CSS',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg',
+    color: '#1572B6',
+  },
+  javascript: {
+    nombre: 'JavaScript',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg',
+    color: '#F7DF1E',
+  },
+  js: {
+    nombre: 'JavaScript',
+    tipo: 'lenguaje',
+    categoria: 'Lenguaje',
+    icono_url: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg',
+    color: '#F7DF1E',
+  },
+};
+
+function normalizeTechnologyKey(value = '') {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
 function normalizeTecnologiaFromApi(tech = {}) {
+  const override = TECHNOLOGY_DISPLAY_OVERRIDES[normalizeTechnologyKey(tech.nombre)];
+
   return {
-    id: tech.id_tecnologia || tech.id || tech.nombre,
-    nombre: tech.nombre,
-    tipo: tech.tipo || 'otro',
-    categoria: mapTecnologiaTipoToCategoria(tech.tipo || 'otro'),
-    icono_url: tech.icono_url || null,
-    color: tech.color || null,
+    id: tech.id_tecnologia || tech.id || override?.nombre || tech.nombre,
+    nombre: override?.nombre || tech.nombre,
+    tipo: override?.tipo || tech.tipo || 'otro',
+    categoria: override?.categoria || mapTecnologiaTipoToCategoria(tech.tipo || 'otro'),
+    icono_url: override?.icono_url || tech.icono_url || null,
+    color: override?.color || tech.color || null,
   };
 }
 
@@ -294,23 +425,61 @@ export async function ensureTecnologia(nombre, tipo = null) {
   return tecnologia;
 }
 
-export async function getGithubRepoLanguages(repoUrl) {
+export async function ensureTecnologiasDetectadas(nombres = [], tipo = 'lenguaje') {
+  const tecnologias = [...new Set(
+    (Array.isArray(nombres) ? nombres : [])
+      .map(nombre => String(nombre || '').trim())
+      .filter(Boolean)
+  )];
+
+  if (tecnologias.length === 0) {
+    return [];
+  }
+
+  const data = await apiFetch(`${API_URL}/tecno/detectadas/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tecnologias, tipo }),
+  });
+
+  const items = Array.isArray(data?.data) ? data.data : [];
+  const normalized = normalizeTecnologiasCatalogo(items);
+
+  if (normalized.length > 0) {
+    const cached = readTecnologiasCatalogoCache();
+    writeTecnologiasCatalogoCache([...cached, ...normalized]);
+  }
+
+  return normalized;
+}
+
+export async function getGithubRepoLanguages(repoUrl, { provider = 'github' } = {}) {
   const cleanUrl = typeof repoUrl === 'string' ? repoUrl.trim() : '';
 
   if (!cleanUrl) {
     return [];
   }
 
-  const data = await apiFetch(`${API_URL}/auth/github/repos/languages`, {
+  const cacheKey = `${provider}:${cleanUrl.replace(/\/+$/, '').toLowerCase()}`;
+  const cached = githubRepoLanguagesMemoryCache.get(cacheKey);
+
+  if (Array.isArray(cached)) {
+    return cached;
+  }
+
+  const data = await apiFetch(`${API_URL}/auth/${provider}/repos/languages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ repo_url: cleanUrl }),
   });
 
-  return Array.isArray(data?.languages) ? data.languages : [];
+  const languages = Array.isArray(data?.languages) ? data.languages : [];
+  githubRepoLanguagesMemoryCache.set(cacheKey, languages);
+
+  return languages;
 }
 
-export async function attachDetectedReposToProject(idProyecto, repositoriosIds = [], participacionData = {}) {
+export async function attachDetectedReposToProject(idProyecto, repositoriosIds = [], participacionData = {}, { provider = 'github' } = {}) {
   const ids = Array.isArray(repositoriosIds)
     ? repositoriosIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
     : [];
@@ -335,7 +504,7 @@ export async function attachDetectedReposToProject(idProyecto, repositoriosIds =
     }
   }
 
-  return apiFetch(`${API_URL}/auth/github/repos/attach-to-project`, {
+  return apiFetch(`${API_URL}/auth/${provider}/repos/attach-to-project`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -830,12 +999,24 @@ function writeProyectoParticipantesCache(id, items = []) {
   } catch {}
 }
 
+function notifyProyectoParticipantesChanged(id) {
+  if (!id || typeof window === 'undefined') return;
+
+  try {
+    window.dispatchEvent(new CustomEvent('projects:participants-changed', {
+      detail: { id: String(id) },
+    }));
+  } catch {}
+}
+
 function clearProyectoParticipantesCache(id) {
   if (!id) return;
 
   try {
     localStorage.removeItem(participantesCacheKey(id));
   } catch {}
+
+  notifyProyectoParticipantesChanged(id);
 }
 
 export async function getProyectoParticipantes(id) {
@@ -923,16 +1104,16 @@ function getParticipacionUsuario(project = {}) {
 }
 
 function mapEstadoToFront(project = {}) {
-  if (project.estado) return project.estado === 'desarrollo' ? 'en_desarrollo' : project.estado;
-
   const publicacion = project.estado_publicacion;
   const desarrollo = project.estado_desarrollo;
 
   if (publicacion === 'archivado') return 'archivado';
   if (publicacion === 'publicado') return 'publicado';
+  if (publicacion === 'borrador' && (!desarrollo || desarrollo === 'sin_especificar')) {
+    return 'borrador';
+  }
 
   if ([
-    'sin_especificar',
     'en_desarrollo',
     'pausado',
     'terminado',
@@ -942,6 +1123,8 @@ function mapEstadoToFront(project = {}) {
   ].includes(desarrollo)) {
     return desarrollo;
   }
+
+  if (project.estado) return project.estado === 'desarrollo' ? 'en_desarrollo' : project.estado;
 
   return 'borrador';
 }
@@ -966,7 +1149,6 @@ function mapEstadoToBackend(estado) {
     case 'mantenimiento':
     case 'versionado':
     case 'cancelado':
-    case 'sin_especificar':
       return {
         estado_publicacion: 'borrador',
         estado_desarrollo: estado,
@@ -979,12 +1161,32 @@ function mapEstadoToBackend(estado) {
       };
 
     case 'borrador':
-    default:
       return {
         estado_publicacion: 'borrador',
         estado_desarrollo: 'sin_especificar',
       };
+
+    default:
+      return null;
   }
+}
+
+function normalizeEstadoProyecto(value) {
+  const estado = cleanString(value);
+  const permitidos = [
+    'borrador',
+    'publicado',
+    'archivado',
+    'en_desarrollo',
+    'desarrollo',
+    'pausado',
+    'terminado',
+    'mantenimiento',
+    'versionado',
+    'cancelado',
+  ];
+
+  return permitidos.includes(estado) ? estado : '';
 }
 
 function getEvidencias(project = {}) {
@@ -1264,7 +1466,8 @@ export function normalizeProyectoFromApi(project = {}) {
 export function normalizeProyectoPayload(datos = {}) {
   const repositorios = normalizeRepositorios(datos).slice(0, PROJECT_LIMITS.repositoriosGithub);
   const videos = normalizeVideos(datos).slice(0, PROJECT_LIMITS.videosYoutube);
-  const estadoBackend = mapEstadoToBackend(datos.estado || 'borrador');
+  const estado = normalizeEstadoProyecto(datos.estado);
+  const estadoBackend = mapEstadoToBackend(estado);
 
   const sitioWeb = cleanString(datos.url_demo);
 
@@ -1297,8 +1500,7 @@ export function normalizeProyectoPayload(datos = {}) {
     titulo: cleanString(datos.titulo),
     descripcion: cleanString(datos.descripcion),
 
-    estado: datos.estado || 'borrador',
-    ...estadoBackend,
+    ...(estado ? { estado, ...estadoBackend } : {}),
 
     tipo: cleanString(datos.tipo),
     tipo_slug: cleanString(datos.tipo),
@@ -1337,24 +1539,39 @@ export function normalizeProyectoPayload(datos = {}) {
 // PROYECTOS
 // ═══════════════════════════════════════════
 
-export async function getProyectos() {
+export function getCachedProyectos() {
   const { userId } = getSession();
+  return readUserProjectsCache(userId).map(normalizeProyectoFromApi);
+}
 
-  const data = await apiFetch(`${API_URL}/projects/usuario/${userId}`);
+export function setCachedProyectos(proyectos = []) {
+  const { userId } = getSession();
+  writeUserProjectsCache(userId, proyectos, { invalidate: false });
+}
 
-  const lista = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.proyectos)
-        ? data.proyectos
-        : [];
+export async function getProyectos({ force = false } = {}) {
+  const { userId } = getSession();
+  const endpoint = userProjectsEndpoint(userId);
+
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force, userId },
+  );
+
+  const lista = unwrapProjectsPayload(data);
 
   return lista.map(normalizeProyectoFromApi);
 }
 
-export async function getProyecto(id) {
-  const data = await apiFetch(`${API_URL}/projects/${id}`);
+export async function getProyecto(id, { force = false } = {}) {
+  const { userId } = getSession();
+  const endpoint = projectEndpoint(id);
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force, userId },
+  );
 
   const project = data?.data || data?.proyecto || data;
 
@@ -1371,6 +1588,7 @@ export async function crearProyecto(datos) {
   });
 
   const project = data?.data || data?.proyecto || data;
+  updateUserProjectsCache((items) => [project, ...items]);
 
   return normalizeProyectoFromApi(project);
 }
@@ -1385,6 +1603,18 @@ export async function actualizarProyecto(id, datos) {
   });
 
   const project = data?.data || data?.proyecto || data;
+  updateUserProjectsCache((items) => {
+    const projectId = id || getCachedProjectId(project);
+    const updatedId = getCachedProjectId(project);
+
+    return items.map((item) => {
+      const itemId = getCachedProjectId(item);
+      return String(itemId) === String(projectId) || String(itemId) === String(updatedId)
+        ? project
+        : item;
+    });
+  });
+  removeCachedDashboardEndpoint(projectEndpoint(id));
 
   return normalizeProyectoFromApi(project);
 }
@@ -1401,19 +1631,40 @@ export async function actualizarProyectoConfiguracion(id, configuracion) {
     body: JSON.stringify(configuracion),
   });
 
-  return data?.data || data;
+  clearProyectoParticipantesCache(id);
+  const result = data?.data || data;
+  updateUserProjectsCache((items) => items.map((item) => (
+    String(getCachedProjectId(item)) === String(id)
+      ? {
+        ...item,
+        configuracion: result.configuracion || configuracion,
+        permisos: result.permisos || item.permisos,
+      }
+      : item
+  )));
+
+  return result;
 }
 
 export async function eliminarProyecto(id) {
-  return apiFetch(`${API_URL}/projects/${id}`, {
+  const result = await apiFetch(`${API_URL}/projects/${id}`, {
     method: 'DELETE',
   });
+
+  updateUserProjectsCache((items) => items.filter((item) => String(getCachedProjectId(item)) !== String(id)));
+  removeCachedDashboardEndpoint(projectEndpoint(id));
+  return result;
 }
 
 export async function desvincularParticipacionProyecto(id) {
-  return apiFetch(`${API_URL}/projects/${id}/participation`, {
+  const result = await apiFetch(`${API_URL}/projects/${id}/participation`, {
     method: 'DELETE',
   });
+
+  clearProyectoParticipantesCache(id);
+  updateUserProjectsCache((items) => items.filter((item) => String(getCachedProjectId(item)) !== String(id)));
+  removeCachedDashboardEndpoint(projectEndpoint(id));
+  return result;
 }
 
 export async function removerParticipanteSinValidacion(idProyecto, idParticipacion) {

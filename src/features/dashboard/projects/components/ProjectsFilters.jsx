@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import '../styles/projects.css';
 import ProjectsGithubSyncPanel from './ProjectsGithubSyncPanel';
 
@@ -37,6 +38,37 @@ export default function ProjectsFilters({
   onAgregarConRepos,
   onReposChanged,
 }) {
+  const [selectedByProvider, setSelectedByProvider] = useState({
+    github: [],
+    gitlab: [],
+  });
+
+  const selectedRepos = useMemo(() => [
+    ...selectedByProvider.github,
+    ...selectedByProvider.gitlab,
+  ], [selectedByProvider]);
+
+  const handleProviderSelection = (provider, repos) => {
+    setSelectedByProvider((current) => ({
+      ...current,
+      [provider]: Array.isArray(repos)
+        ? repos.map((repo) => ({ ...repo, provider: repo.provider || provider }))
+        : [],
+    }));
+  };
+
+  const handleAgregarProyectoConRepos = () => {
+    if (!selectedRepos.length || typeof onAgregarConRepos !== 'function') return;
+
+    onAgregarConRepos({
+      repositorios: selectedRepos.map((repo) => repo.url),
+      detected_repo_ids: selectedRepos
+        .map((repo) => Number(repo.id))
+        .filter((id) => Number.isInteger(id) && id > 0),
+      detected_repos: selectedRepos,
+    });
+  };
+
   const handleBusqueda = (value) => {
     if (typeof onBusqueda === 'function') {
       onBusqueda(value);
@@ -91,9 +123,47 @@ export default function ProjectsFilters({
       {/* ── Tabs + Orden ── */}
       <ProjectsGithubSyncPanel
         expandSignal={githubSyncSignal}
-        onAgregarConRepos={onAgregarConRepos}
+        selectedRepos={selectedByProvider.github}
+        showCreateButton={false}
+        onSelectionChange={(repos) => handleProviderSelection('github', repos)}
         onReposChanged={onReposChanged}
       />
+
+      <ProjectsGithubSyncPanel
+        provider="gitlab"
+        selectedRepos={selectedByProvider.gitlab}
+        showCreateButton={false}
+        onSelectionChange={(repos) => handleProviderSelection('gitlab', repos)}
+        onReposChanged={onReposChanged}
+      />
+
+      <div className="prj-github-selected-strip">
+        <div className="prj-detected-muted">
+          Repositorios seleccionados para el proyecto: {selectedRepos.length}
+        </div>
+
+        {selectedRepos.length > 0 && (
+          <div className="prj-github-selected-list">
+            {selectedRepos.map((repo) => (
+              <span key={`${repo.provider || 'repo'}:${repo.url}`} className="prj-github-selected-chip">
+                {repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} · {repo.nombre}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="prj-btn-add prj-github-create-btn"
+          onClick={handleAgregarProyectoConRepos}
+          disabled={selectedRepos.length === 0}
+        >
+          <svg viewBox="0 0 12 12">
+            <path d="M6 1v10M1 6h10" />
+          </svg>
+          <span>Agregar proyecto con repos</span>
+        </button>
+      </div>
 
       <div className="prj-filter-row">
         <div className="prj-tab-grp">

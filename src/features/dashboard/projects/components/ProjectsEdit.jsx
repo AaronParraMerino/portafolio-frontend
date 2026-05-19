@@ -6,6 +6,7 @@ import { ESTADOS_PROYECTO, TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/pr
 import {
   attachDetectedReposToProject,
   ensureTecnologia,
+  ensureTecnologiasDetectadas,
   getGithubDetectedRepos,
   getGithubRepoLanguages,
   getTecnologiasCatalogoCache,
@@ -30,6 +31,11 @@ const DOCUMENT_ACCEPT = '.pdf,.doc,.docx,.txt,.rtf,.md,.odt';
 const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'md', 'odt'];
 const MIN_DIAS_DURACION_PROYECTO = 7;
 
+function normalizarEstadoFormulario(value) {
+  const clean = String(value || '').trim();
+  return ESTADOS_PROYECTO.some(estado => estado.value === clean) ? clean : '';
+}
+
 /* ════════════════════════════════════════
    Validaciones
 ════════════════════════════════════════ */
@@ -50,8 +56,8 @@ function validate(form) {
     e.descripcion = `Máximo 600 caracteres (${form.descripcion.length}/600).`;
   }
 
-  if (!form.estado) {
-    e.estado = 'Selecciona un estado para el proyecto.';
+  if (!normalizarEstadoFormulario(form.estado)) {
+    e.estado = 'El estado del proyecto es obligatorio.';
   }
 
   if (!Array.isArray(form.etiquetas) || form.etiquetas.filter(Boolean).length === 0) {
@@ -64,9 +70,9 @@ function validate(form) {
     e.url_repositorios = `Máximo ${MAX_REPOSITORIOS_GITHUB} repositorios de GitHub.`;
   }
 
-  const repoInvalido = repositoriosGithub.find(url => !isGithubUrl(url));
+  const repoInvalido = repositoriosGithub.find(url => !isGithubUrl(url) && !isGitlabUrl(url));
   if (repoInvalido) {
-    e.url_repositorios = 'Solo se aceptan enlaces de repositorios GitHub: https://github.com/usuario/repositorio';
+    e.url_repositorios = 'Solo se aceptan enlaces de repositorios GitHub o GitLab.';
   }
 
   if (form.url_demo && !/^https?:\/\/.+/.test(form.url_demo)) {
@@ -144,6 +150,16 @@ function isGithubUrl(url) {
   return /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(url.trim());
 }
 
+function isGitlabUrl(url) {
+  return /^https?:\/\/(www\.)?gitlab\.com\/[\w.-]+(?:\/[\w.-]+)+\/?$/.test(url.trim());
+}
+
+function getRepoProviderFromUrl(url = '') {
+  if (isGitlabUrl(url)) return 'gitlab';
+  if (isGithubUrl(url)) return 'github';
+  return 'manual';
+}
+
 function normalizarRepositoriosGithub(repositorios) {
   return Array.isArray(repositorios)
     ? repositorios.map(r => String(r).trim()).filter(Boolean)
@@ -172,6 +188,7 @@ function normalizarReposInicialesGithub(initialGithubRepos) {
     byUrl.set(url, {
       url,
       id: Number(repo?.id || repo?.id_proyecto_repositorio) || null,
+      provider: repo?.provider || repo?.proveedor || getRepoProviderFromUrl(url),
     });
   });
 
@@ -179,7 +196,11 @@ function normalizarReposInicialesGithub(initialGithubRepos) {
     const url = String(urlValue || '').trim();
     if (!url) return;
     const id = Number(initialGithubRepos?.detected_repo_ids?.[index]) || null;
-    byUrl.set(url, { url, id: byUrl.get(url)?.id || id });
+    byUrl.set(url, {
+      url,
+      id: byUrl.get(url)?.id || id,
+      provider: byUrl.get(url)?.provider || getRepoProviderFromUrl(url),
+    });
   });
 
   return Array.from(byUrl.values()).slice(0, MAX_REPOSITORIOS_GITHUB);
@@ -188,9 +209,19 @@ function normalizarReposInicialesGithub(initialGithubRepos) {
 function buildDetectedRepoIdsByUrl(reposIniciales = []) {
   return reposIniciales.reduce((acc, repo) => {
     if (!repo?.url || !repo?.id) return acc;
-    acc[String(repo.url).trim()] = Number(repo.id);
+    acc[String(repo.url).trim()] = {
+      id: Number(repo.id),
+      provider: repo.provider || getRepoProviderFromUrl(repo.url),
+    };
     return acc;
   }, {});
+}
+
+function normalizarTecnologiasInicialesGithub(initialGithubRepos) {
+  return [
+    ...(Array.isArray(initialGithubRepos?.tecnologias) ? initialGithubRepos.tecnologias : []),
+    ...(Array.isArray(initialGithubRepos?.etiquetas) ? initialGithubRepos.etiquetas : []),
+  ].map(value => String(value || '').trim()).filter(Boolean);
 }
 
 function getDocumentoUrl(doc) {
@@ -718,7 +749,9 @@ function MultiYoutubeLinks({ videos, onChange, error, cargando }) {
    GitHub language detection
 ════════════════════════════════════════ */
 async function fetchGithubLangsForUrl(repoUrl) {
-  const languages = await getGithubRepoLanguages(repoUrl);
+  const languages = await getGithubRepoLanguages(repoUrl, {
+    provider: getRepoProviderFromUrl(repoUrl),
+  });
 
   return languages
     .map(lang => String(lang || '').trim())
@@ -743,12 +776,12 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
     if (!url) return;
 
     if (total >= MAX_REPOSITORIOS_GITHUB) {
-      setLocalError(`Solo puedes agregar hasta ${MAX_REPOSITORIOS_GITHUB} repositorios de GitHub.`);
+      setLocalError(`Solo puedes agregar hasta ${MAX_REPOSITORIOS_GITHUB} repositorios.`);
       return;
     }
 
-    if (!isGithubUrl(url)) {
-      setLocalError('Ingresa un enlace válido de repositorio GitHub.');
+    if (!isGithubUrl(url) && !isGitlabUrl(url)) {
+      setLocalError('Ingresa un enlace válido de repositorio GitHub o GitLab.');
       return;
     }
 
@@ -793,7 +826,9 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
               </div>
 
               <div className="prj-link-info">
-                <span className="prj-link-title">Repositorio GitHub {i + 1}</span>
+                <span className="prj-link-title">
+                  Repositorio {getRepoProviderFromUrl(url) === 'gitlab' ? 'GitLab' : 'GitHub'} {i + 1}
+                </span>
                 <span className="prj-link-url">{url}</span>
               </div>
 
@@ -826,7 +861,7 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
               }
             }}
             disabled={cargando}
-            placeholder="https://github.com/usuario/repositorio"
+            placeholder="https://github.com/usuario/repositorio o https://gitlab.com/grupo/repositorio"
           />
 
           <button
@@ -844,7 +879,7 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
       )}
 
       <div className="prj-field-hint">
-        Puedes agregar hasta {MAX_REPOSITORIOS_GITHUB} repositorios de GitHub.
+        Puedes agregar hasta {MAX_REPOSITORIOS_GITHUB} repositorios GitHub o GitLab.
       </div>
 
       {disponibles === 0 && (
@@ -960,6 +995,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
 export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardando, initialGithubRepos = null }) {
   const esNuevo = !proyecto;
   const reposInicialesGithub = normalizarReposInicialesGithub(initialGithubRepos);
+  const tecnologiasInicialesGithub = normalizarTecnologiasInicialesGithub(initialGithubRepos);
   const detectedRepoIdsInicialesByUrl = buildDetectedRepoIdsByUrl(reposInicialesGithub);
   const repositoriosBase = Array.isArray(proyecto?.url_repositorios)
     ? proyecto.url_repositorios
@@ -991,7 +1027,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
         ? [proyecto.url_video]
         : [],
 
-    estado: proyecto?.estado || 'borrador',
+    estado: normalizarEstadoFormulario(proyecto?.estado),
     tipo: proyecto?.tipo || 'sin_especificar',
     desarrollado_para: proyecto?.desarrollado_para || 'sin_especificar',
 
@@ -999,7 +1035,10 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     fecha_fin: proyecto?.fecha_fin || '',
     en_curso: proyecto?.en_curso ?? false,
     es_publico: proyecto?.es_publico ?? true,
-    etiquetas: proyecto?.etiquetas || [],
+    etiquetas: Array.from(new Set([
+      ...(Array.isArray(proyecto?.etiquetas) ? proyecto.etiquetas : []),
+      ...tecnologiasInicialesGithub,
+    ])),
   });
 
   const [imagenesExistentes, setImagenesExistentes] = useState(() => {
@@ -1038,14 +1077,17 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   const [repoEnUsoConfirmPending, setRepoEnUsoConfirmPending] = useState(null);
   const [checkingGithubLinked, setCheckingGithubLinked] = useState(true);
   const [githubLinked, setGithubLinked] = useState(false);
+  const [gitlabLinked, setGitlabLinked] = useState(false);
   const [detectedRepos, setDetectedRepos] = useState([]);
   const [busquedaDetectedRepos, setBusquedaDetectedRepos] = useState('');
   const [loadingDetectedRepos, setLoadingDetectedRepos] = useState(false);
   const [syncingDetectedRepos, setSyncingDetectedRepos] = useState(false);
+  const [detectingRepoUrl, setDetectingRepoUrl] = useState('');
   const [mostrarDetectedRepos, setMostrarDetectedRepos] = useState(false);
   const [detectedReposError, setDetectedReposError] = useState('');
   const [joinRepoPending, setJoinRepoPending] = useState(null);
   const [joiningRepo, setJoiningRepo] = useState(false);
+  const initialReposTechDetectionKeyRef = useRef('');
 
   const errors = validate(form);
   const hasErrors = Object.keys(errors).length > 0;
@@ -1089,6 +1131,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     });
   }, []);
 
+  useEffect(() => {
+    if (Array.isArray(initialGithubRepos?.tecnologias_detalle) && initialGithubRepos.tecnologias_detalle.length > 0) {
+      mergeCatalogoTecnologias(initialGithubRepos.tecnologias_detalle);
+    }
+  }, [initialGithubRepos, mergeCatalogoTecnologias]);
+
   const registrarTecnologias = useCallback(async (nombres = []) => {
     const lista = [...new Set(
       nombres
@@ -1098,18 +1146,88 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
     if (!lista.length) return [];
 
-    const registradas = [];
+    try {
+      const registradas = await ensureTecnologiasDetectadas(lista, 'lenguaje');
 
-    for (const nombre of lista) {
-      const tech = await ensureTecnologia(nombre);
-      if (tech?.nombre) {
-        registradas.push(tech);
+      if (registradas.length > 0) {
+        mergeCatalogoTecnologias(registradas);
+        return registradas.map(tech => tech.nombre);
       }
+    } catch {}
+
+    const fallback = lista.map(nombre => ({
+      nombre,
+      categoria: 'Lenguaje',
+      tipo: 'lenguaje',
+    }));
+
+    mergeCatalogoTecnologias(fallback);
+
+    return fallback.map(tech => tech.nombre);
+  }, [mergeCatalogoTecnologias]);
+
+  const aplicarTecnologiasDetectadas = useCallback(async (techs = []) => {
+    const registradas = await registrarTecnologias(techs);
+
+    if (registradas.length === 0) {
+      return registradas;
     }
 
-    mergeCatalogoTecnologias(registradas);
-    return registradas.map(tech => tech.nombre);
-  }, [mergeCatalogoTecnologias]);
+    setForm(prev => {
+      const existing = new Set(prev.etiquetas);
+      const nuevas = registradas.filter(t => !existing.has(t));
+      if (!nuevas.length) return prev;
+      return { ...prev, etiquetas: [...prev.etiquetas, ...nuevas].slice(0, 15) };
+    });
+
+    setTouched(prev => ({ ...prev, etiquetas: true }));
+
+    return registradas;
+  }, [registrarTecnologias]);
+
+  useEffect(() => {
+    if (!esNuevo || !initialGithubRepos || tecnologiasInicialesGithub.length > 0) return undefined;
+
+    const urls = normalizarReposInicialesGithub(initialGithubRepos)
+      .map(repo => repo.url)
+      .filter(Boolean);
+    const key = urls.map(normalizarGithubUrlParaComparar).join('|');
+
+    if (!key || initialReposTechDetectionKeyRef.current === key) {
+      return undefined;
+    }
+
+    initialReposTechDetectionKeyRef.current = key;
+    let active = true;
+
+    const detectarTecnologiasIniciales = async () => {
+      try {
+        setDetectingRepoUrl('initial-github-repos');
+        setDetectedReposError('');
+
+        const groups = await Promise.all(
+          urls.map(url => fetchGithubLangsForUrl(url).catch(() => []))
+        );
+
+        if (!active) return;
+        await aplicarTecnologiasDetectadas(groups.flat());
+      } catch (e) {
+        if (active) {
+          setDetectedReposError(e.message || 'No se pudieron detectar las tecnologias del repositorio.');
+        }
+      } finally {
+        if (active) {
+          setDetectingRepoUrl('');
+        }
+      }
+    };
+
+    detectarTecnologiasIniciales();
+
+    return () => {
+      active = false;
+    };
+  }, [aplicarTecnologiasDetectadas, esNuevo, initialGithubRepos, tecnologiasInicialesGithub.length]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1203,12 +1321,28 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     const detectedByUrl = new Map(
       detectedRepos
         .filter((repo) => repo?.url_repositorio)
-        .map((repo) => [String(repo.url_repositorio).trim(), Number(repo.id_proyecto_repositorio)]),
+        .map((repo) => [String(repo.url_repositorio).trim(), {
+          id: Number(repo.id_proyecto_repositorio),
+          provider: repo.proveedor || getRepoProviderFromUrl(repo.url_repositorio),
+        }]),
     );
 
-    const detectedRepoIds = repositoriosGithub
-      .map((url) => detectedByUrl.get(String(url).trim()) || detectedRepoIdsInicialesByUrl[String(url).trim()])
-      .filter((id) => Number.isInteger(id) && id > 0);
+    const detectedReposPayload = repositoriosGithub
+      .map((url) => {
+        const detected = detectedByUrl.get(String(url).trim()) || detectedRepoIdsInicialesByUrl[String(url).trim()];
+        const id = Number(typeof detected === 'object' ? detected.id : detected);
+
+        if (!Number.isInteger(id) || id <= 0) return null;
+
+        return {
+          id,
+          url,
+          provider: detected?.provider || getRepoProviderFromUrl(url),
+        };
+      })
+      .filter(Boolean);
+
+    const detectedRepoIds = detectedReposPayload.map((repo) => repo.id);
 
     setPreConfirmPending({
       datos: {
@@ -1232,6 +1366,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
         fecha_fin: form.en_curso ? null : form.fecha_fin,
         detected_repo_ids: detectedRepoIds,
+        detected_repos: detectedReposPayload,
       },
 
       archivos: nuevasImagenes.map(n => n.file),
@@ -1283,13 +1418,25 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
   const minFechaFin = getMinFechaFin(form.fecha_inicio);
 
-  const loadDetectedRepos = useCallback(async (refresh = false) => {
+  const loadDetectedRepos = useCallback(async (refresh = false, providersOverride = null) => {
     try {
       setLoadingDetectedRepos(true);
       setDetectedReposError('');
 
-      const repos = await getGithubDetectedRepos({ refresh });
-      const normalizedRepos = Array.isArray(repos) ? repos : [];
+      const providers = Array.isArray(providersOverride) ? providersOverride : [
+        ...(githubLinked ? ['github'] : []),
+        ...(gitlabLinked ? ['gitlab'] : []),
+      ];
+      const responses = await Promise.all(
+        providers.map(async (provider) => {
+          const repos = await getGithubDetectedRepos({ refresh, provider });
+          return (Array.isArray(repos) ? repos : []).map((repo) => ({
+            ...repo,
+            proveedor: repo.proveedor || provider,
+          }));
+        }),
+      );
+      const normalizedRepos = responses.flat();
       setDetectedRepos(normalizedRepos);
       return normalizedRepos;
     } catch (e) {
@@ -1298,24 +1445,34 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     } finally {
       setLoadingDetectedRepos(false);
     }
-  }, []);
+  }, [githubLinked, gitlabLinked]);
 
   useEffect(() => {
     let mounted = true;
 
     const boot = async () => {
       try {
-        const linked = await isGithubLinked();
+        const [github, gitlab] = await Promise.all([
+          isGithubLinked({ provider: 'github' }),
+          isGithubLinked({ provider: 'gitlab' }),
+        ]);
         if (!mounted) return;
 
-        setGithubLinked(linked);
+        setGithubLinked(github);
+        setGitlabLinked(gitlab);
 
-        if (linked) {
-          await loadDetectedRepos(false);
+        const providers = [
+          ...(github ? ['github'] : []),
+          ...(gitlab ? ['gitlab'] : []),
+        ];
+
+        if (providers.length > 0) {
+          await loadDetectedRepos(false, providers);
         }
       } catch {
         if (!mounted) return;
         setGithubLinked(false);
+        setGitlabLinked(false);
       } finally {
         if (mounted) {
           setCheckingGithubLinked(false);
@@ -1330,11 +1487,11 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     };
   }, [loadDetectedRepos]);
 
-  const handleSyncDetectedRepos = useCallback(async () => {
+  const handleSyncDetectedRepos = useCallback(async (provider = 'github') => {
     try {
       setSyncingDetectedRepos(true);
       setDetectedReposError('');
-      await syncGithubRepos();
+      await syncGithubRepos({ provider });
       const repos = await loadDetectedRepos(false);
       const proyectoId = Number(form.id_proyecto || form.id || 0);
 
@@ -1346,7 +1503,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
         );
 
         const repositoriosIds = repos
-          .filter((repo) => selectedUrls.has(String(repo?.url_repositorio || '').trim()))
+          .filter((repo) => (repo?.proveedor || 'github') === provider && selectedUrls.has(String(repo?.url_repositorio || '').trim()))
           .map((repo) => Number(repo?.id_proyecto_repositorio))
           .filter((id) => Number.isInteger(id) && id > 0);
 
@@ -1354,34 +1511,46 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
           await attachDetectedReposToProject(proyectoId, repositoriosIds, {
             rol: form.rol || '',
             descripcion_aporte: form.descripcion_aporte || '',
-          });
+          }, { provider });
 
           await loadDetectedRepos(false);
         }
       }
     } catch (e) {
-      setDetectedReposError(e.message || 'No se pudo sincronizar con GitHub.');
+      setDetectedReposError(e.message || `No se pudo sincronizar con ${provider === 'gitlab' ? 'GitLab' : 'GitHub'}.`);
     } finally {
       setSyncingDetectedRepos(false);
     }
   }, [form, loadDetectedRepos]);
 
-  const addDetectedRepoToForm = useCallback((url) => {
+  const addDetectedRepoToForm = useCallback(async (url) => {
     const cleanUrl = String(url || '').trim();
     if (!cleanUrl) return;
 
+    const actual = normalizarRepositoriosGithub(form.url_repositorios);
+
+    if (actual.includes(cleanUrl) || actual.length >= MAX_REPOSITORIOS_GITHUB) {
+      return;
+    }
+
     setForm((prev) => {
-      const actual = normalizarRepositoriosGithub(prev.url_repositorios);
-
-      if (actual.includes(cleanUrl)) return prev;
-      if (actual.length >= MAX_REPOSITORIOS_GITHUB) return prev;
-
       return {
         ...prev,
         url_repositorios: [...actual, cleanUrl],
       };
     });
-  }, []);
+
+    try {
+      setDetectingRepoUrl(cleanUrl);
+      setDetectedReposError('');
+      const techs = await fetchGithubLangsForUrl(cleanUrl);
+      await aplicarTecnologiasDetectadas(techs);
+    } catch (e) {
+      setDetectedReposError(e.message || 'No se pudieron detectar las tecnologias del repositorio.');
+    } finally {
+      setDetectingRepoUrl('');
+    }
+  }, [aplicarTecnologiasDetectadas, form.url_repositorios]);
 
   const handleJoinRepoProject = useCallback((repo) => {
     if (!repo?.puede_unirse || !repo?.id_proyecto) return;
@@ -1399,6 +1568,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
         joinRepoPending.id_proyecto,
         [joinRepoPending.id_proyecto_repositorio],
         { rol, descripcion_aporte },
+        { provider: joinRepoPending.proveedor || 'github' },
       );
 
       setJoinRepoPending(null);
@@ -1571,6 +1741,9 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                       onBlur={handleBlur}
                       required
                     >
+                      <option value="" disabled>
+                        Selecciona un estado
+                      </option>
                       {ESTADOS_PROYECTO.map(e => (
                         <option key={e.value} value={e.value}>
                           {e.label}
@@ -1644,25 +1817,25 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                 <div className="row g-3">
                   <div className="col-12">
                     <label className="prj-label">
-                      Repositorios de GitHub
+                      Repositorios del proyecto
                       <span className="prj-section-badge">
                         {form.url_repositorios.length}/{MAX_REPOSITORIOS_GITHUB}
                       </span>
                     </label>
 
-                    {(checkingGithubLinked || githubLinked) && (
+                    {(checkingGithubLinked || githubLinked || gitlabLinked) && (
                       <div className="prj-detected-repos-box">
                         <div className="prj-detected-repos-head">
                           <div>
                             <span>
                               {checkingGithubLinked
-                                ? 'Sincronizacion de GitHub'
-                                : 'Repositorios detectados de tu cuenta vinculada'}
+                                ? 'Sincronizacion de repositorios'
+                                : 'Repositorios detectados de tus cuentas vinculadas'}
                             </span>
 
                             <div className="prj-field-hint" style={{ marginTop: 4 }}>
                               {checkingGithubLinked
-                                ? 'Verificando si tu cuenta de GitHub esta vinculada...'
+                                ? 'Verificando cuentas vinculadas...'
                                 : loadingDetectedRepos
                                 ? 'Cargando repositorios...'
                                 : `${detectedRepos.length} repositorio${detectedRepos.length !== 1 ? 's' : ''} detectado${detectedRepos.length !== 1 ? 's' : ''}`}
@@ -1673,10 +1846,19 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                             <button
                               type="button"
                               className="prj-detected-sync-btn"
-                              disabled={checkingGithubLinked || guardando || syncingDetectedRepos || loadingDetectedRepos}
-                              onClick={handleSyncDetectedRepos}
+                              disabled={checkingGithubLinked || guardando || syncingDetectedRepos || loadingDetectedRepos || !githubLinked}
+                              onClick={() => handleSyncDetectedRepos('github')}
                             >
-                              {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar'}
+                              {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar GitHub'}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="prj-detected-sync-btn"
+                              disabled={checkingGithubLinked || guardando || syncingDetectedRepos || loadingDetectedRepos || !gitlabLinked}
+                              onClick={() => handleSyncDetectedRepos('gitlab')}
+                            >
+                              {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar GitLab'}
                             </button>
 
                             <button
@@ -1695,7 +1877,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                         )}
 
                         {checkingGithubLinked && (
-                          <div className="prj-detected-muted">Preparando la sincronizacion con GitHub...</div>
+                          <div className="prj-detected-muted">Preparando la sincronizacion de repositorios...</div>
                         )}
 
                         {!checkingGithubLinked && mostrarDetectedRepos && (
@@ -1744,7 +1926,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                     <div key={repo.id_proyecto_repositorio || url} className="prj-detected-item">
                                       <div className="prj-detected-main">
                                         <div className="prj-detected-title">
-                                          {repo.nombre || repo.repo_github?.repo_name || 'Repositorio GitHub'}
+                                          {repo.nombre || repo.repo_github?.repo_name || 'Repositorio'}
                                         </div>
 
                                         <div className="prj-detected-url">{url}</div>
@@ -1757,6 +1939,10 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                       </div>
 
                                       <div className="prj-detected-side">
+                                        <span className="prj-detected-pill">
+                                          {repo?.proveedor === 'gitlab' ? 'GitLab' : 'GitHub'}
+                                        </span>
+
                                         <span className={`prj-detected-pill ${enUso ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
                                           {enUso
                                             ? 'en uso'
@@ -1779,9 +1965,9 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                             type="button"
                                             className="prj-detected-add-btn"
                                             onClick={() => addDetectedRepoToForm(url)}
-                                            disabled={yaAgregado || form.url_repositorios.length >= MAX_REPOSITORIOS_GITHUB || guardando}
+                                            disabled={yaAgregado || form.url_repositorios.length >= MAX_REPOSITORIOS_GITHUB || guardando || detectingRepoUrl === url}
                                           >
-                                            {yaAgregado ? 'Agregado' : 'Usar en proyecto'}
+                                            {detectingRepoUrl === url ? 'Detectando...' : yaAgregado ? 'Agregado' : 'Usar en proyecto'}
                                           </button>
                                         )}
                                       </div>
@@ -1801,14 +1987,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                       error={showErr('url_repositorios')}
                       cargando={guardando}
                       onTechsDetected={async (techs) => {
-                        const registradas = await registrarTecnologias(techs);
-
-                        setForm(prev => {
-                          const existing = new Set(prev.etiquetas);
-                          const nuevas = registradas.filter(t => !existing.has(t));
-                          if (!nuevas.length) return prev;
-                          return { ...prev, etiquetas: [...prev.etiquetas, ...nuevas].slice(0, 15) };
-                        });
+                        await aplicarTecnologiasDetectadas(techs);
                       }}
                     />
                   </div>

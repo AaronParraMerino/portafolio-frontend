@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import SkillForm from "../components/SkillForm";
 import {
   getUserSkills,
+  getCachedUserSkills,
   addUserSkill,
   updateUserSkill,
   deleteUserSkill,
@@ -41,9 +42,17 @@ const getSkillDescription = (skill) =>
   skill?.habilidad?.descripcion ??
   "Sin descripción adicional.";
 
+const getInitialSkills = () => {
+  try {
+    return getCachedUserSkills();
+  } catch {
+    return [];
+  }
+};
+
 export default function SkillsPage() {
-  const [skills, setSkills] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [skills, setSkills] = useState(getInitialSkills);
+  const [loading, setLoading] = useState(() => getInitialSkills().length === 0);
   const [modalMode, setModalMode] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [toast, setToast] = useState(null);
@@ -66,9 +75,11 @@ export default function SkillsPage() {
   };
 
   const loadSkills = useCallback(async () => {
+    const hasCache = getInitialSkills().length > 0;
+
     try {
-      setLoading(true);
-      const data = await getUserSkills();
+      setLoading(!hasCache);
+      const data = await getUserSkills({ force: true });
       setSkills(data);
     } catch (err) {
       showToast("Error al cargar las habilidades", "error");

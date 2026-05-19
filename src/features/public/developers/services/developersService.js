@@ -1,9 +1,15 @@
 import BASE_URL from '../../../../services/http/const';
+import {
+  publicCacheKey,
+  readPublicCache,
+  withPublicCache,
+} from '../../services/publicCache';
 
 export const DEVELOPERS_PER_PAGE = 20;
 const PROJECT_COUNT_CACHE_PREFIX = 'developers:project-count:v1';
 const PROJECT_COUNT_CACHE_TTL = 15 * 60 * 1000;
 const PROJECT_COUNT_CONCURRENCY = 4;
+const DEVELOPERS_LIST_CACHE_TTL = 2 * 60 * 1000;
 
 const DEVELOPER_ENDPOINTS = [
   '/home/desarrolladores',
@@ -11,6 +17,18 @@ const DEVELOPER_ENDPOINTS = [
 ];
 
 const cleanText = (value) => String(value || '').trim();
+
+const developersListCacheKey = ({ page = 1, perPage = DEVELOPERS_PER_PAGE, search = '' } = {}) => (
+  publicCacheKey('developers:list', {
+    page: Number(page) || 1,
+    perPage: Number(perPage) || DEVELOPERS_PER_PAGE,
+    search: cleanText(search).toLowerCase(),
+  })
+);
+
+export const getCachedActiveDevelopers = (options = {}) => (
+  readPublicCache(developersListCacheKey(options), { ttlMs: DEVELOPERS_LIST_CACHE_TTL }) || null
+);
 
 const toNumber = (value, fallback = 0) => {
   const number = Number(value);
@@ -333,35 +351,44 @@ export const getActiveDevelopers = async ({
   perPage = DEVELOPERS_PER_PAGE,
   search = '',
   signal,
+  force = false,
 } = {}) => {
-  const term = cleanText(search);
-  const params = {
-    page,
-    per_page: perPage,
-    limit: perPage,
-    nombre: term,
-    q: term,
-    search: term,
-  };
+  const key = developersListCacheKey({ page, perPage, search });
 
-  let lastError = null;
+  return withPublicCache(
+    key,
+    async () => {
+      const term = cleanText(search);
+      const params = {
+        page,
+        per_page: perPage,
+        limit: perPage,
+        nombre: term,
+        q: term,
+        search: term,
+      };
 
-  for (const endpoint of DEVELOPER_ENDPOINTS) {
-    try {
-      const payload = await requestJson(endpoint, params, signal);
-      const response = normalizeDevelopersResponse(payload, { page, perPage });
+      let lastError = null;
 
-      return response;
-    } catch (error) {
-      if (error?.name === 'AbortError') throw error;
-      lastError = error;
-    }
-  }
+      for (const endpoint of DEVELOPER_ENDPOINTS) {
+        try {
+          const payload = await requestJson(endpoint, params, signal);
+          const response = normalizeDevelopersResponse(payload, { page, perPage });
 
-  try {
-    return await loadFeaturedFallback({ page, perPage, search, signal });
-  } catch (error) {
-    if (error?.name === 'AbortError') throw error;
-    throw lastError || error;
-  }
+          return response;
+        } catch (error) {
+          if (error?.name === 'AbortError') throw error;
+          lastError = error;
+        }
+      }
+
+      try {
+        return await loadFeaturedFallback({ page, perPage, search, signal });
+      } catch (error) {
+        if (error?.name === 'AbortError') throw error;
+        throw lastError || error;
+      }
+    },
+    { force, ttlMs: DEVELOPERS_LIST_CACHE_TTL },
+  );
 };

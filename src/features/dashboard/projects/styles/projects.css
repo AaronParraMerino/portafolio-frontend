@@ -530,7 +530,6 @@
   box-shadow: 0 0 0 4px var(--amarillo-bg);
 }
 .prj-state-dot.borrador,
-.prj-state-dot.sin_especificar,
 .prj-state-dot.terminado {
   background: var(--gris-texto);
   box-shadow: 0 0 0 4px var(--fondo);
@@ -567,6 +566,15 @@
   font-size: 9px;
   font-weight: 600;
   padding: 2px 7px;
+}
+.prj-state-error {
+  border: 1px solid var(--rojo-borde);
+  border-radius: 8px;
+  background: var(--rojo-bg);
+  color: var(--rojo-soft);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
 }
 
 @media (max-width: 520px) {

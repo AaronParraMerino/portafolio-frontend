@@ -8,6 +8,7 @@ import {
   updateVisibility,
   uploadImage,
   deleteImage,
+  setCachedProfile,
 } from '../services/profileService';
 
 const BASE_URL_STORAGE =
@@ -15,6 +16,17 @@ const BASE_URL_STORAGE =
 
 // ── Clave de caché en sessionStorage ──
 const CACHE_KEY = 'perfil_cache';
+
+function cacheKey() {
+  try {
+    const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+    const user = raw ? JSON.parse(raw) : {};
+    const userId = user.id_usuario || user.id || user.idUsuario || 'anon';
+    return `${CACHE_KEY}:${userId}`;
+  } catch {
+    return `${CACHE_KEY}:anon`;
+  }
+}
 
 function mapearPerfil(data) {
   if (!data) return null;
@@ -33,7 +45,7 @@ function mapearPerfil(data) {
 // ── Leer / escribir caché ──
 function leerCache() {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
+    const raw = sessionStorage.getItem(cacheKey());
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -42,14 +54,23 @@ function leerCache() {
 
 function escribirCache(perfil) {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(perfil));
+    sessionStorage.setItem(cacheKey(), JSON.stringify(perfil));
+    syncSharedProfileCache(perfil);
   } catch {
     // sessionStorage lleno o deshabilitado: no es crítico
   }
 }
 
+function syncSharedProfileCache(perfil) {
+  try {
+    setCachedProfile(perfil);
+  } catch {
+    // Shared cache is only an optimization.
+  }
+}
+
 function limpiarCache() {
-  sessionStorage.removeItem(CACHE_KEY);
+  sessionStorage.removeItem(cacheKey());
 }
 
 // ── Guard de carga global (sobrevive re-renders del componente) ──
@@ -80,7 +101,7 @@ export function useProfile() {
     // actualizamos el estado sin mostrar spinner.
     const tieneCachePrevio = Boolean(leerCache());
 
-    getProfile()
+    getProfile({ force: true })
       .then(data => {
         const mapeado = mapearPerfil(data);
         setPerfil(mapeado);
@@ -200,7 +221,7 @@ export function useProfile() {
       } else {
         // Fallback solo si el backend no devuelve URL (raro)
         console.warn('[useProfile] Backend no devolvió URL, haciendo re-fetch...');
-        const data = await getProfile();
+        const data = await getProfile({ force: true });
         const mapeado = mapearPerfil(data);
         setPerfil(prev => {
           const nuevo = {
@@ -249,7 +270,7 @@ export function useProfile() {
   // ── Recargar perfil manualmente (fuerza re-fetch y actualiza caché) ──
   const recargarPerfil = async () => {
     try {
-      const data = await getProfile();
+      const data = await getProfile({ force: true });
       const mapeado = mapearPerfil(data);
       setPerfil(mapeado);
       escribirCache(mapeado);

@@ -23,7 +23,7 @@ export function usePublicPortfolio(userId) {
       error: null,
     });
 
-    getPublicPortfolio(userId)
+    getPublicPortfolio(userId, { force: false })
       .then((data) => {
         if (!active) return;
 

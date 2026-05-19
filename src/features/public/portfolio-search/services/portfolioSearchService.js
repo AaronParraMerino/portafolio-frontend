@@ -1,4 +1,9 @@
 import BASE_URL from '../../../../services/http/const';
+import {
+  publicCacheKey,
+  readPublicCache,
+  withPublicCache,
+} from '../../services/publicCache';
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -6,6 +11,18 @@ const JSON_HEADERS = {
 };
 
 export const SEARCH_AUTH_REQUIRED_MESSAGE = 'Debes iniciar sesión para buscar portafolios.';
+
+const SEARCH_RESULTS_TTL_MS = 2 * 60 * 1000;
+const SEARCH_CATALOGS_TTL_MS = 15 * 60 * 1000;
+const SEARCH_CATALOG_PATHS = [
+  'profesiones',
+  'habilidades-blandas',
+  'habilidades-tecnicas',
+  'cargos-experiencia',
+  'tecnologias-proyecto',
+  'tipos-proyecto',
+];
+const SEARCH_CATALOGS_CACHE_KEY = publicCacheKey('portfolio-search:catalogs', 'all');
 
 const readStorageItem = (storage, key) => {
   try {
@@ -158,6 +175,27 @@ export const buildSearchPayload = (filters = {}) => ({
   per_page: Number(filters.per_page || 12),
 });
 
+const catalogCacheKey = (catalogPath) => publicCacheKey('portfolio-search:catalog', catalogPath);
+
+const searchResultsCacheKey = (filters, page = 1) => (
+  publicCacheKey('portfolio-search:results', {
+    page: Number(page) || 1,
+    payload: buildSearchPayload(filters),
+  })
+);
+
+export const getCachedSearchCatalogs = () => {
+  if (!getStoredToken()) return null;
+
+  return readPublicCache(SEARCH_CATALOGS_CACHE_KEY, { ttlMs: SEARCH_CATALOGS_TTL_MS }) || null;
+};
+
+export const getCachedSearchResults = (filters, page = 1) => {
+  if (!getStoredToken()) return null;
+
+  return readPublicCache(searchResultsCacheKey(filters, page), { ttlMs: SEARCH_RESULTS_TTL_MS }) || null;
+};
+
 export const normalizeSearchResponse = (response) => {
   const list = Array.isArray(response)
     ? response
@@ -179,68 +217,86 @@ export const normalizeSearchResponse = (response) => {
   };
 };
 
-export const searchPortfolios = async (filters, page = 1) => {
+export const searchPortfolios = async (filters, page = 1, { force = false } = {}) => {
   const payload = buildSearchPayload(filters);
+  const authHeaders = getAuthHeaders();
 
-  const res = await fetch(buildUrl('/buscar', { page }), {
-    method: 'POST',
-    headers: {
-      ...JSON_HEADERS,
-      ...getAuthHeaders(),
+  return withPublicCache(
+    searchResultsCacheKey(filters, page),
+    async () => {
+      const res = await fetch(buildUrl('/buscar', { page }), {
+        method: 'POST',
+        headers: {
+          ...JSON_HEADERS,
+          ...authHeaders,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await parseJson(res);
+      return normalizeSearchResponse(data);
     },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await parseJson(res);
-  return normalizeSearchResponse(data);
+    { force, ttlMs: SEARCH_RESULTS_TTL_MS },
+  );
 };
 
-export const getSearchCatalog = async (catalogPath) => {
-  const res = await fetch(buildUrl(`/buscar/catalogos/${catalogPath}`), {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      ...getAuthHeaders(),
+export const getSearchCatalog = async (catalogPath, { force = false } = {}) => {
+  const authHeaders = getAuthHeaders();
+
+  return withPublicCache(
+    catalogCacheKey(catalogPath),
+    async () => {
+      const res = await fetch(buildUrl(`/buscar/catalogos/${catalogPath}`), {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...authHeaders,
+        },
+      });
+
+      const data = await parseJson(res);
+      const list = Array.isArray(data) ? data : data?.data || data?.items || [];
+
+      return list
+        .map((item) => {
+          if (typeof item === 'string') return item;
+          return item?.nombre || item?.name || item?.titulo || item?.valor || '';
+        })
+        .map(cleanText)
+        .filter(Boolean);
     },
-  });
-
-  const data = await parseJson(res);
-  const list = Array.isArray(data) ? data : data?.data || data?.items || [];
-
-  return list
-    .map((item) => {
-      if (typeof item === 'string') return item;
-      return item?.nombre || item?.name || item?.titulo || item?.valor || '';
-    })
-    .map(cleanText)
-    .filter(Boolean);
+    { force, ttlMs: SEARCH_CATALOGS_TTL_MS },
+  );
 };
 
-export const getSearchCatalogs = async () => {
-  const [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto] = await Promise.allSettled([
-    getSearchCatalog('profesiones'),
-    getSearchCatalog('habilidades-blandas'),
-    getSearchCatalog('habilidades-tecnicas'),
-    getSearchCatalog('cargos-experiencia'),
-    getSearchCatalog('tecnologias-proyecto'),
-    getSearchCatalog('tipos-proyecto'),
-  ]);
+export const getSearchCatalogs = async ({ force = false } = {}) => {
+  getAuthHeaders();
 
-  const valueOf = (result) => (result.status === 'fulfilled' ? result.value : []);
+  return withPublicCache(
+    SEARCH_CATALOGS_CACHE_KEY,
+    async () => {
+      const [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto] = await Promise.allSettled(
+        SEARCH_CATALOG_PATHS.map((path) => getSearchCatalog(path, { force }))
+      );
 
-  const rejected = [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto]
-    .find((result) => result.status === 'rejected');
+      const valueOf = (result) => (result.status === 'fulfilled' ? result.value : []);
 
-  if (rejected?.reason?.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
-    throw rejected.reason;
-  }
+      const rejected = [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto]
+        .find((result) => result.status === 'rejected');
 
-  return {
-    profesiones: valueOf(profesiones),
-    habilidadesBlandas: valueOf(habilidadesBlandas),
-    habilidadesTecnicas: valueOf(habilidadesTecnicas),
-    cargos: valueOf(cargos),
-    tecnologias: valueOf(tecnologias),
-    tiposProyecto: valueOf(tiposProyecto),
-  };
+      if (rejected?.reason?.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
+        throw rejected.reason;
+      }
+
+      return {
+        profesiones: valueOf(profesiones),
+        habilidadesBlandas: valueOf(habilidadesBlandas),
+        habilidadesTecnicas: valueOf(habilidadesTecnicas),
+        cargos: valueOf(cargos),
+        tecnologias: valueOf(tecnologias),
+        tiposProyecto: valueOf(tiposProyecto),
+      };
+    },
+    { force, ttlMs: SEARCH_CATALOGS_TTL_MS },
+  );
 };

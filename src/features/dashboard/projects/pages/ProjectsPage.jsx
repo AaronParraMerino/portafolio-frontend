@@ -15,7 +15,6 @@ const ESTADO_DETALLE = {
   publicado: 'Visible como proyecto publicado.',
   borrador: 'Guardado sin publicarse todavia.',
   archivado: 'Fuera del listado activo.',
-  sin_especificar: 'Sin estado de desarrollo definido.',
   en_desarrollo: 'Trabajo activo o en progreso.',
   pausado: 'Temporalmente detenido.',
   terminado: 'Desarrollo finalizado.',
@@ -31,12 +30,17 @@ const ESTADO_SECCIONES = [
   },
   {
     label: 'Desarrollo',
-    estados: ['sin_especificar', 'en_desarrollo', 'pausado', 'terminado', 'mantenimiento', 'versionado', 'cancelado'],
+    estados: ['en_desarrollo', 'pausado', 'terminado', 'mantenimiento', 'versionado', 'cancelado'],
   },
 ];
 
 function getEstadoLabel(value) {
-  return ESTADOS_PROYECTO.find((estado) => estado.value === value)?.label || value || 'Borrador';
+  return ESTADOS_PROYECTO.find((estado) => estado.value === value)?.label || value || 'Pendiente';
+}
+
+function normalizarEstadoSeleccionable(value) {
+  const clean = String(value || '').trim();
+  return ESTADOS_PROYECTO.some((estado) => estado.value === clean) ? clean : '';
 }
 
 function isEstadoEnDesarrollo(estado) {
@@ -74,7 +78,8 @@ export default function ProjectsPage() {
   const [confirmDetach, setConfirmDetach] = useState(null);
   const [configurando, setConfigurando] = useState(null);
   const [estadoProyecto, setEstadoProyecto] = useState(null);
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState('borrador');
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
+  const [estadoError, setEstadoError] = useState('');
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
@@ -149,19 +154,26 @@ export default function ProjectsPage() {
 
   const handleAbrirEstadoProyecto = (proyecto) => {
     setEstadoProyecto(proyecto);
-    setEstadoSeleccionado(proyecto?.estado || 'borrador');
+    setEstadoSeleccionado(normalizarEstadoSeleccionable(proyecto?.estado));
+    setEstadoError('');
   };
 
   const handleCerrarEstadoProyecto = () => {
     setEstadoProyecto(null);
-    setEstadoSeleccionado('borrador');
+    setEstadoSeleccionado('');
+    setEstadoError('');
   };
 
   const handleGuardarEstadoProyecto = () => {
     if (!estadoProyecto) return;
 
-    const estadoActual = estadoProyecto.estado || 'borrador';
-    const nuevoEstado = estadoSeleccionado || estadoActual;
+    const estadoActual = normalizarEstadoSeleccionable(estadoProyecto.estado);
+    const nuevoEstado = normalizarEstadoSeleccionable(estadoSeleccionado);
+
+    if (!nuevoEstado) {
+      setEstadoError('El estado del proyecto es obligatorio.');
+      return;
+    }
 
     if (nuevoEstado !== estadoActual) {
       const tarea = editarExistente(
@@ -173,7 +185,8 @@ export default function ProjectsPage() {
     }
 
     setEstadoProyecto(null);
-    setEstadoSeleccionado('borrador');
+    setEstadoSeleccionado('');
+    setEstadoError('');
   };
 
   // ── Derivados: filtrar + ordenar + contar ──
@@ -212,7 +225,7 @@ export default function ProjectsPage() {
     archivado:  proyectos.filter(p => p.estado === 'archivado').length,
   };
 
-  const estadoActualProyecto = estadoProyecto?.estado || 'borrador';
+  const estadoActualProyecto = normalizarEstadoSeleccionable(estadoProyecto?.estado);
   const hayCambioEstado = estadoSeleccionado !== estadoActualProyecto;
   const loadingInicial = loading && !cargaInicialTerminada && proyectos.length === 0;
   const activityLabel = guardando
@@ -314,7 +327,10 @@ export default function ProjectsPage() {
                             className={`prj-state-option ${selected ? 'active' : ''}`}
                             role="radio"
                             aria-checked={selected}
-                            onClick={() => setEstadoSeleccionado(estado.value)}
+                            onClick={() => {
+                              setEstadoSeleccionado(estado.value);
+                              setEstadoError('');
+                            }}
                             disabled={guardando}
                           >
                             <span className={`prj-state-dot ${estado.value}`} />
@@ -332,9 +348,15 @@ export default function ProjectsPage() {
                 </div>
               ))}
             </div>
+
+            {estadoError && (
+              <div className="prj-state-error" role="alert">
+                {estadoError}
+              </div>
+            )}
           </div>
         )}
-        confirmLabel={hayCambioEstado ? 'Guardar estado' : 'Mantener estado'}
+        confirmLabel={!estadoSeleccionado ? 'Seleccionar estado' : hayCambioEstado ? 'Guardar estado' : 'Mantener estado'}
         cancelLabel="Cancelar"
         variant="blue"
         icon="info"

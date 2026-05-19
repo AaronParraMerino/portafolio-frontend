@@ -260,6 +260,8 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                 {participantesSinValidacion.map((participante) => {
                   const idParticipacion = participante.id_participacion || participante.id;
                   const nombre = participante.nombre || participante.github_username || 'Participante';
+                  const esPropietario = Boolean(participante.es_propietario || participante.tipo_rol === 'owner');
+                  const puedeQuitarParticipante = puedeRemoverSinValidacion && !esPropietario;
 
                   return (
                     <div key={idParticipacion || nombre} className="prj-config-participant">
@@ -281,9 +283,15 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                       <button
                         type="button"
                         className="prj-config-remove-btn"
-                        disabled={!puedeRemoverSinValidacion || removingId === idParticipacion || guardando}
+                        disabled={!puedeQuitarParticipante || removingId === idParticipacion || guardando}
                         onClick={() => handleRemoveParticipant(participante)}
-                        title={puedeRemoverSinValidacion ? 'Quitar participacion' : 'Activa y guarda la regla para remover participantes sin validacion'}
+                        title={
+                          esPropietario
+                            ? 'No se puede quitar al propietario del proyecto'
+                            : puedeRemoverSinValidacion
+                              ? 'Quitar participacion'
+                              : 'Activa y guarda la regla para remover participantes sin validacion'
+                        }
                       >
                         {removingId === idParticipacion ? 'Quitando...' : 'Quitar'}
                       </button>

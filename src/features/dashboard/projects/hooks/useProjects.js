@@ -15,6 +15,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   getProyectos,
+  getCachedProyectos,
+  setCachedProyectos,
   crearProyecto,
   actualizarProyecto,
   actualizarProyectoConfiguracion,
@@ -27,23 +29,26 @@ import {
   attachDetectedReposToProject,
   normalizeProyectoFromApi,
 } from '../services/projectsService';
-import { MOCK_PROYECTOS } from '../model/projectsModel';
-
 const BASE_STORAGE = (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage') + '/';
 const CACHE_KEY = 'projects_cache';
 
-// ── MODO MOCK: cambiar a false cuando el backend esté listo ──
-const USAR_MOCK = false;
-
 // Guard anti-doble-fetch
 let _cargaIniciada = false;
+
+function leerCacheServicio() {
+  try {
+    return getCachedProyectos();
+  } catch {
+    return [];
+  }
+}
 
 // ════════════════════════════════════════
 // Caché helpers
 // ════════════════════════════════════════
 function leerCache() {
   try {
-    const r = sessionStorage.getItem(CACHE_KEY);
+    const r = sessionStorage.getItem(cacheKey());
     return r ? JSON.parse(r) : null;
   } catch {
     return null;
@@ -52,12 +57,52 @@ function leerCache() {
 
 function escribirCache(d) {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(d));
+    sessionStorage.setItem(cacheKey(), JSON.stringify(d));
+  } catch {}
+
+  try {
+    setCachedProyectos(d?.proyectos || []);
   } catch {}
 }
 
 function limpiarCache() {
-  sessionStorage.removeItem(CACHE_KEY);
+  sessionStorage.removeItem(cacheKey());
+}
+
+function cacheKey() {
+  try {
+    const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+    const user = raw ? JSON.parse(raw) : {};
+    const userId = user.id_usuario || user.id || user.idUsuario || 'anon';
+    return `${CACHE_KEY}:${userId}`;
+  } catch {
+    return `${CACHE_KEY}:anon`;
+  }
+}
+
+async function attachDetectedReposByProvider(proyectoId, datos = {}) {
+  if (Array.isArray(datos?.detected_repos) && datos.detected_repos.length > 0) {
+    const reposByProvider = datos.detected_repos.reduce((acc, repo) => {
+      const provider = repo?.provider || 'github';
+      const id = Number(repo?.id || repo?.id_proyecto_repositorio);
+      if (!Number.isInteger(id) || id <= 0) return acc;
+      acc[provider] = [...(acc[provider] || []), id];
+      return acc;
+    }, {});
+
+    for (const [provider, ids] of Object.entries(reposByProvider)) {
+      await attachDetectedReposToProject(proyectoId, ids, datos.detected_participacion ?? {}, { provider }).catch(err =>
+        console.warn(`[useProjects] Error vinculando repos detectados ${provider}:`, err.message)
+      );
+    }
+    return;
+  }
+
+  if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
+    await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
+      console.warn('[useProjects] Error vinculando repos detectados:', err.message)
+    );
+  }
 }
 
 // ════════════════════════════════════════
@@ -122,7 +167,7 @@ function formatDocumento(doc) {
 // ════════════════════════════════════════
 // Normalización local
 // Nota: el service ya normaliza, pero este helper deja seguro
-// el estado interno del hook, cache y modo mock.
+// el estado interno del hook y cache.
 // ════════════════════════════════════════
 function mapearProyecto(p = {}) {
   const normalizado = normalizeProyectoFromApi
@@ -261,36 +306,17 @@ function normalizarResultadoDocumentos(resultado) {
 }
 
 // ════════════════════════════════════════
-// Helper interno: genera badge desde datos del form
-// ════════════════════════════════════════
-function generarBadge(datos) {
-  const map = {
-    publicado: { label: 'Publicado', variant: 'green' },
-    borrador: { label: 'Borrador', variant: 'gray' },
-    archivado: { label: 'Archivado', variant: 'blue' },
-    sin_especificar: { label: 'Sin especificar', variant: 'gray' },
-    en_desarrollo: { label: 'En desarrollo', variant: 'amber' },
-    pausado: { label: 'Pausado', variant: 'amber' },
-    terminado: { label: 'Terminado', variant: 'gray' },
-    mantenimiento: { label: 'Mantenimiento', variant: 'amber' },
-    versionado: { label: 'Versionado', variant: 'amber' },
-    cancelado: { label: 'Cancelado', variant: 'blue' },
-  };
-
-  return map[datos.estado] || { label: datos.estado, variant: 'gray' };
-}
-
-// ════════════════════════════════════════
 // Hook principal
 // ════════════════════════════════════════
 export function useProjects() {
   const cache = leerCache();
+  const serviceCache = leerCacheServicio();
 
   const [proyectos, setProyectos] = useState(() =>
-    cache?.proyectos ?? (USAR_MOCK ? MOCK_PROYECTOS.map(mapearProyecto) : [])
+    cache?.proyectos ?? (serviceCache.length > 0 ? serviceCache.map(mapearProyecto) : [])
   );
 
-  const [loading, setLoading] = useState(!cache);
+  const [loading, setLoading] = useState(!cache && serviceCache.length === 0);
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -307,15 +333,10 @@ export function useProjects() {
   // Carga inicial
   // ════════════════════════════════════════
   useEffect(() => {
-    if (USAR_MOCK) {
-      setLoading(false);
-      return;
-    }
-
     if (_cargaIniciada) return;
     _cargaIniciada = true;
 
-    getProyectos()
+    getProyectos({ force: true })
       .then(data => {
         const mapeados = (data || []).map(mapearProyecto);
         setProyectos(mapeados);
@@ -344,36 +365,6 @@ export function useProjects() {
     setGuardando(true);
 
     try {
-      if (USAR_MOCK) {
-        await new Promise(r => setTimeout(r, 600));
-
-        const previewUrls = imagenesNuevas.map(f => URL.createObjectURL(f));
-        const docsPreview = documentosNuevos.map(f => ({
-          url: URL.createObjectURL(f),
-          nombre: f.name,
-        }));
-
-        const nuevo = mapearProyecto({
-          ...datos,
-          id: Date.now(),
-          id_proyecto: Date.now(),
-          imagenes: previewUrls,
-          documentos: docsPreview,
-          imagenUrl: previewUrls[0] || null,
-          imagen_portada: previewUrls[0] || null,
-          estadoLabel: null,
-          badges: [generarBadge(datos)],
-          fecha_modificacion: new Date().toISOString(),
-        });
-
-        const actualizados = [nuevo, ...proyectos];
-        setProyectos(actualizados);
-        guardarEnCache(actualizados);
-        mostrarToast('Proyecto agregado correctamente');
-
-        return nuevo;
-      }
-
       // 1. Crear proyecto sin archivos.
       const creado = await crearProyecto(datos);
       const creadoMapeado = mapearProyecto(creado);
@@ -410,11 +401,7 @@ export function useProjects() {
       }
 
       // 4. Vincular repos detectados (cuenta GitHub vinculada) a proyecto/participación.
-      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
-        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
-          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
-        );
-      }
+      await attachDetectedReposByProvider(proyectoId, datos);
 
       const actualizados = [mapeado, ...proyectos];
       setProyectos(actualizados);
@@ -466,47 +453,6 @@ export function useProjects() {
         documentosAEliminar
       );
 
-      if (USAR_MOCK) {
-        await new Promise(r => setTimeout(r, 600));
-
-        const imagenesBase = (proyectoActual?.imagenes || [])
-          .filter(url => !urlsImagenesAEliminar.includes(url));
-
-        const nuevasUrls = imagenesNuevas.map(f => URL.createObjectURL(f));
-        const imagenes = [...imagenesBase, ...nuevasUrls].slice(0, 5);
-
-        const documentosBase = (proyectoActual?.documentos || [])
-          .filter(doc => !urlsDocumentosAEliminar.includes(getDocumentoUrl(doc)));
-
-        const nuevosDocs = documentosNuevos.map(f => ({
-          url: URL.createObjectURL(f),
-          nombre: f.name,
-        }));
-
-        const documentos = [...documentosBase, ...nuevosDocs].slice(0, 2);
-
-        const actualizados = proyectos.map(p =>
-          p.id === id || p.id_proyecto === id
-            ? mapearProyecto({
-                ...p,
-                ...datos,
-                imagenes,
-                imagenUrl: imagenes[0] || null,
-                imagen_portada: imagenes[0] || null,
-                documentos,
-                badges: [generarBadge(datos)],
-                fecha_modificacion: new Date().toISOString(),
-              })
-            : p
-        );
-
-        setProyectos(actualizados);
-        guardarEnCache(actualizados);
-        mostrarToast('Proyecto actualizado correctamente');
-
-        return actualizados.find(p => p.id === id || p.id_proyecto === id);
-      }
-
       // 1. Actualizar datos principales del proyecto.
       const actualizado = await actualizarProyecto(proyectoId, datos);
       let mapeado = mapearProyecto(actualizado);
@@ -553,11 +499,7 @@ export function useProjects() {
         documentos: documentosFinales,
       };
 
-      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
-        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
-          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
-        );
-      }
+      await attachDetectedReposByProvider(proyectoId, datos);
 
       const actualizados = proyectos.map(p =>
         p.id === proyectoId || p.id_proyecto === proyectoId
@@ -591,11 +533,7 @@ export function useProjects() {
     guardarEnCache(actualizados);
 
     try {
-      if (!USAR_MOCK) {
-        await eliminarProyecto(id);
-      } else {
-        await new Promise(r => setTimeout(r, 400));
-      }
+      await eliminarProyecto(id);
 
       mostrarToast('Proyecto eliminado');
 
@@ -616,11 +554,7 @@ export function useProjects() {
     guardarEnCache(actualizados);
 
     try {
-      if (!USAR_MOCK) {
-        await desvincularParticipacionProyecto(id);
-      } else {
-        await new Promise(r => setTimeout(r, 400));
-      }
+      await desvincularParticipacionProyecto(id);
 
       mostrarToast('Participacion desvinculada');
 
@@ -652,6 +586,7 @@ export function useProjects() {
           puede_eliminar: data.permisos?.puede_eliminar ?? p.puede_eliminar,
           puede_configurar: data.permisos?.puede_configurar ?? p.puede_configurar,
           puede_desvincular_participacion: data.permisos?.puede_desvincular_participacion ?? p.puede_desvincular_participacion,
+          puede_remover_participantes_sin_validacion: data.permisos?.puede_remover_participantes_sin_validacion ?? p.puede_remover_participantes_sin_validacion,
         });
       });
 
@@ -670,12 +605,10 @@ export function useProjects() {
   };
 
   const refrescar = async () => {
-    if (USAR_MOCK) return proyectos;
-
     setLoading(true);
 
     try {
-      const data = await getProyectos();
+      const data = await getProyectos({ force: true });
       const mapeados = (data || []).map(mapearProyecto);
 
       setProyectos(mapeados);
