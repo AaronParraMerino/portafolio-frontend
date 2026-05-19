@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   DEVELOPERS_PER_PAGE,
   getActiveDevelopers,
+  getCachedActiveDevelopers,
   getDeveloperKey,
   hydrateDeveloperProjectCounts,
 } from '../services/developersService';
@@ -25,13 +26,18 @@ export default function useDevelopers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = cleanText(searchParams.get('q'));
   const initialPage = pageFromParams(searchParams.get('page'));
+  const initialCached = getCachedActiveDevelopers({
+    page: initialPage,
+    perPage: DEVELOPERS_PER_PAGE,
+    search: initialQuery,
+  });
 
   const [query, setQuery] = useState(initialQuery);
   const [submittedQuery, setSubmittedQuery] = useState(initialQuery);
   const [page, setPage] = useState(initialPage);
-  const [developers, setDevelopers] = useState([]);
-  const [meta, setMeta] = useState({ ...emptyMeta, current_page: initialPage });
-  const [loading, setLoading] = useState(true);
+  const [developers, setDevelopers] = useState(() => initialCached?.items || []);
+  const [meta, setMeta] = useState(() => initialCached?.meta || { ...emptyMeta, current_page: initialPage });
+  const [loading, setLoading] = useState(() => !initialCached);
   const [error, setError] = useState('');
 
   const syncUrl = (nextQuery, nextPage) => {
@@ -44,8 +50,19 @@ export default function useDevelopers() {
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
+    const cached = getCachedActiveDevelopers({
+      page,
+      perPage: DEVELOPERS_PER_PAGE,
+      search: submittedQuery,
+    });
 
-    setLoading(true);
+    if (cached) {
+      setDevelopers(cached.items || []);
+      setMeta(cached.meta || { ...emptyMeta, current_page: page });
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError('');
 
     getActiveDevelopers({
@@ -53,6 +70,7 @@ export default function useDevelopers() {
       perPage: DEVELOPERS_PER_PAGE,
       search: submittedQuery,
       signal: controller.signal,
+      force: false,
     })
       .then((response) => {
         if (!active) return;
@@ -82,15 +100,16 @@ export default function useDevelopers() {
       })
       .catch((err) => {
         if (!active || err?.name === 'AbortError') return;
-        setDevelopers([]);
-        setMeta({ ...emptyMeta, current_page: page });
+        if (!cached) {
+          setDevelopers([]);
+          setMeta({ ...emptyMeta, current_page: page });
+        }
         setError(err?.message || 'No se pudieron cargar los desarrolladores.');
         setLoading(false);
       });
 
     return () => {
       active = false;
-      controller.abort();
     };
   }, [page, submittedQuery]);
 

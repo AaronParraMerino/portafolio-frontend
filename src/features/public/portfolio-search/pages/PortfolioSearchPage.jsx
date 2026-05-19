@@ -7,7 +7,13 @@ import PortfolioResultCard from '../components/PortfolioResultCard';
 import SearchEmptyState from '../components/SearchEmptyState';
 import SkillLevelTagInput from '../components/SkillLevelTagInput';
 import TagInput from '../components/TagInput';
-import { SEARCH_AUTH_REQUIRED_MESSAGE, getSearchCatalogs, searchPortfolios } from '../services/portfolioSearchService';
+import {
+  SEARCH_AUTH_REQUIRED_MESSAGE,
+  getCachedSearchCatalogs,
+  getCachedSearchResults,
+  getSearchCatalogs,
+  searchPortfolios,
+} from '../services/portfolioSearchService';
 import '../styles/portfolio-search.css';
 
 const BASE_FILTERS = {
@@ -64,35 +70,45 @@ const TYPE_LABELS = {
 
 const cloneFilters = (filters) => JSON.parse(JSON.stringify(filters));
 
+const emptyCatalogs = () => ({
+  profesiones: [],
+  habilidadesBlandas: [],
+  habilidadesTecnicas: [],
+  cargos: [],
+  tecnologias: [],
+  tiposProyecto: [],
+});
+
 const PortfolioSearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryFromUrl = searchParams.get('q') || '';
+  const cachedCatalogs = getCachedSearchCatalogs();
 
   const [filters, setFilters] = useState(() => ({
     ...cloneFilters(BASE_FILTERS),
     query: queryFromUrl,
   }));
-  const [catalogs, setCatalogs] = useState({
-    profesiones: [],
-    habilidadesBlandas: [],
-    habilidadesTecnicas: [],
-    cargos: [],
-    tecnologias: [],
-    tiposProyecto: [],
-  });
+  const [catalogs, setCatalogs] = useState(() => cachedCatalogs || emptyCatalogs());
   const [results, setResults] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0, per_page: 12 });
   const [loading, setLoading] = useState(false);
-  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(() => !cachedCatalogs);
   const [error, setError] = useState('');
   const [authRequired, setAuthRequired] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    setCatalogLoading(true);
+    const cached = getCachedSearchCatalogs();
 
-    getSearchCatalogs()
+    if (cached) {
+      setCatalogs(cached);
+      setCatalogLoading(false);
+    } else {
+      setCatalogLoading(true);
+    }
+
+    getSearchCatalogs({ force: false })
       .then((data) => {
         if (!mounted) return;
         setCatalogs(data);
@@ -103,15 +119,12 @@ const PortfolioSearchPage = () => {
         if (err.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
           setAuthRequired(true);
           setError(err.message);
+          setCatalogs(emptyCatalogs());
+          return;
         }
-        setCatalogs({
-          profesiones: [],
-          habilidadesBlandas: [],
-          habilidadesTecnicas: [],
-          cargos: [],
-          tecnologias: [],
-          tiposProyecto: [],
-        });
+        if (!cached) {
+          setCatalogs(emptyCatalogs());
+        }
       })
       .finally(() => {
         if (mounted) setCatalogLoading(false);
@@ -174,12 +187,21 @@ const PortfolioSearchPage = () => {
   };
 
   const executeSearch = async (page = 1, nextFilters = filters) => {
-    setLoading(true);
+    const cached = getCachedSearchResults(nextFilters, page);
+
+    if (cached) {
+      setResults(cached.items || []);
+      setMeta(cached.meta || { current_page: page, last_page: 1, total: cached.items?.length || 0, per_page: 12 });
+      setHasSearched(true);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError('');
     setAuthRequired(false);
 
     try {
-      const response = await searchPortfolios(nextFilters, page);
+      const response = await searchPortfolios(nextFilters, page, { force: false });
       setResults(response.items);
       setMeta(response.meta || { current_page: page, last_page: 1, total: response.items.length, per_page: 12 });
       setHasSearched(true);
@@ -192,7 +214,10 @@ const PortfolioSearchPage = () => {
       }
     } catch (err) {
       const message = err.message || 'No se pudo realizar la búsqueda.';
-      setResults([]);
+      if (!cached || message === SEARCH_AUTH_REQUIRED_MESSAGE) {
+        setResults([]);
+        setMeta({ current_page: page, last_page: 1, total: 0, per_page: 12 });
+      }
       setError(message);
       setHasSearched(true);
       if (message === SEARCH_AUTH_REQUIRED_MESSAGE) {

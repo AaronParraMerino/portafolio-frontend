@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getFeaturedPortfolios } from '../services/homePortfolioService';
+import {
+  getCachedFeaturedPortfolios,
+  getFeaturedPortfolios,
+} from '../services/homePortfolioService';
 
 const initialState = {
   ultimas_actualizaciones: [],
@@ -11,17 +14,28 @@ const initialState = {
 };
 
 export default function useFeaturedPortfolios(search = '') {
-  const [sections, setSections] = useState(initialState);
-  const [loading, setLoading] = useState(true);
+  const getInitialSections = () => ({
+    ...initialState,
+    ...(getCachedFeaturedPortfolios(search) || {}),
+  });
+
+  const [sections, setSections] = useState(getInitialSections);
+  const [loading, setLoading] = useState(() => !getCachedFeaturedPortfolios(search));
   const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
+    const cached = getCachedFeaturedPortfolios(search);
+
+    if (cached) {
+      setSections({ ...initialState, ...cached });
+      setLoading(false);
+    }
 
     async function loadPortfolios() {
       try {
-        setLoading(true);
-        const data = await getFeaturedPortfolios(search);
+        setLoading(!cached);
+        const data = await getFeaturedPortfolios(search, { force: false });
         if (mounted) {
           setSections({ ...initialState, ...data });
           setError('');

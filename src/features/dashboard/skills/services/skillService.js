@@ -1,4 +1,10 @@
 import BASE_URL from '../../../../services/http/const';
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
 
 const VALID_SKILL_TYPES = ['tecnica', 'blanda'];
 const VALID_LEVELS = ['basico', 'intermedio', 'avanzado', 'experto'];
@@ -133,6 +139,27 @@ const buildHeaders = (token) => ({
   Accept: 'application/json',
   Authorization: `Bearer ${token}`,
 });
+
+const catalogEndpoint = '/habilidades/catalogo';
+const userSkillsEndpoint = (userId) => `/habilidades/usuario/${userId}`;
+
+const unwrapList = (data) => (Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
+
+const getUserSkillId = (item = {}) => (
+  item.id_habilidad_usuario ??
+  item.id_usuario_habilidad ??
+  item.id
+);
+
+const readUserSkillsCache = (userId) => {
+  const data = readCachedDashboardEndpoint(userSkillsEndpoint(userId), { userId });
+  return unwrapList(data);
+};
+
+const writeUserSkillsCache = (userId, items = []) => {
+  writeCachedDashboardEndpoint(userSkillsEndpoint(userId), { data: items }, { userId });
+  invalidateDashboardDerivedCaches(userId);
+};
 
 const getFirstValidationError = (errors) => {
   if (!errors || typeof errors !== 'object') return '';
@@ -309,22 +336,33 @@ const mapUserSkillToFront = (item) => {
   };
 };
 
-export const getCatalogSkills = async () => {
-  const { token } = getAuthData();
+export const getCachedCatalogSkills = () => {
+  const { userId } = getAuthData();
+  return unwrapList(readCachedDashboardEndpoint(catalogEndpoint, { userId })).map(mapCatalogToFront);
+};
 
-  const res = await fetch(`${BASE_URL}/habilidades/catalogo`, {
-    method: 'GET',
-    headers: buildHeaders(token),
-  });
+export const getCatalogSkills = async ({ force = false } = {}) => {
+  const { token, userId } = getAuthData();
 
-  const data = await parseJson(res);
-  const lista = Array.isArray(data) ? data : (data.data || []);
+  const data = await getCachedDashboardEndpoint(
+    catalogEndpoint,
+    async () => {
+      const res = await fetch(`${BASE_URL}/habilidades/catalogo`, {
+        method: 'GET',
+        headers: buildHeaders(token),
+      });
+
+      return parseJson(res);
+    },
+    { force, userId },
+  );
+  const lista = unwrapList(data);
 
   return lista.map(mapCatalogToFront);
 };
 
 export const createCatalogSkill = async (nombre, tipo, descripcion = '') => {
-  const { token } = getAuthData();
+  const { token, userId } = getAuthData();
   const payload = validateCatalogSkillPayload(nombre, tipo, descripcion);
 
   const res = await fetch(`${BASE_URL}/habilidades/catalogo`, {
@@ -334,19 +372,34 @@ export const createCatalogSkill = async (nombre, tipo, descripcion = '') => {
   });
 
   const data = await parseJson(res);
-  return mapCatalogToFront(data.data || data);
+  const created = data.data || data;
+  const cached = unwrapList(readCachedDashboardEndpoint(catalogEndpoint, { userId }));
+  writeCachedDashboardEndpoint(catalogEndpoint, { data: [...cached, created] }, { userId });
+  return mapCatalogToFront(created);
 };
 
-export const getUserSkills = async () => {
+export const getCachedUserSkills = () => {
+  const { userId } = getAuthData();
+  return readUserSkillsCache(userId).map(mapUserSkillToFront);
+};
+
+export const getUserSkills = async ({ force = false } = {}) => {
   const { token, userId } = getAuthData();
+  const endpoint = userSkillsEndpoint(userId);
 
-  const res = await fetch(`${BASE_URL}/habilidades/usuario/${userId}`, {
-    method: 'GET',
-    headers: buildHeaders(token),
-  });
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    async () => {
+      const res = await fetch(`${BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: buildHeaders(token),
+      });
 
-  const data = await parseJson(res);
-  const lista = Array.isArray(data) ? data : (data.data || []);
+      return parseJson(res);
+    },
+    { force, userId },
+  );
+  const lista = unwrapList(data);
 
   return lista.map(mapUserSkillToFront);
 };
@@ -362,7 +415,9 @@ export const addUserSkill = async (catalogoId, nivel) => {
   });
 
   const data = await parseJson(res);
-  return mapUserSkillToFront(data.data || data);
+  const created = data.data || data;
+  writeUserSkillsCache(userId, [created, ...readUserSkillsCache(userId)]);
+  return mapUserSkillToFront(created);
 };
 
 export const updateUserSkill = async (id, nivel) => {
@@ -387,7 +442,14 @@ export const updateUserSkill = async (id, nivel) => {
   });
 
   const data = await parseJson(res);
-  return mapUserSkillToFront(data.data || data);
+  const updated = data.data || data;
+  writeUserSkillsCache(
+    userId,
+    readUserSkillsCache(userId).map((item) => (
+      String(getUserSkillId(item)) === String(skillId) ? updated : item
+    )),
+  );
+  return mapUserSkillToFront(updated);
 };
 
 export const deleteUserSkill = async (id) => {
@@ -403,5 +465,10 @@ export const deleteUserSkill = async (id) => {
     headers: buildHeaders(token),
   });
 
-  return parseJson(res);
+  const data = await parseJson(res);
+  writeUserSkillsCache(
+    userId,
+    readUserSkillsCache(userId).filter((item) => String(getUserSkillId(item)) !== String(skillId)),
+  );
+  return data;
 };

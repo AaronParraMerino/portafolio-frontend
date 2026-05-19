@@ -1,4 +1,5 @@
 import BASE_URL from '../../../services/http/const';
+import { getCachedDashboardEndpoint } from './dashboardCache';
 
 const SUMMARY_CACHE_PREFIX = 'dashboard-summary:v1';
 
@@ -82,22 +83,28 @@ function saveCachedDashboardSummary(userId, summary) {
   }
 }
 
-async function apiFetch(endpoint, token) {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
+async function apiFetch(endpoint, token, { userId, force = false } = {}) {
+  return getCachedDashboardEndpoint(
+    endpoint,
+    async () => {
+      const res = await fetch(`${BASE_URL}${endpoint}`, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const text = await res.text();
+      const data = text ? parseStoredJson(text, {}) : {};
+
+      if (!res.ok) {
+        throw new Error(data?.message || `Error ${res.status}`);
+      }
+
+      return data;
     },
-  });
-
-  const text = await res.text();
-  const data = text ? parseStoredJson(text, {}) : {};
-
-  if (!res.ok) {
-    throw new Error(data?.message || `Error ${res.status}`);
-  }
-
-  return data;
+    { force, userId },
+  );
 }
 
 function unwrapList(response) {
@@ -177,7 +184,7 @@ function buildRequirements({ profileComplete, counts }) {
   ];
 }
 
-export async function fetchDashboardSummary() {
+export async function fetchDashboardSummary({ force = false } = {}) {
   const { user, userId, token } = getSession();
 
   const [
@@ -187,11 +194,11 @@ export async function fetchDashboardSummary() {
     projectsResult,
     linksResult,
   ] = await Promise.allSettled([
-    apiFetch(`/profile/${userId}`, token),
-    apiFetch(`/habilidades/usuario/${userId}`, token),
-    apiFetch(`/experiencias/usuario/${userId}`, token),
-    apiFetch(`/projects/usuario/${userId}`, token),
-    apiFetch(`/enlaces/${userId}`, token),
+    apiFetch(`/profile/${userId}`, token, { userId, force }),
+    apiFetch(`/habilidades/usuario/${userId}`, token, { userId, force }),
+    apiFetch(`/experiencias/usuario/${userId}`, token, { userId, force }),
+    apiFetch(`/projects/usuario/${userId}`, token, { userId, force }),
+    apiFetch(`/enlaces/${userId}`, token, { userId, force }),
   ]);
 
   const profile = profileResult.status === 'fulfilled'

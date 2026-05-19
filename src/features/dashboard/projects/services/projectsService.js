@@ -14,6 +14,14 @@
 // participaciones, proyecto_evidencias/evidencias, tipos_proyecto, etc.
 // ═══════════════════════════════════════════
 
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  removeCachedDashboardEndpoint,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const TECNOLOGIAS_CACHE_KEY = 'projects_tecnologias_catalogo_cache_v1';
@@ -70,6 +78,46 @@ function getStoredUserId() {
     return user.id || user.id_usuario || user.idUsuario || 'anon';
   } catch {
     return 'anon';
+  }
+}
+
+function userProjectsEndpoint(userId) {
+  return `/projects/usuario/${userId}`;
+}
+
+function projectEndpoint(id) {
+  return `/projects/${id}`;
+}
+
+function unwrapProjectsPayload(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.proyectos)) return data.proyectos;
+  return [];
+}
+
+function getCachedProjectId(project = {}) {
+  return project.id_proyecto || project.id || project.idProyecto || null;
+}
+
+function readUserProjectsCache(userId) {
+  return unwrapProjectsPayload(readCachedDashboardEndpoint(userProjectsEndpoint(userId), { userId }));
+}
+
+function writeUserProjectsCache(userId, projects = [], { invalidate = true } = {}) {
+  writeCachedDashboardEndpoint(userProjectsEndpoint(userId), { data: projects }, { userId });
+  if (invalidate) {
+    invalidateDashboardDerivedCaches(userId);
+  }
+}
+
+function updateUserProjectsCache(updater) {
+  try {
+    const { userId } = getSession();
+    const current = readUserProjectsCache(userId);
+    writeUserProjectsCache(userId, updater(current));
+  } catch {
+    // Cache updates should never block the CRUD flow.
   }
 }
 
@@ -133,8 +181,14 @@ async function apiFetchFormData(url, formData, options = {}) {
 // GITHUB VINCULADO / REPOS DETECTADOS
 // ═══════════════════════════════════════════
 
-export async function isGithubLinked() {
-  const data = await apiFetch(`${API_URL}/auth/oauth/linked-providers`);
+export async function isGithubLinked({ force = false } = {}) {
+  const { userId } = getSession();
+  const endpoint = '/auth/oauth/linked-providers';
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force, userId },
+  );
 
   const providers = Array.isArray(data)
     ? data
@@ -147,16 +201,36 @@ export async function isGithubLinked() {
 }
 
 export async function getGithubDetectedRepos({ refresh = false } = {}) {
+  const { userId } = getSession();
   const qs = refresh ? '?refresh=true' : '';
-  const data = await apiFetch(`${API_URL}/auth/github/repos/detected${qs}`);
+  const endpoint = `/auth/github/repos/detected${qs}`;
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force: refresh, userId },
+  );
+
+  if (refresh) {
+    writeCachedDashboardEndpoint('/auth/github/repos/detected', data, { userId });
+  }
 
   return Array.isArray(data?.data) ? data.data : [];
 }
 
 export async function syncGithubRepos() {
-  return apiFetch(`${API_URL}/auth/github/repos/sync`, {
+  const result = await apiFetch(`${API_URL}/auth/github/repos/sync`, {
     method: 'POST',
   });
+
+  try {
+    const { userId } = getSession();
+    removeCachedDashboardEndpoint('/auth/github/repos/detected', { userId });
+    removeCachedDashboardEndpoint('/auth/github/repos/detected?refresh=true', { userId });
+  } catch {
+    // no-op
+  }
+
+  return result;
 }
 
 export async function getGithubConnectUrl() {
@@ -1337,24 +1411,39 @@ export function normalizeProyectoPayload(datos = {}) {
 // PROYECTOS
 // ═══════════════════════════════════════════
 
-export async function getProyectos() {
+export function getCachedProyectos() {
   const { userId } = getSession();
+  return readUserProjectsCache(userId).map(normalizeProyectoFromApi);
+}
 
-  const data = await apiFetch(`${API_URL}/projects/usuario/${userId}`);
+export function setCachedProyectos(proyectos = []) {
+  const { userId } = getSession();
+  writeUserProjectsCache(userId, proyectos, { invalidate: false });
+}
 
-  const lista = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.proyectos)
-        ? data.proyectos
-        : [];
+export async function getProyectos({ force = false } = {}) {
+  const { userId } = getSession();
+  const endpoint = userProjectsEndpoint(userId);
+
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force, userId },
+  );
+
+  const lista = unwrapProjectsPayload(data);
 
   return lista.map(normalizeProyectoFromApi);
 }
 
-export async function getProyecto(id) {
-  const data = await apiFetch(`${API_URL}/projects/${id}`);
+export async function getProyecto(id, { force = false } = {}) {
+  const { userId } = getSession();
+  const endpoint = projectEndpoint(id);
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`),
+    { force, userId },
+  );
 
   const project = data?.data || data?.proyecto || data;
 
@@ -1371,6 +1460,7 @@ export async function crearProyecto(datos) {
   });
 
   const project = data?.data || data?.proyecto || data;
+  updateUserProjectsCache((items) => [project, ...items]);
 
   return normalizeProyectoFromApi(project);
 }
@@ -1385,6 +1475,18 @@ export async function actualizarProyecto(id, datos) {
   });
 
   const project = data?.data || data?.proyecto || data;
+  updateUserProjectsCache((items) => {
+    const projectId = id || getCachedProjectId(project);
+    const updatedId = getCachedProjectId(project);
+
+    return items.map((item) => {
+      const itemId = getCachedProjectId(item);
+      return String(itemId) === String(projectId) || String(itemId) === String(updatedId)
+        ? project
+        : item;
+    });
+  });
+  removeCachedDashboardEndpoint(projectEndpoint(id));
 
   return normalizeProyectoFromApi(project);
 }
@@ -1401,19 +1503,38 @@ export async function actualizarProyectoConfiguracion(id, configuracion) {
     body: JSON.stringify(configuracion),
   });
 
-  return data?.data || data;
+  const result = data?.data || data;
+  updateUserProjectsCache((items) => items.map((item) => (
+    String(getCachedProjectId(item)) === String(id)
+      ? {
+        ...item,
+        configuracion: result.configuracion || configuracion,
+        permisos: result.permisos || item.permisos,
+      }
+      : item
+  )));
+
+  return result;
 }
 
 export async function eliminarProyecto(id) {
-  return apiFetch(`${API_URL}/projects/${id}`, {
+  const result = await apiFetch(`${API_URL}/projects/${id}`, {
     method: 'DELETE',
   });
+
+  updateUserProjectsCache((items) => items.filter((item) => String(getCachedProjectId(item)) !== String(id)));
+  removeCachedDashboardEndpoint(projectEndpoint(id));
+  return result;
 }
 
 export async function desvincularParticipacionProyecto(id) {
-  return apiFetch(`${API_URL}/projects/${id}/participation`, {
+  const result = await apiFetch(`${API_URL}/projects/${id}/participation`, {
     method: 'DELETE',
   });
+
+  updateUserProjectsCache((items) => items.filter((item) => String(getCachedProjectId(item)) !== String(id)));
+  removeCachedDashboardEndpoint(projectEndpoint(id));
+  return result;
 }
 
 export async function removerParticipanteSinValidacion(idProyecto, idParticipacion) {

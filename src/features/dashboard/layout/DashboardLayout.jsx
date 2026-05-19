@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { preloadDashboardData } from '../services/dashboardPrefetchService';
 import '../styles/dashboard.css';
 
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    preloadDashboardData();
+  }, []);
 
   return (
     <div className="dsh-layout">

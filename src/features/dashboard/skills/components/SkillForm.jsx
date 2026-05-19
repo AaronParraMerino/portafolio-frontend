@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getCatalogSkills } from "../services/skillService";
+import { getCatalogSkills, getCachedCatalogSkills } from "../services/skillService";
 import SkillCatalogModal from "./SkillCatalogModal";
 
 const normalizeSkillName = (value = "") =>
@@ -36,6 +36,14 @@ const buildDuplicateMessage = (duplicate, requestedTipo, typedName) => {
   return `La habilidad "${duplicateName}" ya está registrada como habilidad ${typeLabel(duplicateTipo)}. No puedes crearla como habilidad ${typeLabel(requestedTipo)}.`;
 };
 
+const getInitialCatalog = () => {
+  try {
+    return getCachedCatalogSkills();
+  } catch {
+    return [];
+  }
+};
+
 export default function SkillForm({ onSave, onCancel, editData, userSkills = [] }) {
   const [formData, setFormData] = useState({
     tipo: "",
@@ -44,7 +52,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
     nivel: "",
   });
 
-  const [catalog, setCatalog] = useState([]);
+  const [catalog, setCatalog] = useState(getInitialCatalog);
   const [suggestions, setSuggestions] = useState([]);
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

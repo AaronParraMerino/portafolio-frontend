@@ -15,6 +15,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   getProyectos,
+  getCachedProyectos,
+  setCachedProyectos,
   crearProyecto,
   actualizarProyecto,
   actualizarProyectoConfiguracion,
@@ -38,12 +40,20 @@ const USAR_MOCK = false;
 // Guard anti-doble-fetch
 let _cargaIniciada = false;
 
+function leerCacheServicio() {
+  try {
+    return getCachedProyectos();
+  } catch {
+    return [];
+  }
+}
+
 // ════════════════════════════════════════
 // Caché helpers
 // ════════════════════════════════════════
 function leerCache() {
   try {
-    const r = sessionStorage.getItem(CACHE_KEY);
+    const r = sessionStorage.getItem(cacheKey());
     return r ? JSON.parse(r) : null;
   } catch {
     return null;
@@ -52,12 +62,27 @@ function leerCache() {
 
 function escribirCache(d) {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(d));
+    sessionStorage.setItem(cacheKey(), JSON.stringify(d));
+  } catch {}
+
+  try {
+    setCachedProyectos(d?.proyectos || []);
   } catch {}
 }
 
 function limpiarCache() {
-  sessionStorage.removeItem(CACHE_KEY);
+  sessionStorage.removeItem(cacheKey());
+}
+
+function cacheKey() {
+  try {
+    const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+    const user = raw ? JSON.parse(raw) : {};
+    const userId = user.id_usuario || user.id || user.idUsuario || 'anon';
+    return `${CACHE_KEY}:${userId}`;
+  } catch {
+    return `${CACHE_KEY}:anon`;
+  }
 }
 
 // ════════════════════════════════════════
@@ -285,12 +310,13 @@ function generarBadge(datos) {
 // ════════════════════════════════════════
 export function useProjects() {
   const cache = leerCache();
+  const serviceCache = !USAR_MOCK ? leerCacheServicio() : [];
 
   const [proyectos, setProyectos] = useState(() =>
-    cache?.proyectos ?? (USAR_MOCK ? MOCK_PROYECTOS.map(mapearProyecto) : [])
+    cache?.proyectos ?? (serviceCache.length > 0 ? serviceCache.map(mapearProyecto) : (USAR_MOCK ? MOCK_PROYECTOS.map(mapearProyecto) : []))
   );
 
-  const [loading, setLoading] = useState(!cache);
+  const [loading, setLoading] = useState(!cache && serviceCache.length === 0);
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -315,7 +341,7 @@ export function useProjects() {
     if (_cargaIniciada) return;
     _cargaIniciada = true;
 
-    getProyectos()
+    getProyectos({ force: true })
       .then(data => {
         const mapeados = (data || []).map(mapearProyecto);
         setProyectos(mapeados);
@@ -675,7 +701,7 @@ export function useProjects() {
     setLoading(true);
 
     try {
-      const data = await getProyectos();
+      const data = await getProyectos({ force: true });
       const mapeados = (data || []).map(mapearProyecto);
 
       setProyectos(mapeados);

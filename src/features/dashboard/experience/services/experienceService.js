@@ -1,4 +1,10 @@
 import BASE_URL from '../../../../services/http/const';
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
 
 const getAuthData = () => {
   const token = localStorage.getItem('tokenPORT');
@@ -34,6 +40,22 @@ const toBoolean = (value) => {
 
 const normalizeDate = (value) => (value ? String(value).slice(0, 10) : '');
 
+const experienciasEndpoint = (userId) => `/experiencias/usuario/${userId}`;
+
+const unwrapList = (data) => (Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
+
+const getExperienceId = (item = {}) => item.id_experiencia ?? item.id;
+
+const readExperienciasCache = (userId) => {
+  const data = readCachedDashboardEndpoint(experienciasEndpoint(userId), { userId });
+  return unwrapList(data);
+};
+
+const writeExperienciasCache = (userId, items = []) => {
+  writeCachedDashboardEndpoint(experienciasEndpoint(userId), { data: items }, { userId });
+  invalidateDashboardDerivedCaches(userId);
+};
+
 // Traducción: Lo que viene de Laravel hacia React
 const toFrontModel = (exp) => ({
   id: exp.id_experiencia ?? exp.id,
@@ -63,14 +85,27 @@ const toBackModel = (formData) => {
   };
 };
 
-export const getExperiencias = async () => {
+export const getCachedExperiencias = () => {
+  const { userId } = getAuthData();
+  return readExperienciasCache(userId).map(toFrontModel);
+};
+
+export const getExperiencias = async ({ force = false } = {}) => {
   const { token, userId } = getAuthData();
-  const res = await fetch(`${BASE_URL}/experiencias/usuario/${userId}`, {
-    method: 'GET',
-    headers: buildHeaders(token),
-  });
-  const data = await parseJson(res);
-  const lista = Array.isArray(data) ? data : (data.data || []);
+  const endpoint = experienciasEndpoint(userId);
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    async () => {
+      const res = await fetch(`${BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: buildHeaders(token),
+      });
+
+      return parseJson(res);
+    },
+    { force, userId },
+  );
+  const lista = unwrapList(data);
   return lista.map(toFrontModel);
 };
 
@@ -82,7 +117,9 @@ export const createExperiencia = async (formData) => {
     body: JSON.stringify(toBackModel(formData)),
   });
   const data = await parseJson(res);
-  return toFrontModel(data.data || data);
+  const created = data.data || data;
+  writeExperienciasCache(userId, [created, ...readExperienciasCache(userId)]);
+  return toFrontModel(created);
 };
 
 export const updateExperiencia = async (id, formData) => {
@@ -93,7 +130,14 @@ export const updateExperiencia = async (id, formData) => {
     body: JSON.stringify(toBackModel(formData)),
   });
   const data = await parseJson(res);
-  return toFrontModel(data.data || data);
+  const updated = data.data || data;
+  writeExperienciasCache(
+    userId,
+    readExperienciasCache(userId).map((item) => (
+      String(getExperienceId(item)) === String(id) ? updated : item
+    )),
+  );
+  return toFrontModel(updated);
 };
 
 export const deleteExperiencia = async (id) => {
@@ -102,6 +146,11 @@ export const deleteExperiencia = async (id) => {
     method: 'DELETE',
     headers: buildHeaders(token),
   });
-  return parseJson(res);
+  const data = await parseJson(res);
+  writeExperienciasCache(
+    userId,
+    readExperienciasCache(userId).filter((item) => String(getExperienceId(item)) !== String(id)),
+  );
+  return data;
 };
 

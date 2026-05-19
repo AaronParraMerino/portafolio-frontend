@@ -26,7 +26,7 @@ export function useDashboardSummary(reloadKey = '') {
 
     try {
       if (!summaryRequest || force) {
-        summaryRequest = fetchDashboardSummary()
+        summaryRequest = fetchDashboardSummary({ force })
           .then((data) => {
             summaryCache = data;
             return data;
