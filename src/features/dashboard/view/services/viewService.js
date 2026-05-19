@@ -2,6 +2,11 @@ import BASE_URL from '../../../../services/http/const';
 import { DEFAULT_CONFIG, DEFAULT_VISIBILITY } from '../model/viewModel';
 import { getSkillProgress, normalizeSkillLevel } from '../../skills/model/skillLevel';
 import { normalizeProyectoFromApi } from '../../projects/services/projectsService';
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
 
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const CONFIG_STORAGE_PREFIX = 'portfolio-view-config';
@@ -145,7 +150,7 @@ async function safeJson(res) {
   }
 }
 
-async function apiFetch(endpoint, options = {}) {
+async function fetchEndpoint(endpoint, options = {}) {
   const { token } = getSession();
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
@@ -164,6 +169,21 @@ async function apiFetch(endpoint, options = {}) {
   }
 
   return data;
+}
+
+async function apiFetch(endpoint, options = {}) {
+  if (options.method && options.method !== 'GET') {
+    return fetchEndpoint(endpoint, options);
+  }
+
+  const { userId } = getSession();
+  const { force = false, ...fetchOptions } = options;
+
+  return getCachedDashboardEndpoint(
+    endpoint,
+    () => fetchEndpoint(endpoint, fetchOptions),
+    { force, userId },
+  );
 }
 
 function getApiErrorMessage(res, data) {
@@ -397,17 +417,22 @@ export function loadStoredConfig(userId = getSession().userId) {
   return readStoredConfig(userId).config;
 }
 
-export async function getConfig() {
+export async function getConfig({ force = false } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/portfolio/${userId}/config`);
+  return apiFetch(`/portfolio/${userId}/config`, { force });
 }
 
 export async function saveConfig(payload) {
   const { userId } = getSession();
-  return apiFetch(`/portfolio/${userId}/config`, {
+  const response = await apiFetch(`/portfolio/${userId}/config`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+
+  writeCachedDashboardEndpoint(`/portfolio/${userId}/config`, response, { userId });
+  invalidateDashboardDerivedCaches(userId);
+
+  return response;
 }
 
 export function clearStoredConfig() {
@@ -815,42 +840,42 @@ function buildRuntimeVisibility({ perfilRaw, redes, stats, habilidades, experien
   });
 }
 
-export async function getPerfil() {
+export async function getPerfil({ force = false } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/profile/${userId}`);
+  return apiFetch(`/profile/${userId}`, { force });
 }
 
-export async function getRedes() {
+export async function getRedes({ force = false } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/enlaces/${userId}`);
+  return apiFetch(`/enlaces/${userId}`, { force });
 }
 
-export async function getExperiencias() {
+export async function getExperiencias({ force = false } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/experiencias/usuario/${userId}`);
+  return apiFetch(`/experiencias/usuario/${userId}`, { force });
 }
 
-export async function getHabilidades() {
+export async function getHabilidades({ force = false } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/habilidades/usuario/${userId}`);
+  return apiFetch(`/habilidades/usuario/${userId}`, { force });
 }
 
-export async function getProyectosPublicos() {
+export async function getProyectosPublicos({ force = false } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/projects/usuario/${userId}`);
+  return apiFetch(`/projects/usuario/${userId}`, { force });
 }
 
-export async function getPortfolioViewData() {
+export async function getPortfolioViewData({ force = false } = {}) {
   const { userId } = getSession();
   const stored = readStoredConfig(userId);
   const storedConfig = stored.config;
   const entries = await Promise.allSettled([
-    getPerfil(),
-    getRedes(),
-    getExperiencias(),
-    getHabilidades(),
-    getProyectosPublicos(),
-    getConfig(),
+    getPerfil({ force }),
+    getRedes({ force }),
+    getExperiencias({ force }),
+    getHabilidades({ force }),
+    getProyectosPublicos({ force }),
+    getConfig({ force }),
   ]);
 
   const [perfilResult, redesResult, experienciasResult, habilidadesResult, proyectosResult, configResult] = entries;
@@ -932,6 +957,7 @@ export async function publicarPortafolio(publicado = true) {
   });
 
   clearPortfolioCaches(userId);
+  invalidateDashboardDerivedCaches(userId);
 
   return response;
 }

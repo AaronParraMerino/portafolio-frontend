@@ -5,6 +5,7 @@ import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import Header from "../../layout/Header";
 import {
   getExperiencias,
+  getCachedExperiencias,
   createExperiencia,
   updateExperiencia,
   deleteExperiencia,
@@ -19,12 +20,20 @@ const formatearFechaCompleta = (fechaStr) => {
   return `${day}/${month}/${year}`;
 };
 
+const getInitialExperiencias = () => {
+  try {
+    return getCachedExperiencias();
+  } catch {
+    return [];
+  }
+};
+
 export default function ExperiencePage() {
-  const [experiencias, setExperiencias] = useState([]);
+  const [experiencias, setExperiencias] = useState(getInitialExperiencias);
   const [modalMode, setModalMode] = useState(null);
   const [selectedExp, setSelectedExp] = useState(null);
   const [toast, setToast] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => getInitialExperiencias().length === 0);
 
   const [confirmData, setConfirmData] = useState({
     isOpen: false,
@@ -51,9 +60,11 @@ export default function ExperiencePage() {
     setConfirmData((prev) => ({ ...prev, isOpen: false }));
 
   const loadExperiencias = useCallback(async () => {
+    const hasCache = getInitialExperiencias().length > 0;
+
     try {
-      setLoading(true);
-      const data = await getExperiencias();
+      setLoading(!hasCache);
+      const data = await getExperiencias({ force: true });
       setExperiencias(data);
     } catch (error) {
       showToast(error.message || "Error al conectar con el servidor", "error");

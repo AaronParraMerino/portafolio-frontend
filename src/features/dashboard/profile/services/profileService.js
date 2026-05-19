@@ -1,6 +1,13 @@
 // ═══════════════════════════════════════════
 // PROFILE SERVICE — optimizado
 // ═══════════════════════════════════════════
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 // ── Helper: obtener usuario y token ──
@@ -16,6 +23,30 @@ function getSessionUser() {
   if (!token) throw new Error("No se encontró el token");
 
   return { userId, token };
+}
+
+function profileEndpoint(userId) {
+  return `/profile/${userId}`;
+}
+
+function updateProfileEndpointCache(userId, patch, { invalidate = true } = {}) {
+  const endpoint = profileEndpoint(userId);
+  const current = readCachedDashboardEndpoint(endpoint, { userId }) || {};
+  const payload = patch?.data && typeof patch.data === 'object' ? patch.data : patch;
+
+  writeCachedDashboardEndpoint(endpoint, {
+    ...current,
+    ...(payload || {}),
+  }, { userId });
+
+  if (invalidate) {
+    invalidateDashboardDerivedCaches(userId);
+  }
+}
+
+export function setCachedProfile(perfil) {
+  const { userId } = getSessionUser();
+  updateProfileEndpointCache(userId, perfil, { invalidate: false });
 }
 
 // ── Helper: parsear respuesta de forma segura ──
@@ -64,31 +95,50 @@ async function apiFetch(url, options = {}) {
 }
 
 // ── GET perfil ──
-export async function getProfile() {
+export async function getProfile({ force = false } = {}) {
   const { userId } = getSessionUser();
-  return apiFetch(`${API_URL}/profile/${userId}`, {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const endpoint = profileEndpoint(userId);
+
+  return getCachedDashboardEndpoint(
+    endpoint,
+    () => apiFetch(`${API_URL}${endpoint}`, {
+      headers: { 'Content-Type': 'application/json' },
+    }),
+    { force, userId },
+  );
 }
 
 // ── PUT actualizar datos personales ──
 export async function updateProfile(datos) {
   const { userId } = getSessionUser();
-  return apiFetch(`${API_URL}/profile/${userId}`, {
+  const data = await apiFetch(`${API_URL}/profile/${userId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(datos),
   });
+
+  updateProfileEndpointCache(userId, data);
+  return data;
 }
 
 // ── PATCH actualizar visibilidad ──
 export async function updateVisibility(data) {
   const { userId } = getSessionUser();
-  return apiFetch(`${API_URL}/profile/${userId}/visibility`, {
+  const result = await apiFetch(`${API_URL}/profile/${userId}/visibility`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
+
+  updateProfileEndpointCache(userId, {
+    ...(result?.data && typeof result.data === 'object' ? result.data : result),
+    visibilidad: {
+      ...(readCachedDashboardEndpoint(profileEndpoint(userId), { userId })?.visibilidad || {}),
+      ...data,
+    },
+  });
+
+  return result;
 }
 
 // ── POST subir imagen ──
@@ -119,6 +169,7 @@ export async function uploadImage(tipoOriginal, archivo, method = 'update') {
 
   const resultado = await safeJson(res);
   console.log('[uploadImage] Respuesta:', resultado);
+  updateProfileEndpointCache(userId, resultado);
   return resultado;
 }
 
@@ -140,5 +191,14 @@ export async function deleteImage(tipoOriginal) {
     throw new Error(err.message || `Error al eliminar imagen (${res.status})`);
   }
 
-  return safeJson(res);
+  const data = await safeJson(res);
+
+  updateProfileEndpointCache(userId, {
+    ...(tipoOriginal === 'avatar'
+      ? { foto_perfil: null }
+      : { foto_fondo: null }
+    ),
+  });
+
+  return data;
 }

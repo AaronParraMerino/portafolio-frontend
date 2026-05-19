@@ -1,3 +1,10 @@
+import {
+  getCachedDashboardEndpoint,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  writeCachedDashboardEndpoint,
+} from '../../services/dashboardCache';
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 /**
@@ -49,6 +56,22 @@ const fetchConfig = (method, body = null) => {
   return config;
 };
 
+const enlacesEndpoint = (userId) => `/enlaces/${userId}`;
+
+const unwrapList = (data) => (Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
+
+const getEnlaceId = (item = {}) => item.id_enlace ?? item.id;
+
+const readEnlacesCache = (userId) => {
+  const data = readCachedDashboardEndpoint(enlacesEndpoint(userId), { userId });
+  return unwrapList(data);
+};
+
+const writeEnlacesCache = (userId, items = []) => {
+  writeCachedDashboardEndpoint(enlacesEndpoint(userId), { data: items }, { userId });
+  invalidateDashboardDerivedCaches(userId);
+};
+
 /**
  * Maneja la respuesta del servidor y errores de autenticación.
  */
@@ -85,11 +108,23 @@ export const normalize = (item) => ({
 // --- FUNCIONES EXPORTADAS ---
 
 // GET api/enlaces/{userId}
-export const fetchEnlaces = async () => {
+export const getCachedEnlaces = () => {
   const userId = getUserId();
-  const res = await fetch(`${API_URL}/enlaces/${userId}`, fetchConfig('GET'));
-  const data = await parseJson(res);
-  const lista = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+  return readEnlacesCache(userId).map(normalize);
+};
+
+export const fetchEnlaces = async ({ force = false } = {}) => {
+  const userId = getUserId();
+  const endpoint = enlacesEndpoint(userId);
+  const data = await getCachedDashboardEndpoint(
+    endpoint,
+    async () => {
+      const res = await fetch(`${API_URL}${endpoint}`, fetchConfig('GET'));
+      return parseJson(res);
+    },
+    { force, userId },
+  );
+  const lista = unwrapList(data);
   return lista.map(normalize);
 };
 
@@ -104,7 +139,9 @@ export const postEnlace = async (datos) => {
   };
   const res = await fetch(`${API_URL}/enlaces/${userId}`, fetchConfig('POST', body));
   const data = await parseJson(res);
-  return normalize(data.data ?? data);
+  const created = data.data ?? data;
+  writeEnlacesCache(userId, [...readEnlacesCache(userId), created]);
+  return normalize(created);
 };
 
 // PUT api/enlaces/{userId}/{idEnlace}
@@ -116,7 +153,14 @@ export const putEnlace = async (idEnlace, datos) => {
   };
   const res = await fetch(`${API_URL}/enlaces/${userId}/${idEnlace}`, fetchConfig('PUT', body));
   const data = await parseJson(res);
-  return normalize(data.data ?? data);
+  const updated = data.data ?? data;
+  writeEnlacesCache(
+    userId,
+    readEnlacesCache(userId).map((item) => (
+      String(getEnlaceId(item)) === String(idEnlace) ? updated : item
+    )),
+  );
+  return normalize(updated);
 };
 
 // PATCH api/enlaces/{userId}/{idEnlace}/visibility
@@ -125,12 +169,26 @@ export const patchVisibility = async (idEnlace, es_visible) => {
   const body = { es_visible: Boolean(es_visible) };
   const res = await fetch(`${API_URL}/enlaces/${userId}/${idEnlace}/visibility`, fetchConfig('PATCH', body));
   const data = await parseJson(res);
-  return normalize(data.data ?? data);
+  const updated = data.data ?? data;
+  writeEnlacesCache(
+    userId,
+    readEnlacesCache(userId).map((item) => (
+      String(getEnlaceId(item)) === String(idEnlace)
+        ? { ...item, ...updated, es_visible }
+        : item
+    )),
+  );
+  return normalize(updated);
 };
 
 // DELETE api/enlaces/{userId}/{idEnlace}
 export const removeEnlace = async (idEnlace) => {
   const userId = getUserId();
   const res = await fetch(`${API_URL}/enlaces/${userId}/${idEnlace}`, fetchConfig('DELETE'));
-  return parseJson(res);
+  const data = await parseJson(res);
+  writeEnlacesCache(
+    userId,
+    readEnlacesCache(userId).filter((item) => String(getEnlaceId(item)) !== String(idEnlace)),
+  );
+  return data;
 };

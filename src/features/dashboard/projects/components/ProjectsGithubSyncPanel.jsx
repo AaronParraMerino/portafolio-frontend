@@ -12,6 +12,20 @@ import '../styles/projects.css';
 
 const MAX_REPOSITORIOS_GITHUB = 3;
 const EMPTY_SELECTED_REPOS = [];
+const PROVIDER_META = {
+  github: {
+    name: 'GitHub',
+    reposLabel: 'repositorios GitHub',
+    privateHint: 'Repos privados: vincula GitHub para sincronizarlos. Repos publicos: tambien puedes pegarlos directo al crear o editar.',
+    connectLabel: 'Vincular GitHub',
+  },
+  gitlab: {
+    name: 'GitLab',
+    reposLabel: 'repositorios GitLab',
+    privateHint: 'Repos privados: vincula GitLab para sincronizarlos. Repos publicos: tambien puedes pegarlos directo al crear o editar.',
+    connectLabel: 'Vincular GitLab',
+  },
+};
 
 function normalizarGithubUrl(url = '') {
   return String(url || '').trim().replace(/\/+$/, '').toLowerCase();
@@ -51,6 +65,7 @@ function getRepoSelection(repo = {}) {
     url,
     nombre: getRepoTitle(repo),
     isPrivate: Boolean(repo?.repo_github?.is_private),
+    provider: repo?.proveedor || 'github',
   };
 }
 
@@ -132,13 +147,18 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
 
 export default function ProjectsGithubSyncPanel({
   expandSignal = 0,
+  provider = 'github',
   initialSelectedRepos = EMPTY_SELECTED_REPOS,
   actionLabel = 'Agregar proyecto con repos',
   connectInNewTab = false,
+  selectedRepos: controlledSelectedRepos = null,
+  showCreateButton = true,
   onAgregarConRepos,
   onSelectRepos,
+  onSelectionChange,
   onReposChanged,
 }) {
+  const providerMeta = PROVIDER_META[provider] || PROVIDER_META.github;
   const panelRef = useRef(null);
   const normalizedInitialSelectedRepos = useMemo(
     () => normalizeInitialSelectedRepos(initialSelectedRepos),
@@ -158,22 +178,42 @@ export default function ProjectsGithubSyncPanel({
   const [joinLoading, setJoinLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const effectiveSelectedRepos = Array.isArray(controlledSelectedRepos)
+    ? controlledSelectedRepos
+    : selectedRepos;
+
+  const updateSelectedRepos = useCallback((updater) => {
+    const base = effectiveSelectedRepos;
+    const next = typeof updater === 'function' ? updater(base) : updater;
+
+    if (Array.isArray(controlledSelectedRepos)) {
+      if (typeof onSelectionChange === 'function') {
+        onSelectionChange(next);
+      }
+      return;
+    }
+
+    setSelectedRepos(next);
+    if (typeof onSelectionChange === 'function') {
+      onSelectionChange(next);
+    }
+  }, [controlledSelectedRepos, effectiveSelectedRepos, onSelectionChange]);
 
   const loadDetectedRepos = useCallback(async (refresh = false) => {
     try {
       setLoadingRepos(true);
       setError('');
-      const repos = await getGithubDetectedRepos({ refresh });
+      const repos = await getGithubDetectedRepos({ refresh, provider });
       const normalized = Array.isArray(repos) ? repos : [];
       setDetectedRepos(normalized);
       return normalized;
     } catch (e) {
-      setError(e.message || 'No se pudieron cargar los repositorios detectados.');
+      setError(e.message || `No se pudieron cargar los repositorios detectados de ${providerMeta.name}.`);
       return [];
     } finally {
       setLoadingRepos(false);
     }
-  }, []);
+  }, [provider, providerMeta.name]);
 
   useEffect(() => {
     let mounted = true;
@@ -181,13 +221,10 @@ export default function ProjectsGithubSyncPanel({
     const boot = async () => {
       try {
         setCheckingLinked(true);
-        const linked = await isGithubLinked();
+        const linked = await isGithubLinked({ provider });
         if (!mounted) return;
 
         setGithubLinked(linked);
-        if (linked) {
-          await loadDetectedRepos(false);
-        }
       } catch {
         if (mounted) setGithubLinked(false);
       } finally {
@@ -200,7 +237,15 @@ export default function ProjectsGithubSyncPanel({
     return () => {
       mounted = false;
     };
-  }, [loadDetectedRepos]);
+  }, [provider, providerMeta.name]);
+
+  useEffect(() => {
+    if (!githubLinked || !mostrarRepos || loadingRepos || detectedRepos.length > 0) {
+      return;
+    }
+
+    loadDetectedRepos(false);
+  }, [detectedRepos.length, githubLinked, loadDetectedRepos, loadingRepos, mostrarRepos]);
 
   useEffect(() => {
     if (!expandSignal) return;
@@ -213,8 +258,8 @@ export default function ProjectsGithubSyncPanel({
   }, [normalizedInitialSelectedRepos]);
 
   const selectedByUrl = useMemo(() => new Set(
-    selectedRepos.map((repo) => normalizarGithubUrl(repo.url))
-  ), [selectedRepos]);
+    effectiveSelectedRepos.map((repo) => normalizarGithubUrl(repo.url))
+  ), [effectiveSelectedRepos]);
 
   const reposFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -242,43 +287,43 @@ export default function ProjectsGithubSyncPanel({
       setSyncingRepos(true);
       setError('');
       setNotice('');
-      await syncGithubRepos();
+      const result = await syncGithubRepos({ provider });
       await loadDetectedRepos(false);
       setMostrarRepos(true);
-      setNotice('Repositorios sincronizados con GitHub.');
+      setNotice(formatGithubSyncNotice(result?.stats, providerMeta.name));
     } catch (e) {
-      setError(e.message || 'No se pudo sincronizar con GitHub.');
+      setError(e.message || `No se pudo sincronizar con ${providerMeta.name}.`);
     } finally {
       setSyncingRepos(false);
     }
-  }, [loadDetectedRepos]);
+  }, [loadDetectedRepos, provider, providerMeta.name]);
 
   const handleConnectGithub = useCallback(async () => {
     try {
       setConnectingGithub(true);
       setError('');
-      const url = await getGithubConnectUrl();
-      if (!url) throw new Error('No se pudo iniciar la vinculacion con GitHub.');
+      const url = await getGithubConnectUrl({ provider });
+      if (!url) throw new Error(`No se pudo iniciar la vinculacion con ${providerMeta.name}.`);
 
       if (connectInNewTab) {
         window.open(url, '_blank', 'noopener,noreferrer');
-        setNotice('Completa la vinculacion en la nueva pestana y luego vuelve para sincronizar.');
+        setNotice(`Completa la vinculacion de ${providerMeta.name} en la nueva pestana y luego vuelve para sincronizar.`);
         setConnectingGithub(false);
         return;
       }
 
       window.location.assign(url);
     } catch (e) {
-      setError(e.message || 'No se pudo iniciar la vinculacion con GitHub.');
+      setError(e.message || `No se pudo iniciar la vinculacion con ${providerMeta.name}.`);
       setConnectingGithub(false);
     }
-  }, [connectInNewTab]);
+  }, [connectInNewTab, provider, providerMeta.name]);
 
   const toggleSelectedRepo = useCallback((repo) => {
     const item = getRepoSelection(repo);
     if (!item.url) return;
 
-    setSelectedRepos((prev) => {
+    updateSelectedRepos((prev) => {
       const key = normalizarGithubUrl(item.url);
       const exists = prev.some((current) => normalizarGithubUrl(current.url) === key);
 
@@ -289,22 +334,22 @@ export default function ProjectsGithubSyncPanel({
       if (prev.length >= MAX_REPOSITORIOS_GITHUB) return prev;
       return [...prev, item];
     });
-  }, []);
+  }, [updateSelectedRepos]);
 
   const removeSelectedRepo = useCallback((url) => {
     const key = normalizarGithubUrl(url);
-    setSelectedRepos((prev) => prev.filter((repo) => normalizarGithubUrl(repo.url) !== key));
-  }, []);
+    updateSelectedRepos((prev) => prev.filter((repo) => normalizarGithubUrl(repo.url) !== key));
+  }, [updateSelectedRepos]);
 
   const handleAgregarProyecto = useCallback(async () => {
-    if (selectedRepos.length === 0 || preparingProject) return;
+    if (effectiveSelectedRepos.length === 0 || preparingProject) return;
 
     const selection = {
-      repositorios: selectedRepos.map((repo) => repo.url),
-      detected_repo_ids: selectedRepos
+      repositorios: effectiveSelectedRepos.map((repo) => repo.url),
+      detected_repo_ids: effectiveSelectedRepos
         .map((repo) => Number(repo.id))
         .filter((id) => Number.isInteger(id) && id > 0),
-      detected_repos: selectedRepos,
+      detected_repos: effectiveSelectedRepos,
     };
 
     try {
@@ -312,7 +357,7 @@ export default function ProjectsGithubSyncPanel({
       setError('');
 
       const languageGroups = await Promise.all(
-        selection.repositorios.map((url) => getGithubRepoLanguages(url).catch(() => []))
+        selection.repositorios.map((url) => getGithubRepoLanguages(url, { provider }).catch(() => []))
       );
       const languages = [...new Set(languageGroups.flat().map(lang => String(lang || '').trim()).filter(Boolean))];
       const tecnologias = languages.length > 0
@@ -339,7 +384,7 @@ export default function ProjectsGithubSyncPanel({
     if (typeof onAgregarConRepos === 'function') {
       onAgregarConRepos(selection);
     }
-  }, [onAgregarConRepos, onSelectRepos, preparingProject, selectedRepos]);
+  }, [effectiveSelectedRepos, onAgregarConRepos, onSelectRepos, preparingProject, provider]);
 
   const handleJoinRepo = useCallback(async (participacionData) => {
     if (!joiningRepo) return;
@@ -352,6 +397,7 @@ export default function ProjectsGithubSyncPanel({
         joiningRepo.id_proyecto,
         [joiningRepo.id_proyecto_repositorio],
         participacionData,
+        { provider },
       );
 
       setJoiningRepo(null);
@@ -365,16 +411,16 @@ export default function ProjectsGithubSyncPanel({
     } finally {
       setJoinLoading(false);
     }
-  }, [joiningRepo, loadDetectedRepos, onReposChanged]);
+  }, [joiningRepo, loadDetectedRepos, onReposChanged, provider]);
 
   return (
     <div ref={panelRef} className="prj-github-panel">
       <div className="prj-detected-repos-box prj-github-sync-box">
         <div className="prj-detected-repos-head">
           <div>
-            <span>Sincronizacion de repositorios GitHub</span>
+            <span>Sincronizacion de {providerMeta.reposLabel}</span>
             <div className="prj-field-hint prj-github-private-hint">
-              Repos privados: vincula GitHub para sincronizarlos. Repos publicos: tambien puedes pegarlos directo al crear o editar.
+              {providerMeta.privateHint}
             </div>
           </div>
 
@@ -406,7 +452,7 @@ export default function ProjectsGithubSyncPanel({
                 onClick={handleConnectGithub}
                 disabled={checkingLinked || connectingGithub}
               >
-                {connectingGithub ? 'Conectando...' : 'Vincular GitHub'}
+                {connectingGithub ? 'Conectando...' : providerMeta.connectLabel}
               </button>
             )}
           </div>
@@ -425,12 +471,12 @@ export default function ProjectsGithubSyncPanel({
           <>
             <div className="prj-github-selected-strip">
               <div className="prj-detected-muted">
-                Seleccionados {selectedRepos.length}/{MAX_REPOSITORIOS_GITHUB}
+                Seleccionados {effectiveSelectedRepos.length}/{MAX_REPOSITORIOS_GITHUB}
               </div>
 
-              {selectedRepos.length > 0 && (
+              {effectiveSelectedRepos.length > 0 && (
                 <div className="prj-github-selected-list">
-                  {selectedRepos.map((repo) => (
+                  {effectiveSelectedRepos.map((repo) => (
                     <button
                       key={repo.url}
                       type="button"
@@ -445,17 +491,19 @@ export default function ProjectsGithubSyncPanel({
                 </div>
               )}
 
-              <button
-                type="button"
-                className="prj-btn-add prj-github-create-btn"
-                onClick={handleAgregarProyecto}
-                disabled={selectedRepos.length === 0 || preparingProject}
-              >
-                <svg viewBox="0 0 12 12">
-                  <path d="M6 1v10M1 6h10" />
-                </svg>
-                <span>{preparingProject ? 'Detectando tecnologias...' : actionLabel}</span>
-              </button>
+              {showCreateButton && (
+                <button
+                  type="button"
+                  className="prj-btn-add prj-github-create-btn"
+                  onClick={handleAgregarProyecto}
+                  disabled={effectiveSelectedRepos.length === 0 || preparingProject}
+                >
+                  <svg viewBox="0 0 12 12">
+                    <path d="M6 1v10M1 6h10" />
+                  </svg>
+                  <span>{preparingProject ? 'Detectando tecnologias...' : actionLabel}</span>
+                </button>
+              )}
             </div>
 
             {mostrarRepos && (
@@ -497,7 +545,7 @@ export default function ProjectsGithubSyncPanel({
                       const url = repo?.url_repositorio || '';
                       const enUso = repo?.estado_vinculacion === 'en_uso';
                       const selected = selectedByUrl.has(normalizarGithubUrl(url));
-                      const limitReached = selectedRepos.length >= MAX_REPOSITORIOS_GITHUB && !selected;
+                      const limitReached = effectiveSelectedRepos.length >= MAX_REPOSITORIOS_GITHUB && !selected;
 
                       return (
                         <div
@@ -567,4 +615,27 @@ export default function ProjectsGithubSyncPanel({
       )}
     </div>
   );
+}
+
+function formatGithubSyncNotice(stats = {}, providerName = 'GitHub') {
+  const creados = Number(stats?.creados ?? 0);
+  const actualizados = Number(stats?.actualizados ?? 0);
+  const detalles = Number(stats?.detalles_actualizados ?? 0);
+  const pendientes = Number(stats?.detalles_omitidos_por_limite ?? 0);
+
+  const parts = [
+    `Repositorios sincronizados con ${providerName}.`,
+    `Nuevos: ${Number.isFinite(creados) ? creados : 0}.`,
+    `Actualizados: ${Number.isFinite(actualizados) ? actualizados : 0}.`,
+  ];
+
+  if (Number.isFinite(detalles) && detalles > 0) {
+    parts.push(`Detalles completados: ${detalles}.`);
+  }
+
+  if (Number.isFinite(pendientes) && pendientes > 0) {
+    parts.push(`Detalles pendientes por limite: ${pendientes}.`);
+  }
+
+  return parts.join(' ');
 }

@@ -2,6 +2,12 @@ import BASE_URL from '../../../../services/http/const';
 import { normalizeProyectoParticipantes } from '../../../dashboard/projects/services/projectsService';
 import { DEFAULT_VISIBILITY } from '../../../dashboard/view/model/viewModel';
 import {
+  publicCacheKey,
+  readPublicCache,
+  removePublicCache,
+  withPublicCache,
+} from '../../services/publicCache';
+import {
   buildStats,
   mapConfigFromBackend,
   mapExperienciasFromBackend,
@@ -13,7 +19,7 @@ import {
   separarHabilidades,
 } from '../../../dashboard/view/services/viewService';
 
-const PUBLIC_CACHE_PREFIX = 'public-portfolio-view:v3';
+const PUBLIC_PORTFOLIO_TTL_MS = 3 * 60 * 1000;
 
 function cleanString(value = '') {
   return String(value || '').trim();
@@ -155,48 +161,20 @@ function mapPublicProyectosFromBackend(response) {
   });
 }
 
-function parseJsonStorage(value, fallback) {
-  if (!value) return fallback;
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
-
 function cacheKey(userId) {
-  return `${PUBLIC_CACHE_PREFIX}:${userId}`;
+  return publicCacheKey('portfolio:view', String(userId || '').trim());
 }
 
 export function loadCachedPublicPortfolio(userId) {
   if (!userId) return null;
 
-  const cached = parseJsonStorage(sessionStorage.getItem(cacheKey(userId)), null);
-  return cached?.data || null;
-}
-
-function saveCachedPublicPortfolio(userId, data) {
-  if (!userId) return;
-
-  try {
-    sessionStorage.setItem(cacheKey(userId), JSON.stringify({
-      cachedAt: Date.now(),
-      data,
-    }));
-  } catch {
-    // La cache solo acelera la segunda entrada; no debe bloquear la vista.
-  }
+  return readPublicCache(cacheKey(userId), { ttlMs: PUBLIC_PORTFOLIO_TTL_MS }) || null;
 }
 
 export function clearCachedPublicPortfolio(userId) {
   if (!userId) return;
 
-  try {
-    sessionStorage.removeItem(cacheKey(userId));
-  } catch {
-    // Cache cleanup should not block the public view.
-  }
+  removePublicCache(cacheKey(userId));
 }
 
 async function safeJson(res) {
@@ -348,15 +326,17 @@ function normalizePublicPortfolio(raw = {}) {
   };
 }
 
-export async function getPublicPortfolio(userId) {
+export async function getPublicPortfolio(userId, { force = false } = {}) {
   if (!userId) {
     throw new Error('No se encontro el portafolio solicitado.');
   }
 
-  const payload = await publicFetch(`/portfolio/${encodeURIComponent(userId)}/public`);
-  const data = normalizePublicPortfolio(payload);
-
-  saveCachedPublicPortfolio(userId, data);
-
-  return data;
+  return withPublicCache(
+    cacheKey(userId),
+    async () => {
+      const payload = await publicFetch(`/portfolio/${encodeURIComponent(userId)}/public`);
+      return normalizePublicPortfolio(payload);
+    },
+    { force, ttlMs: PUBLIC_PORTFOLIO_TTL_MS },
+  );
 }

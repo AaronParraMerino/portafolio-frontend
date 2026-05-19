@@ -15,6 +15,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   getProyectos,
+  getCachedProyectos,
+  setCachedProyectos,
   crearProyecto,
   actualizarProyecto,
   actualizarProyectoConfiguracion,
@@ -33,12 +35,20 @@ const CACHE_KEY = 'projects_cache';
 // Guard anti-doble-fetch
 let _cargaIniciada = false;
 
+function leerCacheServicio() {
+  try {
+    return getCachedProyectos();
+  } catch {
+    return [];
+  }
+}
+
 // ════════════════════════════════════════
 // Caché helpers
 // ════════════════════════════════════════
 function leerCache() {
   try {
-    const r = sessionStorage.getItem(CACHE_KEY);
+    const r = sessionStorage.getItem(cacheKey());
     return r ? JSON.parse(r) : null;
   } catch {
     return null;
@@ -47,12 +57,52 @@ function leerCache() {
 
 function escribirCache(d) {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(d));
+    sessionStorage.setItem(cacheKey(), JSON.stringify(d));
+  } catch {}
+
+  try {
+    setCachedProyectos(d?.proyectos || []);
   } catch {}
 }
 
 function limpiarCache() {
-  sessionStorage.removeItem(CACHE_KEY);
+  sessionStorage.removeItem(cacheKey());
+}
+
+function cacheKey() {
+  try {
+    const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+    const user = raw ? JSON.parse(raw) : {};
+    const userId = user.id_usuario || user.id || user.idUsuario || 'anon';
+    return `${CACHE_KEY}:${userId}`;
+  } catch {
+    return `${CACHE_KEY}:anon`;
+  }
+}
+
+async function attachDetectedReposByProvider(proyectoId, datos = {}) {
+  if (Array.isArray(datos?.detected_repos) && datos.detected_repos.length > 0) {
+    const reposByProvider = datos.detected_repos.reduce((acc, repo) => {
+      const provider = repo?.provider || 'github';
+      const id = Number(repo?.id || repo?.id_proyecto_repositorio);
+      if (!Number.isInteger(id) || id <= 0) return acc;
+      acc[provider] = [...(acc[provider] || []), id];
+      return acc;
+    }, {});
+
+    for (const [provider, ids] of Object.entries(reposByProvider)) {
+      await attachDetectedReposToProject(proyectoId, ids, datos.detected_participacion ?? {}, { provider }).catch(err =>
+        console.warn(`[useProjects] Error vinculando repos detectados ${provider}:`, err.message)
+      );
+    }
+    return;
+  }
+
+  if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
+    await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
+      console.warn('[useProjects] Error vinculando repos detectados:', err.message)
+    );
+  }
 }
 
 // ════════════════════════════════════════
@@ -260,12 +310,13 @@ function normalizarResultadoDocumentos(resultado) {
 // ════════════════════════════════════════
 export function useProjects() {
   const cache = leerCache();
+  const serviceCache = leerCacheServicio();
 
   const [proyectos, setProyectos] = useState(() =>
-    cache?.proyectos ?? []
+    cache?.proyectos ?? (serviceCache.length > 0 ? serviceCache.map(mapearProyecto) : [])
   );
 
-  const [loading, setLoading] = useState(!cache);
+  const [loading, setLoading] = useState(!cache && serviceCache.length === 0);
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -285,7 +336,7 @@ export function useProjects() {
     if (_cargaIniciada) return;
     _cargaIniciada = true;
 
-    getProyectos()
+    getProyectos({ force: true })
       .then(data => {
         const mapeados = (data || []).map(mapearProyecto);
         setProyectos(mapeados);
@@ -350,11 +401,7 @@ export function useProjects() {
       }
 
       // 4. Vincular repos detectados (cuenta GitHub vinculada) a proyecto/participación.
-      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
-        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
-          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
-        );
-      }
+      await attachDetectedReposByProvider(proyectoId, datos);
 
       const actualizados = [mapeado, ...proyectos];
       setProyectos(actualizados);
@@ -452,11 +499,7 @@ export function useProjects() {
         documentos: documentosFinales,
       };
 
-      if (Array.isArray(datos?.detected_repo_ids) && datos.detected_repo_ids.length > 0) {
-        await attachDetectedReposToProject(proyectoId, datos.detected_repo_ids, datos.detected_participacion ?? {}).catch(err =>
-          console.warn('[useProjects] Error vinculando repos detectados:', err.message)
-        );
-      }
+      await attachDetectedReposByProvider(proyectoId, datos);
 
       const actualizados = proyectos.map(p =>
         p.id === proyectoId || p.id_proyecto === proyectoId
@@ -565,7 +608,7 @@ export function useProjects() {
     setLoading(true);
 
     try {
-      const data = await getProyectos();
+      const data = await getProyectos({ force: true });
       const mapeados = (data || []).map(mapearProyecto);
 
       setProyectos(mapeados);

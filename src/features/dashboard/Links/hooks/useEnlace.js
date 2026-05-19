@@ -1,23 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   fetchEnlaces,
+  getCachedEnlaces,
   postEnlace,
   putEnlace,
   patchVisibility,
   removeEnlace,
 } from '../services/EnlaceService';
 
+function getInitialEnlaces() {
+  try {
+    return getCachedEnlaces();
+  } catch {
+    return [];
+  }
+}
+
 export function useEnlace() {
-  const [redes,   setRedes]   = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [redes,   setRedes]   = useState(getInitialEnlaces);
+  const [loading, setLoading] = useState(() => getInitialEnlaces().length === 0);
   const [error,   setError]   = useState(null);
 
   // ── Cargar todos ────────────────────────────────
   const cargar = useCallback(async () => {
-    setLoading(true);
+    const hasCache = getInitialEnlaces().length > 0;
+    setLoading(!hasCache);
     setError(null);
     try {
-      const data = await fetchEnlaces();
+      const data = await fetchEnlaces({ force: true });
       setRedes(data);
     } catch (err) {
       setError(err.message ?? 'Error al cargar los enlaces.');

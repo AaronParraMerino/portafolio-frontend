@@ -119,7 +119,7 @@ export function useView() {
     setError(null);
 
     try {
-      const result = await getPortfolioViewData();
+      const result = await getPortfolioViewData({ force: initialState.hasCache });
 
       setData((prev) => normalizeViewData(result.data, prev));
       setDataSource(result.warnings.length ? 'partial' : 'backend');
