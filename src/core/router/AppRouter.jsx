@@ -9,6 +9,7 @@ import DashboardLayout from '../../features/dashboard/layout/DashboardLayout';
 import DashboardPage from '../../features/dashboard/DashboardPage';
 import AdminDashboardLayout from '../../features/admin/layout/AdminDashboardLayout';
 import AdminDashboardPage from '../../features/admin/dashboard/AdminDashboardPage';
+import UsersPage from '../../features/admin/users/pages/UsersPage';
 import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
 import CookiesPage from '../../features/auth/pages/CookiesPage';
@@ -76,7 +77,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
           <Route path="admin" element={<RoleGate adminOnly><AdminDashboardLayout /></RoleGate>}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="profile" element={<AdminDashboardPage section="profile" />} />
-            <Route path="users" element={<AdminDashboardPage section="users" />} />
+            <Route path="users" element={<UsersPage />} />
             <Route path="events" element={<AdminDashboardPage section="events" />} />
             <Route path="notices" element={<AdminDashboardPage section="notices" />} />
             <Route path="reports" element={<AdminDashboardPage section="reports" />} />

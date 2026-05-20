@@ -8,7 +8,7 @@ export default function AdminDashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="dsh-layout">
+    <div className="dsh-layout adm-layout">
       <AdminSidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed(value => !value)}

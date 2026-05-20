@@ -4,7 +4,6 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import { GoogleLogin } from "@react-oauth/google";
 import { Link } from "react-router-dom";
 import Navbar from "../../../shared/components/layout/Navbar";
-import { getDashboardHomePath } from "../../../shared/utils/authStorage";
 import {
   LinkInfoModal,
   LinkVerificationModal,
@@ -109,7 +108,7 @@ export default function LoginForm() {
 
   const handleSuccessfulAuth = (result) => {
     persistAuthSession(result);
-    window.location.href = getDashboardHomePath(result.data);
+    window.location.href = "/";
   };
 
   const handleInactiveAccount = (payload, fallbackEmail = "") => {

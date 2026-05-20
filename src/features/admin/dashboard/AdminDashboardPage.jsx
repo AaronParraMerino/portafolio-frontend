@@ -1,45 +1,7 @@
 import { Link } from 'react-router-dom';
 import { getStoredUser } from '../../../shared/utils/authStorage';
 import AdminHeader from '../layout/AdminHeader';
-
-const MODULES = {
-  dashboard: {
-    title: 'Dashboard administrador',
-    subtitle: 'Resumen base para operar usuarios, eventos, avisos y actividad del sistema.',
-  },
-  profile: {
-    title: 'Perfil administrador',
-    subtitle: 'Acceso reservado para datos y preferencias del administrador.',
-  },
-  users: {
-    title: 'Gestionar usuarios',
-    subtitle: 'Modulo preparado para consultar, editar estados y administrar roles de usuarios.',
-  },
-  events: {
-    title: 'Gestionar eventos',
-    subtitle: 'Modulo preparado para eventos, convocatorias, talleres y actividades destacadas.',
-  },
-  notices: {
-    title: 'Gestionar avisos',
-    subtitle: 'Modulo preparado para avisos internos, banners y comunicaciones importantes.',
-  },
-  reports: {
-    title: 'Reportes',
-    subtitle: 'Modulo preparado para metricas de portafolios, usuarios y actividad de plataforma.',
-  },
-  audit: {
-    title: 'Bitacora',
-    subtitle: 'Modulo preparado para revisar acciones administrativas y eventos sensibles.',
-  },
-  backups: {
-    title: 'Respaldos',
-    subtitle: 'Modulo preparado para respaldos, restauraciones y exportaciones del sistema.',
-  },
-  settings: {
-    title: 'Configuracion',
-    subtitle: 'Modulo preparado para parametros generales, seguridad y preferencias del sistema.',
-  },
-};
+import { getAdminSectionConfig } from '../layout/adminHeaderConfig';
 
 const QUICK_MODULES = [
   {
@@ -95,14 +57,14 @@ function getUserName() {
 }
 
 export default function AdminDashboardPage({ section = 'dashboard' }) {
-  const config = MODULES[section] || MODULES.dashboard;
+  const config = getAdminSectionConfig(section);
   const userName = getUserName();
 
   return (
     <>
       <AdminHeader
+        eyebrow={config.eyebrow}
         title={config.title}
-        subtitle={config.subtitle}
       />
 
       <div className="adm-page">

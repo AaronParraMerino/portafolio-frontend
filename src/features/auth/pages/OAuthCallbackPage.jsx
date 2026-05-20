@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
-import { getDashboardHomePath } from "../../../shared/utils/authStorage";
 
 const PROVIDER_NAMES = { github: "GitHub", gitlab: "GitLab", discord: "Discord", google: "Google" };
 
@@ -36,7 +35,7 @@ export default function OAuthCallbackPage() {
         const usuario = JSON.parse(decodeURIComponent(usuarioRaw));
         localStorage.setItem("tokenPORT", token);
         localStorage.setItem("usuario", JSON.stringify(usuario));
-        window.location.replace(getDashboardHomePath(usuario));
+        window.location.replace("/");
       } catch {
         window.location.replace("/auth/login?oauth_error=parse");
       }
@@ -48,7 +47,7 @@ export default function OAuthCallbackPage() {
   const handleVerify = async () => {
     if (!credential.trim()) {
       const isPassword = linkConfirm.verificationMethod === "password";
-      setCredError(isPassword ? "Ingresa tu contraseña." : "Ingresa el código de 6 dígitos.");
+      setCredError(isPassword ? "Ingresa tu contrasena." : "Ingresa el codigo de 6 digitos.");
       return;
     }
     setLoading(true);
@@ -70,19 +69,19 @@ export default function OAuthCallbackPage() {
         if (result.status === "wrong_credentials") {
           setCredError(
             linkConfirm.verificationMethod === "password"
-              ? "Contraseña incorrecta. Inténtalo de nuevo."
-              : "Código incorrecto o expirado. Inténtalo de nuevo."
+              ? "Contrasena incorrecta. Intentalo de nuevo."
+              : "Codigo incorrecto o expirado. Intentalo de nuevo."
           );
         } else {
-          setCredError(result.message || "Error al confirmar la vinculación.");
+          setCredError(result.message || "Error al confirmar la vinculacion.");
         }
         return;
       }
       localStorage.setItem("tokenPORT", result.token);
       localStorage.setItem("usuario", JSON.stringify(result.data));
-      window.location.replace(getDashboardHomePath(result.data));
+      window.location.replace("/");
     } catch {
-      setCredError("Error de conexión. Intente nuevamente.");
+      setCredError("Error de conexion. Intente nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -91,7 +90,7 @@ export default function OAuthCallbackPage() {
   if (!linkConfirm) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <p>Procesando autenticación…</p>
+        <p>Procesando autenticacion...</p>
       </div>
     );
   }
@@ -99,14 +98,14 @@ export default function OAuthCallbackPage() {
   const providerName = PROVIDER_NAMES[linkConfirm.provider] ?? linkConfirm.provider;
   const isPassword   = linkConfirm.verificationMethod === "password";
 
-  // Paso 1 — Modal informativo
+  // Paso 1 - Modal informativo
   if (step === "info") {
     return (
       <ConfirmModal
         open={true}
         title="Cuenta existente detectada"
-        message={`Ya existe una cuenta con el correo ${linkConfirm.correo}. ¿Deseas vincular tu cuenta de ${providerName} a esa cuenta?`}
-        confirmLabel="Sí, vincular"
+        message={`Ya existe una cuenta con el correo ${linkConfirm.correo}. Deseas vincular tu cuenta de ${providerName} a esa cuenta?`}
+        confirmLabel="Si, vincular"
         cancelLabel="Cancelar"
         variant="yellow"
         icon="warning"
@@ -116,7 +115,7 @@ export default function OAuthCallbackPage() {
     );
   }
 
-  // Paso 2 — Formulario de verificación
+  // Paso 2 - Formulario de verificacion
   return (
     <div style={{
       display: "flex", justifyContent: "center", alignItems: "center",
@@ -127,24 +126,24 @@ export default function OAuthCallbackPage() {
         boxShadow: "0 4px 20px rgba(0,0,0,0.10)", maxWidth: "420px", width: "100%"
       }}>
         <h2 style={{ margin: "0 0 8px", fontSize: "20px", color: "#111827" }}>
-          Confirmar vinculación
+          Confirmar vinculacion
         </h2>
         <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: "14px", lineHeight: "1.5" }}>
           {isPassword
-            ? `Ingresa la contraseña de la cuenta ${linkConfirm.correo} para confirmar.`
-            : `Ingresa el código de 6 dígitos que enviamos a ${linkConfirm.correo}.`
+            ? `Ingresa la contrasena de la cuenta ${linkConfirm.correo} para confirmar.`
+            : `Ingresa el codigo de 6 digitos que enviamos a ${linkConfirm.correo}.`
           }
         </p>
 
         <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", color: "#374151", fontWeight: 600 }}>
-          {isPassword ? "Contraseña" : "Código de verificación"}
+          {isPassword ? "Contrasena" : "Codigo de verificacion"}
         </label>
         <input
           type={isPassword ? "password" : "text"}
           value={credential}
           onChange={e => setCredential(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !loading && handleVerify()}
-          placeholder={isPassword ? "Tu contraseña" : "123456"}
+          placeholder={isPassword ? "Tu contrasena" : "123456"}
           maxLength={isPassword ? undefined : 6}
           autoFocus
           style={{
@@ -167,7 +166,7 @@ export default function OAuthCallbackPage() {
               background: "#fff", color: "#374151", fontSize: "15px", cursor: "pointer"
             }}
           >
-            Atrás
+            Atras
           </button>
           <button
             onClick={handleVerify}
@@ -179,11 +178,10 @@ export default function OAuthCallbackPage() {
               cursor: loading || !credential ? "not-allowed" : "pointer"
             }}
           >
-            {loading ? "Verificando…" : "Confirmar vinculación"}
+            {loading ? "Verificando..." : "Confirmar vinculacion"}
           </button>
         </div>
       </div>
     </div>
   );
 }
-
