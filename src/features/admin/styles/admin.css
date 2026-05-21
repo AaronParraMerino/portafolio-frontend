@@ -1,0 +1,393 @@
+/* Admin page-only styles. Header/sidebar inherit dashboard.css. */
+
+.adm-layout {
+  --adm-primary: #0f766e;
+  --adm-primary-hover: #0b5f59;
+  --adm-primary-deep: #134e4a;
+  --adm-primary-soft: #e0f2f1;
+  --adm-primary-mid: #99f6e4;
+  --adm-primary-glow: rgba(15, 118, 110, .16);
+  --adm-surface: #102133;
+  --adm-surface-strong: #0a1624;
+  --adm-surface-border: rgba(148, 163, 184, .14);
+  --adm-text-soft: rgba(226, 232, 240, .7);
+}
+
+.adm-layout .dash-module-header {
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, .18), rgba(15, 118, 110, 0)) ,
+    linear-gradient(90deg, var(--adm-surface-strong) 0%, var(--adm-surface) 100%);
+  border-bottom: 3px solid var(--adm-primary);
+  box-shadow: 0 8px 24px rgba(10, 22, 36, .2);
+}
+
+.adm-layout .dash-module-header-title {
+  letter-spacing: .01em;
+}
+
+.adm-layout .dsh-sidebar,
+.adm-layout .dsh-drawer {
+  background:
+    linear-gradient(180deg, rgba(15, 118, 110, .1), rgba(15, 118, 110, 0) 26%),
+    linear-gradient(180deg, var(--adm-surface) 0%, var(--adm-surface-strong) 100%);
+  border-right: 1px solid var(--adm-surface-border);
+}
+
+.adm-layout .dsh-sidebar.footer-near {
+  box-shadow: 12px 0 28px rgba(10, 22, 36, .18), 0 16px 30px rgba(10, 22, 36, .22);
+}
+
+.adm-layout .dsh-sidebar.footer-near::after {
+  background: linear-gradient(180deg, rgba(10, 22, 36, 0), rgba(10, 22, 36, .96));
+}
+
+.adm-layout .dsh-sidebar-toggle {
+  background: var(--adm-primary);
+  border-color: var(--adm-primary-deep);
+  box-shadow: 0 2px 10px rgba(15, 118, 110, .35);
+}
+
+.adm-layout .dsh-sidebar-toggle:hover,
+.adm-layout .dsh-fab {
+  background: var(--adm-primary-hover);
+}
+
+.adm-layout .dsh-nav-section-label,
+.adm-layout .dsh-progress-label {
+  color: rgba(226, 232, 240, .34);
+}
+
+.adm-layout .dsh-nav-item {
+  color: rgba(226, 232, 240, .62);
+}
+
+.adm-layout .dsh-nav-item:hover {
+  background: rgba(15, 118, 110, .12);
+  color: #f8fafc;
+}
+
+.adm-layout .dsh-nav-item.active {
+  background: rgba(15, 118, 110, .18);
+  box-shadow: inset 3px 0 0 var(--adm-primary);
+  color: #8df0df;
+}
+
+.adm-layout .dsh-nav-item.danger {
+  color: rgba(248, 113, 113, .7);
+}
+
+.adm-layout .dsh-nav-item.danger:hover {
+  background: rgba(239, 68, 68, .12);
+  color: #fca5a5;
+}
+
+.adm-layout .dsh-sidebar-footer {
+  border-top: 1px solid var(--adm-surface-border);
+}
+
+.adm-layout .dsh-progress-label strong {
+  color: #8df0df;
+}
+
+.adm-layout .dsh-progress-bar {
+  background: rgba(148, 163, 184, .16);
+}
+
+.adm-layout .dsh-progress-fill {
+  background: linear-gradient(90deg, var(--adm-primary), var(--adm-primary-mid));
+}
+
+.adm-layout .dsh-fab {
+  box-shadow: 0 4px 20px rgba(15, 118, 110, .35), 0 1px 4px rgba(0, 0, 0, .24);
+}
+
+.adm-layout .dsh-fab:active {
+  box-shadow: 0 2px 10px rgba(15, 118, 110, .28);
+}
+
+.adm-page {
+  padding: 24px 28px;
+}
+
+.adm-hero {
+  align-items: center;
+  background: linear-gradient(120deg, var(--adm-primary-deep) 0%, var(--adm-primary) 100%);
+  border-radius: 12px;
+  color: #fff;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  overflow: hidden;
+  padding: 28px 32px;
+  position: relative;
+}
+
+.adm-hero::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.adm-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.adm-hero-label {
+  color: rgba(255, 255, 255, .45);
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.adm-hero h2 {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0 0 6px;
+}
+
+.adm-hero p {
+  color: rgba(255, 255, 255, .6);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 680px;
+}
+
+.adm-hero-panel {
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 10px;
+  min-width: 170px;
+  padding: 15px 18px;
+}
+
+.adm-hero-panel span {
+  color: rgba(255, 255, 255, .55);
+  display: block;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.adm-hero-panel strong {
+  color: #fff;
+  display: block;
+  font-size: 18px;
+  margin-top: 3px;
+}
+
+.adm-stats-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+
+.adm-stat-card {
+  background: var(--blanco, #fff);
+  border: 1.5px solid var(--gris-borde, #d1d5db);
+  border-radius: 10px;
+  padding: 16px;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+
+.adm-stat-card:hover {
+  border-color: rgba(15, 118, 110, .28);
+  box-shadow: 0 4px 16px rgba(15, 118, 110, .1);
+  transform: translateY(-2px);
+}
+
+.adm-stat-card span,
+.adm-stat-card small {
+  color: var(--gris-texto, #6b7280);
+  display: block;
+  font-size: 11px;
+}
+
+.adm-stat-card span {
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.adm-stat-card strong {
+  color: var(--adm-primary-deep);
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 10px 0 4px;
+}
+
+.adm-section-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.adm-section-head h3 {
+  color: var(--negro-texto, #111827);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.adm-section-head span {
+  background: var(--gris-borde, #d1d5db);
+  flex: 1;
+  height: 1px;
+}
+
+.adm-module-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.adm-module-card {
+  background: var(--blanco, #fff);
+  border: 1.5px solid var(--gris-borde, #d1d5db);
+  border-radius: 10px;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  padding: 18px;
+  position: relative;
+  text-decoration: none;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+
+.adm-module-card::before {
+  background: linear-gradient(90deg, var(--adm-primary), var(--adm-primary-mid));
+  content: '';
+  height: 3px;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity .15s;
+}
+
+.adm-module-card:hover {
+  border-color: rgba(15, 118, 110, .28);
+  box-shadow: 0 4px 16px rgba(15, 118, 110, .1);
+  transform: translateY(-2px);
+}
+
+.adm-module-card:hover::before {
+  opacity: 1;
+}
+
+.adm-module-card-top {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-module-icon {
+  align-items: center;
+  background: var(--adm-primary-soft);
+  border: 1px solid rgba(15, 118, 110, .22);
+  border-radius: 8px;
+  color: var(--adm-primary);
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.adm-module-icon svg {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  width: 18px;
+}
+
+.adm-module-card strong {
+  color: var(--negro-texto, #111827);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.adm-module-card p {
+  color: var(--gris-texto, #6b7280);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.adm-placeholder {
+  background: #fff;
+  border: 1.5px dashed rgba(15, 118, 110, .22);
+  border-radius: 10px;
+  margin-top: 20px;
+  padding: 18px;
+}
+
+.adm-placeholder strong {
+  color: var(--negro-texto, #111827);
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.adm-placeholder p {
+  color: var(--gris-texto, #6b7280);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .adm-stats-grid,
+  .adm-module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-page {
+    padding: 14px;
+  }
+
+  .adm-hero {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .adm-hero-panel {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .adm-stats-grid,
+  .adm-module-grid {
+    grid-template-columns: 1fr;
+  }
+}
