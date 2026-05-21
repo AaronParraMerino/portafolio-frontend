@@ -36,6 +36,37 @@ export function clearAuthStorage() {
   sessionStorage.removeItem('perfil_cache');
 }
 
+export function getStoredUser() {
+  const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function normalizeUserRole(user = getStoredUser()) {
+  const roleSource = user?.rol ?? user?.role ?? user?.tipo_rol ?? user?.tipoRol ?? '';
+  const value = typeof roleSource === 'object'
+    ? roleSource.nombre || roleSource.name || roleSource.codigo || roleSource.code || ''
+    : roleSource;
+  const role = String(value || '').trim().toLowerCase();
+
+  if (role === 'admin' || role === 'administrador') return 'admin';
+  return 'usuario';
+}
+
+export function isAdminUser(user = getStoredUser()) {
+  return normalizeUserRole(user) === 'admin';
+}
+
+export function getDashboardHomePath(user = getStoredUser()) {
+  return isAdminUser(user) ? '/admin' : '/dashboard';
+}
+
 export function emitAuthExpired() {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));

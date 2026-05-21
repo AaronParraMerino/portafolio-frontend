@@ -40,10 +40,26 @@ export default function Header({
     dense ? 'dash-module-header--dense' : '',
     className,
   ].filter(Boolean).join(' ');
+  const hasBreadcrumb = breadcrumb.length > 0;
 
   return (
     <header className={headerClassName}>
       <div className="dash-module-header-copy">
+        {hasBreadcrumb ? (
+          <nav className="dash-module-header-breadcrumb" aria-label="Ubicacion actual">
+            {breadcrumb.map((item, index) => (
+              <span
+                key={item.key || `${item.label}-${index}`}
+                className={[
+                  'dash-module-header-breadcrumb-item',
+                  item.active ? 'active' : '',
+                ].filter(Boolean).join(' ')}
+              >
+                {item.label}
+              </span>
+            ))}
+          </nav>
+        ) : null}
         {eyebrow ? <p className="dash-module-header-eyebrow">{eyebrow}</p> : null}
         <h1 className="dash-module-header-title">{visibleTitle}</h1>
         {subtitle ? <p className="dash-module-header-subtitle">{subtitle}</p> : null}
