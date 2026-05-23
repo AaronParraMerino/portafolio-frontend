@@ -2,35 +2,37 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import useFeaturedPortfolios from '../hooks/useFeaturedPortfolios';
 import PortfolioCard from './PortfolioCard';
+import { useLanguage } from '../../../../core/i18n';
 
 const SECTION_CONFIG = [
   {
     key: 'ultimas_actualizaciones',
-    label: 'Ultimas actualizaciones',
-    description: 'Portafolios activos con cambios recientes.',
+    labelKey: 'featured.tab.updates.label',
+    descriptionKey: 'featured.tab.updates.description',
     variant: 'updates',
   },
   {
     key: 'mas_proyectos',
-    label: 'Mas proyectos',
-    description: 'Perfiles con mayor cantidad de proyectos publicados.',
+    labelKey: 'featured.tab.projects.label',
+    descriptionKey: 'featured.tab.projects.description',
     variant: 'projects',
   },
   {
     key: 'mas_experiencia',
-    label: 'Mas experiencia',
-    description: 'Profesionales con mas experiencia publica visible.',
+    labelKey: 'featured.tab.experience.label',
+    descriptionKey: 'featured.tab.experience.description',
     variant: 'experience',
   },
   {
     key: 'mas_habilidades',
-    label: 'Mas habilidades',
-    description: 'Portafolios con mas habilidades registradas.',
+    labelKey: 'featured.tab.skills.label',
+    descriptionKey: 'featured.tab.skills.description',
     variant: 'skills',
   },
 ];
 
 export default function FeaturedPortfolios() {
+  const { t } = useLanguage();
   const [draftSearch, setDraftSearch] = useState('');
   const [search, setSearch] = useState('');
   const { sections, loading, error } = useFeaturedPortfolios(search);
@@ -222,14 +224,14 @@ export default function FeaturedPortfolios() {
         <div className="spk-featured-inner">
           <div className="spk-featured-header">
             <div>
-              <div className="spk-featured-kicker">Home publica</div>
-              <h2 className="spk-featured-title">Portafolios destacados</h2>
+              <div className="spk-featured-kicker">{t('featured.kicker')}</div>
+              <h2 className="spk-featured-title">{t('featured.title')}</h2>
               <p className="spk-featured-copy">
-                Explora perfiles profesionales con actividad reciente, experiencia visible y habilidades publicas.
+                {t('featured.copy')}
               </p>
             </div>
             <Link className="spk-featured-link" to="/desarrolladores">
-              Mostrar todo
+              {t('featured.showAll')}
             </Link>
           </div>
 
@@ -239,15 +241,15 @@ export default function FeaturedPortfolios() {
               type="search"
               value={draftSearch}
               onChange={(event) => setDraftSearch(event.target.value)}
-              placeholder="Buscar por habilidad, tecnologia, proyecto o experiencia..."
-              aria-label="Buscar portafolios destacados"
+              placeholder={t('featured.search.placeholder')}
+              aria-label={t('featured.search.aria')}
             />
             <button className="spk-featured-search-btn" type="submit" disabled={loading}>
-              {loading && isSearchMode ? 'Buscando...' : 'Buscar'}
+              {loading && isSearchMode ? t('featured.search.loading') : t('featured.search.button')}
             </button>
             {isSearchMode && (
               <button className="spk-featured-clear-btn" type="button" onClick={clearSearch}>
-                Limpiar
+                {t('featured.search.clear')}
               </button>
             )}
           </form>
@@ -255,11 +257,11 @@ export default function FeaturedPortfolios() {
           {isSearchMode ? (
             <div className="spk-featured-search-state">
               <span>
-                Resultados relevantes para <strong>{search}</strong>, ordenados por coincidencia y completitud del portafolio.
+                {t('featured.search.statePrefix')} <strong>{search}</strong>, {t('featured.search.stateSuffix')}
               </span>
             </div>
           ) : (
-            <div className="spk-featured-tabs" role="tablist" aria-label="Rankings de portafolios">
+            <div className="spk-featured-tabs" role="tablist" aria-label={t('featured.tabs.aria')}>
               {SECTION_CONFIG.map((section) => (
                 <button
                   key={section.key}
@@ -267,8 +269,8 @@ export default function FeaturedPortfolios() {
                   className={`spk-featured-tab${section.key === activeKey ? ' active' : ''}`}
                   onClick={() => setActiveKey(section.key)}
                 >
-                  <strong>{section.label}</strong>
-                  <span>{section.description}</span>
+                  <strong>{t(section.labelKey)}</strong>
+                  <span>{t(section.descriptionKey)}</span>
                 </button>
               ))}
             </div>
@@ -277,25 +279,25 @@ export default function FeaturedPortfolios() {
           <div className="spk-portfolio-grid">
             {loading && (
               <div className="spk-featured-empty">
-                <strong>Cargando portafolios</strong>
-                <span>Estamos preparando los perfiles publicos destacados.</span>
+                <strong>{t('featured.loading.title')}</strong>
+                <span>{t('featured.loading.text')}</span>
               </div>
             )}
 
             {!loading && error && (
               <div className="spk-featured-empty">
-                <strong>No se pudo cargar la seccion</strong>
+                <strong>{t('featured.error.title')}</strong>
                 <span>{error}</span>
               </div>
             )}
 
             {!loading && !error && portfolios.length === 0 && (
               <div className="spk-featured-empty">
-                <strong>{isSearchMode ? 'Sin coincidencias publicas' : 'Aun no hay resultados'}</strong>
+                <strong>{isSearchMode ? t('featured.empty.search.title') : t('featured.empty.default.title')}</strong>
                 <span>
                   {isSearchMode
-                    ? 'Prueba con otra habilidad, tecnologia o termino relacionado al portafolio.'
-                    : 'Cuando existan datos publicos suficientes, este bloque mostrara portafolios destacados.'}
+                    ? t('featured.empty.search.text')
+                    : t('featured.empty.default.text')}
                 </span>
               </div>
             )}

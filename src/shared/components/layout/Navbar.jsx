@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import ConfirmModal from '../../ui/ConfirmModal'
-import { clearAuthStorage, getDashboardHomePath, isAdminUser } from '../../utils/authStorage';
+import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
+import LanguageSelector from '../language/LanguageSelector';
+import { useLanguage } from '../../../core/i18n';
+import { clearAuthStorage } from '../../utils/authStorage';
 
 const ICON_PROPS = {
   fill: 'none',
@@ -12,16 +15,16 @@ const ICON_PROPS = {
 
 /* ── Links de navegación pública ── */
 const NAV_LINKS = [
-  { label: 'Inicio', href: '/', icon: (<><path d="M3 10.8 12 3l9 7.8" /><path d="M5 10v10h5v-6h4v6h5V10" /></>) },
-  { label: 'Cómo funciona',   href: '#como-funciona'   },
-  { label: 'Proyectos', href: '#proyectos', icon: (<><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" /><path d="M3 9h18l-1.3 9.2A2 2 0 0 1 17.7 20H6.3a2 2 0 0 1-2-1.8L3 9Z" /></>) },
-  { label: 'Desarrolladores', href: '/desarrolladores', icon: (<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></>) },
+  { labelKey: 'nav.home', href: '/', icon: (<><path d="M3 10.8 12 3l9 7.8" /><path d="M5 10v10h5v-6h4v6h5V10" /></>) },
+  { labelKey: 'nav.howItWorks',   href: '#como-funciona'   },
+  { labelKey: 'nav.projects', href: '#proyectos', icon: (<><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" /><path d="M3 9h18l-1.3 9.2A2 2 0 0 1 17.7 20H6.3a2 2 0 0 1-2-1.8L3 9Z" /></>) },
+  { labelKey: 'nav.developers', href: '/desarrolladores', icon: (<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></>) },
 ];
 
 const NOTIFICACIONES = [
-  { red: true,  text: 'TechBol visitó tu perfil',             time: 'hace 5 min' },
-  { red: false, text: 'Nuevo match con stack React + Laravel', time: 'hace 1 h'  },
-  { red: false, text: 'Tu proyecto tiene 12 nuevas vistas',    time: 'ayer'       },
+  { red: true,  textKey: 'nav.notification1', timeKey: 'nav.time5min' },
+  { red: false, textKey: 'nav.notification2', timeKey: 'nav.time1h'  },
+  { red: false, textKey: 'nav.notification3', timeKey: 'nav.yesterday' },
 ];
 
 function getNavIcon(href) {
@@ -40,6 +43,7 @@ function getNavIcon(href) {
 }
 
 export default function Navbar() {
+  const { t } = useLanguage();
   const BASE_URL = process.env.REACT_APP_API_URL;
   const [scrolled,      setScrolled]      = useState(false);
   const [mobileOpen,    setMobileOpen]    = useState(false);
@@ -104,23 +108,13 @@ export default function Navbar() {
     setLogoutModal(true);
   };
 
-  const userName = user ? `${user.nombre || user.name || 'Usuario'} ${user.apellido || ''}`.trim() : '';
+  const userName = user ? `${user.nombre || user.name || t('nav.user')} ${user.apellido || ''}`.trim() : '';
   const initials = user
     ? [user.nombre || user.name || 'U', user.apellido || user.lastName || '']
         .map(name => String(name || ' ').trim().slice(0, 1).toUpperCase())
         .join('').padEnd(2, 'U')
     : 'U';
-  const isAdmin = isAdminUser(user);
-  const rawUserRole = user?.rol || user?.role || (isAdmin ? 'admin' : 'usuario');
-  const userRole = isAdmin
-    ? 'Administrador'
-    : String(rawUserRole || 'Usuario').replace(/^usuario$/i, 'Usuario');
-  const dashboardPath = getDashboardHomePath(user);
-  const profilePath = isAdmin ? '/admin/profile' : '/dashboard/profile';
-  const settingsPath = isAdmin ? '/admin/settings' : '/dashboard/settings';
-  const accountAreaLabel = isAdmin ? 'Sistema' : 'Portafolio';
-  const managementLabel = isAdmin ? 'Gestion del sistema' : 'Gestionar portafolio';
-  const mobileManagementLabel = isAdmin ? 'Gestion del sistema' : 'Mi portafolio';
+  const userRole = user?.rol || user?.role || t('nav.user');
 
   return (
     <>
@@ -226,13 +220,13 @@ export default function Navbar() {
         <span className="spk-nav-tagline">CreaFolio</span>
 
         <ul className="spk-nav-links">
-          {NAV_LINKS.map(({ label, href, icon }) => (
-            <li key={label}>
+          {NAV_LINKS.map(({ labelKey, href, icon }) => (
+            <li key={href}>
               <a href={href}>
                 <svg className="spk-nav-link-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
                   {icon || getNavIcon(href)}
                 </svg>
-                <span>{label}</span>
+                <span>{t(labelKey)}</span>
               </a>
             </li>
           ))}
@@ -242,7 +236,7 @@ export default function Navbar() {
 
           {/* Campana */}
           <div className="spk-bell-wrap" ref={notifRef}>
-            <button className="spk-bell" title="Notificaciones" onClick={() => setNotifOpen(v => !v)}>
+            <button className="spk-bell" title={t('nav.notifications')} onClick={() => setNotifOpen(v => !v)}>
               <svg viewBox="0 0 24 24">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
                 <path d="M10 20a2.3 2.3 0 0 0 4 0" />
@@ -252,21 +246,23 @@ export default function Navbar() {
             {notifOpen && (
               <div className="spk-notif-dropdown">
                 <div className="spk-notif-header">
-                  Notificaciones
-                  <button className="spk-notif-clear" onClick={() => setNotifOpen(false)}>Marcar leídas</button>
+                  {t('nav.notifications')}
+                  <button className="spk-notif-clear" onClick={() => setNotifOpen(false)}>{t('nav.markRead')}</button>
                 </div>
                 {NOTIFICACIONES.map((n, i) => (
                   <div className="spk-notif-item" key={i}>
                     <div className={`spk-notif-ico${n.red ? ' red' : ''}`} />
                     <div>
-                      <div className="spk-notif-text">{n.text}</div>
-                      <div className="spk-notif-time">{n.time}</div>
+                      <div className="spk-notif-text">{t(n.textKey)}</div>
+                      <div className="spk-notif-time">{t(n.timeKey)}</div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          <LanguageSelector />
 
           <div className="spk-nav-divider" />
 
@@ -288,36 +284,36 @@ export default function Navbar() {
                   <div className="spk-dd-header">
                     <div className="spk-dd-avatar">{initials}</div>
                     <div>
-                      <div className="spk-dd-name">{userName || 'Usuario'}</div>
+                      <div className="spk-dd-name">{userName || t('nav.user')}</div>
                       <div className="spk-dd-email">{user?.correo || user?.email || '---'}</div>
                       <div className="spk-dd-status">
-                        <span className="spk-dd-status-dot" />Perfil activo
+                        <span className="spk-dd-status-dot" />{t('nav.activeProfile')}
                       </div>
                     </div>
                   </div>
                   <div className="spk-dd-section">
-                    <div className="spk-dd-label">Mi cuenta</div>
-                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = profilePath; }}>
+                    <div className="spk-dd-label">{t('nav.account')}</div>
+                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard/profile'; }}>
                       <svg viewBox="0 0 24 24"><path d="M19 21a7 7 0 0 0-14 0" /><circle cx="12" cy="8" r="4" /></svg>
-                      Ver mi perfil
+                      {t('nav.viewProfile')}
                     </button>
-                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = settingsPath; }}>
+                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard/settings'; }}>
                       <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" /></svg>
-                      Configuración
+                      {t('nav.settings')}
                     </button>
                   </div>
                   <div className="spk-dd-section">
-                    <div className="spk-dd-label">{accountAreaLabel}</div>
-                    <button className="spk-dd-item highlight" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = dashboardPath; }}>
+                    <div className="spk-dd-label">{t('nav.portfolio')}</div>
+                    <button className="spk-dd-item highlight" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = '/dashboard'; }}>
                       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 18v3" /><path d="M8 11s1.4-3 4-3 4 3 4 3-1.4 3-4 3-4-3-4-3Z" /><circle cx="12" cy="11" r="1" /></svg>
-                      {managementLabel}
+                      {t('nav.managePortfolio')}
                     </button>
                   </div>
                   <div className="spk-dd-section">
                     {/* CAMBIO: abre modal en vez de cerrar sesión directo */}
                     <button className="spk-dd-item danger" type="button" onClick={handleLogoutClick}>
                       <svg viewBox="0 0 24 24"><path d="M10 17 15 12 10 7" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-5" /></svg>
-                      Cerrar sesión
+                      {t('nav.logout')}
                     </button>
                   </div>
                 </div>
@@ -325,13 +321,13 @@ export default function Navbar() {
             </div>
           ) : (
             <>
-              <button className="spk-btn-login" onClick={() => window.location.href = "/auth/login"}>Iniciar sesión</button>
-              <button className="spk-btn-register" onClick={() => window.location.href = "/auth/register"}>Registrarse</button>
+              <button className="spk-btn-login" onClick={() => window.location.href = "/auth/login"}>{t('nav.login')}</button>
+              <button className="spk-btn-register" onClick={() => window.location.href = "/auth/register"}>{t('nav.register')}</button>
             </>
           )}
         </div>
 
-        <button className={`spk-hamburger${mobileOpen ? ' open' : ''}`} onClick={() => setMobileOpen(v => !v)} aria-label="Abrir menú">
+        <button className={`spk-hamburger${mobileOpen ? ' open' : ''}`} onClick={() => setMobileOpen(v => !v)} aria-label={t('nav.openMenu')}>
           <span /><span /><span />
         </button>
       </nav>
@@ -340,39 +336,45 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="spk-mobile-menu">
           <div className="spk-mobile-links">
-            {NAV_LINKS.map(({ label, href, icon }) => (
-              <a key={label} href={href} onClick={() => setMobileOpen(false)}>
+            {NAV_LINKS.map(({ labelKey, href, icon }) => (
+              <a key={href} href={href} onClick={() => setMobileOpen(false)}>
                 <svg className="spk-mobile-link-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
                   {icon || getNavIcon(href)}
                 </svg>
-                <span>{label}</span>
+                <span>{t(labelKey)}</span>
               </a>
             ))}
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <LanguageSelector mobile />
           </div>
           <div className="spk-mobile-actions">
             {user ? (
               <>
-                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = dashboardPath; }}>{mobileManagementLabel}</button>
+                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = '/dashboard'; }}>{t('nav.myPortfolio')}</button>
                 {/* CAMBIO: también abre modal desde móvil */}
-                <button className="spk-btn-register" onClick={handleLogoutClick}>Cerrar sesión</button>
+                <button className="spk-btn-register" onClick={handleLogoutClick}>{t('nav.logout')}</button>
               </>
             ) : (
               <>
-                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = "/auth/login"; }}>Iniciar sesión</button>
-                <button className="spk-btn-register" onClick={() => { setMobileOpen(false); window.location.href = "/auth/register"; }}>Registrarse</button>
+                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = "/auth/login"; }}>{t('nav.login')}</button>
+                <button className="spk-btn-register" onClick={() => { setMobileOpen(false); window.location.href = "/auth/register"; }}>{t('nav.register')}</button>
               </>
             )}
           </div>
         </div>
       )}
 
+      {/* ── Calendario personal global: solo usuario autenticado ── */}
+      <CalendarPanel enabled={!!user} />
+
       {/* ── Modal de confirmación de cierre de sesión ── */}
       <ConfirmModal
         open={logoutModal}
-        title="¿Cerrar sesión?"
-        message="Tu sesión se cerrará y tendrás que volver a iniciar sesión para acceder a tu portafolio."
-        confirmLabel="Sí, cerrar sesión"
-        cancelLabel="Cancelar"
+        title={t('nav.logoutTitle')}
+        message={t('nav.logoutMessage')}
+        confirmLabel={t('nav.logoutConfirm')}
+        cancelLabel={t('nav.cancel')}
         variant="red"
         icon="logout"
         loading={loggingOut}
