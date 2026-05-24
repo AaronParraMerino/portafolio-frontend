@@ -1,0 +1,363 @@
+export const EVENT_PAGE_SIZE = 9;
+
+export const EVENT_WORKSPACE_VIEWS = [
+  { id: 'events', label: 'Eventos' },
+  { id: 'communications', label: 'Comunicaciones' },
+  { id: 'calendar', label: 'Calendario' },
+  { id: 'history', label: 'Historial' },
+  { id: 'templates', label: 'Plantillas' },
+];
+
+export const EVENT_STATUS_FILTERS = [
+  { id: 'todos', label: 'Todos', tone: 'primary' },
+  { id: 'activo', label: 'Activos', tone: 'success' },
+  { id: 'programado', label: 'Programados', tone: 'warning' },
+  { id: 'borrador', label: 'Borradores', tone: 'muted' },
+  { id: 'cancelado', label: 'Cancelados', tone: 'danger' },
+];
+
+export const EVENT_TYPES = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'taller', label: 'Taller' },
+  { id: 'charla', label: 'Charla' },
+  { id: 'webinar', label: 'Webinar' },
+  { id: 'feria', label: 'Feria' },
+  { id: 'capacitacion', label: 'Capacitacion' },
+  { id: 'networking', label: 'Networking' },
+  { id: 'curso', label: 'Curso' },
+  { id: 'trabajo', label: 'Trabajo' },
+  { id: 'convocatoria', label: 'Convocatoria' },
+];
+
+export const EVENT_COMMUNICATION_TYPES = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'plataforma', label: 'Plataforma', tone: 'primary' },
+  { id: 'oportunidad', label: 'Oportunidad', tone: 'success' },
+  { id: 'seguridad', label: 'Seguridad', tone: 'warning' },
+  { id: 'mantenimiento', label: 'Mantenimiento', tone: 'info' },
+  { id: 'comunidad', label: 'Comunidad', tone: 'primary' },
+  { id: 'urgente', label: 'Urgente', tone: 'danger' },
+];
+
+export const EVENT_COMMUNICATION_STATUS = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'borrador', label: 'Borrador', tone: 'muted' },
+  { id: 'programado', label: 'Programado', tone: 'warning' },
+  { id: 'enviado', label: 'Enviado', tone: 'success' },
+  { id: 'archivado', label: 'Archivado', tone: 'muted' },
+];
+
+export const EVENT_AUDIENCE_SEGMENTS = [
+  { id: 'inscritos', label: 'Inscritos' },
+  { id: 'interesados', label: 'Interesados' },
+  { id: 'lista_espera', label: 'Lista de espera' },
+  { id: 'base', label: 'Base general' },
+  { id: 'asistieron', label: 'Asistieron' },
+  { id: 'no_asistieron', label: 'No asistieron' },
+];
+
+export const EVENT_TARGET_MODES = [
+  {
+    id: 'all_users',
+    label: 'Enviar a todos los usuarios',
+    helper: 'Ideal para ferias, cursos generales o anuncios abiertos.',
+  },
+  {
+    id: 'segmented',
+    label: 'Segmentar por perfil',
+    helper: 'Usa habilidades y experiencia para dirigir mejor la convocatoria.',
+  },
+];
+
+export const EVENT_PROFILE_TARGET_GROUPS = [
+  {
+    id: 'technicalSkills',
+    label: 'Habilidades tecnicas',
+    helper: 'Selecciona tecnologias, herramientas o areas tecnicas del portafolio.',
+    searchPlaceholder: 'Buscar habilidad tecnica...',
+    options: [],
+  },
+  {
+    id: 'softSkills',
+    label: 'Habilidades blandas',
+    helper: 'Filtra por capacidades personales y colaborativas.',
+    searchPlaceholder: 'Buscar habilidad blanda...',
+    options: [],
+  },
+  {
+    id: 'academicExperience',
+    label: 'Experiencia academica',
+    helper: 'Dirige el evento segun formacion, cursos o avance academico.',
+    searchPlaceholder: 'Buscar experiencia academica...',
+    options: [],
+  },
+  {
+    id: 'workExperience',
+    label: 'Experiencia laboral',
+    helper: 'Usa roles, areas o nivel profesional para la convocatoria.',
+    searchPlaceholder: 'Buscar experiencia laboral...',
+    options: [],
+  },
+];
+
+export const EVENT_COMMUNICATION_AUDIENCES = [
+  { id: 'all_users', label: 'Todos los usuarios', helper: 'Comunicados generales de la plataforma.' },
+  { id: 'portfolio_users', label: 'Usuarios con portafolio', helper: 'Personas que ya publicaron o completan su perfil.' },
+  { id: 'new_users', label: 'Usuarios nuevos', helper: 'Onboarding, bienvenida y pasos iniciales.' },
+  { id: 'admins', label: 'Equipo administrador', helper: 'Mensajes internos de gestion.' },
+];
+
+export const EVENT_COMMUNICATION_CHANNELS = [
+  { id: 'push', label: 'Push' },
+  { id: 'email', label: 'Correo' },
+  { id: 'inapp', label: 'In-app' },
+];
+
+export const EVENT_STATS = [
+  {
+    id: 'total',
+    label: 'Total eventos',
+    helper: 'Registros disponibles',
+    tone: 'primary',
+  },
+  {
+    id: 'activo',
+    label: 'Activos',
+    helper: 'En ejecucion o visibles',
+    tone: 'success',
+  },
+  {
+    id: 'programado',
+    label: 'Programados',
+    helper: 'Con fecha definida',
+    tone: 'warning',
+  },
+  {
+    id: 'comunicaciones',
+    label: 'Comunicaciones',
+    helper: 'Comunicaciones vinculadas',
+    tone: 'info',
+  },
+  {
+    id: 'cancelado',
+    label: 'Cancelados',
+    helper: 'Fuera de agenda',
+    tone: 'danger',
+  },
+];
+
+export function createEventsWorkspaceShell() {
+  return {
+    events: [],
+    communications: [],
+    templates: [],
+    history: [],
+    sourceReady: false,
+    supportsMutations: false,
+    pageSize: EVENT_PAGE_SIZE,
+  };
+}
+
+export function normalizeEventsWorkspace(payload = {}) {
+  const base = createEventsWorkspaceShell();
+
+  return {
+    ...base,
+    ...payload,
+    events: Array.isArray(payload.events) ? payload.events : base.events,
+    communications: Array.isArray(payload.communications) ? payload.communications : base.communications,
+    templates: Array.isArray(payload.templates) ? payload.templates : base.templates,
+    history: Array.isArray(payload.history) ? payload.history : base.history,
+    pageSize: Number.isInteger(payload.pageSize) && payload.pageSize > 0
+      ? payload.pageSize
+      : base.pageSize,
+  };
+}
+
+export function normalizeEvent(item = {}) {
+  const segments = item.segments || item.segmentos || item.segs || [];
+  const channels = item.channels || item.canales || [];
+
+  return {
+    id: item.id || item.id_evento || item.eventId,
+    title: item.title || item.titulo || item.nombre || 'Evento sin titulo',
+    description: item.description || item.desc || item.descripcion || 'Sin descripcion disponible.',
+    type: item.type || item.tipo || 'taller',
+    status: item.status || item.estado || 'borrador',
+    startsAt: item.startsAt || item.fecha_inicio || item.startDate || '',
+    endsAt: item.endsAt || item.fecha_fin || item.endDate || '',
+    date: item.date || item.fecha || item.fecha_inicio || item.fechaEvento || '--',
+    time: item.time || item.hora || item.hora_inicio || '',
+    location: item.location || item.lugar || item.ubicacion || 'Sin lugar',
+    capacity: Number(item.capacity ?? item.cupo ?? item.cupos ?? 0),
+    registered: Number(item.registered ?? item.inscritos ?? item.asistentes ?? 0),
+    interested: Number(item.interested ?? item.interesados ?? 0),
+    waitlist: Number(item.waitlist ?? item.espera ?? 0),
+    communicationsCount: Number(item.communicationsCount ?? item.comunicaciones ?? item.avisos ?? 0),
+    segments: Array.isArray(segments) ? segments : [],
+    channels: Array.isArray(channels) ? channels : [],
+    raw: item,
+  };
+}
+
+export function normalizeEventCommunication(item = {}) {
+  const channels = item.channels || item.canales || [];
+  const segments = item.segments || item.segmentos || [];
+
+  return {
+    id: item.id || item.id_comunicacion,
+    eventId: item.eventId || item.id_evento,
+    eventTitle: item.eventTitle || item.evento || item.titulo_evento || 'Evento sin vincular',
+    title: item.title || item.titulo || 'Comunicacion sin titulo',
+    body: item.body || item.cuerpo || item.preview || 'Sin contenido disponible.',
+    type: item.type || item.tipo || 'plataforma',
+    status: item.status || item.estado || 'borrador',
+    urgency: item.urgency || item.urgencia || 'baja',
+    audience: Number(item.audience ?? item.dest ?? item.destinatarios ?? 0),
+    date: item.date || item.fecha || item.scheduledAt || item.createdAt || '--',
+    channels: Array.isArray(channels) ? channels : [],
+    segments: Array.isArray(segments) ? segments : [],
+    pinned: !!item.pinned,
+    raw: item,
+  };
+}
+
+export function normalizeEventTemplate(item = {}) {
+  const channels = item.channels || item.canales || [];
+
+  return {
+    id: item.id || item.id_plantilla,
+    title: item.title || item.titulo || item.name || 'Plantilla sin nombre',
+    body: item.body || item.cuerpo || item.descripcion || 'Sin contenido disponible.',
+    type: item.type || item.tipo || 'plataforma',
+    channels: Array.isArray(channels) ? channels : [],
+    used: Number(item.used ?? item.usadas ?? 0),
+    raw: item,
+  };
+}
+
+export function normalizeEventHistoryItem(item = {}) {
+  const channels = item.channels || item.canales || [];
+
+  return {
+    id: item.id || item.id_historial,
+    title: item.title || item.titulo || item.action || 'Registro sin titulo',
+    description: item.description || item.descripcion || item.body || '',
+    type: item.type || item.tipo || 'plataforma',
+    status: item.status || item.estado || 'enviado',
+    target: item.target || item.destino || item.eventTitle || item.evento || 'Sin destino',
+    date: item.date || item.fecha || item.createdAt || item.creado || '--',
+    channels: Array.isArray(channels) ? channels : [],
+    raw: item,
+  };
+}
+
+export function getEventStatusMeta(status) {
+  return EVENT_STATUS_FILTERS.find((item) => item.id === status) || EVENT_STATUS_FILTERS[3];
+}
+
+export function getEventTypeMeta(type) {
+  return EVENT_TYPES.find((item) => item.id === type) || EVENT_TYPES[1];
+}
+
+export function getEventCommunicationTypeMeta(type) {
+  return EVENT_COMMUNICATION_TYPES.find((item) => item.id === type) || EVENT_COMMUNICATION_TYPES[1];
+}
+
+export function getEventCommunicationStatusMeta(status) {
+  return EVENT_COMMUNICATION_STATUS.find((item) => item.id === status) || EVENT_COMMUNICATION_STATUS[1];
+}
+
+export function buildEventMetrics(events = [], communications = []) {
+  const normalizedEvents = events.map(normalizeEvent);
+
+  return {
+    total: normalizedEvents.length,
+    activo: normalizedEvents.filter((event) => event.status === 'activo').length,
+    programado: normalizedEvents.filter((event) => event.status === 'programado').length,
+    comunicaciones: communications.length,
+    cancelado: normalizedEvents.filter((event) => event.status === 'cancelado').length,
+  };
+}
+
+export function buildEventWorkspaceCounts({
+  sourceReady,
+  events = [],
+  communications = [],
+  templates = [],
+  history = [],
+}) {
+  if (!sourceReady) {
+    return {
+      events: '--',
+      communications: '--',
+      calendar: '--',
+      history: '--',
+      templates: '--',
+    };
+  }
+
+  return {
+    events: events.length,
+    communications: communications.length,
+    calendar: events.filter((event) => normalizeEvent(event).date && normalizeEvent(event).date !== '--').length,
+    history: history.length,
+    templates: templates.length,
+  };
+}
+
+export function getEventsPageSummary({
+  sourceReady,
+  filteredCount,
+  currentPage,
+  pageSize,
+}) {
+  if (!sourceReady) return 'Sin registros cargados';
+  if (!filteredCount) return 'Sin resultados';
+
+  const start = (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, filteredCount);
+
+  return `${start}-${end} de ${filteredCount} eventos`;
+}
+
+export function getEventsEmptyState({
+  sourceReady,
+  hasQuery,
+  hasFilters,
+}) {
+  if (!sourceReady) {
+    return {
+      title: 'Sin eventos registrados',
+      description: 'Aqui apareceran los eventos creados para cursos, trabajos, ferias o convocatorias.',
+    };
+  }
+
+  if (hasQuery || hasFilters) {
+    return {
+      title: 'Sin eventos encontrados',
+      description: 'Ajusta la busqueda o los filtros para revisar otros eventos.',
+    };
+  }
+
+  return {
+    title: 'Sin eventos registrados',
+    description: 'Aqui apareceran los eventos cuando exista informacion disponible.',
+  };
+}
+
+export function estimateEventAudience(event = {}, segments = []) {
+  const normalizedEvent = normalizeEvent(event);
+
+  if (!segments.length) return 0;
+
+  return segments.reduce((total, segment) => {
+    if (segment === 'inscritos') return total + normalizedEvent.registered;
+    if (segment === 'interesados') return total + normalizedEvent.interested;
+    if (segment === 'lista_espera') return total + normalizedEvent.waitlist;
+    if (segment === 'base') return total + Math.max(normalizedEvent.registered, normalizedEvent.interested);
+    if (segment === 'asistieron') return total + Number(event.attended ?? event.asistieron ?? 0);
+    if (segment === 'no_asistieron') return total + Number(event.missed ?? event.no_asistieron ?? 0);
+    return total;
+  }, 0);
+}
