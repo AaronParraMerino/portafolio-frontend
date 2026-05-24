@@ -1,4 +1,4 @@
-import { USER_DETAIL_ACTIONS, getUserInitials, getUserSessionCount, getUserStatusMeta } from '../services/profileService';
+import { USER_DETAIL_ACTIONS, getUserInitials, getUserSessionCount, getUserStatusMeta } from '../services/usersService';
 
 function CloseIcon() {
   return (

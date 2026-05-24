@@ -17,7 +17,7 @@ import {
   USER_NOTICE_TYPES,
   getUserNoticeStatusMeta,
   getUserNoticeTypeMeta,
-} from '../services/profileService';
+} from '../services/usersService';
 import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
 
 const CHANNEL_ICONS = {

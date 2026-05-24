@@ -1,4 +1,4 @@
-import { USER_STATUS_FILTERS } from '../services/profileService';
+import { USER_STATUS_FILTERS } from '../services/usersService';
 
 function SearchIcon() {
   return (

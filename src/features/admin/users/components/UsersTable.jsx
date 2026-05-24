@@ -5,7 +5,7 @@ import {
   getUserSessionCount,
   getUserStatusMeta,
   USER_TABLE_COLUMNS,
-} from '../services/profileService';
+} from '../services/usersService';
 
 function ColumnIcon({ id }) {
   const props = {

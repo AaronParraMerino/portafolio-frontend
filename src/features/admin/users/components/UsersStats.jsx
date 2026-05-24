@@ -5,7 +5,7 @@ import {
   BsPersonDash,
   BsShieldExclamation,
 } from 'react-icons/bs';
-import { USER_STATS } from '../services/profileService';
+import { USER_STATS } from '../services/usersService';
 
 const STAT_ICONS = {
   primary: BsPeople,

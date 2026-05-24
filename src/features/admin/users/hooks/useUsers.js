@@ -6,7 +6,7 @@ import {
   getUsersEmptyState,
   getUsersPageSummary,
   normalizeUsersDirectory,
-} from '../services/profileService';
+} from '../services/usersService';
 
 export function useUsersDirectory() {
   const [activeView, setActiveView] = useState('users');

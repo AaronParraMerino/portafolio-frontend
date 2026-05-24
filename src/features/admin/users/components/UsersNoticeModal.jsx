@@ -14,7 +14,7 @@ import {
   USER_NOTICE_TYPES,
   USER_NOTICE_URGENCY,
   estimateUsersAudience,
-} from '../services/profileService';
+} from '../services/usersService';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
