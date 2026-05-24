@@ -4,7 +4,7 @@ import {
   BsMegaphone,
   BsPeople,
 } from 'react-icons/bs';
-import { USER_MANAGEMENT_VIEWS } from '../services/profileService';
+import { USER_MANAGEMENT_VIEWS } from '../services/usersService';
 
 const VIEW_ICONS = {
   users: BsPeople,

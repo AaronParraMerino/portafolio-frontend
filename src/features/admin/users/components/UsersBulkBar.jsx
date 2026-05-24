@@ -1,4 +1,4 @@
-import { USER_BULK_ACTIONS } from '../services/profileService';
+import { USER_BULK_ACTIONS } from '../services/usersService';
 
 export default function UsersBulkBar({
   selectedCount,

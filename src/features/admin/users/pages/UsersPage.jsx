@@ -1,7 +1,7 @@
 import { BsMegaphone } from 'react-icons/bs';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
-import { useUsersDirectory } from '../hooks/useProfile';
+import { useUsersDirectory } from '../hooks/useUsers';
 import UsersActionModal from '../components/UsersActionModal';
 import UsersBulkBar from '../components/UsersBulkBar';
 import UsersCommunicationsPanel from '../components/UsersCommunicationsPanel';
