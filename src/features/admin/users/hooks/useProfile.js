@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  buildUsersWorkspaceCounts,
   buildUsersMetrics,
   createUsersDirectoryShell,
   getUsersEmptyState,
@@ -8,6 +9,7 @@ import {
 } from '../services/profileService';
 
 export function useUsersDirectory() {
+  const [activeView, setActiveView] = useState('users');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,6 +17,7 @@ export function useUsersDirectory() {
   const [activeUserId, setActiveUserId] = useState(null);
   const [pendingActionId, setPendingActionId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [noticeModal, setNoticeModal] = useState(null);
 
   const directory = useMemo(
     () => normalizeUsersDirectory(createUsersDirectoryShell()),
@@ -22,12 +25,22 @@ export function useUsersDirectory() {
   );
 
   const users = directory.items;
+  const communications = directory.communications;
+  const historyItems = directory.history;
+  const templates = directory.templates;
   const pageSize = directory.pageSize;
   const sourceReady = !!directory.sourceReady;
   const supportsMutations = !!directory.supportsMutations;
   const supportsSessions = !!directory.supportsSessions;
 
   const metrics = useMemo(() => buildUsersMetrics(users), [users]);
+  const viewCounts = useMemo(() => buildUsersWorkspaceCounts({
+    sourceReady,
+    users,
+    communications,
+    history: historyItems,
+    templates,
+  }), [communications, historyItems, sourceReady, templates, users]);
 
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -93,6 +106,10 @@ export function useUsersDirectory() {
     setCurrentPage(1);
   };
 
+  const handleViewChange = (nextView) => {
+    setActiveView(nextView);
+  };
+
   const handleStatusFilterChange = (nextFilter) => {
     setStatusFilter(nextFilter);
     setCurrentPage(1);
@@ -150,12 +167,58 @@ export function useUsersDirectory() {
     setActionMessage('');
   };
 
+  const handleOpenNoticeModal = (options = {}) => {
+    setActiveView('communications');
+    setNoticeModal({
+      mode: options.mode || 'notice',
+      initialSegments: options.initialSegments || ['todos'],
+      directUser: options.directUser || null,
+      initialNotice: options.initialNotice || null,
+    });
+  };
+
+  const handleOpenSelectedNoticeModal = () => {
+    handleOpenNoticeModal({
+      initialSegments: selectedIds.length ? ['seleccionados'] : ['todos'],
+    });
+  };
+
+  const handleOpenTemplateModal = () => {
+    setActiveView('templates');
+    setNoticeModal({
+      mode: 'template',
+      initialSegments: ['todos'],
+      directUser: null,
+      initialNotice: null,
+    });
+  };
+
+  const handleOpenDirectNoticeModal = () => {
+    if (!activeUser) return;
+
+    setNoticeModal({
+      mode: 'notice',
+      initialSegments: ['seleccionados'],
+      directUser: activeUser,
+    });
+  };
+
+  const handleCloseNoticeModal = () => {
+    setNoticeModal(null);
+  };
+
   return {
     sourceReady,
     supportsMutations,
     supportsSessions,
     users,
+    communications,
+    historyItems,
+    templates,
     metrics,
+    activeView,
+    viewCounts,
+    noticeModal,
     query,
     statusFilter,
     filterCounts,
@@ -173,6 +236,12 @@ export function useUsersDirectory() {
     activeUser,
     pendingActionId,
     actionMessage,
+    onViewChange: handleViewChange,
+    onOpenNoticeModal: handleOpenNoticeModal,
+    onOpenSelectedNoticeModal: handleOpenSelectedNoticeModal,
+    onOpenTemplateModal: handleOpenTemplateModal,
+    onOpenDirectNoticeModal: handleOpenDirectNoticeModal,
+    onCloseNoticeModal: handleCloseNoticeModal,
     onQueryChange: handleQueryChange,
     onStatusFilterChange: handleStatusFilterChange,
     onToggleUser: handleToggleUser,

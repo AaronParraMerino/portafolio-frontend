@@ -249,12 +249,7 @@
 
 .dash-module-header-action-icon svg {
   display: block;
-  fill: none;
   height: 16px;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
   width: 16px;
 }
 

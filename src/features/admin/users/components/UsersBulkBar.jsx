@@ -4,6 +4,7 @@ export default function UsersBulkBar({
   selectedCount,
   supportsMutations,
   onClearSelection,
+  onNotifySelection,
 }) {
   if (!selectedCount) return null;
 
@@ -26,6 +27,16 @@ export default function UsersBulkBar({
           {action.label}
         </button>
       ))}
+
+      <div className="usr-bulk-separator" />
+
+      <button
+        type="button"
+        className="usr-bulk-action usr-bulk-action--notice"
+        onClick={onNotifySelection}
+      >
+        Enviar aviso
+      </button>
 
       <div className="usr-bulk-separator" />
 

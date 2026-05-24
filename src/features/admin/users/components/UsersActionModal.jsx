@@ -2,7 +2,15 @@ import { USER_DETAIL_ACTIONS, getUserInitials, getUserSessionCount, getUserStatu
 
 function CloseIcon() {
   return (
-    <svg viewBox="0 0 12 12" aria-hidden="true">
+    <svg
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M1 1l10 10M11 1 1 11" />
     </svg>
   );
@@ -14,6 +22,7 @@ export default function UsersActionModal({
   actionMessage,
   supportsMutations,
   supportsSessions,
+  onOpenDirectNotice,
   onClose,
   onSelectAction,
   onCancelAction,
@@ -66,6 +75,16 @@ export default function UsersActionModal({
               <span className="usr-modal-section-kicker">Gestion de cuenta</span>
               <h3>Acciones disponibles</h3>
               <p>La estructura visual ya esta lista para conectarse luego con las acciones reales del backend.</p>
+            </div>
+
+            <div className="usr-modal-toolbar">
+              <button
+                type="button"
+                className="usr-reason-btn usr-reason-btn--primary"
+                onClick={onOpenDirectNotice}
+              >
+                Aviso directo
+              </button>
             </div>
 
             <div className="usr-action-grid">
