@@ -8,6 +8,7 @@ import {
   isGithubLinked,
   syncGithubRepos,
 } from '../services/projectsService';
+import RepositoryProviderIcon from './RepositoryProviderIcon';
 import '../styles/projects.css';
 
 const MAX_REPOSITORIOS_GITHUB = 3;
@@ -484,6 +485,7 @@ export default function ProjectsGithubSyncPanel({
                       onClick={() => removeSelectedRepo(repo.url)}
                       title="Quitar repositorio"
                     >
+                      <RepositoryProviderIcon provider={provider} />
                       {repo.nombre}
                       <span>x</span>
                     </button>
@@ -554,6 +556,7 @@ export default function ProjectsGithubSyncPanel({
                         >
                           <div className="prj-detected-main">
                             <div className="prj-detected-title">
+                              <RepositoryProviderIcon provider={provider} />
                               {getRepoTitle(repo)}
                             </div>
                             <div className="prj-detected-url">{url}</div>

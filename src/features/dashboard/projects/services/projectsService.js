@@ -723,6 +723,19 @@ function getParticipantAvatar(item = {}, usuario = {}, perfil = {}, githubAccoun
   );
 }
 
+function getParticipantThumb(item = {}, usuario = {}, perfil = {}) {
+  return formatUrl(
+    item.avatar_thumb_url ||
+    item.avatarThumbUrl ||
+    item.foto_perfil_thumb_url ||
+    item.fotoPerfilThumbUrl ||
+    perfil.foto_perfil_thumb_url ||
+    perfil.fotoPerfilThumbUrl ||
+    usuario.foto_perfil_thumb_url ||
+    usuario.fotoPerfilThumbUrl
+  );
+}
+
 function normalizeParticipant(item = {}, index = 0) {
   const usuario = item.usuario || item.user || {};
   const perfil = item.perfil || usuario.perfil || {};
@@ -810,6 +823,7 @@ function normalizeParticipant(item = {}, index = 0) {
     tipo_rol: isOwner ? 'owner' : 'colaborador',
     rol_label: isOwner ? 'Owner' : 'Colaborador',
     avatar_url: getParticipantAvatar(item, usuario, perfil, githubAccount),
+    avatar_thumb_url: getParticipantThumb(item, usuario, perfil),
     github_username: githubUsername,
     github_role: githubRole || (isOwner ? 'owner' : ''),
     descripcion_aporte: item.descripcion_aporte || item.descripcionAporte || '',

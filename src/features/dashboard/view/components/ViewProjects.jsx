@@ -276,20 +276,6 @@ function getSitioWebUrl(proyecto = {}) {
   return proyecto.demoUrl || proyecto.url_demo || proyecto.url_sitio_web || proyecto.url_sitioweb || '';
 }
 
-function isDarkColor(color = '') {
-  const hex = String(color || '').trim().replace('#', '');
-
-  if (!/^[0-9a-f]{6}$/i.test(hex)) {
-    return false;
-  }
-
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-
-  return ((r * 299 + g * 587 + b * 114) / 1000) < 96;
-}
-
 function colorWithAlpha(color = '', alphaHex = '24') {
   const hex = String(color || '').trim();
 
@@ -314,17 +300,16 @@ function getTecnologiaDetalle(proyecto = {}, nombre = '') {
 
 function TechChip({ proyecto, tag, detail = false }) {
   const tech = getTecnologiaDetalle(proyecto, tag);
-  const dark = isDarkColor(tech.color);
   const style = tech.color
     ? {
         '--tech-color': tech.color,
-        '--tech-bg': dark ? '#111827' : colorWithAlpha(tech.color, '24'),
-        '--tech-text': dark ? '#ffffff' : '#111827',
+        '--tech-bg': colorWithAlpha(tech.color, '24'),
+        '--tech-text': '#111827',
       }
     : undefined;
 
   return (
-    <span className={`prj-tag-chip prj-tech-chip prj-project-tech-chip${detail ? ' detail' : ''}${dark ? ' dark' : ''}`} style={style}>
+    <span className={`prj-tag-chip prj-tech-chip prj-project-tech-chip${detail ? ' detail' : ''}`} style={style}>
       <span className="prj-tech-chip-icon" aria-hidden="true">
         {tech.icono_url ? (
           <img src={tech.icono_url} alt="" />

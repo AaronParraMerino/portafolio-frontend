@@ -266,8 +266,16 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                   return (
                     <div key={idParticipacion || nombre} className="prj-config-participant">
                       <div className="prj-config-participant-avatar">
-                        {participante.avatar_url ? (
-                          <img src={participante.avatar_url} alt="" />
+                        {(participante.avatar_thumb_url || participante.avatar_url) ? (
+                          <img
+                            src={participante.avatar_thumb_url || participante.avatar_url}
+                            alt=""
+                            onError={(event) => {
+                              if (participante.avatar_url && event.currentTarget.src !== participante.avatar_url) {
+                                event.currentTarget.src = participante.avatar_url;
+                              }
+                            }}
+                          />
                         ) : (
                           <span>{getInitials(nombre)}</span>
                         )}

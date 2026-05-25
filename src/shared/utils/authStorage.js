@@ -26,6 +26,19 @@ function requestUrl(input) {
   return '';
 }
 
+async function isApplicationSessionUnauthorized(response) {
+  try {
+    const data = await response.clone().json();
+    const message = String(data?.message || '').trim().toLowerCase();
+
+    return message.includes('unauthenticated')
+      || message.includes('no hay sesion activa')
+      || message.includes('no autenticado');
+  } catch {
+    return false;
+  }
+}
+
 export function clearAuthStorage() {
   // Clear auth/user keys in both storages to avoid stale mixed state.
   localStorage.removeItem('tokenPORT');
@@ -91,7 +104,12 @@ export function installAuth401Interceptor() {
     const isBackendCall = requestUrl(input).startsWith(BASE_URL);
     const isProtectedCall = hasBearerToken(init);
 
-    if (res.status === 401 && isBackendCall && isProtectedCall) {
+    if (
+      res.status === 401
+      && isBackendCall
+      && isProtectedCall
+      && await isApplicationSessionUnauthorized(res)
+    ) {
       clearAuthStorage();
       emitAuthExpired();
     }
