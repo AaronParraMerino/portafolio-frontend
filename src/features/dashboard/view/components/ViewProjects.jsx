@@ -229,6 +229,14 @@ function getProjectImages(proyecto = {}) {
   ]);
 }
 
+function getProjectOriginalImages(proyecto = {}) {
+  return uniqueNonEmpty([
+    ...(Array.isArray(proyecto.imagenes_originales) ? proyecto.imagenes_originales : []),
+    proyecto.imagen_portada_original,
+    ...getProjectImages(proyecto),
+  ]);
+}
+
 function getProjectVideos(proyecto = {}) {
   return uniqueNonEmpty([
     ...(Array.isArray(proyecto.url_videos) ? proyecto.url_videos : []),
@@ -414,10 +422,11 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
   const [idx, setIdx] = useState(0);
   const [mediaExpandida, setMediaExpandida] = useState(false);
   const images = getProjectImages(proyecto);
+  const originalImages = getProjectOriginalImages(proyecto);
   const videos = showVideos ? getProjectVideos(proyecto) : [];
   const media = showMedia
     ? [
-        ...images.map(url => ({ tipo: 'imagen', url })),
+        ...images.map((url, index) => ({ tipo: 'imagen', url, fallbackUrl: originalImages[index] || url })),
         ...videos.map(url => ({ tipo: 'youtube', url, embedUrl: toYoutubeEmbedUrl(url) })),
       ]
     : [];
@@ -451,6 +460,11 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                         className="prj-carousel-img"
                         loading={i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
+                        onError={(event) => {
+                          if (item.fallbackUrl && event.currentTarget.src !== item.fallbackUrl) {
+                            event.currentTarget.src = item.fallbackUrl;
+                          }
+                        }}
                       />
                     ) : (
                       <div className="prj-carousel-video-wrap">

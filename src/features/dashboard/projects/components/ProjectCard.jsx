@@ -429,15 +429,19 @@ export default function ProjectCard({
     const url = proyecto.imagenUrl || proyecto.imagen_portada || null;
     return url ? [url] : [];
   })();
+  const imagenesOriginales = Array.isArray(proyecto.imagenes_originales) && proyecto.imagenes_originales.length > 0
+    ? proyecto.imagenes_originales.filter(Boolean)
+    : imagenes;
 
   const videosYoutube = normalizarVideos(proyecto);
   const repositorios = normalizarRepositorios(proyecto);
   const documentos = normalizarDocumentos(proyecto);
 
   const media = [
-    ...imagenes.map((url) => ({
+    ...imagenes.map((url, index) => ({
       tipo: 'imagen',
       url,
+      fallbackUrl: imagenesOriginales[index] || proyecto.imagen_portada_original || url,
     })),
     ...videosYoutube.map((url) => ({
       tipo: 'youtube',
@@ -502,6 +506,11 @@ export default function ProjectCard({
                         className="prj-carousel-img"
                         loading={i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
+                        onError={(event) => {
+                          if (item.fallbackUrl && event.currentTarget.src !== item.fallbackUrl) {
+                            event.currentTarget.src = item.fallbackUrl;
+                          }
+                        }}
                       />
                     ) : (
                       <div className="prj-carousel-video-wrap">
