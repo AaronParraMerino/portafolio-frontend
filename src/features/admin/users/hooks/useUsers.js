@@ -8,6 +8,7 @@ import {
   getUsersPageSummary,
   inactivateUserAccount,
   normalizeUsersDirectory,
+  sendAdminNotice,
 } from '../services/usersService';
 
 export function useUsersDirectory() {
@@ -19,6 +20,7 @@ export function useUsersDirectory() {
   const [activeUserId, setActiveUserId] = useState(null);
   const [pendingActionId, setPendingActionId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [actionChannels, setActionChannels] = useState(['inapp', 'email']);
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionSubmitting, setActionSubmitting] = useState(false);
@@ -59,6 +61,7 @@ export function useUsersDirectory() {
   const supportsMutations = !!directory.supportsMutations;
   const supportsSessions = !!directory.supportsSessions;
   const supportsInactivation = !!directory.supportsInactivation;
+  const supportsCommunications = !!directory.supportsCommunications;
 
   const metrics = useMemo(() => buildUsersMetrics(users), [users]);
   const viewCounts = useMemo(() => buildUsersWorkspaceCounts({
@@ -176,6 +179,7 @@ export function useUsersDirectory() {
     setActiveUserId(userId);
     setPendingActionId('');
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
     setActionError('');
     setActionSuccess('');
   };
@@ -195,6 +199,7 @@ export function useUsersDirectory() {
     setActiveUserId(null);
     setPendingActionId('');
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
     setActionError('');
     setActionSuccess('');
   };
@@ -202,6 +207,7 @@ export function useUsersDirectory() {
   const handleSelectAction = (actionId) => {
     setPendingActionId(actionId);
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
     setActionError('');
     setActionSuccess('');
   };
@@ -209,6 +215,7 @@ export function useUsersDirectory() {
   const handleCancelAction = () => {
     setPendingActionId('');
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
     setActionError('');
     setActionSuccess('');
   };
@@ -221,7 +228,10 @@ export function useUsersDirectory() {
     setActionSuccess('');
 
     try {
-      const response = await inactivateUserAccount(activeUser.id);
+      const response = await inactivateUserAccount(activeUser.id, {
+        razon: actionMessage.trim() || null,
+        canales: actionChannels,
+      });
       setDirectory((current) => ({
         ...current,
         items: current.items.map((user) => (
@@ -233,11 +243,20 @@ export function useUsersDirectory() {
       setActionSuccess(response?.message || 'Cuenta inactivada correctamente.');
       setPendingActionId('');
       setActionMessage('');
+      setActionChannels(['inapp', 'email']);
     } catch (error) {
       setActionError(error.message || 'No se pudo inactivar la cuenta.');
     } finally {
       setActionSubmitting(false);
     }
+  };
+
+  const handleToggleActionChannel = (channel) => {
+    setActionChannels((current) => (
+      current.includes(channel)
+        ? (current.length === 1 ? current : current.filter((item) => item !== channel))
+        : [...current, channel]
+    ));
   };
 
   const handleOpenNoticeModal = (options = {}) => {
@@ -280,12 +299,39 @@ export function useUsersDirectory() {
     setNoticeModal(null);
   };
 
+  const handleSendNotice = async (payload) => {
+    const response = await sendAdminNotice(payload);
+    const notice = response?.data || {};
+
+    setDirectory((current) => ({
+      ...current,
+      communications: [
+        {
+          id: notice.id_envio,
+          titulo: notice.titulo,
+          cuerpo: notice.contenido,
+          tipo: notice.tipo,
+          urgencia: notice.urgencia,
+          canales: notice.canales,
+          destinatarios: notice.destinatarios,
+          creado: new Date(notice.created_at).toLocaleString('es-BO'),
+          estado: 'enviado',
+          segmentos: notice.segmentos || payload.segmentos || [],
+        },
+        ...current.communications,
+      ],
+    }));
+
+    return response;
+  };
+
   return {
     sourceReady,
     loadError,
     supportsMutations,
     supportsSessions,
     supportsInactivation,
+    supportsCommunications,
     users,
     communications,
     historyItems,
@@ -311,6 +357,7 @@ export function useUsersDirectory() {
     activeUser,
     pendingActionId,
     actionMessage,
+    actionChannels,
     actionError,
     actionSuccess,
     actionSubmitting,
@@ -320,6 +367,7 @@ export function useUsersDirectory() {
     onOpenTemplateModal: handleOpenTemplateModal,
     onOpenDirectNoticeModal: handleOpenDirectNoticeModal,
     onCloseNoticeModal: handleCloseNoticeModal,
+    onSendNotice: handleSendNotice,
     onQueryChange: handleQueryChange,
     onStatusFilterChange: handleStatusFilterChange,
     onToggleUser: handleToggleUser,
@@ -333,5 +381,6 @@ export function useUsersDirectory() {
     onCancelAction: handleCancelAction,
     onConfirmAction: handleConfirmAction,
     onActionMessageChange: setActionMessage,
+    onToggleActionChannel: handleToggleActionChannel,
   };
 }

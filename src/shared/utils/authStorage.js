@@ -47,6 +47,17 @@ export function clearAuthStorage() {
   sessionStorage.removeItem('tokenPORT');
   sessionStorage.removeItem('usuario');
   sessionStorage.removeItem('perfil_cache');
+
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith('notifications-cache:v1:')) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Cache is only an optimization.
+  }
 }
 
 export function getStoredUser() {

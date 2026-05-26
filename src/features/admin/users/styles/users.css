@@ -2353,6 +2353,30 @@
   box-shadow: 0 0 0 3px rgba(15, 118, 110, .12);
 }
 
+.usr-action-channels {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.usr-action-channels label {
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid var(--gris-borde, #d1d5db);
+  border-radius: 10px;
+  color: var(--gris-oscuro, #374151);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 7px;
+  padding: 8px 12px;
+}
+
+.usr-action-channels input {
+  accent-color: var(--adm-primary, #0f766e);
+}
+
 .usr-reason-foot {
   align-items: center;
   display: flex;

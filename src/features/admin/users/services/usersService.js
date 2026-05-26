@@ -190,6 +190,7 @@ export function createUsersDirectoryShell() {
     sourceReady: false,
     supportsMutations: false,
     supportsSessions: false,
+    supportsCommunications: false,
     pageSize: USER_PAGE_SIZE,
   };
 }
@@ -266,13 +267,30 @@ export async function closeAllUserSessions(userId) {
   return parseAdminResponse(response, 'No se pudieron cerrar las sesiones.');
 }
 
-export async function inactivateUserAccount(userId) {
+export async function inactivateUserAccount(userId, payload = {}) {
   const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}`, {
     method: 'DELETE',
-    headers: getAdminRequestHeaders(),
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
   });
 
   return parseAdminResponse(response, 'No se pudo inactivar la cuenta.');
+}
+
+export async function sendAdminNotice(payload) {
+  const response = await fetch(`${BASE_URL}/administrador/notificaciones`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo enviar el aviso.');
 }
 
 export function normalizeUsersDirectory(payload = {}) {

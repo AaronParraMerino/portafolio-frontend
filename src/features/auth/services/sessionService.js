@@ -4,6 +4,10 @@ const COOKIE_ACCEPTED_KEY = 'folio_cookie_accepted';
 const COOKIE_DISMISSED_KEY = 'folio_cookie_dismissed';
 const UUID_COOKIE_NAME = 'uuid_persistente';
 export const BASE_SESSION_TOKEN_KEY = 'folio_session_token';
+const BASE_SESSION_LAST_SUCCESS_KEY = 'folio_session_basic_last_success';
+const BASE_SESSION_MIN_INTERVAL_MS = 3 * 60 * 60 * 1000;
+
+let baseSessionRequest = null;
 
 const cut = (value, max) => (value ? String(value).slice(0, max) : null);
 
@@ -51,24 +55,50 @@ function getRamSafe() {
 }
 
 export async function initSesionBase() {
-  const payload = getClientSessionData();
-  try {
-    const data = await post('/seccion/basic', payload);
+  const previousToken = sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
+  const lastSuccess = Number(sessionStorage.getItem(BASE_SESSION_LAST_SUCCESS_KEY));
 
-    if (!data || data.errors) {
-      console.error('Error initSesionBase:', data);
-      return null;
-    }
-
-    if (data.session_token) {
-      sessionStorage.setItem(BASE_SESSION_TOKEN_KEY, data.session_token);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error initSesionBase:', error);
-    return null;
+  if (
+    previousToken
+    && Number.isFinite(lastSuccess)
+    && Date.now() - lastSuccess < BASE_SESSION_MIN_INTERVAL_MS
+  ) {
+    return {
+      session_token: previousToken,
+      origen: 'sesion_base_reciente',
+    };
   }
+
+  if (baseSessionRequest) {
+    return baseSessionRequest;
+  }
+
+  baseSessionRequest = (async () => {
+    const payload = getClientSessionData();
+
+    try {
+      const data = await post('/seccion/basic', payload);
+
+      if (!data || data.errors) {
+        console.error('Error initSesionBase:', data);
+        return null;
+      }
+
+      if (data.session_token) {
+        sessionStorage.setItem(BASE_SESSION_TOKEN_KEY, data.session_token);
+        sessionStorage.setItem(BASE_SESSION_LAST_SUCCESS_KEY, String(Date.now()));
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error initSesionBase:', error);
+      return null;
+    } finally {
+      baseSessionRequest = null;
+    }
+  })();
+
+  return baseSessionRequest;
 }
 
 function readCookie(name) {

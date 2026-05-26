@@ -22,6 +22,7 @@ export default function UsersPage() {
     supportsMutations,
     supportsSessions,
     supportsInactivation,
+    supportsCommunications,
     users,
     communications,
     historyItems,
@@ -46,6 +47,7 @@ export default function UsersPage() {
     activeUser,
     pendingActionId,
     actionMessage,
+    actionChannels,
     actionError,
     actionSuccess,
     actionSubmitting,
@@ -55,6 +57,7 @@ export default function UsersPage() {
     onOpenTemplateModal,
     onOpenDirectNoticeModal,
     onCloseNoticeModal,
+    onSendNotice,
     onQueryChange,
     onStatusFilterChange,
     onToggleUser,
@@ -68,6 +71,7 @@ export default function UsersPage() {
     onCancelAction,
     onConfirmAction,
     onActionMessageChange,
+    onToggleActionChannel,
   } = useUsersDirectory();
 
   const headerActions = [
@@ -173,6 +177,7 @@ export default function UsersPage() {
         user={activeUser}
         pendingActionId={pendingActionId}
         actionMessage={actionMessage}
+        actionChannels={actionChannels}
         supportsSessions={supportsSessions}
         supportsInactivation={supportsInactivation}
         onOpenDirectNotice={onOpenDirectNoticeModal}
@@ -181,6 +186,7 @@ export default function UsersPage() {
         onCancelAction={onCancelAction}
         onConfirmAction={onConfirmAction}
         onActionMessageChange={onActionMessageChange}
+        onToggleActionChannel={onToggleActionChannel}
         actionError={actionError}
         actionSuccess={actionSuccess}
         actionSubmitting={actionSubmitting}
@@ -192,6 +198,8 @@ export default function UsersPage() {
         selectedIds={selectedIds}
         metrics={metrics}
         supportsMutations={supportsMutations}
+        supportsCommunications={supportsCommunications}
+        onSendNotice={onSendNotice}
         onClose={onCloseNoticeModal}
       />
     </div>

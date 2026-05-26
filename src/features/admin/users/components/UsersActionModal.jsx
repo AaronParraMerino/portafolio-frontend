@@ -20,6 +20,7 @@ export default function UsersActionModal({
   user,
   pendingActionId,
   actionMessage,
+  actionChannels,
   supportsSessions,
   supportsInactivation,
   actionError,
@@ -31,6 +32,7 @@ export default function UsersActionModal({
   onCancelAction,
   onConfirmAction,
   onActionMessageChange,
+  onToggleActionChannel,
 }) {
   if (!user) return null;
 
@@ -116,9 +118,37 @@ export default function UsersActionModal({
                 </div>
 
                 {canConfirmSelectedAction ? (
-                  <p className="usr-action-confirm-copy">
-                    La cuenta quedara inactiva, su contenido dejara de mostrarse y se cerraran sus sesiones activas.
-                  </p>
+                  <>
+                    <p className="usr-action-confirm-copy">
+                      La cuenta quedara inactiva, su contenido dejara de mostrarse y se cerraran sus sesiones activas.
+                    </p>
+                    <textarea
+                      className="usr-reason-textarea"
+                      rows="4"
+                      maxLength="1000"
+                      value={actionMessage}
+                      onChange={(event) => onActionMessageChange(event.target.value)}
+                      placeholder="Motivo para el usuario (opcional). Si se deja vacio, se enviara un aviso generico."
+                    />
+                    <div className="usr-action-channels" aria-label="Canales para notificar la inactivacion">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={actionChannels.includes('inapp')}
+                          onChange={() => onToggleActionChannel('inapp')}
+                        />
+                        <span>In-app</span>
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={actionChannels.includes('email')}
+                          onChange={() => onToggleActionChannel('email')}
+                        />
+                        <span>Correo</span>
+                      </label>
+                    </div>
+                  </>
                 ) : (
                   <textarea
                     className="usr-reason-textarea"
@@ -133,7 +163,7 @@ export default function UsersActionModal({
                 <div className="usr-reason-foot">
                   <p>
                     {canConfirmSelectedAction
-                      ? 'Esta accion reutiliza la desactivacion existente del sistema.'
+                      ? 'Se enviara la razon personalizada o el mensaje generico por los canales seleccionados.'
                       : 'Este bloque queda preparado para integrar esta accion posteriormente.'}
                   </p>
 
