@@ -574,7 +574,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
   };
 }
 
-function ViewProjectCard({ proyecto, visibilidad, fetchParticipants }) {
+function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalidatedParticipants }) {
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
   const showMedia = detailVisible(visibilidad, 'media');
   const showEstado = detailVisible(visibilidad, 'estado');
@@ -726,7 +726,7 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants }) {
             proyecto={proyecto}
             fetchRemote={fetchParticipants}
             fallbackToCurrentUser={fetchParticipants}
-            validatedOnly
+            validatedOnly={!showUnvalidatedParticipants}
             compact
           />
         )}
@@ -856,7 +856,7 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants }) {
                 detail
                 fetchRemote={fetchParticipants}
                 fallbackToCurrentUser={fetchParticipants}
-                validatedOnly
+                validatedOnly={!showUnvalidatedParticipants}
                 compact
               />
             )}
@@ -867,7 +867,12 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants }) {
   );
 }
 
-export default function ViewProjects({ proyectos = [], visibilidad, fetchParticipants = false }) {
+export default function ViewProjects({
+  proyectos = [],
+  visibilidad,
+  fetchParticipants = false,
+  showUnvalidatedParticipants = false,
+}) {
   const visibles = proyectos.filter(proyecto =>
     isVisible(visibilidad, 'proyectos', proyecto.id)
   );
@@ -890,6 +895,7 @@ export default function ViewProjects({ proyectos = [], visibilidad, fetchPartici
             proyecto={proyecto}
             visibilidad={visibilidad}
             fetchParticipants={fetchParticipants}
+            showUnvalidatedParticipants={showUnvalidatedParticipants}
           />
         ))}
       </div>

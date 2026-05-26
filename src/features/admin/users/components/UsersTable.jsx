@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   getUserAvatarPalette,
   getUserInitials,
@@ -6,6 +6,7 @@ import {
   getUserStatusMeta,
   USER_TABLE_COLUMNS,
 } from '../services/usersService';
+import UsersSessionsMenu from './UsersSessionsMenu';
 
 function ColumnIcon({ id }) {
   const props = {
@@ -103,13 +104,28 @@ export default function UsersTable({
   onToggleVisible,
   onGoToPage,
   onOpenUser,
+  onSessionCountChange,
 }) {
   const masterCheckboxRef = useRef(null);
+  const [openSessionsUserId, setOpenSessionsUserId] = useState(null);
 
   useEffect(() => {
     if (!masterCheckboxRef.current) return;
     masterCheckboxRef.current.indeterminate = someVisibleSelected;
   }, [someVisibleSelected]);
+
+  useEffect(() => {
+    if (openSessionsUserId === null) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (!event.target.closest(`[data-session-menu-root="${openSessionsUserId}"]`)) {
+        setOpenSessionsUserId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [openSessionsUserId]);
 
   return (
     <>
@@ -148,8 +164,11 @@ export default function UsersTable({
                 const avatarPalette = getUserAvatarPalette(user.id || user.email || user.nombre);
                 const sessionCount = getUserSessionCount(user);
 
+                const isSessionsOpen = String(openSessionsUserId) === String(user.id);
+
                 return (
-                  <tr key={user.id} className={isSelected ? 'selected' : ''}>
+                  <Fragment key={user.id}>
+                  <tr className={isSelected ? 'selected' : ''}>
                     <td>
                       <input
                         type="checkbox"
@@ -186,10 +205,17 @@ export default function UsersTable({
                       </span>
                     </td>
 
-                    <td>
-                      <span className={`usr-session-pill${sessionCount > 0 ? ' active' : ''}`}>
+                    <td data-session-menu-root={user.id}>
+                      <button
+                        type="button"
+                        className={`usr-session-pill usr-session-trigger${sessionCount > 0 ? ' active' : ''}${isSessionsOpen ? ' open' : ''}`}
+                        onClick={() => setOpenSessionsUserId(isSessionsOpen ? null : user.id)}
+                        aria-expanded={isSessionsOpen}
+                        aria-label={`Ver sesiones de ${user.nombre || 'usuario'}`}
+                      >
                         {sessionCount > 0 ? sessionCount : 'Sin sesiones'}
-                      </span>
+                        <span aria-hidden="true" className="usr-session-chevron">v</span>
+                      </button>
                     </td>
 
                     <td>
@@ -216,6 +242,17 @@ export default function UsersTable({
                       </button>
                     </td>
                   </tr>
+                  {isSessionsOpen ? (
+                    <tr className="usr-session-expanded-row">
+                      <td colSpan={USER_TABLE_COLUMNS.length} data-session-menu-root={user.id}>
+                        <UsersSessionsMenu
+                          user={user}
+                          onCountChange={onSessionCountChange}
+                        />
+                      </td>
+                    </tr>
+                  ) : null}
+                  </Fragment>
                 );
               })}
             </tbody>

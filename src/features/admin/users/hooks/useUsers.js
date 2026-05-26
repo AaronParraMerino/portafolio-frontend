@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   buildUsersWorkspaceCounts,
   buildUsersMetrics,
   createUsersDirectoryShell,
+  fetchUsersDirectory,
   getUsersEmptyState,
   getUsersPageSummary,
   normalizeUsersDirectory,
@@ -18,11 +19,32 @@ export function useUsersDirectory() {
   const [pendingActionId, setPendingActionId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [noticeModal, setNoticeModal] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
-  const directory = useMemo(
-    () => normalizeUsersDirectory(createUsersDirectoryShell()),
-    [],
-  );
+  const [directory, setDirectory] = useState(() => (
+    normalizeUsersDirectory(createUsersDirectoryShell())
+  ));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchUsersDirectory()
+      .then((result) => {
+        if (!cancelled) {
+          setDirectory(result);
+          setLoadError('');
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setLoadError(error.message || 'No se pudo cargar la lista de usuarios.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const users = directory.items;
   const communications = directory.communications;
@@ -84,7 +106,7 @@ export function useUsersDirectory() {
     todos: users.length,
     activo: users.filter((user) => user.estado === 'activo').length,
     pausado: users.filter((user) => user.estado === 'pausado').length,
-    suspendido: users.filter((user) => user.estado === 'suspendido').length,
+    bloqueado: users.filter((user) => user.estado === 'bloqueado').length,
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   }), [users]);
 
@@ -151,6 +173,17 @@ export function useUsersDirectory() {
     setActionMessage('');
   };
 
+  const handleSessionCountChange = useCallback((userId, count) => {
+    setDirectory((current) => ({
+      ...current,
+      items: current.items.map((user) => (
+        String(user.id) === String(userId)
+          ? { ...user, sesionesActivas: count }
+          : user
+      )),
+    }));
+  }, []);
+
   const handleCloseUser = () => {
     setActiveUserId(null);
     setPendingActionId('');
@@ -209,6 +242,7 @@ export function useUsersDirectory() {
 
   return {
     sourceReady,
+    loadError,
     supportsMutations,
     supportsSessions,
     users,
@@ -249,6 +283,7 @@ export function useUsersDirectory() {
     onClearSelection: handleClearSelection,
     onGoToPage: handleGoToPage,
     onOpenUser: handleOpenUser,
+    onSessionCountChange: handleSessionCountChange,
     onCloseUser: handleCloseUser,
     onSelectAction: handleSelectAction,
     onCancelAction: handleCancelAction,

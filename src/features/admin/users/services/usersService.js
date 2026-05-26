@@ -1,3 +1,5 @@
+import BASE_URL from '../../../../services/http/const';
+
 export const USER_PAGE_SIZE = 10;
 
 export const USER_MANAGEMENT_VIEWS = [
@@ -11,7 +13,7 @@ export const USER_STATUS_FILTERS = [
   { id: 'todos', label: 'Todos' },
   { id: 'activo', label: 'Activos' },
   { id: 'pausado', label: 'Pausados' },
-  { id: 'suspendido', label: 'Suspendidos' },
+  { id: 'bloqueado', label: 'Bloqueados' },
   { id: 'inactivo', label: 'Inactivos' },
 ];
 
@@ -26,15 +28,15 @@ export const USER_STATUS_META = {
     tone: 'warning',
     helper: 'Acceso detenido temporalmente.',
   },
-  suspendido: {
-    label: 'Suspendido',
+  bloqueado: {
+    label: 'Bloqueado',
     tone: 'danger',
     helper: 'Sin acceso indefinido.',
   },
   inactivo: {
     label: 'Inactivo',
     tone: 'muted',
-    helper: 'Sin actividad reciente.',
+    helper: 'Cuenta desactivada por el usuario.',
   },
 };
 
@@ -58,15 +60,15 @@ export const USER_STATS = [
     tone: 'warning',
   },
   {
-    id: 'suspendido',
-    label: 'Suspendidos',
+    id: 'bloqueado',
+    label: 'Bloqueados',
     helper: 'Acceso restringido',
     tone: 'danger',
   },
   {
     id: 'inactivo',
     label: 'Inactivos',
-    helper: 'Sin actividad reciente',
+    helper: 'Cuentas desactivadas',
     tone: 'muted',
   },
 ];
@@ -84,7 +86,7 @@ export const USER_TABLE_COLUMNS = [
 export const USER_BULK_ACTIONS = [
   { id: 'activar', label: 'Activar', tone: 'success' },
   { id: 'pausar', label: 'Pausar', tone: 'warning' },
-  { id: 'suspender', label: 'Suspender', tone: 'danger' },
+  { id: 'bloquear', label: 'Bloquear', tone: 'danger' },
   { id: 'eliminar', label: 'Eliminar', tone: 'danger' },
 ];
 
@@ -102,8 +104,8 @@ export const USER_DETAIL_ACTIONS = [
     tone: 'warning',
   },
   {
-    id: 'suspender',
-    label: 'Suspender cuenta',
+    id: 'bloquear',
+    label: 'Bloquear cuenta',
     description: 'Mantiene el bloqueo hasta una revision manual del equipo.',
     tone: 'danger',
   },
@@ -119,7 +121,7 @@ export const USER_COMMUNICATION_SEGMENTS = [
   { id: 'todos', label: 'Todos', status: null },
   { id: 'activos', label: 'Activos', status: 'activo' },
   { id: 'pausados', label: 'Pausados', status: 'pausado' },
-  { id: 'suspendidos', label: 'Suspendidos', status: 'suspendido' },
+  { id: 'bloqueados', label: 'Bloqueados', status: 'bloqueado' },
   { id: 'inactivos', label: 'Inactivos', status: 'inactivo' },
   { id: 'seleccionados', label: 'Seleccionados', status: null },
 ];
@@ -192,6 +194,78 @@ export function createUsersDirectoryShell() {
   };
 }
 
+export async function fetchUsersDirectory() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+
+  if (!token) {
+    throw new Error('No hay sesion administrativa activa.');
+  }
+
+  const response = await fetch(`${BASE_URL}/administrador/usuarios`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload?.message || 'No se pudo cargar la lista de usuarios.');
+  }
+
+  return normalizeUsersDirectory(payload);
+}
+
+function getAdminRequestHeaders() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+
+  if (!token) {
+    throw new Error('No hay sesion administrativa activa.');
+  }
+
+  return {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+async function parseAdminResponse(response, fallbackMessage) {
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload?.message || fallbackMessage);
+  }
+
+  return payload;
+}
+
+export async function fetchUserSessions(userId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/sesiones`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudieron cargar las sesiones.');
+
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
+export async function closeUserSession(userId, sessionId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/sesiones/${sessionId}`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudo cerrar la sesion.');
+}
+
+export async function closeAllUserSessions(userId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/sesiones`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudieron cerrar las sesiones.');
+}
+
 export function normalizeUsersDirectory(payload = {}) {
   const base = createUsersDirectoryShell();
 
@@ -213,7 +287,7 @@ export function buildUsersMetrics(users = []) {
     total: users.length,
     activo: users.filter((user) => user.estado === 'activo').length,
     pausado: users.filter((user) => user.estado === 'pausado').length,
-    suspendido: users.filter((user) => user.estado === 'suspendido').length,
+    bloqueado: users.filter((user) => user.estado === 'bloqueado').length,
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   };
 }

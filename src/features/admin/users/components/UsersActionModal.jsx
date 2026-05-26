@@ -172,7 +172,7 @@ export default function UsersActionModal({
               <div className="usr-session-empty">
                 {supportsSessions
                   ? 'No existen sesiones activas registradas para esta cuenta.'
-                  : 'Aqui apareceran las sesiones activas, ubicaciones y accesos recientes del usuario.'}
+                  : 'Gestiona las sesiones desde el desplegable de la columna Sesiones en la tabla.'}
               </div>
             )}
           </section>

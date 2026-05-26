@@ -18,6 +18,7 @@ export default function UsersPage() {
   const headerConfig = getAdminSectionConfig('users');
   const {
     sourceReady,
+    loadError,
     supportsMutations,
     supportsSessions,
     users,
@@ -57,6 +58,7 @@ export default function UsersPage() {
     onClearSelection,
     onGoToPage,
     onOpenUser,
+    onSessionCountChange,
     onCloseUser,
     onSelectAction,
     onCancelAction,
@@ -84,6 +86,9 @@ export default function UsersPage() {
       />
 
       <div className="usr-content">
+        {loadError ? (
+          <p className="usr-load-error" role="alert">{loadError}</p>
+        ) : null}
         <UsersStats metrics={metrics} sourceReady={sourceReady} />
 
         <section className="usr-panel">
@@ -119,6 +124,7 @@ export default function UsersPage() {
                 onToggleVisible={onToggleVisible}
                 onGoToPage={onGoToPage}
                 onOpenUser={onOpenUser}
+                onSessionCountChange={onSessionCountChange}
               />
             </>
           ) : null}

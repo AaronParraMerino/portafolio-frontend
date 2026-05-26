@@ -176,7 +176,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
               </label>
 
               <label>
-                <span className="prj-label">Nivel GitHub requerido</span>
+                <span className="prj-label">Nivel Git requerido</span>
                 <select
                   className="prj-select"
                   value={form.github_nivel_autoridad}
@@ -208,13 +208,13 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
               <CheckRow
                 name="permitir_participantes_sin_validacion"
                 checked={form.permitir_participantes_sin_validacion}
-                label="Permitir participantes sin validacion GitHub"
+                label="Permitir participantes sin validacion GitHub y GitLab"
                 onChange={setValue}
               />
               <CheckRow
                 name="permitir_remover_participantes_sin_validacion"
                 checked={form.permitir_remover_participantes_sin_validacion}
-                label="Permitir remover participantes sin validacion"
+                label="Permitir remover participantes sin validacion GitHub y GitLab"
                 onChange={setValue}
               />
             </div>
