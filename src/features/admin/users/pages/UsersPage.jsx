@@ -21,6 +21,7 @@ export default function UsersPage() {
     loadError,
     supportsMutations,
     supportsSessions,
+    supportsInactivation,
     users,
     communications,
     historyItems,
@@ -45,6 +46,9 @@ export default function UsersPage() {
     activeUser,
     pendingActionId,
     actionMessage,
+    actionError,
+    actionSuccess,
+    actionSubmitting,
     onViewChange,
     onOpenNoticeModal,
     onOpenSelectedNoticeModal,
@@ -62,6 +66,7 @@ export default function UsersPage() {
     onCloseUser,
     onSelectAction,
     onCancelAction,
+    onConfirmAction,
     onActionMessageChange,
   } = useUsersDirectory();
 
@@ -168,13 +173,17 @@ export default function UsersPage() {
         user={activeUser}
         pendingActionId={pendingActionId}
         actionMessage={actionMessage}
-        supportsMutations={supportsMutations}
         supportsSessions={supportsSessions}
+        supportsInactivation={supportsInactivation}
         onOpenDirectNotice={onOpenDirectNoticeModal}
         onClose={onCloseUser}
         onSelectAction={onSelectAction}
         onCancelAction={onCancelAction}
+        onConfirmAction={onConfirmAction}
         onActionMessageChange={onActionMessageChange}
+        actionError={actionError}
+        actionSuccess={actionSuccess}
+        actionSubmitting={actionSubmitting}
       />
 
       <UsersNoticeModal

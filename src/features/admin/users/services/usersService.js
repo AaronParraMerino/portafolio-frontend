@@ -87,7 +87,7 @@ export const USER_BULK_ACTIONS = [
   { id: 'activar', label: 'Activar', tone: 'success' },
   { id: 'pausar', label: 'Pausar', tone: 'warning' },
   { id: 'bloquear', label: 'Bloquear', tone: 'danger' },
-  { id: 'eliminar', label: 'Eliminar', tone: 'danger' },
+  { id: 'inactivar', label: 'Inactivar', tone: 'danger' },
 ];
 
 export const USER_DETAIL_ACTIONS = [
@@ -110,9 +110,9 @@ export const USER_DETAIL_ACTIONS = [
     tone: 'danger',
   },
   {
-    id: 'eliminar',
-    label: 'Eliminar usuario',
-    description: 'Accion irreversible disponible cuando se integre el backend.',
+    id: 'inactivar',
+    label: 'Inactivar cuenta',
+    description: 'Desactiva la cuenta, oculta su contenido y cierra sus sesiones.',
     tone: 'danger',
   },
 ];
@@ -264,6 +264,15 @@ export async function closeAllUserSessions(userId) {
   });
 
   return parseAdminResponse(response, 'No se pudieron cerrar las sesiones.');
+}
+
+export async function inactivateUserAccount(userId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudo inactivar la cuenta.');
 }
 
 export function normalizeUsersDirectory(payload = {}) {

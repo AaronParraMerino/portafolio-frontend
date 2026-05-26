@@ -47,7 +47,7 @@ export default function EliminarCuenta() {
     }
   };
 
-  const handleEliminar = async () => {
+  const handleDesactivar = async () => {
     const sinConfirmacion = form.confirmacion.trim() === "";
     const sinContrasena = form.contrasena.trim() === "";
 
@@ -57,19 +57,19 @@ export default function EliminarCuenta() {
     }
 
     if (sinConfirmacion) {
-      showToast("error", 'Escribe "ELIMINAR" en el campo de confirmación.');
+      showToast("error", 'Escribe "INACTIVAR" en el campo de confirmación.');
       return;
     }
 
     if (sinContrasena) {
-      showToast("error", "Ingresa tu contraseña para confirmar la eliminación.");
+      showToast("error", "Ingresa tu contraseña para confirmar la desactivación.");
       return;
     }
 
-    if (form.confirmacion.toLowerCase() !== "eliminar") {
+    if (form.confirmacion.toLowerCase() !== "inactivar") {
       showToast(
         "error",
-        'El texto de confirmación no es correcto. Escribe exactamente "ELIMINAR".'
+        'El texto de confirmación no es correcto. Escribe exactamente "INACTIVAR".'
       );
       return;
     }
@@ -215,7 +215,7 @@ export default function EliminarCuenta() {
             Zona de peligro
           </div>
 
-          <h1 style={titleStyle}>Eliminar cuenta</h1>
+          <h1 style={titleStyle}>Cuenta inactiva</h1>
 
           <p style={subtitleStyle}>
             Tu cuenta quedará inactiva y tu portafolio público se ocultará.
@@ -242,13 +242,14 @@ export default function EliminarCuenta() {
           </div>
 
           <div>
-            <p style={warningTitleStyle}>Al desactivar tu cuenta:</p>
+            <p style={warningTitleStyle}>Al dejar tu cuenta inactiva:</p>
 
             <ul style={warningListStyle}>
               {[
                 "No podrás iniciar sesión hasta restablecerla",
                 "Tu perfil público quedará oculto",
-                "Tus proyectos, habilidades, enlaces y evidencias visibles pasarán a privado",
+                "Tus habilidades, enlaces, experiencias y participaciones visibles quedarán ocultos",
+                "Los recursos compartidos de proyectos seguirán disponibles para otros participantes",
                 "Tus datos se conservarán para una reactivación segura",
               ].map((item, index) => (
                 <li key={index} style={warningItemStyle}>
@@ -266,7 +267,7 @@ export default function EliminarCuenta() {
             <label style={labelStyle}>
               Escribe{" "}
               <span style={{ color: "var(--rojo-soft)", fontWeight: 800 }}>
-                ELIMINAR
+                INACTIVAR
               </span>{" "}
               para confirmar
             </label>
@@ -276,7 +277,7 @@ export default function EliminarCuenta() {
               name="confirmacion"
               value={form.confirmacion}
               onChange={handleChange}
-              placeholder="ELIMINAR"
+              placeholder="INACTIVAR"
               style={{
                 ...inputStyle,
                 borderColor:
@@ -337,7 +338,7 @@ export default function EliminarCuenta() {
                 opacity: loading ? 0.65 : 1,
                 cursor: loading ? "not-allowed" : "pointer",
               }}
-              onClick={handleEliminar}
+              onClick={handleDesactivar}
               disabled={loading}
             >
               <svg

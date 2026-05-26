@@ -6,6 +6,7 @@ import {
   fetchUsersDirectory,
   getUsersEmptyState,
   getUsersPageSummary,
+  inactivateUserAccount,
   normalizeUsersDirectory,
 } from '../services/usersService';
 
@@ -18,6 +19,9 @@ export function useUsersDirectory() {
   const [activeUserId, setActiveUserId] = useState(null);
   const [pendingActionId, setPendingActionId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
+  const [actionSubmitting, setActionSubmitting] = useState(false);
   const [noticeModal, setNoticeModal] = useState(null);
   const [loadError, setLoadError] = useState('');
 
@@ -54,6 +58,7 @@ export function useUsersDirectory() {
   const sourceReady = !!directory.sourceReady;
   const supportsMutations = !!directory.supportsMutations;
   const supportsSessions = !!directory.supportsSessions;
+  const supportsInactivation = !!directory.supportsInactivation;
 
   const metrics = useMemo(() => buildUsersMetrics(users), [users]);
   const viewCounts = useMemo(() => buildUsersWorkspaceCounts({
@@ -171,6 +176,8 @@ export function useUsersDirectory() {
     setActiveUserId(userId);
     setPendingActionId('');
     setActionMessage('');
+    setActionError('');
+    setActionSuccess('');
   };
 
   const handleSessionCountChange = useCallback((userId, count) => {
@@ -188,16 +195,49 @@ export function useUsersDirectory() {
     setActiveUserId(null);
     setPendingActionId('');
     setActionMessage('');
+    setActionError('');
+    setActionSuccess('');
   };
 
   const handleSelectAction = (actionId) => {
     setPendingActionId(actionId);
     setActionMessage('');
+    setActionError('');
+    setActionSuccess('');
   };
 
   const handleCancelAction = () => {
     setPendingActionId('');
     setActionMessage('');
+    setActionError('');
+    setActionSuccess('');
+  };
+
+  const handleConfirmAction = async () => {
+    if (!activeUser || pendingActionId !== 'inactivar') return;
+
+    setActionSubmitting(true);
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const response = await inactivateUserAccount(activeUser.id);
+      setDirectory((current) => ({
+        ...current,
+        items: current.items.map((user) => (
+          String(user.id) === String(activeUser.id)
+            ? { ...user, estado: 'inactivo', sesionesActivas: 0 }
+            : user
+        )),
+      }));
+      setActionSuccess(response?.message || 'Cuenta inactivada correctamente.');
+      setPendingActionId('');
+      setActionMessage('');
+    } catch (error) {
+      setActionError(error.message || 'No se pudo inactivar la cuenta.');
+    } finally {
+      setActionSubmitting(false);
+    }
   };
 
   const handleOpenNoticeModal = (options = {}) => {
@@ -245,6 +285,7 @@ export function useUsersDirectory() {
     loadError,
     supportsMutations,
     supportsSessions,
+    supportsInactivation,
     users,
     communications,
     historyItems,
@@ -270,6 +311,9 @@ export function useUsersDirectory() {
     activeUser,
     pendingActionId,
     actionMessage,
+    actionError,
+    actionSuccess,
+    actionSubmitting,
     onViewChange: handleViewChange,
     onOpenNoticeModal: handleOpenNoticeModal,
     onOpenSelectedNoticeModal: handleOpenSelectedNoticeModal,
@@ -287,6 +331,7 @@ export function useUsersDirectory() {
     onCloseUser: handleCloseUser,
     onSelectAction: handleSelectAction,
     onCancelAction: handleCancelAction,
+    onConfirmAction: handleConfirmAction,
     onActionMessageChange: setActionMessage,
   };
 }

@@ -20,12 +20,16 @@ export default function UsersActionModal({
   user,
   pendingActionId,
   actionMessage,
-  supportsMutations,
   supportsSessions,
+  supportsInactivation,
+  actionError,
+  actionSuccess,
+  actionSubmitting,
   onOpenDirectNotice,
   onClose,
   onSelectAction,
   onCancelAction,
+  onConfirmAction,
   onActionMessageChange,
 }) {
   if (!user) return null;
@@ -34,6 +38,8 @@ export default function UsersActionModal({
   const sessions = Array.isArray(user.sessions) ? user.sessions : [];
   const selectedAction = USER_DETAIL_ACTIONS.find((action) => action.id === pendingActionId) || null;
   const sessionCount = getUserSessionCount(user);
+  const canInactivate = supportsInactivation && user.estado !== 'inactivo';
+  const canConfirmSelectedAction = selectedAction?.id === 'inactivar' && canInactivate;
 
   return (
     <div className="usr-modal-backdrop" onClick={onClose} aria-hidden="true">
@@ -74,7 +80,7 @@ export default function UsersActionModal({
             <div className="usr-modal-section-head">
               <span className="usr-modal-section-kicker">Gestion de cuenta</span>
               <h3>Acciones disponibles</h3>
-              <p>La estructura visual ya esta lista para conectarse luego con las acciones reales del backend.</p>
+              <p>La inactivacion utiliza el flujo real de desactivacion; las otras acciones se habilitaran despues.</p>
             </div>
 
             <div className="usr-modal-toolbar">
@@ -94,6 +100,7 @@ export default function UsersActionModal({
                   type="button"
                   className={`usr-action-card usr-action-card--${action.tone}${pendingActionId === action.id ? ' active' : ''}`}
                   onClick={() => onSelectAction(action.id)}
+                  disabled={action.id === 'inactivar' && !canInactivate}
                 >
                   <strong>{action.label}</strong>
                   <span>{action.description}</span>
@@ -105,23 +112,29 @@ export default function UsersActionModal({
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
                   <strong>{selectedAction.label}</strong>
-                  <span>{supportsMutations ? 'Accion lista para enviar' : 'Pendiente de integracion'}</span>
+                  <span>{canConfirmSelectedAction ? 'Accion disponible' : 'Pendiente de integracion'}</span>
                 </div>
 
-                <textarea
-                  className="usr-reason-textarea"
-                  rows="4"
-                  maxLength="400"
-                  value={actionMessage}
-                  onChange={(event) => onActionMessageChange(event.target.value)}
-                  placeholder="Escribe el motivo o una nota interna para esta accion..."
-                />
+                {canConfirmSelectedAction ? (
+                  <p className="usr-action-confirm-copy">
+                    La cuenta quedara inactiva, su contenido dejara de mostrarse y se cerraran sus sesiones activas.
+                  </p>
+                ) : (
+                  <textarea
+                    className="usr-reason-textarea"
+                    rows="4"
+                    maxLength="400"
+                    value={actionMessage}
+                    onChange={(event) => onActionMessageChange(event.target.value)}
+                    placeholder="Escribe el motivo o una nota interna para esta accion..."
+                  />
+                )}
 
                 <div className="usr-reason-foot">
                   <p>
-                    {supportsMutations
-                      ? 'Este mensaje podra enviarse al usuario junto con la accion.'
-                      : 'Este bloque queda preparado para enviar notificaciones cuando se integre el backend.'}
+                    {canConfirmSelectedAction
+                      ? 'Esta accion reutiliza la desactivacion existente del sistema.'
+                      : 'Este bloque queda preparado para integrar esta accion posteriormente.'}
                   </p>
 
                   <div className="usr-reason-actions">
@@ -136,14 +149,20 @@ export default function UsersActionModal({
                     <button
                       type="button"
                       className="usr-reason-btn usr-reason-btn--primary"
-                      disabled={!supportsMutations}
+                      disabled={!canConfirmSelectedAction || actionSubmitting}
+                      onClick={onConfirmAction}
                     >
-                      {supportsMutations ? 'Confirmar accion' : 'Disponible con backend'}
+                      {canConfirmSelectedAction
+                        ? (actionSubmitting ? 'Inactivando...' : 'Confirmar inactivacion')
+                        : 'Disponible proximamente'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
+
+            {actionError ? <p className="usr-action-feedback usr-action-feedback--error">{actionError}</p> : null}
+            {actionSuccess ? <p className="usr-action-feedback usr-action-feedback--success">{actionSuccess}</p> : null}
           </section>
 
           <section className="usr-modal-section">
