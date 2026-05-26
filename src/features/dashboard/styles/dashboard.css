@@ -16,6 +16,44 @@
   margin-left: 64px;
 }
 
+.dsh-paused-banner {
+  align-items: center;
+  background: #eef1f4;
+  border-bottom: 1px solid #cbd5e1;
+  color: #475569;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  gap: 10px;
+  padding: 12px 28px;
+}
+
+.dsh-paused-banner strong {
+  background: #64748b;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: .05em;
+  padding: 5px 10px;
+  text-transform: uppercase;
+}
+
+.dsh-layout--paused .dsh-main button,
+.dsh-layout--paused .dsh-main input,
+.dsh-layout--paused .dsh-main textarea,
+.dsh-layout--paused .dsh-main select {
+  cursor: not-allowed !important;
+  filter: grayscale(1);
+  opacity: .58;
+  pointer-events: none;
+}
+
+.dsh-layout--paused .dash-module-header-action,
+.dsh-layout--paused .dash-edit-modal,
+.dsh-layout--paused .edit-panel {
+  filter: grayscale(1);
+}
+
 /* Shared dashboard loading state */
 .dash-loading,
 .dash-error-state {
@@ -249,12 +287,7 @@
 
 .dash-module-header-action-icon svg {
   display: block;
-  fill: none;
   height: 16px;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
   width: 16px;
 }
 
@@ -334,6 +367,20 @@
     border-radius .22s ease,
     box-shadow .22s ease;
   overflow: hidden;
+}
+
+.dsh-sidebar.paused {
+  filter: grayscale(1);
+}
+
+.dsh-sidebar.paused .dsh-nav-item {
+  color: rgba(226, 232, 240, .56);
+}
+
+.dsh-sidebar.paused .dsh-nav-item.active {
+  background: rgba(148, 163, 184, .16);
+  border-left-color: #94a3b8;
+  color: #e2e8f0;
 }
 
 .dsh-sidebar.footer-near {

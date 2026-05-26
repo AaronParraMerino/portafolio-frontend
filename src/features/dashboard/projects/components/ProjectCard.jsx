@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ProjectsDotsMenu from './ProjectsDotsMenu';
 import ProjectsGithubCollaborators from './ProjectsGithubCollaborators';
+import RepositoryProviderIcon, { getRepositoryProvider } from './RepositoryProviderIcon';
 import '../styles/projects.css';
 import { TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/projectsModel';
 
@@ -150,11 +151,21 @@ function normalizarRepositorios(proyecto = {}) {
   if (Array.isArray(proyecto.url_repositorios) && proyecto.url_repositorios.length > 0) {
     return proyecto.url_repositorios
       .filter(Boolean)
-      .map(url => String(url).trim());
+      .map((repo) => {
+        const url = typeof repo === 'object' ? repo.url || repo.url_repositorio : repo;
+        return {
+          url: String(url || '').trim(),
+          provider: getRepositoryProvider(repo),
+        };
+      })
+      .filter(repo => repo.url);
   }
 
   return proyecto.url_repositorio
-    ? [proyecto.url_repositorio]
+    ? [{
+        url: proyecto.url_repositorio,
+        provider: getRepositoryProvider(proyecto.url_repositorio),
+      }]
     : [];
 }
 
@@ -262,20 +273,6 @@ function normalizarTexto(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-function isDarkColor(color = '') {
-  const hex = String(color || '').trim().replace('#', '');
-
-  if (!/^[0-9a-f]{6}$/i.test(hex)) {
-    return false;
-  }
-
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-
-  return ((r * 299 + g * 587 + b * 114) / 1000) < 96;
-}
-
 function colorWithAlpha(color = '', alphaHex = '24') {
   const hex = String(color || '').trim();
 
@@ -300,17 +297,16 @@ function getTecnologiaDetalle(proyecto = {}, nombre = '') {
 
 function TechChip({ proyecto, tag, detail = false }) {
   const tech = getTecnologiaDetalle(proyecto, tag);
-  const dark = isDarkColor(tech.color);
   const style = tech.color
     ? {
         '--tech-color': tech.color,
-        '--tech-bg': dark ? '#111827' : colorWithAlpha(tech.color, '24'),
-        '--tech-text': dark ? '#ffffff' : '#111827',
+        '--tech-bg': colorWithAlpha(tech.color, '24'),
+        '--tech-text': '#111827',
       }
     : undefined;
 
   return (
-    <span className={`prj-tag-chip prj-tech-chip prj-project-tech-chip${detail ? ' detail' : ''}${dark ? ' dark' : ''}`} style={style}>
+    <span className={`prj-tag-chip prj-tech-chip prj-project-tech-chip${detail ? ' detail' : ''}`} style={style}>
       <span className="prj-tech-chip-icon" aria-hidden="true">
         {tech.icono_url ? (
           <img src={tech.icono_url} alt="" />
@@ -334,24 +330,6 @@ function CoverIcon() {
     </svg>
   );
 }
-
-const IconGitHub = () => (
-  <svg viewBox="0 0 10 10" width="10" height="10">
-    <path
-      d="M5 0C2.2 0 0 2.3 0 5c0 2.2 1.4 4.1 3.4 4.8.3 0 .4-.1.4-.2v-.9
-         c-1.4.3-1.7-.6-1.7-.6-.2-.6-.6-.7-.6-.7-.4-.3 0-.3 0-.3
-         .5 0 .8.5.8.5.4.8 1.2.5 1.5.4 0-.3.2-.5.3-.7
-         -1.1-.1-2.3-.6-2.3-2.5 0-.5.2-1 .5-1.3
-         0-.1-.2-.6 0-1.3 0 0 .4-.1 1.4.5
-         .4-.1.8-.2 1.2-.2.4 0 .8.1 1.2.2
-         1-.7 1.4-.5 1.4-.5.2.7 0 1.2 0 1.3
-         .3.4.5.8.5 1.3 0 1.9-1.1 2.3-2.3 2.5
-         .2.1.3.4.3.9v1.4c0 .1.1.3.4.2
-         C8.6 9.1 10 7.2 10 5c0-2.7-2.2-5-5-5z"
-      fill="currentColor"
-    />
-  </svg>
-);
 
 const IconSite = () => (
   <svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -422,6 +400,7 @@ function DetailLink({ href, children, className = '' }) {
 ════════════════════════════════════════ */
 export default function ProjectCard({
   proyecto = {},
+  prioridadImagen = false,
   onEditar,
   onEliminar,
   onDesvincular,
@@ -451,15 +430,19 @@ export default function ProjectCard({
     const url = proyecto.imagenUrl || proyecto.imagen_portada || null;
     return url ? [url] : [];
   })();
+  const imagenesOriginales = Array.isArray(proyecto.imagenes_originales) && proyecto.imagenes_originales.length > 0
+    ? proyecto.imagenes_originales.filter(Boolean)
+    : imagenes;
 
   const videosYoutube = normalizarVideos(proyecto);
-  const repositoriosGithub = normalizarRepositorios(proyecto);
+  const repositorios = normalizarRepositorios(proyecto);
   const documentos = normalizarDocumentos(proyecto);
 
   const media = [
-    ...imagenes.map((url) => ({
+    ...imagenes.map((url, index) => ({
       tipo: 'imagen',
       url,
+      fallbackUrl: imagenesOriginales[index] || proyecto.imagen_portada_original || url,
     })),
     ...videosYoutube.map((url) => ({
       tipo: 'youtube',
@@ -478,7 +461,7 @@ export default function ProjectCard({
     desarrolladoLabel ||
     miParticipacion ||
     periodoLabel ||
-    repositoriosGithub.length > 0 ||
+    repositorios.length > 0 ||
     sitioWebUrl ||
     videosYoutube.length > 0 ||
     documentos.length > 0;
@@ -522,8 +505,13 @@ export default function ProjectCard({
                         src={item.url}
                         alt={`${proyecto.titulo || 'Proyecto'} – imagen ${i + 1}`}
                         className="prj-carousel-img"
-                        loading={i === 0 ? 'eager' : 'lazy'}
+                        loading={prioridadImagen && i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
+                        onError={(event) => {
+                          if (item.fallbackUrl && event.currentTarget.src !== item.fallbackUrl) {
+                            event.currentTarget.src = item.fallbackUrl;
+                          }
+                        }}
                       />
                     ) : (
                       <div className="prj-carousel-video-wrap">
@@ -704,16 +692,17 @@ export default function ProjectCard({
         {!detallesExpandidos && (
           <div className="prj-card-footer">
             <div className="prj-proj-links">
-              {repositoriosGithub.map((url, i) => (
+              {repositorios.map((repo, i) => (
                 <a
                   key={`repo-${i}`}
-                  href={url}
-                  className="prj-proj-link prj-proj-link-gh"
+                  href={repo.url}
+                  className={`prj-proj-link prj-proj-link-${repo.provider === 'gitlab' ? 'gl' : 'gh'}`}
                   target="_blank"
                   rel="noreferrer"
-                  title={url}
+                  title={repo.url}
                 >
-                  <IconGitHub /> GitHub {repositoriosGithub.length > 1 ? i + 1 : ''}
+                  <RepositoryProviderIcon provider={repo.provider} />
+                  {repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} {repositorios.length > 1 ? i + 1 : ''}
                 </a>
               ))}
 
@@ -844,18 +833,19 @@ export default function ProjectCard({
               </div>
             )}
 
-            {(repositoriosGithub.length > 0 || sitioWebUrl || videosYoutube.length > 0 || documentos.length > 0) && (
+            {(repositorios.length > 0 || sitioWebUrl || videosYoutube.length > 0 || documentos.length > 0) && (
               <div className="prj-detail-section">
                 <div className="prj-detail-section-title">Enlaces</div>
 
                 <div className="prj-detail-links">
-                  {repositoriosGithub.map((url, i) => (
+                  {repositorios.map((repo, i) => (
                     <DetailLink
                       key={`detail-repo-${i}`}
-                      href={url}
-                      className="gh"
+                      href={repo.url}
+                      className={repo.provider === 'gitlab' ? 'gl' : 'gh'}
                     >
-                      <IconGitHub /> Repositorio GitHub {repositoriosGithub.length > 1 ? i + 1 : ''}
+                      <RepositoryProviderIcon provider={repo.provider} />
+                      Repositorio {repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} {repositorios.length > 1 ? i + 1 : ''}
                     </DetailLink>
                   ))}
 

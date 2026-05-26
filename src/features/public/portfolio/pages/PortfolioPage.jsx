@@ -186,7 +186,7 @@ export default function PortfolioPage() {
           <ViewProjects
             proyectos={proyectos}
             visibilidad={visibilidad}
-            fetchParticipants
+            showUnvalidatedParticipants
           />
         </ViewOsFrame>
       </div>

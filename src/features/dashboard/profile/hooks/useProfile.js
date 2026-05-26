@@ -38,7 +38,8 @@ function mapearPerfil(data) {
   return {
     ...data,
     avatarUrl: formatUrl(data.foto_perfil),
-    bannerUrl: formatUrl(data.foto_fondo),
+    bannerUrl: formatUrl(data.foto_fondo_medium_url || data.foto_fondo),
+    bannerOriginalUrl: formatUrl(data.foto_fondo),
   };
 }
 
@@ -206,13 +207,17 @@ export function useProfile() {
         const urlFinal = urlCruda.startsWith('http')
           ? urlCruda
           : `${BASE_URL_STORAGE}${urlCruda}`;
+        const bannerMedium = payload.foto_fondo_medium_url || urlCruda;
+        const bannerFinal = bannerMedium.startsWith('http')
+          ? bannerMedium
+          : `${BASE_URL_STORAGE}${bannerMedium}`;
 
         setPerfil(prev => {
           const nuevo = {
             ...prev,
             ...(tipo === 'avatar'
               ? { avatarUrl: urlFinal, foto_perfil: urlCruda }
-              : { bannerUrl: urlFinal, foto_fondo: urlCruda }
+              : { bannerUrl: bannerFinal, bannerOriginalUrl: urlFinal, foto_fondo: urlCruda }
             ),
           };
           escribirCache(nuevo);
@@ -253,7 +258,7 @@ export function useProfile() {
           ...prev,
           ...(tipo === 'avatar'
             ? { avatarUrl: null, foto_perfil: null }
-            : { bannerUrl: null, foto_fondo: null }
+            : { bannerUrl: null, bannerOriginalUrl: null, foto_fondo: null }
           ),
         };
         escribirCache(nuevo);

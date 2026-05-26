@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import '../styles/projects.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import ProjectsTechPicker from './ProjectsTechPicker';
+import RepositoryProviderIcon from './RepositoryProviderIcon';
 import { ESTADOS_PROYECTO, TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/projectsModel';
 import {
   attachDetectedReposToProject,
@@ -816,13 +817,8 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
         <div className="prj-link-list">
           {repositorios.map((url, i) => (
             <div key={`${url}-${i}`} className="prj-link-item">
-              <div className="prj-link-icon prj-link-icon-gh">
-                <svg viewBox="0 0 10 10">
-                  <path
-                    d="M5 0C2.2 0 0 2.3 0 5c0 2.2 1.4 4.1 3.4 4.8.3 0 .4-.1.4-.2v-.9c-1.4.3-1.7-.6-1.7-.6-.2-.6-.6-.7-.6-.7-.4-.3 0-.3 0-.3.5 0 .8.5.8.5.4.8 1.2.5 1.5.4 0-.3.2-.5.3-.7-1.1-.1-2.3-.6-2.3-2.5 0-.5.2-1 .5-1.3 0-.1-.2-.6 0-1.3 0 0 .4-.1 1.4.5.4-.1.8-.2 1.2-.2.4 0 .8.1 1.2.2 1-.7 1.4-.5 1.4-.5.2.7 0 1.2 0 1.3.3.4.5.8.5 1.3 0 1.9-1.1 2.3-2.3 2.5.2.1.3.4.3.9v1.4c0 .1.1.3.4.2C8.6 9.1 10 7.2 10 5c0-2.7-2.2-5-5-5z"
-                    fill="currentColor"
-                  />
-                </svg>
+              <div className={`prj-link-icon prj-link-icon-${getRepoProviderFromUrl(url) === 'gitlab' ? 'gl' : 'gh'}`}>
+                <RepositoryProviderIcon provider={getRepoProviderFromUrl(url)} />
               </div>
 
               <div className="prj-link-info">
@@ -1940,6 +1936,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                                       <div className="prj-detected-side">
                                         <span className="prj-detected-pill">
+                                          <RepositoryProviderIcon provider={repo?.proveedor || getRepoProviderFromUrl(url)} />
                                           {repo?.proveedor === 'gitlab' ? 'GitLab' : 'GitHub'}
                                         </span>
 

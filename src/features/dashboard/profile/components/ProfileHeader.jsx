@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import '../styles/profile.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
@@ -190,6 +190,20 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
   const iniciales = perfil.nombre.split(' ').slice(0, 2).map(n => n[0]).join('');
   const [modal,    setModal]    = useState(null);
   const [cargando, setCargando] = useState(false);
+  const [bannerUrl, setBannerUrl] = useState(perfil.bannerUrl);
+
+  useEffect(() => {
+    setBannerUrl(perfil.bannerUrl);
+    if (!perfil.bannerUrl || !perfil.bannerOriginalUrl || perfil.bannerUrl === perfil.bannerOriginalUrl) return undefined;
+
+    const image = new Image();
+    image.src = perfil.bannerUrl;
+    image.onerror = () => setBannerUrl(perfil.bannerOriginalUrl);
+
+    return () => {
+      image.onerror = null;
+    };
+  }, [perfil.bannerUrl, perfil.bannerOriginalUrl]);
 
   const handleSubir = async (tipo, archivo) => {
     const fn = tipo === 'banner' ? onSubirBanner : onSubirAvatar;
@@ -211,8 +225,8 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
     <>
       <div className="prf-header">
 
-        <div className={`prf-banner${perfil.bannerUrl ? ' has-img' : ''}`}
-          style={perfil.bannerUrl ? { backgroundImage: `url(${perfil.bannerUrl})` } : undefined}>
+        <div className={`prf-banner${bannerUrl ? ' has-img' : ''}`}
+          style={bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : undefined}>
           <div className="prf-img-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button className="prf-avatar-btn" style={{ position: 'static', transform: 'none', margin: 0 }}
               title="Cambiar banner" onClick={() => setModal({ tipo: 'upload-banner' })}>

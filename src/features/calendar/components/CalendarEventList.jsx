@@ -10,7 +10,7 @@ export default function CalendarEventList({
   onDeleteAll,
 }) {
   const title = formatSelectedDate(selectedDate);
-  const isPastDate = selectedDate < today;
+  
   const canCreate = selectedDate >= today;
   const hasEvents = events.length > 0;
 

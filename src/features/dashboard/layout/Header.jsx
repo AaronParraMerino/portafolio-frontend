@@ -4,7 +4,15 @@ const toArray = (actions) => {
 };
 
 const PlusIcon = () => (
-  <svg viewBox="0 0 16 16" aria-hidden="true">
+  <svg
+    viewBox="0 0 16 16"
+    aria-hidden="true"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M8 3v10M3 8h10" />
   </svg>
 );
