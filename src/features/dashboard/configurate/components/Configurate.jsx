@@ -248,10 +248,10 @@ export default function Configurate() {
 
               <div style={cardContentStyle}>
                 <h3 style={{ ...cardTitleStyle, color: "var(--rojo-soft)" }}>
-                  Eliminar cuenta
+                  Cuenta inactiva
                 </h3>
                 <p style={cardTextStyle}>
-                  Esta acción es permanente e irreversible.
+                  Desactiva tu cuenta y oculta tu portafolio hasta restablecerla.
                 </p>
               </div>
             </div>

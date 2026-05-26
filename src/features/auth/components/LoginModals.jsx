@@ -108,6 +108,24 @@ export function LoginErrorModal({ message, onClose }) {
   );
 }
 
+export function BlockedAccountModal({ blocked, onClose }) {
+  if (!blocked) return null;
+
+  return (
+    <ConfirmModal
+      open={true}
+      title="Cuenta bloqueada"
+      message={`Esta cuenta ha sido bloqueada. Motivo: ${blocked.razon}`}
+      confirmLabel="Aceptar"
+      cancelLabel="Cerrar"
+      variant="red"
+      icon="warning"
+      onConfirm={onClose}
+      onClose={onClose}
+    />
+  );
+}
+
 export function LoginSuccessModal({ message, onClose }) {
   return (
     <ConfirmModal

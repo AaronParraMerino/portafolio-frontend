@@ -1,4 +1,5 @@
-import { USER_DETAIL_ACTIONS, getUserInitials, getUserSessionCount, getUserStatusMeta } from '../services/usersService';
+import { USER_DETAIL_ACTIONS, getUserSessionCount, getUserStatusMeta } from '../services/usersService';
+import CachedUserAvatar from './CachedUserAvatar';
 
 function CloseIcon() {
   return (
@@ -20,13 +21,22 @@ export default function UsersActionModal({
   user,
   pendingActionId,
   actionMessage,
-  supportsMutations,
+  actionChannels,
   supportsSessions,
+  supportsInactivation,
+  supportsActivation,
+  supportsPausing,
+  supportsBlocking,
+  actionError,
+  actionSuccess,
+  actionSubmitting,
   onOpenDirectNotice,
   onClose,
   onSelectAction,
   onCancelAction,
+  onConfirmAction,
   onActionMessageChange,
+  onToggleActionChannel,
 }) {
   if (!user) return null;
 
@@ -34,6 +44,18 @@ export default function UsersActionModal({
   const sessions = Array.isArray(user.sessions) ? user.sessions : [];
   const selectedAction = USER_DETAIL_ACTIONS.find((action) => action.id === pendingActionId) || null;
   const sessionCount = getUserSessionCount(user);
+  const canInactivate = supportsInactivation && user.estado !== 'inactivo';
+  const canActivate = supportsActivation && user.estado !== 'activo';
+  const canPause = supportsPausing && user.estado === 'activo';
+  const canBlock = supportsBlocking && user.estado !== 'bloqueado';
+  const isActivation = selectedAction?.id === 'activar';
+  const isPausing = selectedAction?.id === 'pausar';
+  const isBlocking = selectedAction?.id === 'bloquear';
+  const isInactivation = selectedAction?.id === 'inactivar';
+  const canConfirmSelectedAction = (isActivation && canActivate)
+    || (isPausing && canPause)
+    || (isBlocking && canBlock)
+    || (isInactivation && canInactivate);
 
   return (
     <div className="usr-modal-backdrop" onClick={onClose} aria-hidden="true">
@@ -45,9 +67,7 @@ export default function UsersActionModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="usr-modal-head">
-          <div className="usr-modal-avatar">
-            {getUserInitials(user.nombre)}
-          </div>
+          <CachedUserAvatar user={user} className="usr-modal-avatar" />
 
           <div className="usr-modal-copy">
             <strong>{user.nombre || 'Usuario sin nombre'}</strong>
@@ -74,7 +94,7 @@ export default function UsersActionModal({
             <div className="usr-modal-section-head">
               <span className="usr-modal-section-kicker">Gestion de cuenta</span>
               <h3>Acciones disponibles</h3>
-              <p>La estructura visual ya esta lista para conectarse luego con las acciones reales del backend.</p>
+              <p>Activar, pausar, bloquear e inactivar ya aplican su estado real y generan el aviso correspondiente.</p>
             </div>
 
             <div className="usr-modal-toolbar">
@@ -94,6 +114,10 @@ export default function UsersActionModal({
                   type="button"
                   className={`usr-action-card usr-action-card--${action.tone}${pendingActionId === action.id ? ' active' : ''}`}
                   onClick={() => onSelectAction(action.id)}
+                  disabled={(action.id === 'activar' && !canActivate)
+                    || (action.id === 'pausar' && !canPause)
+                    || (action.id === 'bloquear' && !canBlock)
+                    || (action.id === 'inactivar' && !canInactivate)}
                 >
                   <strong>{action.label}</strong>
                   <span>{action.description}</span>
@@ -105,23 +129,79 @@ export default function UsersActionModal({
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
                   <strong>{selectedAction.label}</strong>
-                  <span>{supportsMutations ? 'Accion lista para enviar' : 'Pendiente de integracion'}</span>
+                  <span>{canConfirmSelectedAction ? 'Accion disponible' : 'Pendiente de integracion'}</span>
                 </div>
 
-                <textarea
-                  className="usr-reason-textarea"
-                  rows="4"
-                  maxLength="400"
-                  value={actionMessage}
-                  onChange={(event) => onActionMessageChange(event.target.value)}
-                  placeholder="Escribe el motivo o una nota interna para esta accion..."
-                />
+                {canConfirmSelectedAction ? (
+                  <>
+                    <p className="usr-action-confirm-copy">
+                      {isActivation
+                        ? 'La cuenta quedara activa inmediatamente y el usuario podra iniciar sesion sin codigo de verificacion.'
+                        : (isPausing
+                          ? 'La cuenta seguira visible y con inicio de sesion, pero solo podra consultar informacion hasta que administracion la active.'
+                          : isBlocking
+                          ? 'La cuenta quedara bloqueada, su contenido dejara de mostrarse y solo un administrador podra activarla nuevamente.'
+                          : 'La cuenta quedara inactiva, su contenido dejara de mostrarse y se cerraran sus sesiones activas.')}
+                    </p>
+                    <textarea
+                      className="usr-reason-textarea"
+                      rows="4"
+                      maxLength="1000"
+                      value={actionMessage}
+                      onChange={(event) => onActionMessageChange(event.target.value)}
+                      placeholder={isActivation
+                        ? 'Mensaje para el usuario (opcional). Si se deja vacio, se enviara un aviso generico de activacion.'
+                        : (isPausing
+                          ? 'Motivo de la pausa. Se mostrara como aviso de solo lectura en su dashboard.'
+                          : isBlocking
+                          ? 'Motivo del bloqueo. Se mostrara al usuario cuando intente iniciar sesion.'
+                          : 'Motivo para el usuario (opcional). Si se deja vacio, se enviara un aviso generico.')}
+                    />
+                    {isPausing || isBlocking ? (
+                      <p className="usr-action-confirm-copy">
+                        El motivo se registrara como notificacion In-app obligatoria para informar esta restriccion.
+                      </p>
+                    ) : (
+                      <div className="usr-action-channels" aria-label={`Canales para notificar la ${isActivation ? 'activacion' : 'inactivacion'}`}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={actionChannels.includes('inapp')}
+                            onChange={() => onToggleActionChannel('inapp')}
+                          />
+                          <span>In-app</span>
+                        </label>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={actionChannels.includes('email')}
+                            onChange={() => onToggleActionChannel('email')}
+                          />
+                          <span>Correo</span>
+                        </label>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <textarea
+                    className="usr-reason-textarea"
+                    rows="4"
+                    maxLength="400"
+                    value={actionMessage}
+                    onChange={(event) => onActionMessageChange(event.target.value)}
+                    placeholder="Escribe el motivo o una nota interna para esta accion..."
+                  />
+                )}
 
                 <div className="usr-reason-foot">
                   <p>
-                    {supportsMutations
-                      ? 'Este mensaje podra enviarse al usuario junto con la accion.'
-                      : 'Este bloque queda preparado para enviar notificaciones cuando se integre el backend.'}
+                    {canConfirmSelectedAction
+                      ? (isBlocking
+                        ? 'El usuario no podra desbloquearse; la accion Activar cuenta del administrador restaura el acceso.'
+                        : (isPausing
+                          ? 'El usuario conservara lectura y visibilidad; la accion Activar cuenta restaura las modificaciones.'
+                          : `Se enviara ${isActivation ? 'el mensaje personalizado' : 'la razon personalizada'} o el aviso generico por los canales seleccionados.`))
+                      : 'Este bloque queda preparado para integrar esta accion posteriormente.'}
                   </p>
 
                   <div className="usr-reason-actions">
@@ -136,14 +216,22 @@ export default function UsersActionModal({
                     <button
                       type="button"
                       className="usr-reason-btn usr-reason-btn--primary"
-                      disabled={!supportsMutations}
+                      disabled={!canConfirmSelectedAction || actionSubmitting}
+                      onClick={onConfirmAction}
                     >
-                      {supportsMutations ? 'Confirmar accion' : 'Disponible con backend'}
+                      {canConfirmSelectedAction
+                        ? (actionSubmitting
+                          ? (isActivation ? 'Activando...' : (isPausing ? 'Pausando...' : (isBlocking ? 'Bloqueando...' : 'Inactivando...')))
+                          : (isActivation ? 'Confirmar activacion' : (isPausing ? 'Confirmar pausa' : (isBlocking ? 'Confirmar bloqueo' : 'Confirmar inactivacion'))))
+                        : 'Disponible proximamente'}
                     </button>
                   </div>
                 </div>
               </div>
             )}
+
+            {actionError ? <p className="usr-action-feedback usr-action-feedback--error">{actionError}</p> : null}
+            {actionSuccess ? <p className="usr-action-feedback usr-action-feedback--success">{actionSuccess}</p> : null}
           </section>
 
           <section className="usr-modal-section">
@@ -172,7 +260,7 @@ export default function UsersActionModal({
               <div className="usr-session-empty">
                 {supportsSessions
                   ? 'No existen sesiones activas registradas para esta cuenta.'
-                  : 'Aqui apareceran las sesiones activas, ubicaciones y accesos recientes del usuario.'}
+                  : 'Gestiona las sesiones desde el desplegable de la columna Sesiones en la tabla.'}
               </div>
             )}
           </section>

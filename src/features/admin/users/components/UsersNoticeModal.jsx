@@ -37,12 +37,33 @@ function toggleOption(value, selectedValues, onChange) {
   onChange([...selectedValues.filter((item) => !['todos', 'seleccionados'].includes(item)), value]);
 }
 
+function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
+  if (directUser?.id) return [directUser.id];
+
+  if (segments.includes('seleccionados')) {
+    return selectedIds.map((id) => Number(id)).filter(Boolean);
+  }
+
+  const statuses = {
+    activos: 'activo',
+    pausados: 'pausado',
+    bloqueados: 'bloqueado',
+    inactivos: 'inactivo',
+  };
+
+  return users
+    .filter((user) => segments.includes('todos') || segments.some((segment) => statuses[segment] === user.estado))
+    .map((user) => Number(user.id))
+    .filter(Boolean);
+}
+
 export default function UsersNoticeModal({
   modal,
   users,
   selectedIds,
   metrics,
-  supportsMutations,
+  supportsCommunications,
+  onSendNotice,
   onClose,
 }) {
   const [title, setTitle] = useState('');
@@ -50,9 +71,10 @@ export default function UsersNoticeModal({
   const [type, setType] = useState('cuenta');
   const [urgency, setUrgency] = useState('baja');
   const [segments, setSegments] = useState(['todos']);
-  const [channels, setChannels] = useState(['inapp', 'email']);
+  const [channels, setChannels] = useState(['inapp']);
   const [schedule, setSchedule] = useState('');
   const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!modal) return;
@@ -64,9 +86,10 @@ export default function UsersNoticeModal({
     setType(initialNotice.type || initialNotice.tipo || (modal.mode === 'template' ? 'sistema' : 'cuenta'));
     setUrgency(initialNotice.urgency || initialNotice.urgencia || 'baja');
     setSegments(initialNotice.segments || initialNotice.segmentos || (modal.directUser ? ['seleccionados'] : modal.initialSegments || ['todos']));
-    setChannels(initialNotice.channels || initialNotice.canales || ['inapp', 'email']);
+    setChannels(['inapp']);
     setSchedule(initialNotice.scheduledAt || '');
     setMessage('');
+    setSubmitting(false);
   }, [modal]);
 
   const audience = useMemo(() => {
@@ -92,7 +115,7 @@ export default function UsersNoticeModal({
     : 'Segmenta por estado, seleccion o usuario puntual.';
   const selectedType = USER_NOTICE_TYPES.find((item) => item.id === type);
 
-  const handleSubmit = (intent) => {
+  const handleSubmit = async (intent) => {
     if (!title.trim() || !body.trim()) {
       setMessage('Completa titulo y mensaje antes de continuar.');
       return;
@@ -103,16 +126,53 @@ export default function UsersNoticeModal({
       return;
     }
 
-    if (!supportsMutations) {
-      setMessage(isTemplate
-        ? 'Plantilla lista para guardar cuando conectemos backend.'
-        : intent === 'draft'
-          ? 'Borrador listo para guardar cuando conectemos backend.'
-          : 'Aviso listo para enviar o programar cuando conectemos backend.');
+    if (isTemplate) {
+      setMessage('Las plantillas se habilitaran en una siguiente integracion.');
       return;
     }
 
-    setMessage(isTemplate ? 'Plantilla preparada.' : 'Aviso preparado.');
+    if (intent === 'draft') {
+      setMessage('El guardado de borradores aun no esta disponible.');
+      return;
+    }
+
+    if (schedule) {
+      setMessage('La programacion aun no esta disponible. Quita la fecha para enviar ahora.');
+      return;
+    }
+
+    if (!supportsCommunications) {
+      setMessage('El envio in-app todavia no esta disponible.');
+      return;
+    }
+
+    const destinatarios = resolveNoticeRecipients({
+      directUser: modal.directUser,
+      users,
+      selectedIds,
+      segments,
+    });
+
+    setSubmitting(true);
+    setMessage('');
+
+    try {
+      const response = await onSendNotice({
+        destinatarios,
+        titulo: title.trim(),
+        contenido: body.trim(),
+        tipo: type,
+        urgencia: urgency,
+        canales: ['inapp'],
+        segmentos: segments,
+      });
+
+      setMessage(response?.message || `Aviso enviado a ${destinatarios.length} usuario(s).`);
+    } catch (error) {
+      setMessage(error.message || 'No se pudo enviar el aviso.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -201,6 +261,7 @@ export default function UsersNoticeModal({
                   value={schedule}
                   onChange={(event) => setSchedule(event.target.value)}
                 />
+                <small>Proximamente. Por ahora el envio es inmediato.</small>
               </label>
             ) : null}
           </div>
@@ -270,14 +331,15 @@ export default function UsersNoticeModal({
                     key={channel.id}
                     type="button"
                     className={`usr-segment-card${selected ? ' active' : ''}`}
-                    onClick={() => toggleOption(channel.id, channels, setChannels)}
+                    onClick={() => channel.id === 'inapp' && setChannels(['inapp'])}
+                    disabled={channel.id !== 'inapp'}
                   >
                     <span className="usr-segment-icon">
                       <Icon />
                     </span>
                     <span>
                       <strong>{channel.label}</strong>
-                      <small>{selected ? 'Incluido' : 'Opcional'}</small>
+                      <small>{channel.id === 'inapp' ? 'Incluido' : 'Proximamente'}</small>
                     </span>
                     <span className="usr-segment-check">
                       {selected ? <BsCheckLg /> : null}
@@ -320,6 +382,7 @@ export default function UsersNoticeModal({
                 type="button"
                 className="usr-reason-btn usr-reason-btn--ghost"
                 onClick={() => handleSubmit('draft')}
+                disabled={submitting}
               >
                 Guardar borrador
               </button>
@@ -329,8 +392,9 @@ export default function UsersNoticeModal({
               type="button"
               className="usr-reason-btn usr-reason-btn--primary"
               onClick={() => handleSubmit(isTemplate ? 'template' : 'send')}
+              disabled={submitting}
             >
-              {isTemplate ? 'Guardar plantilla' : 'Enviar / programar'}
+              {isTemplate ? 'Guardar plantilla' : submitting ? 'Enviando...' : 'Enviar ahora'}
             </button>
           </div>
         </div>

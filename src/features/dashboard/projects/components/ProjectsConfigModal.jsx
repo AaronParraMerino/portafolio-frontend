@@ -6,15 +6,11 @@ import {
 } from '../services/projectsService';
 
 const DEFAULT_CONFIG = {
-  modo_union: 'github_validado',
-  requiere_aprobacion_union: true,
   permitir_participantes_sin_validacion: false,
   puede_editar_proyecto: 'participantes_validados',
   puede_administrar_proyecto: 'propietarios',
   github_nivel_autoridad: 'maintainer',
   github_prevalece_sobre_creador: true,
-  enlace_union_activo: false,
-  visibilidad_github_validado_usuario: 'visible',
   visibilidad_usuario_sin_validacion: 'visible',
   permitir_remover_participantes_sin_validacion: false,
 };
@@ -180,7 +176,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
               </label>
 
               <label>
-                <span className="prj-label">Nivel GitHub requerido</span>
+                <span className="prj-label">Nivel Git requerido</span>
                 <select
                   className="prj-select"
                   value={form.github_nivel_autoridad}
@@ -189,20 +185,6 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                   <option value="owner">Owner</option>
                   <option value="maintainer">Maintainer/Admin</option>
                   <option value="admin_push">Admin o push</option>
-                </select>
-              </label>
-
-              <label>
-                <span className="prj-label">Modo de union</span>
-                <select
-                  className="prj-select"
-                  value={form.modo_union}
-                  onChange={(e) => setValue('modo_union', e.target.value)}
-                >
-                  <option value="cerrado">Cerrado</option>
-                  <option value="por_solicitud">Por solicitud</option>
-                  <option value="enlace_autenticado">Enlace autenticado</option>
-                  <option value="github_validado">GitHub validado</option>
                 </select>
               </label>
 
@@ -224,21 +206,15 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
             <div className="prj-section-label">Reglas</div>
             <div className="prj-config-checks">
               <CheckRow
-                name="requiere_aprobacion_union"
-                checked={form.requiere_aprobacion_union}
-                label="Requerir aprobacion para unirse"
-                onChange={setValue}
-              />
-              <CheckRow
                 name="permitir_participantes_sin_validacion"
                 checked={form.permitir_participantes_sin_validacion}
-                label="Permitir participantes sin validacion GitHub"
+                label="Permitir participantes sin validacion GitHub y GitLab"
                 onChange={setValue}
               />
               <CheckRow
                 name="permitir_remover_participantes_sin_validacion"
                 checked={form.permitir_remover_participantes_sin_validacion}
-                label="Permitir remover participantes sin validacion"
+                label="Permitir remover participantes sin validacion GitHub y GitLab"
                 onChange={setValue}
               />
             </div>
@@ -266,8 +242,16 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                   return (
                     <div key={idParticipacion || nombre} className="prj-config-participant">
                       <div className="prj-config-participant-avatar">
-                        {participante.avatar_url ? (
-                          <img src={participante.avatar_url} alt="" />
+                        {(participante.avatar_thumb_url || participante.avatar_url) ? (
+                          <img
+                            src={participante.avatar_thumb_url || participante.avatar_url}
+                            alt=""
+                            onError={(event) => {
+                              if (participante.avatar_url && event.currentTarget.src !== participante.avatar_url) {
+                                event.currentTarget.src = participante.avatar_url;
+                              }
+                            }}
+                          />
                         ) : (
                           <span>{getInitials(nombre)}</span>
                         )}

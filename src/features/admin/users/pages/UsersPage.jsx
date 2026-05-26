@@ -18,8 +18,14 @@ export default function UsersPage() {
   const headerConfig = getAdminSectionConfig('users');
   const {
     sourceReady,
+    loadError,
     supportsMutations,
     supportsSessions,
+    supportsInactivation,
+    supportsActivation,
+    supportsPausing,
+    supportsBlocking,
+    supportsCommunications,
     users,
     communications,
     historyItems,
@@ -44,12 +50,17 @@ export default function UsersPage() {
     activeUser,
     pendingActionId,
     actionMessage,
+    actionChannels,
+    actionError,
+    actionSuccess,
+    actionSubmitting,
     onViewChange,
     onOpenNoticeModal,
     onOpenSelectedNoticeModal,
     onOpenTemplateModal,
     onOpenDirectNoticeModal,
     onCloseNoticeModal,
+    onSendNotice,
     onQueryChange,
     onStatusFilterChange,
     onToggleUser,
@@ -57,10 +68,13 @@ export default function UsersPage() {
     onClearSelection,
     onGoToPage,
     onOpenUser,
+    onSessionCountChange,
     onCloseUser,
     onSelectAction,
     onCancelAction,
+    onConfirmAction,
     onActionMessageChange,
+    onToggleActionChannel,
   } = useUsersDirectory();
 
   const headerActions = [
@@ -84,6 +98,9 @@ export default function UsersPage() {
       />
 
       <div className="usr-content">
+        {loadError ? (
+          <p className="usr-load-error" role="alert">{loadError}</p>
+        ) : null}
         <UsersStats metrics={metrics} sourceReady={sourceReady} />
 
         <section className="usr-panel">
@@ -119,6 +136,7 @@ export default function UsersPage() {
                 onToggleVisible={onToggleVisible}
                 onGoToPage={onGoToPage}
                 onOpenUser={onOpenUser}
+                onSessionCountChange={onSessionCountChange}
               />
             </>
           ) : null}
@@ -162,13 +180,22 @@ export default function UsersPage() {
         user={activeUser}
         pendingActionId={pendingActionId}
         actionMessage={actionMessage}
-        supportsMutations={supportsMutations}
+        actionChannels={actionChannels}
         supportsSessions={supportsSessions}
+        supportsInactivation={supportsInactivation}
+        supportsActivation={supportsActivation}
+        supportsPausing={supportsPausing}
+        supportsBlocking={supportsBlocking}
         onOpenDirectNotice={onOpenDirectNoticeModal}
         onClose={onCloseUser}
         onSelectAction={onSelectAction}
         onCancelAction={onCancelAction}
+        onConfirmAction={onConfirmAction}
         onActionMessageChange={onActionMessageChange}
+        onToggleActionChannel={onToggleActionChannel}
+        actionError={actionError}
+        actionSuccess={actionSuccess}
+        actionSubmitting={actionSubmitting}
       />
 
       <UsersNoticeModal
@@ -177,6 +204,8 @@ export default function UsersPage() {
         selectedIds={selectedIds}
         metrics={metrics}
         supportsMutations={supportsMutations}
+        supportsCommunications={supportsCommunications}
+        onSendNotice={onSendNotice}
         onClose={onCloseNoticeModal}
       />
     </div>

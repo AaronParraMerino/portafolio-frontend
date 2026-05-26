@@ -48,7 +48,7 @@ export const ADMIN_SECTIONS = {
     eyebrow: 'Cuenta / Configuracion',
   },
   deleteAccount: {
-    title: 'Eliminar Cuenta',
+    title: 'Cuenta inactiva',
     eyebrow: 'Cuenta / Configuracion',
   },
 };

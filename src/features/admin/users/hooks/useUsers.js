@@ -1,11 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  activateUserAccount,
+  blockUserAccount,
   buildUsersWorkspaceCounts,
   buildUsersMetrics,
   createUsersDirectoryShell,
+  fetchUsersDirectory,
   getUsersEmptyState,
   getUsersPageSummary,
+  inactivateUserAccount,
   normalizeUsersDirectory,
+  pauseUserAccount,
+  sendAdminNotice,
 } from '../services/usersService';
 
 export function useUsersDirectory() {
@@ -17,12 +23,37 @@ export function useUsersDirectory() {
   const [activeUserId, setActiveUserId] = useState(null);
   const [pendingActionId, setPendingActionId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
+  const [actionChannels, setActionChannels] = useState(['inapp', 'email']);
+  const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
+  const [actionSubmitting, setActionSubmitting] = useState(false);
   const [noticeModal, setNoticeModal] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
-  const directory = useMemo(
-    () => normalizeUsersDirectory(createUsersDirectoryShell()),
-    [],
-  );
+  const [directory, setDirectory] = useState(() => (
+    normalizeUsersDirectory(createUsersDirectoryShell())
+  ));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchUsersDirectory()
+      .then((result) => {
+        if (!cancelled) {
+          setDirectory(result);
+          setLoadError('');
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setLoadError(error.message || 'No se pudo cargar la lista de usuarios.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const users = directory.items;
   const communications = directory.communications;
@@ -32,6 +63,11 @@ export function useUsersDirectory() {
   const sourceReady = !!directory.sourceReady;
   const supportsMutations = !!directory.supportsMutations;
   const supportsSessions = !!directory.supportsSessions;
+  const supportsInactivation = !!directory.supportsInactivation;
+  const supportsActivation = !!directory.supportsActivation;
+  const supportsPausing = !!directory.supportsPausing;
+  const supportsBlocking = !!directory.supportsBlocking;
+  const supportsCommunications = !!directory.supportsCommunications;
 
   const metrics = useMemo(() => buildUsersMetrics(users), [users]);
   const viewCounts = useMemo(() => buildUsersWorkspaceCounts({
@@ -84,7 +120,7 @@ export function useUsersDirectory() {
     todos: users.length,
     activo: users.filter((user) => user.estado === 'activo').length,
     pausado: users.filter((user) => user.estado === 'pausado').length,
-    suspendido: users.filter((user) => user.estado === 'suspendido').length,
+    bloqueado: users.filter((user) => user.estado === 'bloqueado').length,
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   }), [users]);
 
@@ -149,22 +185,108 @@ export function useUsersDirectory() {
     setActiveUserId(userId);
     setPendingActionId('');
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
+    setActionError('');
+    setActionSuccess('');
   };
+
+  const handleSessionCountChange = useCallback((userId, count) => {
+    setDirectory((current) => ({
+      ...current,
+      items: current.items.map((user) => (
+        String(user.id) === String(userId)
+          ? { ...user, sesionesActivas: count }
+          : user
+      )),
+    }));
+  }, []);
 
   const handleCloseUser = () => {
     setActiveUserId(null);
     setPendingActionId('');
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
+    setActionError('');
+    setActionSuccess('');
   };
 
   const handleSelectAction = (actionId) => {
     setPendingActionId(actionId);
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
+    setActionError('');
+    setActionSuccess('');
   };
 
   const handleCancelAction = () => {
     setPendingActionId('');
     setActionMessage('');
+    setActionChannels(['inapp', 'email']);
+    setActionError('');
+    setActionSuccess('');
+  };
+
+  const handleConfirmAction = async () => {
+    if (!activeUser || !['activar', 'pausar', 'bloquear', 'inactivar'].includes(pendingActionId)) return;
+
+    setActionSubmitting(true);
+    setActionError('');
+    setActionSuccess('');
+
+    try {
+      const isActivation = pendingActionId === 'activar';
+      const isPausing = pendingActionId === 'pausar';
+      const isBlocking = pendingActionId === 'bloquear';
+      const actionPayload = {
+        razon: actionMessage.trim() || null,
+        ...(isPausing || isBlocking ? {} : { canales: actionChannels }),
+      };
+      const response = isActivation
+        ? await activateUserAccount(activeUser.id, actionPayload)
+        : (isPausing
+          ? await pauseUserAccount(activeUser.id, actionPayload)
+          : isBlocking
+          ? await blockUserAccount(activeUser.id, actionPayload)
+          : await inactivateUserAccount(activeUser.id, actionPayload));
+      setDirectory((current) => ({
+        ...current,
+        items: current.items.map((user) => (
+          String(user.id) === String(activeUser.id)
+            ? {
+              ...user,
+              estado: isActivation ? 'activo' : (isPausing ? 'pausado' : (isBlocking ? 'bloqueado' : 'inactivo')),
+              sesionesActivas: isActivation || isPausing ? user.sesionesActivas : 0,
+            }
+            : user
+        )),
+      }));
+      setActionSuccess(response?.message || (isActivation
+        ? 'Cuenta activada correctamente.'
+        : (isPausing
+          ? 'Cuenta pausada correctamente.'
+          : (isBlocking ? 'Cuenta bloqueada correctamente.' : 'Cuenta inactivada correctamente.'))));
+      setPendingActionId('');
+      setActionMessage('');
+      setActionChannels(['inapp', 'email']);
+    } catch (error) {
+      setActionError(error.message || (pendingActionId === 'activar'
+        ? 'No se pudo activar la cuenta.'
+        : (pendingActionId === 'pausar'
+          ? 'No se pudo pausar la cuenta.'
+          : pendingActionId === 'bloquear'
+          ? 'No se pudo bloquear la cuenta.'
+          : 'No se pudo inactivar la cuenta.')));
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
+  const handleToggleActionChannel = (channel) => {
+    setActionChannels((current) => (
+      current.includes(channel)
+        ? (current.length === 1 ? current : current.filter((item) => item !== channel))
+        : [...current, channel]
+    ));
   };
 
   const handleOpenNoticeModal = (options = {}) => {
@@ -207,10 +329,42 @@ export function useUsersDirectory() {
     setNoticeModal(null);
   };
 
+  const handleSendNotice = async (payload) => {
+    const response = await sendAdminNotice(payload);
+    const notice = response?.data || {};
+
+    setDirectory((current) => ({
+      ...current,
+      communications: [
+        {
+          id: notice.id_envio,
+          titulo: notice.titulo,
+          cuerpo: notice.contenido,
+          tipo: notice.tipo,
+          urgencia: notice.urgencia,
+          canales: notice.canales,
+          destinatarios: notice.destinatarios,
+          creado: new Date(notice.created_at).toLocaleString('es-BO'),
+          estado: 'enviado',
+          segmentos: notice.segmentos || payload.segmentos || [],
+        },
+        ...current.communications,
+      ],
+    }));
+
+    return response;
+  };
+
   return {
     sourceReady,
+    loadError,
     supportsMutations,
     supportsSessions,
+    supportsInactivation,
+    supportsActivation,
+    supportsPausing,
+    supportsBlocking,
+    supportsCommunications,
     users,
     communications,
     historyItems,
@@ -236,12 +390,17 @@ export function useUsersDirectory() {
     activeUser,
     pendingActionId,
     actionMessage,
+    actionChannels,
+    actionError,
+    actionSuccess,
+    actionSubmitting,
     onViewChange: handleViewChange,
     onOpenNoticeModal: handleOpenNoticeModal,
     onOpenSelectedNoticeModal: handleOpenSelectedNoticeModal,
     onOpenTemplateModal: handleOpenTemplateModal,
     onOpenDirectNoticeModal: handleOpenDirectNoticeModal,
     onCloseNoticeModal: handleCloseNoticeModal,
+    onSendNotice: handleSendNotice,
     onQueryChange: handleQueryChange,
     onStatusFilterChange: handleStatusFilterChange,
     onToggleUser: handleToggleUser,
@@ -249,9 +408,12 @@ export function useUsersDirectory() {
     onClearSelection: handleClearSelection,
     onGoToPage: handleGoToPage,
     onOpenUser: handleOpenUser,
+    onSessionCountChange: handleSessionCountChange,
     onCloseUser: handleCloseUser,
     onSelectAction: handleSelectAction,
     onCancelAction: handleCancelAction,
+    onConfirmAction: handleConfirmAction,
     onActionMessageChange: setActionMessage,
+    onToggleActionChannel: handleToggleActionChannel,
   };
 }

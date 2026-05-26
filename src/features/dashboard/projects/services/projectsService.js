@@ -723,6 +723,19 @@ function getParticipantAvatar(item = {}, usuario = {}, perfil = {}, githubAccoun
   );
 }
 
+function getParticipantThumb(item = {}, usuario = {}, perfil = {}) {
+  return formatUrl(
+    item.avatar_thumb_url ||
+    item.avatarThumbUrl ||
+    item.foto_perfil_thumb_url ||
+    item.fotoPerfilThumbUrl ||
+    perfil.foto_perfil_thumb_url ||
+    perfil.fotoPerfilThumbUrl ||
+    usuario.foto_perfil_thumb_url ||
+    usuario.fotoPerfilThumbUrl
+  );
+}
+
 function normalizeParticipant(item = {}, index = 0) {
   const usuario = item.usuario || item.user || {};
   const perfil = item.perfil || usuario.perfil || {};
@@ -810,6 +823,7 @@ function normalizeParticipant(item = {}, index = 0) {
     tipo_rol: isOwner ? 'owner' : 'colaborador',
     rol_label: isOwner ? 'Owner' : 'Colaborador',
     avatar_url: getParticipantAvatar(item, usuario, perfil, githubAccount),
+    avatar_thumb_url: getParticipantThumb(item, usuario, perfil),
     github_username: githubUsername,
     github_role: githubRole || (isOwner ? 'owner' : ''),
     descripcion_aporte: item.descripcion_aporte || item.descripcionAporte || '',
@@ -1201,6 +1215,18 @@ function evidenciaUrl(ev = {}) {
   return ev.url || ev.archivo_url || ev.archivoUrl || ev.archivo_path || ev.archivoPath || '';
 }
 
+function evidenciaImagenUrl(ev = {}, variant = 'card') {
+  if (variant === 'detail') {
+    return ev.imagen_detail_url || ev.imagenDetailUrl || evidenciaUrl(ev);
+  }
+
+  if (variant === 'original') {
+    return evidenciaUrl(ev);
+  }
+
+  return ev.imagen_card_url || ev.imagenCardUrl || evidenciaUrl(ev);
+}
+
 function evidenciaTipo(ev = {}) {
   return cleanString(ev.tipo).toLowerCase();
 }
@@ -1222,21 +1248,21 @@ function sortByOrden(a, b) {
   return (a.orden ?? 0) - (b.orden ?? 0);
 }
 
-function getImagenesFromEvidencias(evidencias = []) {
+function getImagenesFromEvidencias(evidencias = [], variant = 'card') {
   return evidencias
     .filter(isVisible)
     .filter(ev => ['imagen', 'captura'].includes(evidenciaTipo(ev)))
     .sort(sortByOrden)
-    .map(ev => formatUrl(evidenciaUrl(ev)))
+    .map(ev => formatUrl(evidenciaImagenUrl(ev, variant)))
     .filter(Boolean);
 }
 
-function getPortadaFromEvidencias(evidencias = [], imagenes = []) {
+function getPortadaFromEvidencias(evidencias = [], imagenes = [], variant = 'card') {
   const portada = evidencias
     .filter(isVisible)
     .find(ev => ['imagen', 'captura'].includes(evidenciaTipo(ev)) && isTruthyDb(ev.es_portada));
 
-  return formatUrl(evidenciaUrl(portada)) || imagenes[0] || '';
+  return formatUrl(evidenciaImagenUrl(portada, variant)) || imagenes[0] || '';
 }
 
 function getRepositoriosFromEvidencias(evidencias = []) {
@@ -1315,6 +1341,7 @@ export function normalizeProyectoFromApi(project = {}) {
     : [];
 
   const imagenesDesdeEvidencias = getImagenesFromEvidencias(evidencias);
+  const imagenesOriginalesDesdeEvidencias = getImagenesFromEvidencias(evidencias, 'original');
 
   const imagenes = imagenesDirectas.length > 0
     ? imagenesDirectas
@@ -1326,9 +1353,18 @@ export function normalizeProyectoFromApi(project = {}) {
           ? [formatUrl(project.imagenUrl)]
           : [];
 
+  const imagenesOriginales = imagenesDirectas.length > 0
+    ? imagenesDirectas
+    : imagenesOriginalesDesdeEvidencias.length > 0
+      ? imagenesOriginalesDesdeEvidencias
+      : imagenes;
+
   const portada = project.imagen_portada
     ? formatUrl(project.imagen_portada)
     : getPortadaFromEvidencias(evidencias, imagenes);
+  const portadaOriginal = project.imagen_portada
+    ? formatUrl(project.imagen_portada)
+    : getPortadaFromEvidencias(evidencias, imagenesOriginales, 'original');
 
   const reposFromEvidencias = getRepositoriosFromEvidencias(evidencias);
   const repositorios = Array.isArray(project.url_repositorios) && project.url_repositorios.length > 0
@@ -1418,8 +1454,10 @@ export function normalizeProyectoFromApi(project = {}) {
     url_video: project.url_video || videos[0] || '',
 
     imagenes,
+    imagenes_originales: imagenesOriginales,
     imagenUrl: imagenes[0] || null,
     imagen_portada: portada || imagenes[0] || null,
+    imagen_portada_original: portadaOriginal || imagenesOriginales[0] || null,
 
     documentos,
 

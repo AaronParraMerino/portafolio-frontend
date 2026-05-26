@@ -118,7 +118,7 @@ const BADGE_STYLES = {
   amber: { background: 'rgba(245,158,11,.2)', color: '#fbbf24' },
 };
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, paused = false, onToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
   const activeId = getActiveId(location.pathname);
@@ -283,7 +283,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   return (
     <>
       <aside
-        className={`dsh-sidebar${collapsed ? ' collapsed' : ''}${footerInset > 4 ? ' footer-near' : ''}`}
+        className={`dsh-sidebar${collapsed ? ' collapsed' : ''}${paused ? ' paused' : ''}${footerInset > 4 ? ' footer-near' : ''}`}
         style={{ '--dsh-sidebar-footer-inset': `${footerInset}px` }}
       >
         <NavContent inDrawer={false} />

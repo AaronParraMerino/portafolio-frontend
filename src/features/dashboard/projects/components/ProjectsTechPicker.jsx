@@ -56,20 +56,6 @@ function getTechColor(tech) {
   return tech?.color || '';
 }
 
-function isDarkColor(color = '') {
-  const hex = String(color || '').trim().replace('#', '');
-
-  if (!/^[0-9a-f]{6}$/i.test(hex)) {
-    return false;
-  }
-
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-
-  return ((r * 299 + g * 587 + b * 114) / 1000) < 96;
-}
-
 function colorWithAlpha(color = '', alphaHex = '24') {
   const hex = String(color || '').trim();
 
@@ -258,17 +244,16 @@ export default function ProjectsTechPicker({
             <div className="prj-tech-chips" onClick={(e) => e.stopPropagation()}>
               {selectedList.map(s => {
                 const tech = getSelectedTech(s);
-                const dark = isDarkColor(tech.color);
                 const chipStyle = tech.color
                   ? {
                       '--tech-color': tech.color,
-                      '--tech-bg': dark ? '#111827' : colorWithAlpha(tech.color, '24'),
-                      '--tech-text': dark ? '#ffffff' : '#111827',
+                      '--tech-bg': colorWithAlpha(tech.color, '24'),
+                      '--tech-text': '#111827',
                     }
                   : undefined;
 
                 return (
-                <span key={s} className={`prj-tag-chip prj-tech-chip${dark ? ' dark' : ''}`} style={chipStyle}>
+                <span key={s} className="prj-tag-chip prj-tech-chip" style={chipStyle}>
                   <span className="prj-tech-chip-icon" aria-hidden="true">
                     {tech.icono_url ? (
                       <img src={tech.icono_url} alt="" />
