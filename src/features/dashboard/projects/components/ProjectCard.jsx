@@ -400,6 +400,7 @@ function DetailLink({ href, children, className = '' }) {
 ════════════════════════════════════════ */
 export default function ProjectCard({
   proyecto = {},
+  prioridadImagen = false,
   onEditar,
   onEliminar,
   onDesvincular,
@@ -504,7 +505,7 @@ export default function ProjectCard({
                         src={item.url}
                         alt={`${proyecto.titulo || 'Proyecto'} – imagen ${i + 1}`}
                         className="prj-carousel-img"
-                        loading={i === 0 ? 'eager' : 'lazy'}
+                        loading={prioridadImagen && i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
                         onError={(event) => {
                           if (item.fallbackUrl && event.currentTarget.src !== item.fallbackUrl) {
