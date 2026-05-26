@@ -75,7 +75,10 @@ function getParticipantContribution(participante = {}) {
 }
 
 export default function ProjectParticipantAvatar({ participante = {} }) {
+  const originalAvatar = participante.avatar_url || '';
+  const preferredAvatar = participante.avatar_thumb_url || originalAvatar;
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageSource, setImageSource] = useState(preferredAvatar);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const nombre = getParticipantName(participante);
@@ -86,6 +89,11 @@ export default function ProjectParticipantAvatar({ participante = {} }) {
   const roleDetail = rol ? ` - ${rol}` : '';
   const githubDetail = github ? ` (@${github})` : '';
   const label = `${nombre}${githubDetail}${roleDetail}`;
+
+  useEffect(() => {
+    setImageFailed(false);
+    setImageSource(preferredAvatar);
+  }, [preferredAvatar]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -128,12 +136,19 @@ export default function ProjectParticipantAvatar({ participante = {} }) {
           setOpen(value => !value);
         }}
       >
-        {participante.avatar_url && !imageFailed ? (
+        {imageSource && !imageFailed ? (
           <img
-            src={participante.avatar_url}
+            src={imageSource}
             alt=""
             loading="lazy"
-            onError={() => setImageFailed(true)}
+            onError={() => {
+              if (imageSource !== originalAvatar && originalAvatar) {
+                setImageSource(originalAvatar);
+                return;
+              }
+
+              setImageFailed(true);
+            }}
           />
         ) : (
           <span className="prj-collab-initials">{getInitials(nombre)}</span>

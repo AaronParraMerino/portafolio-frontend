@@ -25,6 +25,29 @@
   letter-spacing: .01em;
 }
 
+.adm-layout .dash-module-header-action--primary {
+  background: var(--adm-primary);
+  box-shadow: 0 2px 12px rgba(15, 118, 110, .35);
+  color: var(--blanco);
+}
+
+.adm-layout .dash-module-header-action--primary:hover {
+  background: var(--adm-primary-hover);
+  box-shadow: 0 6px 18px rgba(15, 118, 110, .42);
+  color: var(--blanco);
+}
+
+.adm-layout .dash-module-header-action--secondary {
+  background: rgba(15, 118, 110, .12);
+  border-color: rgba(153, 246, 228, .18);
+  color: #d5fbf4;
+}
+
+.adm-layout .dash-module-header-action--secondary:hover {
+  background: rgba(15, 118, 110, .2);
+  color: #fff;
+}
+
 .adm-layout .dsh-sidebar,
 .adm-layout .dsh-drawer {
   background:

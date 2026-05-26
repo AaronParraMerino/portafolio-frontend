@@ -4,7 +4,7 @@ import Header from '../../layout/Header';
 export default function EliminarCuentaPage() {
   return (
     <>
-      <Header eyebrow="CUENTA" title="Eliminar Cuenta" subtitle="Configuracion" />
+      <Header eyebrow="CUENTA" title="Cuenta inactiva" subtitle="Configuracion" />
       <EliminarCuenta />
     </>
   );

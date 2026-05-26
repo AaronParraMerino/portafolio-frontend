@@ -5,6 +5,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { Link } from "react-router-dom";
 import Navbar from "../../../shared/components/layout/Navbar";
 import {
+  BlockedAccountModal,
   LinkInfoModal,
   LinkVerificationModal,
   LoginErrorModal,
@@ -42,6 +43,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [blocked, setBlocked] = useState(null);
 
   const [linkConfirm, setLinkConfirm] = useState(null);
   const [linkStep, setLinkStep] = useState(INITIAL_LINK_STEP);
@@ -62,6 +64,13 @@ export default function LoginForm() {
       setReactivate({
         correo: oauthState.correo,
         step: INITIAL_REACTIVATION_STEP,
+      });
+      return;
+    }
+
+    if (oauthState.oauthError === "blocked") {
+      setBlocked({
+        razon: oauthState.razon || "Tu cuenta fue bloqueada por administracion.",
       });
       return;
     }
@@ -101,6 +110,7 @@ export default function LoginForm() {
 
   const closeError = () => setError("");
   const closeSuccess = () => setSuccess("");
+  const closeBlocked = () => setBlocked(null);
 
   const handleOAuthRedirect = (provider) => {
     window.location.href = buildOAuthRedirectUrl(baseUrl, provider);
@@ -116,6 +126,15 @@ export default function LoginForm() {
       correo: payload.correo || fallbackEmail,
       step: INITIAL_REACTIVATION_STEP,
     });
+    setError("");
+    setSuccess("");
+  };
+
+  const handleBlockedAccount = (payload) => {
+    setBlocked({
+      razon: payload.razon || "Tu cuenta fue bloqueada por administracion.",
+    });
+    setReactivate(null);
     setError("");
     setSuccess("");
   };
@@ -168,6 +187,11 @@ export default function LoginForm() {
         return;
       }
 
+      if (payload?.status === "blocked_account") {
+        handleBlockedAccount(payload);
+        return;
+      }
+
       setError(payload?.message || "No se pudo iniciar sesion con Google");
     }
   };
@@ -207,6 +231,12 @@ export default function LoginForm() {
         return;
       }
 
+      if (payload?.status === "blocked_account") {
+        resetLinkConfirm();
+        handleBlockedAccount(payload);
+        return;
+      }
+
       resetLinkConfirm();
       setError(payload?.message || "No se pudo vincular la cuenta.");
     } finally {
@@ -233,6 +263,11 @@ export default function LoginForm() {
 
       if (payload?.status === "inactive_account") {
         handleInactiveAccount(payload, correo.trim());
+        return;
+      }
+
+      if (payload?.status === "blocked_account") {
+        handleBlockedAccount(payload);
         return;
       }
 
@@ -439,6 +474,7 @@ export default function LoginForm() {
         </div>
 
         <LoginErrorModal message={error} onClose={closeError} />
+        <BlockedAccountModal blocked={blocked} onClose={closeBlocked} />
         <LoginSuccessModal message={success} onClose={closeSuccess} />
 
         {linkConfirm && linkStep === "info" && (

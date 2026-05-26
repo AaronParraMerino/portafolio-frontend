@@ -56,12 +56,14 @@ export function cleanOAuthErrorFromUrl() {
   if (!oauthError) return null;
 
   const correo = params.get("correo") || "";
+  const razon = params.get("razon") || "";
   params.delete("oauth_error");
+  params.delete("razon");
 
   const cleaned = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
   window.history.replaceState({}, "", cleaned);
 
-  return { oauthError, correo };
+  return { oauthError, correo, razon };
 }
 
 export function buildOAuthRedirectUrl(baseUrl, provider) {

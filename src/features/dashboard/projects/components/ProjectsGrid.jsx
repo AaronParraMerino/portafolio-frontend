@@ -81,6 +81,7 @@ export default function ProjectsGrid({
         <ProjectCard
           key={getProjectKey(p, index)}
           proyecto={p}
+          prioridadImagen={index < 3}
           onEditar={onEditar}
           onEliminar={onEliminar}
           onDesvincular={onDesvincular}

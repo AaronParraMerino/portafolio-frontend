@@ -683,6 +683,8 @@
 }
 .prj-proj-link-gh { color: #24292f; border-color: rgba(36,41,47,.22); }
 .prj-proj-link-gh:hover { border-color: #24292f; background: #f6f8fa; color: #24292f; }
+.prj-proj-link-gl { color: #e24329; border-color: rgba(226,67,41,.25); }
+.prj-proj-link-gl:hover { border-color: #e24329; background: #fff4f1; color: #c0341d; }
 .prj-proj-link-demo { color: var(--azul); border-color: color-mix(in srgb, var(--azul) 35%, transparent); }
 .prj-proj-link-demo:hover { background: color-mix(in srgb, var(--azul) 8%, #fff); }
 /* YouTube: rojo con ícono inline */
@@ -1248,7 +1250,6 @@
   font-weight: 800;
   box-shadow: 0 1px 2px rgba(15,23,42,.12);
 }
-.prj-tech-chip.dark .prj-tech-chip-icon { background: #111827; color: #fff; border-color: rgba(255,255,255,.28); }
 .prj-tech-chip-icon img { width: 18px; height: 18px; object-fit: contain; display: block; }
 .prj-tech-chip-label { line-height: 1; }
 .prj-tech-chip button { color: currentColor; opacity: .8; margin-left: 1px; }
@@ -1854,6 +1855,11 @@
 .prj-link-icon-gh {
   background: rgba(36,41,47,.08);
   color: #24292f;
+}
+
+.prj-link-icon-gl {
+  background: rgba(226,67,41,.11);
+  color: #e24329;
 }
 
 .prj-link-icon svg {
@@ -2485,6 +2491,16 @@
   border-color: #24292f;
 }
 
+.prj-detail-link.gl {
+  color: #e24329;
+  border-color: rgba(226,67,41,.25);
+}
+
+.prj-detail-link.gl:hover {
+  background: #fff4f1;
+  border-color: #e24329;
+}
+
 .prj-detail-link.site {
   color: var(--azul);
   border-color: var(--azul-mid);
@@ -2545,6 +2561,81 @@
   margin: 0 0 14px;
 }
 
+.prj-repositories-panel {
+  margin: 0 0 14px;
+}
+
+.prj-repositories-sync-box {
+  margin-bottom: 0;
+}
+
+.prj-repositories-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.prj-provider-actions,
+.prj-repositories-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prj-provider-action {
+  width: 44px;
+  height: 40px;
+  border: 1.5px solid var(--azul-mid);
+  border-radius: 9px;
+  background: var(--blanco);
+  color: #24292f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .15s, box-shadow .15s;
+}
+
+.prj-provider-action .prj-repo-provider-icon {
+  width: 21px;
+  height: 21px;
+}
+
+.prj-provider-action.gitlab {
+  color: #e24329;
+}
+
+.prj-provider-action.linked:hover:not(:disabled) {
+  border-color: var(--azul);
+  background: var(--blanco);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--azul-glow);
+}
+
+.prj-provider-action:not(.linked) {
+  opacity: .67;
+}
+
+.prj-provider-action:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.prj-repositories-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--gris-texto);
+  font-size: 12px;
+  padding: 9px 0 4px;
+}
+
+.prj-repositories-selected {
+  padding: 5px 0 8px;
+}
+
 .prj-github-sync-box {
   margin-bottom: 0;
 }
@@ -2600,6 +2691,16 @@
 .prj-github-selected-chip span {
   font-family: var(--mono);
   color: var(--rojo-soft);
+}
+
+.prj-repo-provider-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.prj-repo-provider-icon.gitlab {
+  color: #e24329;
 }
 
 .prj-github-create-btn {
@@ -2719,6 +2820,9 @@
 }
 
 .prj-detected-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   color: var(--negro-texto);
@@ -2742,6 +2846,9 @@
 }
 
 .prj-detected-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border-radius: 999px;
   padding: 2px 8px;
   font-family: var(--mono);
@@ -2881,6 +2988,23 @@
 }
 
 @media (max-width: 520px) {
+  .prj-repositories-toolbar,
+  .prj-repositories-caption {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .prj-repositories-controls {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .prj-repositories-controls .prj-detected-sync-btn,
+  .prj-repositories-controls .prj-github-create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .prj-detected-repos-head {
     align-items: flex-start;
     flex-direction: column;
