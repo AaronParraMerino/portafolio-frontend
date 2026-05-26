@@ -115,6 +115,7 @@ export default function useCalendarEvents() {
 
   const selectDate = (date) => {
     setSelectedDate(date);
+
     const [year, month] = date.split('-').map(Number);
     setCurrentMonth(new Date(year, month - 1, 1));
     setFormOpen(false);
@@ -122,7 +123,7 @@ export default function useCalendarEvents() {
     setFormMode('create');
 
     if (date < today) {
-      setFeedback('Fecha pasada seleccionada. Solo puedes visualizar eventos registrados.');
+      setFeedback('Fecha pasada seleccionada. Los eventos quedan solo como historial.');
     }
 
     return true;
@@ -144,11 +145,22 @@ export default function useCalendarEvents() {
   };
 
   const openEdit = (event) => {
+    if (!event) return false;
+
+    if (event.fecha < today) {
+      setFeedback('No se pueden editar eventos de fechas pasadas. Este evento queda como historial.');
+      setFormOpen(false);
+      setEditingEvent(null);
+      setFormMode('create');
+      return false;
+    }
+
     setSelectedDate(event.fecha);
     setEditingEvent(event);
     setFormMode('edit');
     setFormOpen(true);
     setFeedback('');
+    return true;
   };
 
   const closeForm = () => {
@@ -166,6 +178,12 @@ export default function useCalendarEvents() {
   );
 
   const saveEvent = (payload) => {
+    if (editingEvent?.fecha < today) {
+      const message = 'No se puede modificar un evento de una fecha pasada.';
+      setFeedback(message);
+      return { ok: false, message };
+    }
+
     if (payload.fecha < today) {
       const message = 'La fecha del evento no puede ser anterior a la fecha actual.';
       setFeedback(message);
@@ -201,15 +219,29 @@ export default function useCalendarEvents() {
   };
 
   const deleteEvent = (eventToDelete) => {
+    if (!eventToDelete) return false;
+
+    if (eventToDelete.fecha < today) {
+      setFeedback('No se pueden eliminar eventos de fechas pasadas. Este evento queda como historial.');
+      return false;
+    }
+
     setEvents((prev) => prev.filter((event) => event.id !== eventToDelete.id));
     setFeedback('Evento eliminado correctamente.');
+    return true;
   };
 
   const deleteEventsByDate = (date) => {
+    if (date < today) {
+      setFeedback('No se pueden eliminar eventos de fechas pasadas. Estos eventos quedan como historial.');
+      return false;
+    }
+
     const amount = events.filter((event) => event.fecha === date).length;
     setEvents((prev) => prev.filter((event) => event.fecha !== date));
     setFeedback(`${amount} ${amount === 1 ? 'evento eliminado' : 'eventos eliminados'} correctamente.`);
     closeForm();
+    return true;
   };
 
   return {

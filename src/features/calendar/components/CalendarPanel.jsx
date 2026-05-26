@@ -37,6 +37,8 @@ export default function CalendarPanel({ enabled = true }) {
 
   if (!enabled) return null;
 
+  const selectedDateIsPast = selectedDate < today;
+
   const scrollToForm = () => {
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -54,11 +56,11 @@ export default function CalendarPanel({ enabled = true }) {
   };
 
   const handleEdit = (event) => {
-    openEdit(event);
-    scrollToForm();
+    if (openEdit(event)) scrollToForm();
   };
 
   const handleAskDelete = (event) => {
+    if (event.fecha < today) return;
     setEventToDelete(event);
   };
 
@@ -69,7 +71,7 @@ export default function CalendarPanel({ enabled = true }) {
   };
 
   const handleAskDeleteDay = () => {
-    if (!selectedEvents.length) return;
+    if (!selectedEvents.length || selectedDateIsPast) return;
     setDeleteDayRequest({ date: selectedDate, count: selectedEvents.length });
   };
 
@@ -90,7 +92,14 @@ export default function CalendarPanel({ enabled = true }) {
             <div className="cal-panel-subtitle">Crea y gestiona eventos propios</div>
           </div>
 
-          <button type="button" className="cal-panel-close" onClick={() => setOpen(false)} aria-label="Cerrar calendario">×</button>
+          <button
+            type="button"
+            className="cal-panel-close"
+            onClick={() => setOpen(false)}
+            aria-label="Cerrar calendario"
+          >
+            ×
+          </button>
         </header>
 
         <div className="cal-panel-scroll">
@@ -109,9 +118,15 @@ export default function CalendarPanel({ enabled = true }) {
           {feedback && <div className="cal-feedback">{feedback}</div>}
 
           <div className="cal-quick-actions">
-            <button type="button" className="cal-btn cal-btn-primary" onClick={handleNewEvent}>
-              Nuevo evento
-            </button>
+            {selectedDateIsPast ? (
+              <div className="cal-history-note">
+                Fecha pasada: puedes consultar los eventos registrados, pero no crear, editar ni eliminar.
+              </div>
+            ) : (
+              <button type="button" className="cal-btn cal-btn-primary" onClick={handleNewEvent}>
+                Nuevo evento
+              </button>
+            )}
           </div>
 
           <div ref={formRef}>

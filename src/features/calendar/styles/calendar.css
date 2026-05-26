@@ -222,6 +222,22 @@
   border-color: var(--cal-blue);
 }
 
+/* Día pasado con eventos: historial visual distinto al azul de eventos futuros */
+.cal-day.past.has-event:not(.selected),
+.cal-day.past-event:not(.selected) {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fdba74;
+  font-weight: 900;
+}
+
+.cal-day.past.has-event:not(.selected):hover,
+.cal-day.past-event:not(.selected):hover {
+  background: #ffedd5;
+  color: #7c2d12;
+  border-color: #fb923c;
+}
+
 .cal-day.selected,
 .cal-day.selected.has-event {
   background: var(--cal-blue);
@@ -247,6 +263,21 @@
 .cal-btn-primary:hover { background: var(--cal-blue-hover); }
 .cal-btn-secondary { background: var(--cal-blue-light); color: var(--cal-blue); border: 1px solid var(--cal-blue-mid); }
 
+.cal-history-note {
+  border: 1px solid #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.cal-history-note {
+  text-align: center;
+}
+
 .cal-event-form { border: 1px solid var(--cal-border); border-radius: 14px; background: #fbfdff; padding: 14px; margin-bottom: 18px; }
 .cal-form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .cal-form-head strong { font-size: 13px; }
@@ -265,6 +296,11 @@
 .cal-events-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
 .cal-events-head h3 { margin: 0; font-size: 14px; line-height: 1.25; }
 .cal-event-count { font-size: 11px; color: var(--cal-blue); background: var(--cal-blue-light); border: 1px solid var(--cal-blue-mid); border-radius: 999px; padding: 3px 8px; font-weight: 800; white-space: nowrap; }
+.cal-event-count.history {
+  color: #9a3412;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
 .cal-event-list { max-height: none; overflow: visible; padding-right: 3px; display: flex; flex-direction: column; gap: 8px; }
 .cal-event-card { border: 1px solid var(--cal-border); border-left: 4px solid var(--cal-blue); border-radius: 12px; padding: 11px; background: var(--cal-white); }
 .cal-event-card.work { border-left-color: var(--cal-amber); }
@@ -273,6 +309,19 @@
 .cal-event-card.meeting { border-left-color: var(--cal-blue); }
 .cal-event-card.delivery { border-left-color: #7c3aed; }
 .cal-event-card.other { border-left-color: #94a3b8; }
+
+.cal-event-card.locked {
+  background: #fffaf4;
+  border-color: #fed7aa;
+  opacity: .82;
+}
+
+.cal-event-card.locked strong,
+.cal-event-card.locked .cal-event-time,
+.cal-event-card.locked .cal-event-desc {
+  color: #7c2d12;
+}
+
 .cal-event-card strong { font-size: 12px; display: block; }
 .cal-event-time { display: block; font-size: 10px; color: var(--cal-muted); margin-top: 3px; font-weight: 700; }
 .cal-event-desc { margin: 7px 0 0; color: var(--cal-muted); line-height: 1.5; font-size: 11px; }

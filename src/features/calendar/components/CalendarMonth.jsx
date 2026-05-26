@@ -25,11 +25,13 @@ export default function CalendarMonth({
   const days = Array.from({ length: 42 }, (_, index) => {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + index);
+
     const iso = toISODate(date);
     const isCurrentMonth = date.getMonth() === month;
     const isSelected = iso === selectedDate;
     const hasEvent = eventDates.has(iso);
     const isPast = iso < today;
+    const isPastEvent = isPast && hasEvent;
 
     return {
       date,
@@ -39,6 +41,7 @@ export default function CalendarMonth({
       isSelected,
       hasEvent,
       isPast,
+      isPastEvent,
     };
   });
 
@@ -68,13 +71,16 @@ export default function CalendarMonth({
             item.isSelected ? 'selected' : '',
             item.hasEvent ? 'has-event' : '',
             item.isPast ? 'past' : '',
+            item.isPastEvent ? 'past-event' : '',
           ].filter(Boolean).join(' ');
 
-          const title = item.hasEvent
-            ? `Ver eventos del ${formatDateDisplay(item.iso)}`
-            : item.isPast
-              ? `Ver fecha pasada ${formatDateDisplay(item.iso)}`
-              : `Seleccionar ${formatDateDisplay(item.iso)}`;
+          const title = item.isPastEvent
+            ? `Ver historial de eventos del ${formatDateDisplay(item.iso)}`
+            : item.hasEvent
+              ? `Ver eventos del ${formatDateDisplay(item.iso)}`
+              : item.isPast
+                ? `Ver fecha pasada ${formatDateDisplay(item.iso)}`
+                : `Seleccionar ${formatDateDisplay(item.iso)}`;
 
           return (
             <button
