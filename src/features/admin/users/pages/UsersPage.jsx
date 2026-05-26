@@ -22,6 +22,9 @@ export default function UsersPage() {
     supportsMutations,
     supportsSessions,
     supportsInactivation,
+    supportsActivation,
+    supportsPausing,
+    supportsBlocking,
     supportsCommunications,
     users,
     communications,
@@ -180,6 +183,9 @@ export default function UsersPage() {
         actionChannels={actionChannels}
         supportsSessions={supportsSessions}
         supportsInactivation={supportsInactivation}
+        supportsActivation={supportsActivation}
+        supportsPausing={supportsPausing}
+        supportsBlocking={supportsBlocking}
         onOpenDirectNotice={onOpenDirectNoticeModal}
         onClose={onCloseUser}
         onSelectAction={onSelectAction}

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  activateUserAccount,
+  blockUserAccount,
   buildUsersWorkspaceCounts,
   buildUsersMetrics,
   createUsersDirectoryShell,
@@ -8,6 +10,7 @@ import {
   getUsersPageSummary,
   inactivateUserAccount,
   normalizeUsersDirectory,
+  pauseUserAccount,
   sendAdminNotice,
 } from '../services/usersService';
 
@@ -61,6 +64,9 @@ export function useUsersDirectory() {
   const supportsMutations = !!directory.supportsMutations;
   const supportsSessions = !!directory.supportsSessions;
   const supportsInactivation = !!directory.supportsInactivation;
+  const supportsActivation = !!directory.supportsActivation;
+  const supportsPausing = !!directory.supportsPausing;
+  const supportsBlocking = !!directory.supportsBlocking;
   const supportsCommunications = !!directory.supportsCommunications;
 
   const metrics = useMemo(() => buildUsersMetrics(users), [users]);
@@ -221,31 +227,55 @@ export function useUsersDirectory() {
   };
 
   const handleConfirmAction = async () => {
-    if (!activeUser || pendingActionId !== 'inactivar') return;
+    if (!activeUser || !['activar', 'pausar', 'bloquear', 'inactivar'].includes(pendingActionId)) return;
 
     setActionSubmitting(true);
     setActionError('');
     setActionSuccess('');
 
     try {
-      const response = await inactivateUserAccount(activeUser.id, {
+      const isActivation = pendingActionId === 'activar';
+      const isPausing = pendingActionId === 'pausar';
+      const isBlocking = pendingActionId === 'bloquear';
+      const actionPayload = {
         razon: actionMessage.trim() || null,
-        canales: actionChannels,
-      });
+        ...(isPausing || isBlocking ? {} : { canales: actionChannels }),
+      };
+      const response = isActivation
+        ? await activateUserAccount(activeUser.id, actionPayload)
+        : (isPausing
+          ? await pauseUserAccount(activeUser.id, actionPayload)
+          : isBlocking
+          ? await blockUserAccount(activeUser.id, actionPayload)
+          : await inactivateUserAccount(activeUser.id, actionPayload));
       setDirectory((current) => ({
         ...current,
         items: current.items.map((user) => (
           String(user.id) === String(activeUser.id)
-            ? { ...user, estado: 'inactivo', sesionesActivas: 0 }
+            ? {
+              ...user,
+              estado: isActivation ? 'activo' : (isPausing ? 'pausado' : (isBlocking ? 'bloqueado' : 'inactivo')),
+              sesionesActivas: isActivation || isPausing ? user.sesionesActivas : 0,
+            }
             : user
         )),
       }));
-      setActionSuccess(response?.message || 'Cuenta inactivada correctamente.');
+      setActionSuccess(response?.message || (isActivation
+        ? 'Cuenta activada correctamente.'
+        : (isPausing
+          ? 'Cuenta pausada correctamente.'
+          : (isBlocking ? 'Cuenta bloqueada correctamente.' : 'Cuenta inactivada correctamente.'))));
       setPendingActionId('');
       setActionMessage('');
       setActionChannels(['inapp', 'email']);
     } catch (error) {
-      setActionError(error.message || 'No se pudo inactivar la cuenta.');
+      setActionError(error.message || (pendingActionId === 'activar'
+        ? 'No se pudo activar la cuenta.'
+        : (pendingActionId === 'pausar'
+          ? 'No se pudo pausar la cuenta.'
+          : pendingActionId === 'bloquear'
+          ? 'No se pudo bloquear la cuenta.'
+          : 'No se pudo inactivar la cuenta.')));
     } finally {
       setActionSubmitting(false);
     }
@@ -331,6 +361,9 @@ export function useUsersDirectory() {
     supportsMutations,
     supportsSessions,
     supportsInactivation,
+    supportsActivation,
+    supportsPausing,
+    supportsBlocking,
     supportsCommunications,
     users,
     communications,

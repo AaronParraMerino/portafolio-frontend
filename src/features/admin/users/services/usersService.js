@@ -26,7 +26,7 @@ export const USER_STATUS_META = {
   pausado: {
     label: 'Pausado',
     tone: 'warning',
-    helper: 'Acceso detenido temporalmente.',
+    helper: 'Solo lectura temporal.',
   },
   bloqueado: {
     label: 'Bloqueado',
@@ -100,7 +100,7 @@ export const USER_DETAIL_ACTIONS = [
   {
     id: 'pausar',
     label: 'Pausar cuenta',
-    description: 'Bloquea el acceso temporalmente sin eliminar la cuenta.',
+    description: 'Mantiene el contenido visible y limita la cuenta a consultas.',
     tone: 'warning',
   },
   {
@@ -190,6 +190,9 @@ export function createUsersDirectoryShell() {
     sourceReady: false,
     supportsMutations: false,
     supportsSessions: false,
+    supportsActivation: false,
+    supportsPausing: false,
+    supportsBlocking: false,
     supportsCommunications: false,
     pageSize: USER_PAGE_SIZE,
   };
@@ -278,6 +281,45 @@ export async function inactivateUserAccount(userId, payload = {}) {
   });
 
   return parseAdminResponse(response, 'No se pudo inactivar la cuenta.');
+}
+
+export async function activateUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/activar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo activar la cuenta.');
+}
+
+export async function blockUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/bloquear`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo bloquear la cuenta.');
+}
+
+export async function pauseUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/pausar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo pausar la cuenta.');
 }
 
 export async function sendAdminNotice(payload) {

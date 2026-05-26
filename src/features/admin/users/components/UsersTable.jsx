@@ -1,11 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import {
-  getUserAvatarPalette,
-  getUserInitials,
   getUserSessionCount,
   getUserStatusMeta,
   USER_TABLE_COLUMNS,
 } from '../services/usersService';
+import CachedUserAvatar from './CachedUserAvatar';
 import UsersSessionsMenu from './UsersSessionsMenu';
 
 function ColumnIcon({ id }) {
@@ -161,7 +160,6 @@ export default function UsersTable({
               {users.map((user) => {
                 const isSelected = selectedIds.includes(String(user.id));
                 const statusMeta = getUserStatusMeta(user.estado);
-                const avatarPalette = getUserAvatarPalette(user.id || user.email || user.nombre);
                 const sessionCount = getUserSessionCount(user);
 
                 const isSessionsOpen = String(openSessionsUserId) === String(user.id);
@@ -181,15 +179,7 @@ export default function UsersTable({
 
                     <td>
                       <div className="usr-user-cell">
-                        <div
-                          className="usr-user-avatar"
-                          style={{
-                            background: avatarPalette.background,
-                            color: avatarPalette.color,
-                          }}
-                        >
-                          {getUserInitials(user.nombre)}
-                        </div>
+                        <CachedUserAvatar user={user} />
 
                         <div className="usr-user-copy">
                           <strong>{user.nombre || 'Usuario sin nombre'}</strong>

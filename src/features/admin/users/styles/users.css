@@ -1656,6 +1656,15 @@
   height: 40px;
   justify-content: center;
   width: 40px;
+  overflow: hidden;
+}
+
+.usr-user-avatar img,
+.usr-modal-avatar img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .usr-user-copy {
