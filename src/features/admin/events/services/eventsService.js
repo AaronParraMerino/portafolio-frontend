@@ -1,3 +1,5 @@
+import BASE_URL from '../../../../services/http/const';
+
 export const EVENT_PAGE_SIZE = 9;
 
 export const EVENT_WORKSPACE_VIEWS = [
@@ -152,6 +154,12 @@ export function createEventsWorkspaceShell() {
     communications: [],
     templates: [],
     history: [],
+    profileTargets: {
+      technicalSkills: [],
+      softSkills: [],
+      academicExperience: [],
+      workExperience: [],
+    },
     sourceReady: false,
     supportsMutations: false,
     pageSize: EVENT_PAGE_SIZE,
@@ -160,6 +168,7 @@ export function createEventsWorkspaceShell() {
 
 export function normalizeEventsWorkspace(payload = {}) {
   const base = createEventsWorkspaceShell();
+  hydrateEventProfileTargetGroups(payload.profileTargets);
 
   return {
     ...base,
@@ -168,10 +177,127 @@ export function normalizeEventsWorkspace(payload = {}) {
     communications: Array.isArray(payload.communications) ? payload.communications : base.communications,
     templates: Array.isArray(payload.templates) ? payload.templates : base.templates,
     history: Array.isArray(payload.history) ? payload.history : base.history,
+    profileTargets: payload.profileTargets || base.profileTargets,
     pageSize: Number.isInteger(payload.pageSize) && payload.pageSize > 0
       ? payload.pageSize
       : base.pageSize,
   };
+}
+
+export function hydrateEventProfileTargetGroups(profileTargets = {}) {
+  EVENT_PROFILE_TARGET_GROUPS.forEach((group) => {
+    group.options = Array.isArray(profileTargets[group.id]) ? profileTargets[group.id] : [];
+  });
+}
+
+function getAdminRequestHeaders() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+
+  if (!token) {
+    throw new Error('No hay sesion administrativa activa.');
+  }
+
+  return {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+async function parseAdminResponse(response, fallbackMessage) {
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload?.message || fallbackMessage);
+  }
+
+  return payload;
+}
+
+export async function fetchEventsWorkspace() {
+  const response = await fetch(`${BASE_URL}/administrador/eventos/workspace`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudo cargar el workspace de eventos.');
+
+  return normalizeEventsWorkspace(payload);
+}
+
+export async function createAdminEvent(payload) {
+  const response = await fetch(`${BASE_URL}/administrador/eventos`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear el evento.');
+}
+
+export async function updateAdminEvent(eventId, payload) {
+  const response = await fetch(`${BASE_URL}/administrador/eventos/${eventId}`, {
+    method: 'PUT',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar el evento.');
+}
+
+export async function createAdminEventCommunication(payload) {
+  const response = await fetch(`${BASE_URL}/administrador/eventos/comunicaciones`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear la comunicacion.');
+}
+
+export async function updateAdminEventCommunication(communicationId, payload) {
+  const response = await fetch(`${BASE_URL}/administrador/eventos/comunicaciones/${communicationId}`, {
+    method: 'PUT',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar la comunicacion.');
+}
+
+export async function createAdminEventTemplate(payload) {
+  const response = await fetch(`${BASE_URL}/administrador/eventos/plantillas`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear la plantilla.');
+}
+
+export async function updateAdminEventTemplate(templateId, payload) {
+  const response = await fetch(`${BASE_URL}/administrador/eventos/plantillas/${templateId}`, {
+    method: 'PUT',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar la plantilla.');
 }
 
 export function normalizeEvent(item = {}) {

@@ -1,8 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   buildEventMetrics,
   buildEventWorkspaceCounts,
+  createAdminEvent,
+  createAdminEventCommunication,
+  createAdminEventTemplate,
   createEventsWorkspaceShell,
+  fetchEventsWorkspace,
   getEventsEmptyState,
   getEventsPageSummary,
   normalizeEvent,
@@ -10,9 +14,15 @@ import {
   normalizeEventHistoryItem,
   normalizeEventTemplate,
   normalizeEventsWorkspace,
+  updateAdminEvent,
+  updateAdminEventCommunication,
+  updateAdminEventTemplate,
 } from '../services/eventsService';
 
 export function useEventsWorkspace() {
+  const [workspace, setWorkspace] = useState(() => normalizeEventsWorkspace(createEventsWorkspaceShell()));
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [activeView, setActiveView] = useState('events');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -21,10 +31,24 @@ export function useEventsWorkspace() {
   const [eventModal, setEventModal] = useState(null);
   const [communicationModal, setCommunicationModal] = useState(null);
 
-  const workspace = useMemo(
-    () => normalizeEventsWorkspace(createEventsWorkspaceShell()),
-    [],
-  );
+  const loadWorkspace = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const nextWorkspace = await fetchEventsWorkspace();
+      setWorkspace(nextWorkspace);
+    } catch (error) {
+      setWorkspace(normalizeEventsWorkspace(createEventsWorkspaceShell()));
+      setErrorMessage(error.message || 'No se pudo cargar el workspace de eventos.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadWorkspace();
+  }, [loadWorkspace]);
 
   const events = useMemo(
     () => workspace.events.map(normalizeEvent),
@@ -185,9 +209,39 @@ export function useEventsWorkspace() {
     setCommunicationModal(null);
   };
 
+  const handleSaveEvent = async (payload) => {
+    if (eventModal?.mode === 'edit' && eventModal.event?.id) {
+      await updateAdminEvent(eventModal.event.id, payload);
+    } else {
+      await createAdminEvent(payload);
+    }
+
+    await loadWorkspace();
+    setEventModal(null);
+  };
+
+  const handleSaveCommunication = async (payload) => {
+    if (communicationModal?.mode === 'template') {
+      if (communicationModal.template?.id) {
+        await updateAdminEventTemplate(communicationModal.template.id, payload);
+      } else {
+        await createAdminEventTemplate(payload);
+      }
+    } else if (communicationModal?.communication?.id) {
+      await updateAdminEventCommunication(communicationModal.communication.id, payload);
+    } else {
+      await createAdminEventCommunication(payload);
+    }
+
+    await loadWorkspace();
+    setCommunicationModal(null);
+  };
+
   return {
     sourceReady,
     supportsMutations,
+    isLoading,
+    errorMessage,
     events,
     communications,
     templates,
@@ -216,9 +270,11 @@ export function useEventsWorkspace() {
     onOpenCreateEvent: handleOpenCreateEvent,
     onOpenEditEvent: handleOpenEditEvent,
     onCloseEventModal: handleCloseEventModal,
+    onSaveEvent: handleSaveEvent,
     onOpenCommunication: handleOpenCommunication,
     onOpenTemplateCommunication: handleOpenTemplateCommunication,
     onEditCommunication: handleEditCommunication,
     onCloseCommunicationModal: handleCloseCommunicationModal,
+    onSaveCommunication: handleSaveCommunication,
   };
 }

@@ -74,6 +74,7 @@ function toArray(value) {
 export default function EventFormModal({
   modal,
   onClose,
+  onSave,
 }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [message, setMessage] = useState('');
@@ -139,7 +140,7 @@ export default function EventFormModal({
     setMessage('');
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!form.title.trim() || !form.location.trim()) {
@@ -147,7 +148,27 @@ export default function EventFormModal({
       return;
     }
 
-    setMessage('Evento guardado en el formulario.');
+    try {
+      await onSave?.({
+        title: form.title,
+        type: form.type,
+        status: form.status,
+        startsAt: form.startsAt || null,
+        endsAt: form.endsAt || null,
+        sendAt: form.sendAt || null,
+        location: form.location,
+        capacity: form.capacity === '' ? 0 : Number(form.capacity),
+        description: form.description,
+        targetMode: form.targetMode,
+        channels: form.channels,
+        segments: form.targetMode === 'segmented'
+          ? Object.values(form.targetSelections).flat()
+          : ['all_users'],
+        targetSelections: form.targetSelections,
+      });
+    } catch (error) {
+      setMessage(error.message || 'No se pudo guardar el evento.');
+    }
   };
 
   return (

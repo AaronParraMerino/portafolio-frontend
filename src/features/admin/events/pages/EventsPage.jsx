@@ -40,6 +40,7 @@ export default function EventsPage() {
     paginationItems,
     eventModal,
     communicationModal,
+    errorMessage,
     onViewChange,
     onQueryChange,
     onStatusFilterChange,
@@ -48,10 +49,12 @@ export default function EventsPage() {
     onOpenCreateEvent,
     onOpenEditEvent,
     onCloseEventModal,
+    onSaveEvent,
     onOpenCommunication,
     onOpenTemplateCommunication,
     onEditCommunication,
     onCloseCommunicationModal,
+    onSaveCommunication,
   } = useEventsWorkspace();
 
   const headerActions = [
@@ -86,6 +89,10 @@ export default function EventsPage() {
 
       <div className="evt-content">
         <EventsStats metrics={metrics} sourceReady={sourceReady} />
+
+        {errorMessage ? (
+          <div className="evt-modal-message">{errorMessage}</div>
+        ) : null}
 
         <section className="evt-panel">
           <EventsWorkspaceTabs
@@ -160,12 +167,14 @@ export default function EventsPage() {
       <EventFormModal
         modal={eventModal}
         onClose={onCloseEventModal}
+        onSave={onSaveEvent}
       />
 
       <EventCommunicationModal
         modal={communicationModal}
         events={events}
         onClose={onCloseCommunicationModal}
+        onSave={onSaveCommunication}
       />
     </div>
   );

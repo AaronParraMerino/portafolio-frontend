@@ -47,6 +47,7 @@ export default function EventCommunicationModal({
   modal,
   events,
   onClose,
+  onSave,
 }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [message, setMessage] = useState('');
@@ -86,7 +87,7 @@ export default function EventCommunicationModal({
     setMessage('');
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!form.title.trim() || !form.body.trim()) {
@@ -94,7 +95,34 @@ export default function EventCommunicationModal({
       return;
     }
 
-    setMessage('Anuncio guardado en el formulario.');
+    const payload = isTemplateMode
+      ? {
+          title: form.title,
+          type: form.type,
+          body: form.body,
+          channels: form.channels,
+          payload: {
+            channels: form.channels,
+          },
+        }
+      : {
+          eventId: form.eventId || null,
+          title: form.title,
+          type: form.type,
+          urgency: form.urgency,
+          status: modal.communication?.status || (form.date ? 'programado' : 'borrador'),
+          date: form.date || null,
+          body: form.body,
+          audiences: form.audiences,
+          segments: form.audiences,
+          channels: form.channels,
+        };
+
+    try {
+      await onSave?.(payload);
+    } catch (error) {
+      setMessage(error.message || 'No se pudo guardar el anuncio.');
+    }
   };
 
   return (
