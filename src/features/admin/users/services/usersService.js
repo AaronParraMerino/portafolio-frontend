@@ -337,11 +337,12 @@ export async function sendAdminNotice(payload) {
 
 export function normalizeUsersDirectory(payload = {}) {
   const base = createUsersDirectoryShell();
+  const items = Array.isArray(payload.items) ? payload.items : base.items;
 
   return {
     ...base,
     ...payload,
-    items: Array.isArray(payload.items) ? payload.items : base.items,
+    items: getUniqueUsersById(items),
     communications: Array.isArray(payload.communications) ? payload.communications : base.communications,
     history: Array.isArray(payload.history) ? payload.history : base.history,
     templates: Array.isArray(payload.templates) ? payload.templates : base.templates,
@@ -349,6 +350,21 @@ export function normalizeUsersDirectory(payload = {}) {
       ? payload.pageSize
       : base.pageSize,
   };
+}
+
+function getUniqueUsersById(users = []) {
+  const uniqueUsers = new Map();
+
+  users.forEach((user) => {
+    const id = user?.id ?? user?.id_usuario ?? user?.usuario_id;
+
+    if (id === undefined || id === null) return;
+    if (!uniqueUsers.has(String(id))) {
+      uniqueUsers.set(String(id), user);
+    }
+  });
+
+  return Array.from(uniqueUsers.values());
 }
 
 export function buildUsersMetrics(users = []) {
