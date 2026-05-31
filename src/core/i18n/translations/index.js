@@ -16,9 +16,9 @@ import { viewTranslations } from './view';
 import { linksTranslations } from './links';
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'es', label: 'Español', shortLabel: 'ES' },
-  { code: 'en', label: 'English', shortLabel: 'EN' },
-  { code: 'pt', label: 'Português', shortLabel: 'PT' },
+  { code: 'es', label: 'Español', shortLabel: 'ES', flag: '🇪🇸' },
+  { code: 'en', label: 'English', shortLabel: 'EN', flag: '🇺🇸' },
+  { code: 'pt', label: 'Português', shortLabel: 'PT', flag: '🇧🇷' },
 ];
 
 export const DEFAULT_LANGUAGE = 'es';

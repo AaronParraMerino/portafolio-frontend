@@ -14,7 +14,15 @@ export const footerTranslations = {
     "footer.developers.createPortfolio": "Crear portafolio",
     "footer.developers.myProfile": "Mi perfil",
     "footer.developers.myProjects": "Mis proyectos",
-    "footer.developers.publicView": "Vista pública"
+    "footer.developers.publicView": "Vista pública",
+    "footer.legal.title": "Legal",
+    "footer.legal.about": "Acerca de",
+    "footer.legal.terms": "Términos",
+    "footer.legal.privacy": "Privacidad",
+    "footer.legal.contact": "Contacto",
+    "footer.status.online": "Backend conectado",
+    "footer.status.offline": "Backend no disponible",
+    "footer.rights": "Todos los derechos reservados"
   },
   "en": {
     "footer.cta.label": "Join now",
@@ -31,7 +39,15 @@ export const footerTranslations = {
     "footer.developers.createPortfolio": "Create portfolio",
     "footer.developers.myProfile": "My profile",
     "footer.developers.myProjects": "My projects",
-    "footer.developers.publicView": "Public view"
+    "footer.developers.publicView": "Public view",
+    "footer.legal.title": "Legal",
+    "footer.legal.about": "About",
+    "footer.legal.terms": "Terms",
+    "footer.legal.privacy": "Privacy",
+    "footer.legal.contact": "Contact",
+    "footer.status.online": "Backend connected",
+    "footer.status.offline": "Backend unavailable",
+    "footer.rights": "All rights reserved"
   },
   "pt": {
     "footer.cta.label": "Junte-se agora",
@@ -48,6 +64,14 @@ export const footerTranslations = {
     "footer.developers.createPortfolio": "Criar portfólio",
     "footer.developers.myProfile": "Meu perfil",
     "footer.developers.myProjects": "Meus projetos",
-    "footer.developers.publicView": "Vista pública"
+    "footer.developers.publicView": "Vista pública",
+    "footer.legal.title": "Legal",
+    "footer.legal.about": "Sobre",
+    "footer.legal.terms": "Termos",
+    "footer.legal.privacy": "Privacidade",
+    "footer.legal.contact": "Contato",
+    "footer.status.online": "Backend conectado",
+    "footer.status.offline": "Backend indisponível",
+    "footer.rights": "Todos os direitos reservados"
   }
 };
