@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../../core/i18n';
 
 const STORAGE_KEY = 'creafolio_calendar_events_v1';
 
@@ -61,6 +62,7 @@ function readStoredEvents(today) {
 }
 
 export default function useCalendarEvents() {
+  const { t } = useLanguage();
   const today = useMemo(() => todayISO(), []);
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState(() => readStoredEvents(today));
@@ -123,7 +125,7 @@ export default function useCalendarEvents() {
     setFormMode('create');
 
     if (date < today) {
-      setFeedback('Fecha pasada seleccionada. Los eventos quedan solo como historial.');
+      setFeedback(t('calendar.feedback.pastSelected'));
     }
 
     return true;
@@ -131,7 +133,7 @@ export default function useCalendarEvents() {
 
   const openCreate = (date = selectedDate) => {
     if (date < today) {
-      setFeedback('No se pueden crear eventos en fechas pasadas.');
+      setFeedback(t('calendar.feedback.noCreatePast'));
       setFormOpen(false);
       return false;
     }
@@ -148,7 +150,7 @@ export default function useCalendarEvents() {
     if (!event) return false;
 
     if (event.fecha < today) {
-      setFeedback('No se pueden editar eventos de fechas pasadas. Este evento queda como historial.');
+      setFeedback(t('calendar.feedback.noEditPast'));
       setFormOpen(false);
       setEditingEvent(null);
       setFormMode('create');
@@ -179,19 +181,19 @@ export default function useCalendarEvents() {
 
   const saveEvent = (payload) => {
     if (editingEvent?.fecha < today) {
-      const message = 'No se puede modificar un evento de una fecha pasada.';
+      const message = t('calendar.feedback.noModifyPast');
       setFeedback(message);
       return { ok: false, message };
     }
 
     if (payload.fecha < today) {
-      const message = 'La fecha del evento no puede ser anterior a la fecha actual.';
+      const message = t('calendar.feedback.eventDatePast');
       setFeedback(message);
       return { ok: false, message };
     }
 
     if (hasTimeConflict(payload)) {
-      const message = 'Ya existe un evento registrado para esta fecha y hora. Cambia la hora o selecciona otra fecha.';
+      const message = t('calendar.feedback.timeConflict');
       setFeedback(message);
       return { ok: false, message };
     }
@@ -203,7 +205,7 @@ export default function useCalendarEvents() {
           : event
       )));
       setSelectedDate(payload.fecha);
-      setFeedback('Evento actualizado correctamente.');
+      setFeedback(t('calendar.feedback.updated'));
     } else {
       const newEvent = {
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -211,7 +213,7 @@ export default function useCalendarEvents() {
       };
       setEvents((prev) => [newEvent, ...prev]);
       setSelectedDate(payload.fecha);
-      setFeedback('Evento creado correctamente.');
+      setFeedback(t('calendar.feedback.created'));
     }
 
     closeForm();
@@ -222,24 +224,28 @@ export default function useCalendarEvents() {
     if (!eventToDelete) return false;
 
     if (eventToDelete.fecha < today) {
-      setFeedback('No se pueden eliminar eventos de fechas pasadas. Este evento queda como historial.');
+      setFeedback(t('calendar.feedback.noDeletePast'));
       return false;
     }
 
     setEvents((prev) => prev.filter((event) => event.id !== eventToDelete.id));
-    setFeedback('Evento eliminado correctamente.');
+    setFeedback(t('calendar.feedback.deleted'));
     return true;
   };
 
   const deleteEventsByDate = (date) => {
     if (date < today) {
-      setFeedback('No se pueden eliminar eventos de fechas pasadas. Estos eventos quedan como historial.');
+      setFeedback(t('calendar.feedback.noDeletePastMany'));
       return false;
     }
 
     const amount = events.filter((event) => event.fecha === date).length;
     setEvents((prev) => prev.filter((event) => event.fecha !== date));
-    setFeedback(`${amount} ${amount === 1 ? 'evento eliminado' : 'eventos eliminados'} correctamente.`);
+    setFeedback(
+      amount === 1
+        ? t('calendar.feedback.deletedOne')
+        : t('calendar.feedback.deletedMany', { count: amount })
+    );
     closeForm();
     return true;
   };

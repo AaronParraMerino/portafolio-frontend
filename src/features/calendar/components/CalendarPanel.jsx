@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
+import { useLanguage } from '../../../core/i18n';
 import CalendarEventForm from './CalendarEventForm';
 import CalendarEventList from './CalendarEventList';
 import CalendarMonth from './CalendarMonth';
@@ -8,6 +9,7 @@ import useCalendarEvents from '../hooks/useCalendarEvents';
 import '../styles/calendar.css';
 
 export default function CalendarPanel({ enabled = true }) {
+  const { t } = useLanguage();
   const formRef = useRef(null);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [deleteDayRequest, setDeleteDayRequest] = useState(null);
@@ -88,22 +90,22 @@ export default function CalendarPanel({ enabled = true }) {
       <aside className={`cal-panel${open ? ' is-open' : ''}`} aria-hidden={!open}>
         <header className="cal-panel-header">
           <div>
-            <div className="cal-panel-title">Calendario personal</div>
-            <div className="cal-panel-subtitle">Crea y gestiona eventos propios</div>
+            <div className="cal-panel-title">{t('calendar.panel.title')}</div>
+            <div className="cal-panel-subtitle">{t('calendar.panel.subtitle')}</div>
           </div>
 
           <button
             type="button"
             className="cal-panel-close"
             onClick={() => setOpen(false)}
-            aria-label="Cerrar calendario"
+            aria-label={t('calendar.panel.closeAria')}
           >
             ×
           </button>
         </header>
 
         <div className="cal-panel-scroll">
-          <p className="cal-section-label">Calendario</p>
+          <p className="cal-section-label">{t('calendar.panel.sectionLabel')}</p>
 
           <CalendarMonth
             currentMonth={currentMonth}
@@ -120,11 +122,11 @@ export default function CalendarPanel({ enabled = true }) {
           <div className="cal-quick-actions">
             {selectedDateIsPast ? (
               <div className="cal-history-note">
-                Fecha pasada: puedes consultar los eventos registrados, pero no crear, editar ni eliminar.
+                {t('calendar.history.note')}
               </div>
             ) : (
               <button type="button" className="cal-btn cal-btn-primary" onClick={handleNewEvent}>
-                Nuevo evento
+                {t('calendar.actions.newEvent')}
               </button>
             )}
           </div>
@@ -155,10 +157,10 @@ export default function CalendarPanel({ enabled = true }) {
 
       <ConfirmModal
         open={!!eventToDelete}
-        title="¿Eliminar evento?"
-        message={eventToDelete ? `Se eliminará el evento "${eventToDelete.titulo}". Esta acción no se puede deshacer.` : ''}
-        confirmLabel="Sí, eliminar"
-        cancelLabel="Cancelar"
+        title={t('calendar.confirm.deleteTitle')}
+        message={eventToDelete ? t('calendar.confirm.deleteMessage', { title: eventToDelete.titulo }) : ''}
+        confirmLabel={t('calendar.confirm.deleteConfirm')}
+        cancelLabel={t('calendar.actions.cancel')}
         variant="red"
         icon="warning"
         onConfirm={handleConfirmDelete}
@@ -167,10 +169,10 @@ export default function CalendarPanel({ enabled = true }) {
 
       <ConfirmModal
         open={!!deleteDayRequest}
-        title="¿Eliminar eventos del día?"
-        message={deleteDayRequest ? `Se eliminarán ${deleteDayRequest.count} eventos registrados para esta fecha. Esta acción no se puede deshacer.` : ''}
-        confirmLabel="Sí, eliminar todos"
-        cancelLabel="Cancelar"
+        title={t('calendar.confirm.deleteDayTitle')}
+        message={deleteDayRequest ? t('calendar.confirm.deleteDayMessage', { count: deleteDayRequest.count }) : ''}
+        confirmLabel={t('calendar.confirm.deleteAllConfirm')}
+        cancelLabel={t('calendar.actions.cancel')}
         variant="red"
         icon="warning"
         onConfirm={handleConfirmDeleteDay}

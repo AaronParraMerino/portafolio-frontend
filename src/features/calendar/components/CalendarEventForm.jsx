@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../../core/i18n';
 
 const EMPTY_FORM = {
   titulo: '',
@@ -14,6 +15,15 @@ const URL_REGEX = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|dev|bo|edu|a
 const TITLE_ALLOWED_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+$/;
 const DESCRIPTION_FORBIDDEN_REGEX = /[#$%&/*°]/;
 
+const EVENT_TYPES = [
+  { value: 'Personal', labelKey: 'calendar.type.personal' },
+  { value: 'Académico', labelKey: 'calendar.type.academic' },
+  { value: 'Trabajo', labelKey: 'calendar.type.work' },
+  { value: 'Reunión', labelKey: 'calendar.type.meeting' },
+  { value: 'Entrega', labelKey: 'calendar.type.delivery' },
+  { value: 'Otro', labelKey: 'calendar.type.other' },
+];
+
 export default function CalendarEventForm({
   open,
   mode,
@@ -23,6 +33,7 @@ export default function CalendarEventForm({
   onCancel,
   onSubmit,
 }) {
+  const { t } = useLanguage();
   const [values, setValues] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
@@ -62,33 +73,33 @@ export default function CalendarEventForm({
     const description = values.descripcion.trim();
 
     if (!title) {
-      nextErrors.titulo = 'El título es obligatorio.';
+      nextErrors.titulo = t('calendar.validation.titleRequired');
     } else if (title.length > TITLE_MAX_LENGTH) {
-      nextErrors.titulo = `El título no puede superar los ${TITLE_MAX_LENGTH} caracteres.`;
+      nextErrors.titulo = t('calendar.validation.titleMax', { count: TITLE_MAX_LENGTH });
     } else if (/\d/.test(title)) {
-      nextErrors.titulo = 'El título no debe contener números.';
+      nextErrors.titulo = t('calendar.validation.titleNoNumbers');
     } else if (URL_REGEX.test(title)) {
-      nextErrors.titulo = 'El título no debe contener enlaces o URLs.';
+      nextErrors.titulo = t('calendar.validation.titleNoUrls');
     } else if (!TITLE_ALLOWED_REGEX.test(title)) {
-      nextErrors.titulo = 'El título solo debe contener letras y espacios, sin símbolos.';
+      nextErrors.titulo = t('calendar.validation.titleOnlyLetters');
     }
 
     if (description.length > DESCRIPTION_MAX_LENGTH) {
-      nextErrors.descripcion = `La descripción no puede superar los ${DESCRIPTION_MAX_LENGTH} caracteres.`;
+      nextErrors.descripcion = t('calendar.validation.descriptionMax', { count: DESCRIPTION_MAX_LENGTH });
     } else if (URL_REGEX.test(description)) {
-      nextErrors.descripcion = 'La descripción no debe contener enlaces o URLs.';
+      nextErrors.descripcion = t('calendar.validation.descriptionNoUrls');
     } else if (DESCRIPTION_FORBIDDEN_REGEX.test(description)) {
-      nextErrors.descripcion = 'La descripción contiene caracteres no permitidos como # $ % & / * °.';
+      nextErrors.descripcion = t('calendar.validation.descriptionForbidden');
     }
 
     if (!values.fecha) {
-      nextErrors.fecha = 'La fecha es obligatoria.';
+      nextErrors.fecha = t('calendar.validation.dateRequired');
     } else if (today && values.fecha < today) {
-      nextErrors.fecha = 'No se pueden crear eventos en fechas pasadas.';
+      nextErrors.fecha = t('calendar.validation.noPastDate');
     }
 
     if (!values.hora) {
-      nextErrors.hora = 'La hora es obligatoria.';
+      nextErrors.hora = t('calendar.validation.timeRequired');
     }
 
     return nextErrors;
@@ -112,7 +123,7 @@ export default function CalendarEventForm({
     if (result === false) {
       setErrors((prev) => ({
         ...prev,
-        form: 'No se pudo guardar el evento. Revisa los datos ingresados.',
+        form: t('calendar.validation.saveGeneric'),
       }));
       return;
     }
@@ -120,44 +131,43 @@ export default function CalendarEventForm({
     if (result?.ok === false) {
       setErrors((prev) => ({
         ...prev,
-        form: result.message || 'No se pudo guardar el evento.',
+        form: result.message || t('calendar.validation.saveShort'),
       }));
-      return;
     }
   };
 
   return (
     <form className="cal-event-form" onSubmit={handleSubmit}>
       <div className="cal-form-head">
-        <strong>{mode === 'edit' ? 'Editar evento' : 'Nuevo evento'}</strong>
-        <button type="button" className="cal-form-close" onClick={onCancel} aria-label="Cerrar formulario">×</button>
+        <strong>{mode === 'edit' ? t('calendar.form.editTitle') : t('calendar.form.newTitle')}</strong>
+        <button type="button" className="cal-form-close" onClick={onCancel} aria-label={t('calendar.form.closeAria')}>×</button>
       </div>
 
       <div className="cal-field">
-        <label>Título del evento *</label>
+        <label>{t('calendar.form.titleLabel')} *</label>
         <input
           value={values.titulo}
           maxLength={TITLE_MAX_LENGTH}
           onChange={(e) => setValue('titulo', e.target.value)}
-          placeholder="Ej: Reunión con QA"
+          placeholder={t('calendar.form.titlePlaceholder')}
         />
         <div className="cal-field-help">
-          <span>Solo letras y espacios. Sin números, símbolos ni enlaces.</span>
+          <span>{t('calendar.form.titleHelp')}</span>
           <span>{values.titulo.length}/{TITLE_MAX_LENGTH}</span>
         </div>
         {errors.titulo && <span className="cal-error">{errors.titulo}</span>}
       </div>
 
       <div className="cal-field">
-        <label>Descripción</label>
+        <label>{t('calendar.form.descriptionLabel')}</label>
         <textarea
           value={values.descripcion}
           maxLength={DESCRIPTION_MAX_LENGTH}
           onChange={(e) => setValue('descripcion', e.target.value)}
-          placeholder="Detalle breve del evento"
+          placeholder={t('calendar.form.descriptionPlaceholder')}
         />
         <div className="cal-field-help">
-          <span>No se permiten enlaces ni caracteres como # $ % & / * °.</span>
+          <span>{t('calendar.form.descriptionHelp')}</span>
           <span>{values.descripcion.length}/{DESCRIPTION_MAX_LENGTH}</span>
         </div>
         {errors.descripcion && <span className="cal-error">{errors.descripcion}</span>}
@@ -165,7 +175,7 @@ export default function CalendarEventForm({
 
       <div className="cal-form-row">
         <div className="cal-field">
-          <label>Fecha *</label>
+          <label>{t('calendar.form.dateLabel')} *</label>
           <input
             type="date"
             value={values.fecha}
@@ -173,13 +183,13 @@ export default function CalendarEventForm({
             onChange={(e) => setValue('fecha', e.target.value)}
           />
           <div className="cal-field-help">
-            <span>Formato visible: {formattedDate || 'dd/mm/aaaa'}</span>
+            <span>{t('calendar.form.visibleFormat', { date: formattedDate || 'dd/mm/aaaa' })}</span>
           </div>
           {errors.fecha && <span className="cal-error">{errors.fecha}</span>}
         </div>
 
         <div className="cal-field">
-          <label>Hora *</label>
+          <label>{t('calendar.form.timeLabel')} *</label>
           <input
             type="time"
             value={values.hora}
@@ -190,22 +200,19 @@ export default function CalendarEventForm({
       </div>
 
       <div className="cal-field">
-        <label>Tipo</label>
+        <label>{t('calendar.form.typeLabel')}</label>
         <select value={values.tipo} onChange={(e) => setValue('tipo', e.target.value)}>
-          <option>Personal</option>
-          <option>Académico</option>
-          <option>Trabajo</option>
-          <option>Reunión</option>
-          <option>Entrega</option>
-          <option>Otro</option>
+          {EVENT_TYPES.map((type) => (
+            <option key={type.value} value={type.value}>{t(type.labelKey)}</option>
+          ))}
         </select>
       </div>
 
       {errors.form && <div className="cal-error cal-error-form">{errors.form}</div>}
 
       <div className="cal-form-actions">
-        <button type="button" className="cal-btn cal-btn-secondary" onClick={onCancel}>Cancelar</button>
-        <button type="submit" className="cal-btn cal-btn-primary">Guardar</button>
+        <button type="button" className="cal-btn cal-btn-secondary" onClick={onCancel}>{t('calendar.actions.cancel')}</button>
+        <button type="submit" className="cal-btn cal-btn-primary">{t('calendar.actions.save')}</button>
       </div>
     </form>
   );
