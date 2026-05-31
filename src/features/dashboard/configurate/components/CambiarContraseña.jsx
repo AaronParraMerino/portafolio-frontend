@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BASE_URL from "../../../../services/http/const";
 import { BASE_SESSION_TOKEN_KEY } from "../../../auth/services/sessionService";
+import { useLanguage } from "../../../../core/i18n";
 
 const getToken = () => localStorage.getItem("tokenPORT");
 
 export default function CambiarContraseña() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     actual: "",
@@ -53,23 +55,23 @@ export default function CambiarContraseña() {
 
   const validate = () => {
     if (!form.actual) {
-      return "Ingresa tu contraseña actual.";
+      return t("configurate.password.validation.currentRequired");
     }
 
     if (form.nueva.length < 6) {
-      return "La nueva contraseña debe tener al menos 6 caracteres.";
+      return t("configurate.password.validation.minLength");
     }
 
     if (!/[A-Z]/.test(form.nueva)) {
-      return "La nueva contraseña debe incluir al menos una mayúscula.";
+      return t("configurate.password.validation.uppercase");
     }
 
     if (!/[0-9]/.test(form.nueva)) {
-      return "La nueva contraseña debe incluir al menos un número.";
+      return t("configurate.password.validation.number");
     }
 
     if (form.nueva !== form.confirmar) {
-      return "Las contraseñas no coinciden.";
+      return t("auth.error.passwordMismatch");
     }
 
     return null;
@@ -105,10 +107,10 @@ export default function CambiarContraseña() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.message || "Error al actualizar la contraseña.");
+        throw new Error(data.message || t("configurate.password.error.update"));
       }
 
-      setSuccess(data.message || "Contraseña actualizada correctamente.");
+      setSuccess(data.message || t("configurate.password.success.updated"));
       setForm({
         actual: "",
         nueva: "",
@@ -146,13 +148,13 @@ export default function CambiarContraseña() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data.message || "Error al solicitar recuperación.");
+        throw new Error(data.message || t("configurate.password.error.recovery"));
       }
 
       sessionStorage.setItem("correo_recuperacion", recovEmail);
       sessionStorage.setItem("redirect_after_recovery", "/dashboard/settings");
 
-      setRecovMsg(data.message || "Código enviado. Redirigiendo...");
+      setRecovMsg(data.message || t("configurate.password.success.codeSent"));
 
       setTimeout(() => navigate("/auth/Codigo"), 1200);
     } catch (e) {
@@ -172,7 +174,7 @@ export default function CambiarContraseña() {
       >
         <button type="button" style={backButtonStyle} onClick={handleBack}>
           <span style={backIconStyle}>‹</span>
-          Volver
+          {t("actions.back")}
         </button>
 
         <section style={headerStyle}>
@@ -190,19 +192,19 @@ export default function CambiarContraseña() {
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            Seguridad
+            {t("configurate.password.badge")}
           </div>
 
-          <h1 style={titleStyle}>Cambiar contraseña</h1>
+          <h1 style={titleStyle}>{t("configurate.password.title")}</h1>
 
           <p style={subtitleStyle}>
-            Elige una contraseña segura y no la reutilices en otros sitios.
+            {t("configurate.password.subtitle")}
           </p>
         </section>
 
         <section style={cardStyle}>
           <div style={fieldStyle}>
-            <label style={labelStyle}>Contraseña actual</label>
+            <label style={labelStyle}>{t("configurate.password.currentLabel")}</label>
 
             <input
               type="password"
@@ -223,7 +225,7 @@ export default function CambiarContraseña() {
           </div>
 
           <div style={fieldStyle}>
-            <label style={labelStyle}>Nueva contraseña</label>
+            <label style={labelStyle}>{t("configurate.password.newLabel")}</label>
 
             <input
               type="password"
@@ -243,12 +245,12 @@ export default function CambiarContraseña() {
             />
 
             <span style={hintStyle}>
-              Mínimo 6 caracteres, una mayúscula y un número.
+              {t("configurate.password.requirements")}
             </span>
           </div>
 
           <div style={fieldStyle}>
-            <label style={labelStyle}>Confirmar nueva contraseña</label>
+            <label style={labelStyle}>{t("configurate.password.confirmLabel")}</label>
 
             <input
               type="password"
@@ -289,7 +291,7 @@ export default function CambiarContraseña() {
               onClick={handleSubmit}
               disabled={loading}
             >
-              {loading ? "Actualizando..." : "Actualizar contraseña"}
+              {loading ? t("auth.status.updating") : t("configurate.password.submit")}
             </button>
 
             <button
@@ -300,14 +302,14 @@ export default function CambiarContraseña() {
               }}
               onClick={handleBack}
             >
-              Cancelar
+              {t("actions.cancel")}
             </button>
           </div>
         </section>
 
         <div style={dividerStyle}>
           <span style={dividerLineStyle} />
-          <span style={dividerTextStyle}>¿No recuerdas tu contraseña?</span>
+          <span style={dividerTextStyle}>{t("configurate.password.forgotQuestion")}</span>
           <span style={dividerLineStyle} />
         </div>
 
@@ -326,16 +328,15 @@ export default function CambiarContraseña() {
               <circle cx="12" cy="12" r="10" />
               <path d="M12 8v4m0 4h.01" />
             </svg>
-            Recuperación
+            {t("configurate.password.recoveryBadge")}
           </div>
 
           <p style={recovDescStyle}>
-            Te enviaremos un código a tu correo para que puedas establecer una
-            nueva contraseña.
+            {t("configurate.password.recoveryDescription")}
           </p>
 
           <div style={fieldStyle}>
-            <label style={labelStyle}>Correo electrónico</label>
+            <label style={labelStyle}>{t("auth.field.email")}</label>
 
             <input
               type="email"
@@ -345,7 +346,7 @@ export default function CambiarContraseña() {
                 setRecovError("");
                 setRecovMsg("");
               }}
-              placeholder="ejemplo@correo.com"
+              placeholder={t("configurate.password.emailPlaceholder")}
               style={inputStyle}
               autoComplete="email"
               onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
@@ -372,7 +373,7 @@ export default function CambiarContraseña() {
             onClick={handleRecovery}
             disabled={!recovEmail || recovLoading}
           >
-            {recovLoading ? "Enviando..." : "Enviar código de recuperación"}
+            {recovLoading ? t("auth.status.sending") : t("configurate.password.sendRecoveryCode")}
           </button>
         </section>
       </main>

@@ -1,0 +1,53 @@
+export const footerTranslations = {
+  "es": {
+    "footer.cta.label": "Únete ahora",
+    "footer.cta.titleLine1": "Tu próxima oportunidad",
+    "footer.cta.titleLine2": "empieza con un",
+    "footer.cta.titleHighlight": "buen portafolio",
+    "footer.description": "La vitrina digital para desarrolladores de software bolivianos. Portafolios reales, proyectos reales, conexiones reales.",
+    "footer.platform.title": "Plataforma",
+    "footer.platform.exploreDevelopers": "Explorar desarrolladores",
+    "footer.platform.trendingProjects": "Proyectos destacados",
+    "footer.platform.howItWorks": "Cómo funciona",
+    "footer.platform.companies": "Empresas",
+    "footer.developers.title": "Desarrolladores",
+    "footer.developers.createPortfolio": "Crear portafolio",
+    "footer.developers.myProfile": "Mi perfil",
+    "footer.developers.myProjects": "Mis proyectos",
+    "footer.developers.publicView": "Vista pública"
+  },
+  "en": {
+    "footer.cta.label": "Join now",
+    "footer.cta.titleLine1": "Your next opportunity",
+    "footer.cta.titleLine2": "starts with a",
+    "footer.cta.titleHighlight": "strong portfolio",
+    "footer.description": "The digital showcase for Bolivian software developers. Real portfolios, real projects, real connections.",
+    "footer.platform.title": "Platform",
+    "footer.platform.exploreDevelopers": "Explore developers",
+    "footer.platform.trendingProjects": "Featured projects",
+    "footer.platform.howItWorks": "How it works",
+    "footer.platform.companies": "Companies",
+    "footer.developers.title": "Developers",
+    "footer.developers.createPortfolio": "Create portfolio",
+    "footer.developers.myProfile": "My profile",
+    "footer.developers.myProjects": "My projects",
+    "footer.developers.publicView": "Public view"
+  },
+  "pt": {
+    "footer.cta.label": "Junte-se agora",
+    "footer.cta.titleLine1": "Sua próxima oportunidade",
+    "footer.cta.titleLine2": "começa com um",
+    "footer.cta.titleHighlight": "bom portfólio",
+    "footer.description": "A vitrine digital para desenvolvedores de software bolivianos. Portfólios reais, projetos reais, conexões reais.",
+    "footer.platform.title": "Plataforma",
+    "footer.platform.exploreDevelopers": "Explorar desenvolvedores",
+    "footer.platform.trendingProjects": "Projetos em destaque",
+    "footer.platform.howItWorks": "Como funciona",
+    "footer.platform.companies": "Empresas",
+    "footer.developers.title": "Desenvolvedores",
+    "footer.developers.createPortfolio": "Criar portfólio",
+    "footer.developers.myProfile": "Meu perfil",
+    "footer.developers.myProjects": "Meus projetos",
+    "footer.developers.publicView": "Vista pública"
+  }
+};

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import '../styles/profile.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import { useLanguage } from '../../../../core/i18n';
 import DashboardEdit, {
   DashboardEditBody,
   DashboardEditFooter,
@@ -40,40 +41,40 @@ const PAISES = [
 const INVALID_CHARS_NAME = /[0-9!@#$%^&*()_+=[\]{};':"\\|,.<>/?]/;
 const INVALID_CHARS_TEXT = /[<>{}[\]\\]/;
 
-function validateField(name, value, form) {
+function validateField(name, value, form, t) {
   switch (name) {
     case 'nombre':
-      if (!value.trim()) return 'El nombre es obligatorio.';
-      if (value.trim().length < 2) return 'Mínimo 2 caracteres.';
-      if (INVALID_CHARS_NAME.test(value)) return 'No se permiten números ni caracteres especiales.';
-      if (value.length > 50) return 'Máximo 50 caracteres.';
+      if (!value.trim()) return t('profile.validation.firstNameRequired');
+      if (value.trim().length < 2) return t('profile.validation.min2');
+      if (INVALID_CHARS_NAME.test(value)) return t('profile.validation.noNumbersSpecials');
+      if (value.length > 50) return t('profile.validation.max50');
       return '';
     case 'apellido':
-      if (!value.trim()) return 'El apellido es obligatorio.';
-      if (value.trim().length < 2) return 'Mínimo 2 caracteres.';
-      if (INVALID_CHARS_NAME.test(value)) return 'No se permiten números ni caracteres especiales.';
-      if (value.length > 50) return 'Máximo 50 caracteres.';
+      if (!value.trim()) return t('profile.validation.lastNameRequired');
+      if (value.trim().length < 2) return t('profile.validation.min2');
+      if (INVALID_CHARS_NAME.test(value)) return t('profile.validation.noNumbersSpecials');
+      if (value.length > 50) return t('profile.validation.max50');
       return '';
     case 'profesion':
-      if (value && INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
-      if (value.length > 80) return 'Máximo 80 caracteres.';
+      if (value && INVALID_CHARS_TEXT.test(value)) return t('profile.validation.forbiddenChars');
+      if (value.length > 80) return t('profile.validation.max80');
       return '';
     case 'biografia':
-      if (value && INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
-      if (value.length > 500) return `Máximo 500 caracteres (${value.length}/500).`;
+      if (value && INVALID_CHARS_TEXT.test(value)) return t('profile.validation.forbiddenChars');
+      if (value.length > 500) return t('profile.validation.max500', { count: value.length });
       return '';
     case 'ciudad':
-      if (/\d/.test(value)) return 'No se permiten números, solo letras.';
-      if (value && INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos.';
-      if (value.length > 60) return 'Máximo 60 caracteres.';
+      if (/\d/.test(value)) return t('profile.validation.cityNoNumbers');
+      if (value && INVALID_CHARS_TEXT.test(value)) return t('profile.validation.forbiddenSimple');
+      if (value.length > 60) return t('profile.validation.max60');
       return '';
     case 'telefono': {
       if (!value.trim()) return '';
       const onlyDigits = value.replace(/\s/g, '');
-      if (!/^\d+$/.test(onlyDigits)) return 'Solo se permiten dígitos (sin guiones ni paréntesis).';
+      if (!/^\d+$/.test(onlyDigits)) return t('profile.validation.onlyDigits');
       const pais = PAISES.find(p => p.code === form.paisCode);
       if (pais && !pais.telRegex.test(onlyDigits))
-        return `Número inválido para ${pais.name}. ${pais.telHint}.`;
+        return t('profile.validation.invalidPhoneForCountry', { country: pais.name, hint: pais.telHint });
       return '';
     }
     default: return '';
@@ -81,7 +82,7 @@ function validateField(name, value, form) {
 }
 
 /* ── Dropdown País ── */
-function PaisDropdown({ value, onChange }) {
+function PaisDropdown({ value, onChange, t }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
@@ -109,7 +110,7 @@ function PaisDropdown({ value, onChange }) {
             <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.name}</span>
             <span style={{ fontSize: 11, color: 'var(--gris-texto)', flexShrink: 0 }}>{selected.dial}</span>
           </>
-        ) : <span style={{ color: 'var(--gris-texto)' }}>Seleccionar país…</span>}
+        ) : <span style={{ color: 'var(--gris-texto)' }}>{t('profile.action.selectCountry')}</span>}
         <svg viewBox="0 0 10 6" style={{ width: 10, height: 10, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0, marginLeft: 4, transition: 'transform .15s', transform: open ? 'rotate(180deg)' : 'none' }}>
           <path d="M1 1l4 4 4-4"/>
         </svg>
@@ -120,11 +121,11 @@ function PaisDropdown({ value, onChange }) {
             <svg viewBox="0 0 14 14" style={{ width: 13, height: 13, stroke: 'var(--gris-texto)', fill: 'none', strokeWidth: 1.8, flexShrink: 0 }}>
               <circle cx="6" cy="6" r="4.5"/><path d="M10 10l2.5 2.5"/>
             </svg>
-            <input ref={searchRef} className="prf-country-search" placeholder="Buscar país o código..."
+            <input ref={searchRef} className="prf-country-search" placeholder={t('profile.action.searchCountry')}
               value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <ul className="prf-country-list">
-            {filtered.length === 0 && <li className="prf-country-empty">Sin resultados</li>}
+            {filtered.length === 0 && <li className="prf-country-empty">{t('profile.action.noCountryResults')}</li>}
             {filtered.map(p => (
               <li key={p.code} role="option" aria-selected={value === p.code}
                 className={`prf-country-item${value === p.code ? ' selected' : ''}`}
@@ -161,6 +162,7 @@ function FieldError({ msg }) {
    COMPONENTE PRINCIPAL
 ══════════════════════════════════════════════ */
 export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }) {
+  const { t } = useLanguage();
 
   const detectDialCode = () => {
     if (!perfil?.telefono) return 'BO';
@@ -190,7 +192,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
 
   const errors = {};
   ['nombre','apellido','profesion','biografia','ciudad','telefono'].forEach(f => {
-    errors[f] = validateField(f, form[f], form);
+    errors[f] = validateField(f, form[f], form, t);
   });
   const hasErrors = Object.values(errors).some(Boolean);
 
@@ -235,20 +237,20 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
   return (
     <>
       <DashboardEdit
-        title="Editar perfil"
-        subtitle="Los cambios se reflejan en tu vista publica"
+        title={t('profile.edit.title')}
+        subtitle={t('profile.edit.subtitle')}
         onClose={onCancelar}
         closeDisabled={guardando}
         closeOnOverlay={!guardando}
         size="lg"
-        ariaLabel="Editar perfil"
+        ariaLabel={t('profile.edit.title')}
       >
           {submitAttempted && hasErrors && (
             <div className="dash-edit-banner-error prf-global-error-banner" role="alert">
               <svg viewBox="0 0 14 14" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
                 <path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10v.5"/>
               </svg>
-              Revisa los campos marcados antes de guardar.
+              {t('profile.edit.reviewErrors')}
             </div>
           )}
 
@@ -256,60 +258,60 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
             <DashboardEditBody>
 
               <div className="prf-form-section">
-                <span className="prf-section-label">Información básica</span>
+                <span className="prf-section-label">{t('profile.edit.basicInfo')}</span>
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="prf-label">Nombre <span className="prf-required-star">*</span></label>
+                    <label className="prf-label">{t('profile.field.firstName')} <span className="prf-required-star">*</span></label>
                     <input className={`form-control dash-edit-input prf-input${showError('nombre') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="nombre" value={form.nombre} onChange={handleChange} onBlur={handleBlur}
-                      placeholder="Tu nombre" autoComplete="given-name" maxLength={51} />
+                      placeholder={t('profile.edit.firstNamePlaceholder')} autoComplete="given-name" maxLength={51} />
                     <FieldError msg={showError('nombre')} />
                   </div>
                   <div className="col-md-6">
-                    <label className="prf-label">Apellido <span className="prf-required-star">*</span></label>
+                    <label className="prf-label">{t('profile.field.lastName')} <span className="prf-required-star">*</span></label>
                     <input className={`form-control dash-edit-input prf-input${showError('apellido') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="apellido" value={form.apellido} onChange={handleChange} onBlur={handleBlur}
-                      placeholder="Tu apellido" autoComplete="family-name" maxLength={51} />
+                      placeholder={t('profile.edit.lastNamePlaceholder')} autoComplete="family-name" maxLength={51} />
                     <FieldError msg={showError('apellido')} />
                   </div>
                   <div className="col-md-6">
-                    <label className="prf-label">Profesión</label>
+                    <label className="prf-label">{t('profile.field.profession')}</label>
                     <input className={`form-control dash-edit-input prf-input${showError('profesion') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="profesion" value={form.profesion} onChange={handleChange} onBlur={handleBlur}
-                      placeholder="Ej: Dev Full Stack" autoComplete="organization-title" maxLength={81} />
+                      placeholder={t('profile.edit.professionPlaceholder')} autoComplete="organization-title" maxLength={81} />
                     <FieldError msg={showError('profesion')} />
                   </div>
                   <div className="col-12">
                     <label className="prf-label">
-                      Acerca de mí
+                      {t('profile.field.about')}
                       <span className="prf-char-count" style={{ color: form.biografia.length > 480 ? 'var(--rojo-soft)' : 'var(--gris-texto)' }}>
                         {form.biografia.length}/500
                       </span>
                     </label>
                     <textarea className={`form-control dash-edit-textarea prf-input${showError('biografia') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="biografia" value={form.biografia} onChange={handleChange} onBlur={handleBlur}
-                      rows={3} placeholder="Cuéntanos sobre ti..." autoComplete="off" maxLength={501} />
+                      rows={3} placeholder={t('profile.edit.aboutPlaceholder')} autoComplete="off" maxLength={501} />
                     <FieldError msg={showError('biografia')} />
                   </div>
                 </div>
               </div>
 
               <div className="prf-form-section">
-                <span className="prf-section-label">Contacto</span>
+                <span className="prf-section-label">{t('profile.edit.contact')}</span>
                 <div className="row g-3">
                   <div className="col-md-4">
-                    <label className="prf-label">País</label>
-                    <PaisDropdown value={form.paisCode} onChange={handlePaisChange} />
+                    <label className="prf-label">{t('profile.field.country')}</label>
+                    <PaisDropdown value={form.paisCode} onChange={handlePaisChange} t={t} />
                   </div>
                   <div className="col-md-4">
-                    <label className="prf-label">Ciudad</label>
+                    <label className="prf-label">{t('profile.field.city')}</label>
                     <input className={`form-control dash-edit-input prf-input${showError('ciudad') ? ' dash-edit-input-error prf-input-error' : ''}`}
                       name="ciudad" value={form.ciudad} onChange={handleChange} onBlur={handleBlur}
-                      placeholder="Cochabamba" autoComplete="address-level2" maxLength={61} />
+                      placeholder={t('profile.edit.cityPlaceholder')} autoComplete="address-level2" maxLength={61} />
                     <FieldError msg={showError('ciudad')} />
                   </div>
                   <div className="col-md-4">
-                    <label className="prf-label">Teléfono</label>
+                    <label className="prf-label">{t('profile.field.phone')}</label>
                     <div className={`prf-tel-wrap${showError('telefono') ? ' prf-input-error-wrap' : ''}`}>
                       <div className="prf-tel-code" title={paisObj?.name}>
                         <span style={{ fontSize: 16 }}>{paisObj?.flag}</span>
@@ -321,7 +323,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
                         autoComplete="tel-national" inputMode="numeric" maxLength={16} />
                     </div>
                     {!showError('telefono') && paisObj && (
-                      <div className="prf-field-hint">{paisObj.telHint} — el código {paisObj.dial} se añade automáticamente</div>
+                      <div className="prf-field-hint">{t('profile.edit.phoneHint', { hint: paisObj.telHint, dial: paisObj.dial })}</div>
                     )}
                     <FieldError msg={showError('telefono')} />
                   </div>
@@ -331,11 +333,11 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
             </DashboardEditBody>
 
             <DashboardEditFooter>
-              <button type="button" className="dash-edit-btn dash-edit-btn--secondary" onClick={onCancelar} disabled={guardando}>Cancelar</button>
+              <button type="button" className="dash-edit-btn dash-edit-btn--secondary" onClick={onCancelar} disabled={guardando}>{t('profile.action.cancel')}</button>
               <button type="submit" className="dash-edit-btn dash-edit-btn--primary" disabled={guardando}>
                 {guardando
-                  ? <><span className="dash-edit-spinner" /> Guardando...</>
-                  : <><svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>Guardar cambios</>
+                  ? <><span className="dash-edit-spinner" /> {t('profile.action.saving')}</>
+                  : <><svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>{t('profile.action.saveChanges')}</>
                 }
               </button>
             </DashboardEditFooter>
@@ -345,9 +347,9 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
 
       <ConfirmModal
         open={!!confirmPending}
-        title="¿Guardar cambios?"
-        message="Estás por actualizar tu información de perfil. Los cambios se reflejarán en tu vista pública de inmediato."
-        confirmLabel="Sí, guardar"
+        title={t('profile.edit.confirmTitle')}
+        message={t('profile.edit.confirmMessage')}
+        confirmLabel={t('profile.edit.confirmSave')}
         variant="blue"
         icon="check"
         loading={guardando}

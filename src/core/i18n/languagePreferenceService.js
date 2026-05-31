@@ -46,14 +46,19 @@ const parseJson = async (res) => {
   return data;
 };
 
-const mapPreferenceFromBack = (data = {}) => normalizeLanguage(
-  data?.idioma_preferido ??
-  data?.idioma ??
-  data?.language ??
-  data?.data?.idioma_preferido ??
-  data?.data?.idioma ??
-  data?.data?.language
-);
+const mapPreferenceFromBack = (data = {}, fallbackLanguage = getStoredLanguage()) => {
+  const value =
+    data?.idioma_preferido ??
+    data?.idioma ??
+    data?.language ??
+    data?.data?.idioma_preferido ??
+    data?.data?.idioma ??
+    data?.data?.language;
+
+  return SUPPORTED_LANGUAGES.some((item) => item.code === value)
+    ? value
+    : normalizeLanguage(fallbackLanguage);
+};
 
 /**
  * Obtiene la preferencia guardada en backend.
@@ -68,7 +73,7 @@ export const getLanguagePreference = async () => {
   });
 
   const data = await parseJson(res);
-  return mapPreferenceFromBack(data);
+  return mapPreferenceFromBack(data, getStoredLanguage());
 };
 
 /**
@@ -90,7 +95,7 @@ export const updateLanguagePreference = async (language) => {
   });
 
   const data = await parseJson(res);
-  const syncedLanguage = mapPreferenceFromBack(data);
+  const syncedLanguage = mapPreferenceFromBack(data, idioma);
   saveStoredLanguage(syncedLanguage);
 
   return {

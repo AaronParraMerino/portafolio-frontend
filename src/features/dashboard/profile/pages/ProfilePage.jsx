@@ -7,18 +7,20 @@ import ProfileCompletitud     from '../components/ProfileCompletitud';
 import ProfileToast           from '../components/ProfileToast';
 import Header                 from '../../layout/Header';
 import '../styles/profile.css';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const { perfil, loading, guardando, editando, setEditando, guardarPerfil, toggleVisibilidad, toast, subirImagen, eliminarImagen } = useProfile();
 
   if (loading) {
     return (
       <>
-        <Header eyebrow="GENERAL" title="Mi Perfil" />
+        <Header eyebrow={t('profile.header.eyebrow')} title={t('profile.header.title')} />
         <div className="prf-page">
           <div className="dash-loading">
             <span className="dash-loading-spinner" />
-            <span>Cargando perfil...</span>
+            <span>{t('profile.loading')}</span>
           </div>
         </div>
       </>
@@ -28,10 +30,10 @@ export default function ProfilePage() {
   if (!perfil) {
     return (
       <>
-        <Header eyebrow="GENERAL" title="Mi Perfil" />
+        <Header eyebrow={t('profile.header.eyebrow')} title={t('profile.header.title')} />
         <div className="prf-page">
           <div className="prf-error">
-            No se pudo cargar el perfil.
+            {t('profile.error.load')}
           </div>
         </div>
       </>
@@ -40,7 +42,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Header eyebrow="GENERAL" title="Mi Perfil" />
+      <Header eyebrow={t('profile.header.eyebrow')} title={t('profile.header.title')} />
 
       <div className="prf-page">
 
