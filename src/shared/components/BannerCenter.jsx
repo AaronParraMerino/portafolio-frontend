@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '../../core/i18n';
 import PoliticaCookies from '../../features/auth/components/PoliticasC';
 import {
   aceptarCookiesYGuardarHardware,
@@ -44,56 +45,74 @@ const persistOrder = (list) => {
 
 const MOCK_NOTICES = [
   {
-    id: 'notice-ddddd',
-    title: 'Bienvddenido',
-    description: 'Estas son nuevas funcionalidades que pueden gustarte.',
-    linkLabel: 'Ver recomendaciones',
+    id: 'notice-recommendations',
+    titleKey: 'banner.notice.recommendations.title',
+    descriptionKey: 'banner.notice.recommendations.description',
+    linkLabelKey: 'banner.notice.recommendations.link',
     linkHref: '/dashboard/experience',
-    primaryLabel: 'Abrir',
-    secondaryLabel: 'limpiar',
+    primaryLabelKey: 'banner.action.open',
+    secondaryLabelKey: 'banner.action.dismiss',
     autoHideMs: 35000,
   },
   {
     id: 'notice-welcome',
-    title: 'Bienvenido',
-    description: 'Estas son nuevas funcionalidades que pueden gustarte.',
-    linkLabel: 'Ver recomendaciones',
+    titleKey: 'banner.notice.welcome.title',
+    descriptionKey: 'banner.notice.welcome.description',
+    linkLabelKey: 'banner.notice.welcome.link',
     linkHref: '/dashboard/experience',
-    primaryLabel: 'Abrir',
-    secondaryLabel: 'Cerrar',
+    primaryLabelKey: 'banner.action.ok',
+    secondaryLabelKey: 'banner.action.close',
     autoHideMs: 35000,
   },
   {
     id: 'notice-profile',
-    title: 'Tip de perfil',
-    description: 'Completa tu perfil para mejorar visibilidad en el portafolio.',
-    linkLabel: 'Ir a perfil',
+    titleKey: 'banner.notice.profile.title',
+    descriptionKey: 'banner.notice.profile.description',
+    linkLabelKey: 'banner.notice.profile.link',
     linkHref: '/dashboard/profile',
-    primaryLabel: 'Entendido',
-    secondaryLabel: 'Descartar',
+    primaryLabelKey: 'banner.action.ok',
+    secondaryLabelKey: 'banner.action.dismiss',
     autoHideMs: 35000,
   },
 ];
 
+function translateNotice(notice, t) {
+  return {
+    ...notice,
+    title: notice.titleKey ? t(notice.titleKey) : notice.title,
+    description: notice.descriptionKey ? t(notice.descriptionKey) : notice.description,
+    linkLabel: notice.linkLabelKey ? t(notice.linkLabelKey) : notice.linkLabel,
+    primaryLabel: notice.primaryLabelKey ? t(notice.primaryLabelKey) : notice.primaryLabel,
+    secondaryLabel: notice.secondaryLabelKey ? t(notice.secondaryLabelKey) : notice.secondaryLabel,
+  };
+}
+
 export default function BannerCenter({ notices = MOCK_NOTICES }) {
+  const { t } = useLanguage();
+
+  const translatedNotices = useMemo(
+    () => notices.map((notice) => translateNotice(notice, t)),
+    [notices, t],
+  );
+
   const queue = useMemo(() => {
     const base = [];
 
     if (!wasCookieAccepted() && !wasCookieDismissed()) {
       base.push({
         id: 'cookie-banner',
-        title: 'Cookies del sitio',
-        description: 'Usamos cookies para mejorar tu experiencia. Si aceptas, guardamos consentimiento y huella tecnica.',
-        linkLabel: 'Ver politica de cookies',
+        title: t('cookie.title'),
+        description: t('cookie.description'),
+        linkLabel: t('cookie.policyLink'),
         linkAction: 'open-policy',
-        primaryLabel: 'Aceptar',
-        secondaryLabel: 'Cerrar',
+        primaryLabel: t('cookie.acceptShort'),
+        secondaryLabel: t('cookie.close'),
         autoHideMs: 35000,
       });
     }
 
-    return [...base, ...notices];
-  }, [notices]);
+    return [...base, ...translatedNotices];
+  }, [translatedNotices, t]);
 
   const [items, setItems] = useState(queue);
   const [collapsed, setCollapsed] = useState(true);
@@ -357,10 +376,10 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
           type="button"
           style={styles.tab}
           onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Abrir banners' : 'Cerrar banners'}
-          title={collapsed ? 'Mostrar banners' : 'Colapsar banners'}
+          aria-label={collapsed ? t('banner.openAria') : t('banner.closeAria')}
+          title={collapsed ? t('banner.showTitle') : t('banner.collapseTitle')}
         >
-          <span style={styles.tabLabel}>Avisos</span>
+          <span style={styles.tabLabel}>{t('banner.tab')}</span>
           <span style={styles.tabBadge}>{pendingCount}</span>
         </button>
       )}
