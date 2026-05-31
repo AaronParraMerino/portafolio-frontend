@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 
 const normalizeTag = (value) => String(value || '').trim();
 
@@ -9,6 +10,7 @@ const TagInput = ({
   onChange,
   suggestions = [],
 }) => {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [focused, setFocused] = useState(false);
 
@@ -67,7 +69,13 @@ const TagInput = ({
             {values.map((value) => (
               <span className="ps-tag" key={value}>
                 {value}
-                <button type="button" onClick={() => removeValue(value)} aria-label={`Quitar ${value}`}>×</button>
+                <button
+                  type="button"
+                  onClick={() => removeValue(value)}
+                  aria-label={t('portfolioSearch.filters.remove', { label: value })}
+                >
+                  ×
+                </button>
               </span>
             ))}
           </div>

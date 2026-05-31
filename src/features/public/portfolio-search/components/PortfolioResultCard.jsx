@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../../../core/i18n';
 
 const pick = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
 
@@ -17,11 +18,11 @@ const parseTechnologies = (value) => {
     .slice(0, 8);
 };
 
-const normalizePortfolio = (portfolio = {}) => {
+const normalizePortfolio = (portfolio = {}, t) => {
   const id = pick(portfolio.id_usuario, portfolio.usuario_id, portfolio.user_id, portfolio.id);
   const fullName = [portfolio.nombre, portfolio.apellido].filter(Boolean).join(' ').trim();
-  const nombre = pick(portfolio.nombre_completo, fullName, portfolio.nombre, 'Portafolio profesional');
-  const profesion = pick(portfolio.profesion, 'Profesional de software');
+  const nombre = pick(portfolio.nombre_completo, fullName, portfolio.nombre, t('portfolioSearch.card.defaultName'));
+  const profesion = pick(portfolio.profesion, t('portfolioSearch.card.defaultProfession'));
   const ciudad = pick(portfolio.ciudad, '');
   const pais = pick(portfolio.pais, '');
 
@@ -29,7 +30,7 @@ const normalizePortfolio = (portfolio = {}) => {
     id,
     nombre,
     profesion,
-    ubicacion: [ciudad, pais].filter(Boolean).join(', ') || 'Ubicación no especificada',
+    ubicacion: [ciudad, pais].filter(Boolean).join(', ') || t('portfolioSearch.card.unspecifiedLocation'),
     foto: pick(portfolio.foto_perfil, portfolio.avatar, portfolio.foto, ''),
     tecnologias: parseTechnologies(portfolio.tecnologias_relacionadas),
     habilidades: Number(portfolio.habilidades_relacionadas || 0),
@@ -39,16 +40,17 @@ const normalizePortfolio = (portfolio = {}) => {
 };
 
 const PortfolioResultCard = ({ portfolio }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const data = normalizePortfolio(portfolio);
+  const data = normalizePortfolio(portfolio, t);
 
   const handleOpen = () => {
     if (!data.id) return;
     const backFallback = `${location.pathname}${location.search}${location.hash}` || '/portafolios';
     navigate(`/portafolio/${data.id}`, {
       state: {
-        backLabel: 'Volver al buscador',
+        backLabel: t('portfolioSearch.card.backLabel'),
         backFallback,
       },
     });
@@ -56,7 +58,12 @@ const PortfolioResultCard = ({ portfolio }) => {
 
   return (
     <article className="ps-result-card">
-      <button type="button" className="ps-card-click" onClick={handleOpen} aria-label={`Ver portafolio de ${data.nombre}`}>
+      <button
+        type="button"
+        className="ps-card-click"
+        onClick={handleOpen}
+        aria-label={t('portfolioSearch.card.viewAria', { name: data.nombre })}
+      >
         <span className={`ps-avatar ${data.foto ? 'has-image' : ''}`} aria-hidden="true">
           {data.foto ? <img src={data.foto} alt="" /> : getInitials(data.nombre)}
         </span>
@@ -79,13 +86,13 @@ const PortfolioResultCard = ({ portfolio }) => {
           )}
 
           <span className="ps-card-stats">
-            <span><strong>{data.proyectos}</strong> proyectos relacionados</span>
-            <span><strong>{data.experiencias}</strong> experiencias relacionadas</span>
-            <span><strong>{data.habilidades}</strong> habilidades relacionadas</span>
+            <span><strong>{data.proyectos}</strong> {t('portfolioSearch.card.projects')}</span>
+            <span><strong>{data.experiencias}</strong> {t('portfolioSearch.card.experience')}</span>
+            <span><strong>{data.habilidades}</strong> {t('portfolioSearch.card.skills')}</span>
           </span>
         </span>
 
-        <span className="ps-card-action">Ver portafolio</span>
+        <span className="ps-card-action">{t('portfolioSearch.card.viewPortfolio')}</span>
       </button>
     </article>
   );
