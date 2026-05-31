@@ -1,4 +1,11 @@
-import { USER_DETAIL_ACTIONS, getUserSessionCount, getUserStatusMeta } from '../services/usersService';
+import {
+  USER_DETAIL_ACTIONS,
+  USER_ROLE_ACTIONS,
+  getUserRoleMeta,
+  getUserRoleValue,
+  getUserSessionCount,
+  getUserStatusMeta,
+} from '../services/usersService';
 import CachedUserAvatar from './CachedUserAvatar';
 
 function CloseIcon() {
@@ -27,6 +34,7 @@ export default function UsersActionModal({
   supportsActivation,
   supportsPausing,
   supportsBlocking,
+  supportsRoleManagement,
   actionError,
   actionSuccess,
   actionSubmitting,
@@ -41,21 +49,30 @@ export default function UsersActionModal({
   if (!user) return null;
 
   const statusMeta = getUserStatusMeta(user.estado);
+  const roleMeta = getUserRoleMeta(user);
+  const roleValue = getUserRoleValue(user);
   const sessions = Array.isArray(user.sessions) ? user.sessions : [];
-  const selectedAction = USER_DETAIL_ACTIONS.find((action) => action.id === pendingActionId) || null;
+  const selectedAccountAction = USER_DETAIL_ACTIONS.find((action) => action.id === pendingActionId) || null;
+  const selectedRoleAction = USER_ROLE_ACTIONS.find((action) => action.id === pendingActionId) || null;
   const sessionCount = getUserSessionCount(user);
   const canInactivate = supportsInactivation && user.estado !== 'inactivo';
   const canActivate = supportsActivation && user.estado !== 'activo';
   const canPause = supportsPausing && user.estado === 'activo';
   const canBlock = supportsBlocking && user.estado !== 'bloqueado';
-  const isActivation = selectedAction?.id === 'activar';
-  const isPausing = selectedAction?.id === 'pausar';
-  const isBlocking = selectedAction?.id === 'bloquear';
-  const isInactivation = selectedAction?.id === 'inactivar';
+  const isActivation = selectedAccountAction?.id === 'activar';
+  const isPausing = selectedAccountAction?.id === 'pausar';
+  const isBlocking = selectedAccountAction?.id === 'bloquear';
+  const isInactivation = selectedAccountAction?.id === 'inactivar';
+  const isRoleAction = !!selectedRoleAction;
+  const canAssignPublisher = roleValue !== 'publicante' && roleValue !== 'administrador';
+  const canRemovePublisher = roleValue === 'publicante';
+  const canManageSelectedRole = (selectedRoleAction?.id === 'asignar_publicante' && canAssignPublisher)
+    || (selectedRoleAction?.id === 'quitar_publicante' && canRemovePublisher);
   const canConfirmSelectedAction = (isActivation && canActivate)
     || (isPausing && canPause)
     || (isBlocking && canBlock)
-    || (isInactivation && canInactivate);
+    || (isInactivation && canInactivate)
+    || (isRoleAction && canManageSelectedRole && actionMessage.trim().length >= 10);
 
   return (
     <div className="usr-modal-backdrop" onClick={onClose} aria-hidden="true">
@@ -75,6 +92,9 @@ export default function UsersActionModal({
             <div className={`usr-status-badge usr-status-badge--${statusMeta.tone}`}>
               <span className="usr-status-dot" />
               {statusMeta.label}
+            </div>
+            <div className={`usr-role-badge usr-role-badge--${roleMeta.tone}`}>
+              {roleMeta.label}
             </div>
           </div>
 
@@ -125,10 +145,10 @@ export default function UsersActionModal({
               ))}
             </div>
 
-            {selectedAction && (
+            {selectedAccountAction && (
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
-                  <strong>{selectedAction.label}</strong>
+                  <strong>{selectedAccountAction.label}</strong>
                   <span>{canConfirmSelectedAction ? 'Accion disponible' : 'Pendiente de integracion'}</span>
                 </div>
 
@@ -232,6 +252,96 @@ export default function UsersActionModal({
 
             {actionError ? <p className="usr-action-feedback usr-action-feedback--error">{actionError}</p> : null}
             {actionSuccess ? <p className="usr-action-feedback usr-action-feedback--success">{actionSuccess}</p> : null}
+          </section>
+
+          <section className="usr-modal-section">
+            <div className="usr-modal-section-head">
+              <span className="usr-modal-section-kicker">Gestion de rol</span>
+              <h3>Permisos de publicante</h3>
+              <p>
+                Rol actual: <strong>{roleMeta.label}</strong>. Si un publicante incumple reglas,
+                puedes retirar el permiso registrando un motivo administrativo.
+              </p>
+            </div>
+
+            <div className="usr-role-summary-card">
+              <div>
+                <span>Rol actual</span>
+                <strong>{roleMeta.label}</strong>
+                <small>{roleMeta.helper}</small>
+              </div>
+              <div>
+                <span>Eventos</span>
+                <strong>{roleValue === 'publicante' ? 'Habilitado' : 'Sin permiso'}</strong>
+                <small>El rol publicante permite crear hasta 3 eventos por mes.</small>
+              </div>
+            </div>
+
+            <div className="usr-action-grid">
+              {USER_ROLE_ACTIONS.map((action) => {
+                const disabled = action.id === 'asignar_publicante' ? !canAssignPublisher : !canRemovePublisher;
+
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className={`usr-action-card usr-action-card--${action.tone}${pendingActionId === action.id ? ' active' : ''}`}
+                    onClick={() => onSelectAction(action.id)}
+                    disabled={disabled}
+                  >
+                    <strong>{action.label}</strong>
+                    <span>{action.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {isRoleAction ? (
+              <div className="usr-reason-panel">
+                <div className="usr-reason-head">
+                  <strong>{selectedRoleAction.label}</strong>
+                  <span>{supportsRoleManagement ? 'Accion conectable con backend' : 'Accion preparada en frontend'}</span>
+                </div>
+
+                <p className="usr-action-confirm-copy">
+                  Escribe un motivo claro. Este texto debe quedar asociado al cambio de rol y servir como aviso administrativo para el usuario.
+                </p>
+
+                <textarea
+                  className="usr-reason-textarea"
+                  rows="4"
+                  maxLength="1000"
+                  value={actionMessage}
+                  onChange={(event) => onActionMessageChange(event.target.value)}
+                  placeholder="Ej. Se retira el rol publicante por publicar contenido no verificable o incumplir las reglas de eventos..."
+                />
+
+                <div className="usr-reason-foot">
+                  <p>
+                    El motivo es obligatorio y debe tener al menos 10 caracteres para confirmar el cambio de rol.
+                  </p>
+
+                  <div className="usr-reason-actions">
+                    <button
+                      type="button"
+                      className="usr-reason-btn usr-reason-btn--ghost"
+                      onClick={onCancelAction}
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="button"
+                      className="usr-reason-btn usr-reason-btn--primary"
+                      disabled={!canConfirmSelectedAction || actionSubmitting}
+                      onClick={onConfirmAction}
+                    >
+                      {actionSubmitting ? 'Actualizando rol...' : 'Confirmar cambio de rol'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section className="usr-modal-section">

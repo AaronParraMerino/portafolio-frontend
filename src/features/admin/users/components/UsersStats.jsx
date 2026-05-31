@@ -3,6 +3,7 @@ import {
   BsPeople,
   BsPersonCheck,
   BsPersonDash,
+  BsPersonGear,
   BsShieldExclamation,
 } from 'react-icons/bs';
 import { USER_STATS } from '../services/usersService';
@@ -11,6 +12,7 @@ const STAT_ICONS = {
   primary: BsPeople,
   success: BsPersonCheck,
   warning: BsPauseCircle,
+  info: BsPersonGear,
   danger: BsShieldExclamation,
   muted: BsPersonDash,
 };

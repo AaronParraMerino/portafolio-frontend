@@ -14,6 +14,7 @@ import {
   USER_NOTICE_TYPES,
   USER_NOTICE_URGENCY,
   estimateUsersAudience,
+  getUserRoleValue,
 } from '../services/usersService';
 
 const CHANNEL_ICONS = {
@@ -50,9 +51,16 @@ function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
     bloqueados: 'bloqueado',
     inactivos: 'inactivo',
   };
+  const roles = {
+    publicantes: 'publicante',
+  };
 
   return users
-    .filter((user) => segments.includes('todos') || segments.some((segment) => statuses[segment] === user.estado))
+    .filter((user) => (
+      segments.includes('todos')
+      || segments.some((segment) => statuses[segment] === user.estado)
+      || segments.some((segment) => roles[segment] === getUserRoleValue(user))
+    ))
     .map((user) => Number(user.id))
     .filter(Boolean);
 }
@@ -68,7 +76,7 @@ export default function UsersNoticeModal({
 }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [type, setType] = useState('cuenta');
+  const [type, setType] = useState('sistema');
   const [urgency, setUrgency] = useState('baja');
   const [segments, setSegments] = useState(['todos']);
   const [channels, setChannels] = useState(['inapp']);
@@ -83,7 +91,7 @@ export default function UsersNoticeModal({
 
     setTitle(initialNotice.title || initialNotice.titulo || (modal.directUser ? `Aviso para ${modal.directUser.nombre || 'usuario'}` : ''));
     setBody(initialNotice.body || initialNotice.preview || initialNotice.cuerpo || '');
-    setType(initialNotice.type || initialNotice.tipo || (modal.mode === 'template' ? 'sistema' : 'cuenta'));
+    setType(initialNotice.type || initialNotice.tipo || 'sistema');
     setUrgency(initialNotice.urgency || initialNotice.urgencia || 'baja');
     setSegments(initialNotice.segments || initialNotice.segmentos || (modal.directUser ? ['seleccionados'] : modal.initialSegments || ['todos']));
     setChannels(['inapp']);
@@ -106,13 +114,13 @@ export default function UsersNoticeModal({
 
   const isTemplate = modal.mode === 'template';
   const modalTitle = isTemplate
-    ? 'Nueva plantilla de usuarios'
+    ? 'Nueva plantilla de aviso'
     : modal.initialNotice
-      ? 'Editar aviso a usuarios'
-      : 'Nuevo aviso a usuarios';
+      ? 'Editar aviso general'
+      : 'Nuevo aviso general del sistema';
   const modalSubtitle = isTemplate
-    ? 'Guarda una estructura reutilizable para avisos frecuentes.'
-    : 'Segmenta por estado, seleccion o usuario puntual.';
+    ? 'Guarda una estructura reutilizable para comunicados frecuentes.'
+    : 'Segmenta por estado, rol publicante, seleccion o usuario puntual.';
   const selectedType = USER_NOTICE_TYPES.find((item) => item.id === type);
 
   const handleSubmit = async (intent) => {
@@ -233,7 +241,7 @@ export default function UsersNoticeModal({
                 rows="5"
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="Contenido que recibiran los usuarios."
+                placeholder="Contenido claro del aviso: motivo, impacto, fecha y accion esperada si corresponde."
               />
             </label>
 
@@ -291,7 +299,9 @@ export default function UsersNoticeModal({
                 const selected = segments.includes(segment.id);
                 const count = segment.id === 'seleccionados'
                   ? selectedIds.length
-                  : segment.status
+                  : segment.role
+                    ? metrics?.publicantes ?? 0
+                    : segment.status
                     ? metrics?.[segment.status] ?? 0
                     : metrics?.total ?? 0;
 
@@ -373,7 +383,7 @@ export default function UsersNoticeModal({
               ? 'Plantilla reutilizable para futuros avisos.'
               : schedule
                 ? 'El aviso quedara programado con la fecha elegida.'
-                : 'Sin fecha: preparado para envio inmediato.'}
+                : 'Aviso general preparado para envio inmediato.'}
           </span>
 
           <div className="usr-notice-foot-actions">
