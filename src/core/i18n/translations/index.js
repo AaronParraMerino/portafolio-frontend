@@ -12,6 +12,8 @@ import { profileTranslations } from './profile';
 import { configurateTranslations } from './configurate';
 import { projectsTranslations } from './projects';
 import { experienceTranslations } from './experience';
+import { viewTranslations } from './view';
+import { linksTranslations } from './links';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'es', label: 'Español', shortLabel: 'ES' },
@@ -36,6 +38,8 @@ const translationModules = [
   configurateTranslations,
   projectsTranslations,
   experienceTranslations,
+  viewTranslations,
+  linksTranslations,
 ];
 
 const createEmptyTranslations = () => (

@@ -1,6 +1,7 @@
 // src/features/dashboard/view/components/ViewIdentity.jsx
 
 import { getFullName, isVisible } from '../model/viewModel';
+import { useLanguage } from '../../../../core/i18n';
 
 function IconLocation() {
   return (
@@ -142,6 +143,7 @@ function SocialIcon({ red }) {
 }
 
 export default function ViewIdentity({ perfil, redes = [], disponible = false, visibilidad }) {
+  const { t } = useLanguage();
   const showNombre = isVisible(visibilidad, 'perfil', 'nombre');
   const showProfesion = isVisible(visibilidad, 'perfil', 'profesion');
   const showUbicacion = isVisible(visibilidad, 'perfil', 'ubicacion');
@@ -165,7 +167,7 @@ export default function ViewIdentity({ perfil, redes = [], disponible = false, v
 
             {disponible && (
               <div className="pf-available">
-                Disponible para proyectos
+                {t('view.identity.available')}
               </div>
             )}
           </div>
@@ -228,7 +230,7 @@ export default function ViewIdentity({ perfil, redes = [], disponible = false, v
 
       {showBiografia && perfil?.biografia && (
         <div className="pf-about-inline">
-          <div className="pf-about-label">Acerca de mí</div>
+          <div className="pf-about-label">{t('view.identity.about')}</div>
           <p className="pf-about-text">{perfil?.biografia}</p>
         </div>
       )}

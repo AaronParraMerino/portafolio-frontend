@@ -1,29 +1,30 @@
 import { createPortal } from 'react-dom';
 import { FiFileText, FiImage, FiMonitor, FiX } from 'react-icons/fi';
+import { useLanguage } from '../../../../core/i18n';
 
 const FORMAT_OPTIONS = [
   {
     id: 'png',
-    label: 'Imagen PNG',
-    meta: 'Imagen completa',
+    labelKey: 'view.download.format.png.label',
+    metaKey: 'view.download.format.png.meta',
     icon: <FiImage />,
   },
   {
     id: 'jpg',
-    label: 'Imagen JPG',
-    meta: 'Imagen liviana',
+    labelKey: 'view.download.format.jpg.label',
+    metaKey: 'view.download.format.jpg.meta',
     icon: <FiImage />,
   },
   {
     id: 'pdf',
-    label: 'PDF',
-    meta: 'Paginas automaticas',
+    labelKey: 'view.download.format.pdf.label',
+    metaKey: 'view.download.format.pdf.meta',
     icon: <FiFileText />,
   },
   {
     id: 'pptx',
-    label: 'PPTX',
-    meta: 'Slides automaticos',
+    labelKey: 'view.download.format.pptx.label',
+    metaKey: 'view.download.format.pptx.meta',
     icon: <FiMonitor />,
   },
 ];
@@ -35,6 +36,8 @@ export default function ViewDownloadModal({
   onClose,
   onExport,
 }) {
+  const { t } = useLanguage();
+
   if (!open) return null;
 
   return createPortal(
@@ -50,12 +53,12 @@ export default function ViewDownloadModal({
         className="export-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Descargar portafolio"
+        aria-label={t('view.download.title')}
       >
         <div className="export-head">
           <div>
-            <div className="export-title">Descargar portafolio</div>
-            <div className="export-subtitle">Elige el formato de salida</div>
+            <div className="export-title">{t('view.download.title')}</div>
+            <div className="export-subtitle">{t('view.download.subtitle')}</div>
           </div>
 
           <button
@@ -63,7 +66,7 @@ export default function ViewDownloadModal({
             className="export-close"
             onClick={onClose}
             disabled={Boolean(exporting)}
-            aria-label="Cerrar"
+            aria-label={t('actions.close')}
           >
             <FiX />
           </button>
@@ -87,9 +90,9 @@ export default function ViewDownloadModal({
 
                 <span className="export-option-copy">
                   <span className="export-option-label">
-                    {active ? 'Preparando...' : option.label}
+                    {active ? t('view.download.preparing') : t(option.labelKey)}
                   </span>
-                  <span className="export-option-meta">{option.meta}</span>
+                  <span className="export-option-meta">{t(option.metaKey)}</span>
                 </span>
               </button>
             );
