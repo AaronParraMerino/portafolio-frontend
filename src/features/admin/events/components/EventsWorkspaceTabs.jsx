@@ -1,16 +1,14 @@
 import {
-  BsCalendar3,
   BsClockHistory,
   BsFileEarmarkText,
-  BsMegaphone,
+  BsPersonCheck,
   BsStars,
 } from 'react-icons/bs';
 import { EVENT_WORKSPACE_VIEWS } from '../services/eventsService';
 
 const VIEW_ICONS = {
+  requests: BsPersonCheck,
   events: BsStars,
-  communications: BsMegaphone,
-  calendar: BsCalendar3,
   history: BsClockHistory,
   templates: BsFileEarmarkText,
 };

@@ -80,11 +80,16 @@ export function normalizeUserRole(user = getStoredUser()) {
   const role = String(value || '').trim().toLowerCase();
 
   if (role === 'admin' || role === 'administrador') return 'admin';
+  if (role === 'publicador' || role === 'publisher' || role === 'publicante') return 'publicador';
   return 'usuario';
 }
 
 export function isAdminUser(user = getStoredUser()) {
   return normalizeUserRole(user) === 'admin';
+}
+
+export function isPublisherUser(user = getStoredUser()) {
+  return normalizeUserRole(user) === 'publicador';
 }
 
 export function getDashboardHomePath(user = getStoredUser()) {

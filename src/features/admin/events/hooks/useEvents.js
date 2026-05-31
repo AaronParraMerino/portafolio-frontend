@@ -12,6 +12,7 @@ import {
   normalizeEvent,
   normalizeEventCommunication,
   normalizeEventHistoryItem,
+  normalizePublisherRequest,
   normalizeEventTemplate,
   normalizeEventsWorkspace,
   updateAdminEvent,
@@ -23,7 +24,7 @@ export function useEventsWorkspace() {
   const [workspace, setWorkspace] = useState(() => normalizeEventsWorkspace(createEventsWorkspaceShell()));
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [activeView, setActiveView] = useState('events');
+  const [activeView, setActiveView] = useState('requests');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
@@ -54,6 +55,10 @@ export function useEventsWorkspace() {
     () => workspace.events.map(normalizeEvent),
     [workspace.events],
   );
+  const publisherRequests = useMemo(
+    () => (workspace.publisherRequests || []).map(normalizePublisherRequest),
+    [workspace.publisherRequests],
+  );
   const communications = useMemo(
     () => workspace.communications.map(normalizeEventCommunication),
     [workspace.communications],
@@ -72,17 +77,18 @@ export function useEventsWorkspace() {
   const supportsMutations = !!workspace.supportsMutations;
 
   const metrics = useMemo(
-    () => buildEventMetrics(events, communications),
-    [communications, events],
+    () => buildEventMetrics(events, communications, publisherRequests),
+    [communications, events, publisherRequests],
   );
 
   const viewCounts = useMemo(() => buildEventWorkspaceCounts({
     sourceReady,
     events,
+    requests: publisherRequests,
     communications,
     templates,
     history: historyItems,
-  }), [communications, events, historyItems, sourceReady, templates]);
+  }), [communications, events, historyItems, publisherRequests, sourceReady, templates]);
 
   const filteredEvents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -243,6 +249,7 @@ export function useEventsWorkspace() {
     isLoading,
     errorMessage,
     events,
+    publisherRequests,
     communications,
     templates,
     historyItems,

@@ -1,90 +1,47 @@
-import {
-  BsCalendar2Plus,
-  BsMegaphone,
-} from 'react-icons/bs';
+import { useState } from 'react';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
-import EventCommunicationModal from '../components/EventCommunicationModal';
-import EventFormModal from '../components/EventFormModal';
-import EventsCalendar from '../components/EventsCalendar';
-import EventsCommunicationsPanel from '../components/EventsCommunicationsPanel';
-import EventsFilters from '../components/EventsFilters';
-import EventsGrid from '../components/EventsGrid';
+import AdminEventActionModal from '../components/AdminEventActionModal';
+import AdminEventsManagementPanel from '../components/AdminEventsManagementPanel';
+import AdminPublisherRequestsPanel from '../components/AdminPublisherRequestsPanel';
 import EventsHistoryPanel from '../components/EventsHistoryPanel';
 import EventsStats from '../components/EventsStats';
-import EventsTemplatesPanel from '../components/EventsTemplatesPanel';
 import EventsWorkspaceTabs from '../components/EventsWorkspaceTabs';
 import { useEventsWorkspace } from '../hooks/useEvents';
 import '../styles/events.css';
 
 export default function EventsPage() {
   const headerConfig = getAdminSectionConfig('events');
+  const [actionModal, setActionModal] = useState(null);
+  const [actionNotice, setActionNotice] = useState('');
   const {
     sourceReady,
     events,
-    communications,
-    templates,
+    publisherRequests,
     historyItems,
     metrics,
     activeView,
     viewCounts,
-    query,
-    statusFilter,
-    typeFilter,
-    statusCounts,
-    visibleEvents,
-    pageSummary,
-    emptyState,
-    currentPage,
-    totalPages,
-    paginationItems,
-    eventModal,
-    communicationModal,
     errorMessage,
     onViewChange,
-    onQueryChange,
-    onStatusFilterChange,
-    onTypeFilterChange,
-    onGoToPage,
-    onOpenCreateEvent,
-    onOpenEditEvent,
-    onCloseEventModal,
-    onSaveEvent,
-    onOpenCommunication,
-    onOpenTemplateCommunication,
-    onEditCommunication,
-    onCloseCommunicationModal,
-    onSaveCommunication,
   } = useEventsWorkspace();
 
-  const headerActions = [
-    {
-      key: 'communication',
-      label: 'Anuncio general',
-      title: 'Crear anuncio general',
-      ariaLabel: 'Crear anuncio general',
-      icon: <BsMegaphone />,
-      variant: 'secondary',
-      className: 'evt-header-action--muted',
-      onClick: () => onOpenCommunication(),
-    },
-    {
-      key: 'event',
-      label: 'Crear evento',
-      title: 'Crear evento',
-      ariaLabel: 'Crear evento',
-      icon: <BsCalendar2Plus />,
-      variant: 'primary',
-      onClick: onOpenCreateEvent,
-    },
-  ];
+  const handleOpenAction = (target, action) => {
+    setActionModal({ target, action });
+    setActionNotice('');
+  };
+
+  const handleConfirmAction = ({ action, target }) => {
+    const targetName = target.title || target.name || 'registro';
+    setActionNotice(`Accion "${action}" preparada para ${targetName}.`);
+    setActionModal(null);
+  };
 
   return (
     <div className="evt-page">
       <AdminHeader
         eyebrow={headerConfig.eyebrow}
         title={headerConfig.title}
-        actions={headerActions}
       />
 
       <div className="evt-content">
@@ -92,6 +49,9 @@ export default function EventsPage() {
 
         {errorMessage ? (
           <div className="evt-modal-message">{errorMessage}</div>
+        ) : null}
+        {actionNotice ? (
+          <div className="evt-admin-notice">{actionNotice}</div>
         ) : null}
 
         <section className="evt-panel">
@@ -101,48 +61,19 @@ export default function EventsPage() {
             onViewChange={onViewChange}
           />
 
-          {activeView === 'events' ? (
-            <>
-              <EventsFilters
-                query={query}
-                statusFilter={statusFilter}
-                typeFilter={typeFilter}
-                statusCounts={statusCounts}
-                sourceReady={sourceReady}
-                onQueryChange={onQueryChange}
-                onStatusFilterChange={onStatusFilterChange}
-                onTypeFilterChange={onTypeFilterChange}
-              />
-
-              <EventsGrid
-                events={visibleEvents}
-                sourceReady={sourceReady}
-                emptyState={emptyState}
-                pageSummary={pageSummary}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                paginationItems={paginationItems}
-                onGoToPage={onGoToPage}
-                onEditEvent={onOpenEditEvent}
-                onCommunicate={onOpenCommunication}
-              />
-            </>
-          ) : null}
-
-          {activeView === 'communications' ? (
-            <EventsCommunicationsPanel
+          {activeView === 'requests' ? (
+            <AdminPublisherRequestsPanel
               sourceReady={sourceReady}
-              communications={communications}
-              onCreateCommunication={() => onOpenCommunication()}
-              onEditCommunication={onEditCommunication}
+              requests={publisherRequests}
+              onReviewRequest={handleOpenAction}
             />
           ) : null}
 
-          {activeView === 'calendar' ? (
-            <EventsCalendar
+          {activeView === 'events' ? (
+            <AdminEventsManagementPanel
+              sourceReady={sourceReady}
               events={events}
-              onEditEvent={onOpenEditEvent}
-              onCommunicate={onOpenCommunication}
+              onReviewEvent={handleOpenAction}
             />
           ) : null}
 
@@ -153,28 +84,14 @@ export default function EventsPage() {
             />
           ) : null}
 
-          {activeView === 'templates' ? (
-            <EventsTemplatesPanel
-              sourceReady={sourceReady}
-              templates={templates}
-              onCreateTemplate={onOpenTemplateCommunication}
-              onUseTemplate={onOpenTemplateCommunication}
-            />
-          ) : null}
         </section>
       </div>
 
-      <EventFormModal
-        modal={eventModal}
-        onClose={onCloseEventModal}
-        onSave={onSaveEvent}
-      />
-
-      <EventCommunicationModal
-        modal={communicationModal}
-        events={events}
-        onClose={onCloseCommunicationModal}
-        onSave={onSaveCommunication}
+      <AdminEventActionModal
+        action={actionModal?.action}
+        target={actionModal?.target}
+        onClose={() => setActionModal(null)}
+        onConfirm={handleConfirmAction}
       />
     </div>
   );

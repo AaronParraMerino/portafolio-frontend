@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BsCalendar2Plus,
   BsCheck2,
@@ -10,6 +10,7 @@ import {
   BsPhone,
   BsPersonWorkspace,
   BsBriefcase,
+  BsImage,
   BsSearch,
   BsBell,
   BsX,
@@ -26,6 +27,9 @@ const DEFAULT_FORM = {
   title: '',
   type: 'taller',
   status: 'borrador',
+  imageFile: null,
+  imagePreview: '',
+  imageUrl: '',
   startsAt: '',
   endsAt: '',
   sendAt: '',
@@ -42,6 +46,8 @@ const DEFAULT_FORM = {
     workExperience: [],
   },
 };
+
+const MAX_EVENT_IMAGE_MB = 2;
 
 const TARGET_ICONS = {
   all_users: BsGlobe2,
@@ -71,6 +77,100 @@ function toArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function SingleEventImageUpload({
+  imagePreview,
+  imageUrl,
+  onChange,
+  onRemove,
+}) {
+  const inputRef = useRef(null);
+  const [drag, setDrag] = useState(false);
+  const [error, setError] = useState('');
+  const previewSrc = imagePreview || imageUrl;
+
+  const processFile = useCallback((file) => {
+    setError('');
+
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Solo se aceptan imagenes JPG, PNG o WebP.');
+      return;
+    }
+    if (file.size > MAX_EVENT_IMAGE_MB * 1024 * 1024) {
+      setError(`La imagen no puede superar ${MAX_EVENT_IMAGE_MB} MB.`);
+      return;
+    }
+
+    onChange(file);
+  }, [onChange]);
+
+  return (
+    <div className="evt-image-upload">
+      {previewSrc ? (
+        <div className="evt-image-preview">
+          <img src={previewSrc} alt="Vista previa del evento" />
+          <span className="evt-image-badge">Portada</span>
+          <button
+            type="button"
+            className="evt-image-remove"
+            onClick={onRemove}
+            title="Quitar imagen"
+            aria-label="Quitar imagen"
+          >
+            <BsX />
+          </button>
+        </div>
+      ) : (
+        <div
+          className={`evt-image-dropzone${drag ? ' drag' : ''}`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDrag(false);
+            processFile(event.dataTransfer.files?.[0]);
+          }}
+          onClick={() => inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => event.key === 'Enter' && inputRef.current?.click()}
+        >
+          <div className="evt-image-placeholder">
+            <span className="evt-image-icon">
+              <BsImage />
+            </span>
+            <strong>Arrastra una imagen aqui</strong>
+            <small>o haz clic para seleccionar. JPG, PNG o WebP, max. {MAX_EVENT_IMAGE_MB} MB.</small>
+          </div>
+        </div>
+      )}
+
+      {previewSrc ? (
+        <button type="button" className="evt-image-change" onClick={() => inputRef.current?.click()}>
+          <BsImage />
+          Cambiar imagen
+        </button>
+      ) : null}
+
+      {error ? <div className="evt-modal-message">{error}</div> : null}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="d-none"
+        onChange={(event) => {
+          processFile(event.target.files?.[0]);
+          event.target.value = '';
+        }}
+      />
+    </div>
+  );
+}
+
 export default function EventFormModal({
   modal,
   onClose,
@@ -78,15 +178,30 @@ export default function EventFormModal({
 }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [message, setMessage] = useState('');
+  const objectUrlRef = useRef('');
 
   useEffect(() => {
-    if (!modal) return;
+    if (!modal) {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = '';
+      }
+      return;
+    }
 
     const event = modal.event || {};
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = '';
+    }
+
     setForm({
       title: event.title || '',
       type: event.type || 'taller',
       status: event.status || 'borrador',
+      imageFile: null,
+      imagePreview: event.imagePreview || '',
+      imageUrl: event.imageUrl || event.image_url || event.imagen_url || event.banner_url || '',
       startsAt: event.startsAt || event.fecha_inicio || '',
       endsAt: event.endsAt || event.fecha_fin || '',
       sendAt: event.sendAt || event.fecha_envio || '',
@@ -106,6 +221,12 @@ export default function EventFormModal({
     setMessage('');
   }, [modal]);
 
+  useEffect(() => () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+    }
+  }, []);
+
   const selectedTargetsCount = Object.values(form.targetSelections)
     .reduce((total, items) => total + items.length, 0);
 
@@ -119,6 +240,36 @@ export default function EventFormModal({
         : group.options,
     }));
   }, [form.targetSearch]);
+
+  const handleImageChange = useCallback((file) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+    }
+
+    const preview = URL.createObjectURL(file);
+    objectUrlRef.current = preview;
+    setForm((current) => ({
+      ...current,
+      imageFile: file,
+      imagePreview: preview,
+      imageUrl: '',
+    }));
+    setMessage('');
+  }, []);
+
+  const handleImageRemove = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = '';
+    }
+
+    setForm((current) => ({
+      ...current,
+      imageFile: null,
+      imagePreview: '',
+      imageUrl: '',
+    }));
+  }, []);
 
   if (!modal) return null;
 
@@ -157,6 +308,9 @@ export default function EventFormModal({
         endsAt: form.endsAt || null,
         sendAt: form.sendAt || null,
         location: form.location,
+        imageFile: form.imageFile,
+        imagePreview: form.imagePreview,
+        imageUrl: form.imageUrl,
         capacity: form.capacity === '' ? 0 : Number(form.capacity),
         description: form.description,
         targetMode: form.targetMode,
@@ -199,6 +353,16 @@ export default function EventFormModal({
                 placeholder="Ej. Curso de React para portafolios profesionales"
               />
             </label>
+
+            <div className="evt-field evt-field--full">
+              <span>Imagen del evento</span>
+              <SingleEventImageUpload
+                imagePreview={form.imagePreview}
+                imageUrl={form.imageUrl}
+                onChange={handleImageChange}
+                onRemove={handleImageRemove}
+              />
+            </div>
 
             <label className="evt-field">
               <span>Tipo</span>
