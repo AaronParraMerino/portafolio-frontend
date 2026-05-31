@@ -71,7 +71,7 @@ export default function LanguageSelector({ mobile = false }) {
 
   return (
     <div
-      className={`spk-lang-selector${mobile ? ' mobile' : ''}${open ? ' open' : ''}`}
+      className={`spk-lang-selector${mobile ? " mobile" : ""}${open ? " open" : ""}`}
       ref={selectorRef}
     >
       <style>{`
@@ -196,16 +196,29 @@ export default function LanguageSelector({ mobile = false }) {
         }
 
         .spk-flag.es {
-          background: linear-gradient(
-            to bottom,
-            #aa151b 0%,
-            #aa151b 25%,
-            #f1bf00 25%,
-            #f1bf00 75%,
-            #aa151b 75%,
-            #aa151b 100%
-          );
-        }
+  background: linear-gradient(
+    to bottom,
+    #d52b1e 0%,
+    #d52b1e 33.33%,
+    #f9e300 33.33%,
+    #f9e300 66.66%,
+    #007934 66.66%,
+    #007934 100%
+  );
+}
+
+.spk-flag.es::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4.8px;
+  height: 4.8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .85);
+  border: 1px solid rgba(17, 24, 39, .25);
+  transform: translate(-50%, -50%);
+}
 
         .spk-flag.en {
           background: repeating-linear-gradient(
@@ -288,8 +301,8 @@ export default function LanguageSelector({ mobile = false }) {
         type="button"
         className="spk-lang-btn"
         onClick={() => setOpen((value) => !value)}
-        aria-label={t('language.label')}
-        title={t('language.label')}
+        aria-label={t("language.label")}
+        title={t("language.label")}
       >
         <span className={`spk-flag ${current.code}`} aria-hidden="true" />
         {current.shortLabel}
@@ -305,7 +318,7 @@ export default function LanguageSelector({ mobile = false }) {
               key={item.code}
               type="button"
               role="menuitem"
-              className={`spk-lang-option${item.code === language ? ' active' : ''}`}
+              className={`spk-lang-option${item.code === language ? " active" : ""}`}
               onClick={() => handleSelect(item.code)}
             >
               <span className="spk-lang-option-main">
