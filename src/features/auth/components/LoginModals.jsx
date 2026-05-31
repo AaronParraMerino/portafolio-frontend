@@ -1,5 +1,6 @@
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { PROVIDER_LABELS } from "../services/loginAuthService";
+import { useLanguage } from "../../../core/i18n";
 
 const modalBackdropStyle = {
   position: "fixed",
@@ -93,13 +94,14 @@ function InlineAuthModal({ children }) {
 }
 
 export function LoginErrorModal({ message, onClose }) {
+  const { t } = useLanguage();
   return (
     <ConfirmModal
       open={!!message}
-      title="Error"
+      title={t("auth.modal.errorTitle")}
       message={message}
-      confirmLabel="Aceptar"
-      cancelLabel="Cerrar"
+      confirmLabel={t("actions.accept")}
+      cancelLabel={t("actions.close")}
       variant="red"
       icon="warning"
       onConfirm={onClose}
@@ -109,15 +111,16 @@ export function LoginErrorModal({ message, onClose }) {
 }
 
 export function BlockedAccountModal({ blocked, onClose }) {
+  const { t } = useLanguage();
   if (!blocked) return null;
 
   return (
     <ConfirmModal
       open={true}
-      title="Cuenta bloqueada"
-      message={`Esta cuenta ha sido bloqueada. Motivo: ${blocked.razon}`}
-      confirmLabel="Aceptar"
-      cancelLabel="Cerrar"
+      title={t("auth.modal.blockedTitle")}
+      message={t("auth.modal.blockedMessage", { reason: blocked.razon })}
+      confirmLabel={t("actions.accept")}
+      cancelLabel={t("actions.close")}
       variant="red"
       icon="warning"
       onConfirm={onClose}
@@ -127,13 +130,14 @@ export function BlockedAccountModal({ blocked, onClose }) {
 }
 
 export function LoginSuccessModal({ message, onClose }) {
+  const { t } = useLanguage();
   return (
     <ConfirmModal
       open={!!message}
-      title="Cuenta restablecida"
+      title={t("auth.modal.restoredTitle")}
       message={message}
-      confirmLabel="Aceptar"
-      cancelLabel="Cerrar"
+      confirmLabel={t("actions.accept")}
+      cancelLabel={t("actions.close")}
       variant="green"
       icon="check"
       onConfirm={onClose}
@@ -143,6 +147,7 @@ export function LoginSuccessModal({ message, onClose }) {
 }
 
 export function LinkInfoModal({ linkConfirm, onConfirm, onClose }) {
+  const { t } = useLanguage();
   if (!linkConfirm) return null;
 
   const provider = PROVIDER_LABELS[linkConfirm.provider] ?? linkConfirm.provider;
@@ -150,10 +155,10 @@ export function LinkInfoModal({ linkConfirm, onConfirm, onClose }) {
   return (
     <ConfirmModal
       open={true}
-      title="Cuenta existente detectada"
-      message={`Ya existe una cuenta con el correo ${linkConfirm.correo}. Deseas vincular tu cuenta de ${provider} a esa cuenta?`}
-      confirmLabel="Si, vincular"
-      cancelLabel="Cancelar"
+      title={t("auth.modal.existingTitle")}
+      message={t("auth.modal.existingMessage", { email: linkConfirm.correo, provider })}
+      confirmLabel={t("auth.action.linkAccount")}
+      cancelLabel={t("actions.cancel")}
       variant="yellow"
       icon="warning"
       onConfirm={onConfirm}
@@ -171,6 +176,7 @@ export function LinkVerificationModal({
   onBack,
   onConfirm,
 }) {
+  const { t } = useLanguage();
   if (!linkConfirm) return null;
 
   const isPassword = linkConfirm.verificationMethod === "password";
@@ -178,18 +184,18 @@ export function LinkVerificationModal({
 
   return (
     <InlineAuthModal>
-      <h3 style={modalTitleStyle}>Confirmar vinculacion</h3>
+      <h3 style={modalTitleStyle}>{t("auth.modal.confirmLinkTitle")}</h3>
       <p style={modalTextStyle}>
         {isPassword
-          ? `Ingresa la contrasena de la cuenta ${linkConfirm.correo} para confirmar.`
-          : `Ingresa el codigo de 6 digitos que enviamos a ${linkConfirm.correo}.`}
+          ? t("auth.modal.confirmPasswordText", { email: linkConfirm.correo })
+          : t("auth.modal.confirmCodeText", { email: linkConfirm.correo })}
       </p>
       <input
         type={isPassword ? "password" : "text"}
         value={credential}
         onChange={(e) => onCredentialChange(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && !loading && onConfirm()}
-        placeholder={isPassword ? "Tu contrasena" : "123456"}
+        placeholder={isPassword ? t("auth.placeholder.password") : "123456"}
         maxLength={isPassword ? undefined : 6}
         autoFocus
         style={isPassword ? passwordInputStyle(credentialError) : codeInputStyle(credentialError)}
@@ -197,10 +203,10 @@ export function LinkVerificationModal({
       {credentialError && <p style={{ color: "#ef4444", fontSize: "13px", margin: "6px 0 0" }}>{credentialError}</p>}
       <div style={modalActionsStyle}>
         <button onClick={onBack} disabled={loading} style={backButtonStyle}>
-          Atras
+          {t("actions.back")}
         </button>
         <button onClick={onConfirm} disabled={disabled} style={primaryButtonStyle(disabled)}>
-          {loading ? "Verificando..." : "Confirmar vinculacion"}
+          {loading ? t("auth.status.verifying") : t("auth.action.confirmLink")}
         </button>
       </div>
     </InlineAuthModal>
@@ -208,15 +214,16 @@ export function LinkVerificationModal({
 }
 
 export function ReactivationInfoModal({ reactivate, loading, onConfirm, onClose }) {
+  const { t } = useLanguage();
   if (!reactivate) return null;
 
   return (
     <ConfirmModal
       open={true}
-      title="Cuenta inactiva"
-      message={`Encontramos una cuenta anterior con el correo ${reactivate.correo}. Deseas restablecerla por codigo de correo?`}
-      confirmLabel={loading ? "Enviando..." : "Enviar codigo"}
-      cancelLabel="Cancelar"
+      title={t("auth.modal.inactiveTitle")}
+      message={t("auth.modal.inactiveMessage", { email: reactivate.correo })}
+      confirmLabel={loading ? t("auth.status.sending") : t("auth.action.sendCode")}
+      cancelLabel={t("actions.cancel")}
       variant="yellow"
       icon="warning"
       onConfirm={onConfirm}
@@ -234,15 +241,16 @@ export function ReactivationCodeModal({
   onBack,
   onConfirm,
 }) {
+  const { t } = useLanguage();
   if (!reactivate) return null;
 
   const disabled = loading || code.length !== 6;
 
   return (
     <InlineAuthModal>
-      <h3 style={modalTitleStyle}>Restablecer cuenta</h3>
+      <h3 style={modalTitleStyle}>{t("auth.modal.restoreAccountTitle")}</h3>
       <p style={modalTextStyle}>
-        Ingresa el codigo de 6 caracteres que enviamos a {reactivate.correo}.
+        {t("auth.modal.restoreAccountText", { email: reactivate.correo })}
       </p>
       <input
         type="text"
@@ -257,10 +265,10 @@ export function ReactivationCodeModal({
       {error && <p style={{ color: "#ef4444", fontSize: "13px", margin: "6px 0 0" }}>{error}</p>}
       <div style={modalActionsStyle}>
         <button onClick={onBack} disabled={loading} style={backButtonStyle}>
-          Atras
+          {t("actions.back")}
         </button>
         <button onClick={onConfirm} disabled={disabled} style={primaryButtonStyle(disabled)}>
-          {loading ? "Verificando..." : "Restablecer cuenta"}
+          {loading ? t("auth.status.verifying") : t("auth.action.restoreAccount")}
         </button>
       </div>
     </InlineAuthModal>

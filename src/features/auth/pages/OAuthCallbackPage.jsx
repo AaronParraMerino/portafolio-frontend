@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
+import { useLanguage } from "../../../core/i18n";
 
 const PROVIDER_NAMES = { github: "GitHub", gitlab: "GitLab", discord: "Discord", google: "Google" };
 
 export default function OAuthCallbackPage() {
+  const { t } = useLanguage();
   const BASE_URL = process.env.REACT_APP_API_URL;
   // linkConfirm: { linkToken, correo, provider, verificationMethod }
   const [linkConfirm, setLinkConfirm] = useState(null);
@@ -47,7 +49,7 @@ export default function OAuthCallbackPage() {
   const handleVerify = async () => {
     if (!credential.trim()) {
       const isPassword = linkConfirm.verificationMethod === "password";
-      setCredError(isPassword ? "Ingresa tu contrasena." : "Ingresa el codigo de 6 digitos.");
+      setCredError(isPassword ? t("auth.error.enterPassword") : t("auth.error.enterSixDigitCode"));
       return;
     }
     setLoading(true);
@@ -69,11 +71,11 @@ export default function OAuthCallbackPage() {
         if (result.status === "wrong_credentials") {
           setCredError(
             linkConfirm.verificationMethod === "password"
-              ? "Contrasena incorrecta. Intentalo de nuevo."
-              : "Codigo incorrecto o expirado. Intentalo de nuevo."
+              ? t("auth.error.wrongPassword")
+              : t("auth.error.wrongCodeRetry")
           );
         } else {
-          setCredError(result.message || "Error al confirmar la vinculacion.");
+          setCredError(result.message || t("auth.error.confirmLink"));
         }
         return;
       }
@@ -81,7 +83,7 @@ export default function OAuthCallbackPage() {
       localStorage.setItem("usuario", JSON.stringify(result.data));
       window.location.replace("/");
     } catch {
-      setCredError("Error de conexion. Intente nuevamente.");
+      setCredError(t("auth.error.connection"));
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export default function OAuthCallbackPage() {
   if (!linkConfirm) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <p>Procesando autenticacion...</p>
+        <p>{t("auth.status.processing")}</p>
       </div>
     );
   }
@@ -103,10 +105,10 @@ export default function OAuthCallbackPage() {
     return (
       <ConfirmModal
         open={true}
-        title="Cuenta existente detectada"
-        message={`Ya existe una cuenta con el correo ${linkConfirm.correo}. Deseas vincular tu cuenta de ${providerName} a esa cuenta?`}
-        confirmLabel="Si, vincular"
-        cancelLabel="Cancelar"
+        title={t("auth.modal.existingTitle")}
+        message={t("auth.modal.existingMessage", { email: linkConfirm.correo, provider: providerName })}
+        confirmLabel={t("auth.action.linkAccount")}
+        cancelLabel={t("actions.cancel")}
         variant="yellow"
         icon="warning"
         onConfirm={() => setStep("verify")}
@@ -126,24 +128,24 @@ export default function OAuthCallbackPage() {
         boxShadow: "0 4px 20px rgba(0,0,0,0.10)", maxWidth: "420px", width: "100%"
       }}>
         <h2 style={{ margin: "0 0 8px", fontSize: "20px", color: "#111827" }}>
-          Confirmar vinculacion
+          {t("auth.modal.confirmLinkTitle")}
         </h2>
         <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: "14px", lineHeight: "1.5" }}>
           {isPassword
-            ? `Ingresa la contrasena de la cuenta ${linkConfirm.correo} para confirmar.`
-            : `Ingresa el codigo de 6 digitos que enviamos a ${linkConfirm.correo}.`
+            ? t("auth.modal.confirmPasswordText", { email: linkConfirm.correo })
+            : t("auth.modal.confirmCodeText", { email: linkConfirm.correo })
           }
         </p>
 
         <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", color: "#374151", fontWeight: 600 }}>
-          {isPassword ? "Contrasena" : "Codigo de verificacion"}
+          {isPassword ? t("auth.field.password") : t("auth.code.label")}
         </label>
         <input
           type={isPassword ? "password" : "text"}
           value={credential}
           onChange={e => setCredential(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !loading && handleVerify()}
-          placeholder={isPassword ? "Tu contrasena" : "123456"}
+          placeholder={isPassword ? t("auth.placeholder.password") : "123456"}
           maxLength={isPassword ? undefined : 6}
           autoFocus
           style={{
@@ -166,7 +168,7 @@ export default function OAuthCallbackPage() {
               background: "#fff", color: "#374151", fontSize: "15px", cursor: "pointer"
             }}
           >
-            Atras
+            {t("actions.back")}
           </button>
           <button
             onClick={handleVerify}
@@ -178,7 +180,7 @@ export default function OAuthCallbackPage() {
               cursor: loading || !credential ? "not-allowed" : "pointer"
             }}
           >
-            {loading ? "Verificando..." : "Confirmar vinculacion"}
+            {loading ? t("auth.status.verifying") : t("auth.action.confirmLink")}
           </button>
         </div>
       </div>
