@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   BsCheck2,
-  BsEnvelopeCheck,
   BsExclamationTriangle,
   BsInfoCircle,
   BsPhone,
@@ -331,12 +330,6 @@ export default function PublisherPermissionModal({
               <span>Telefono actual</span>
               <strong>{detectedPhone || 'No registrado'}</strong>
               <small>{detectedPhone ? 'Tomado de tu perfil' : 'Completa este dato para continuar'}</small>
-            </article>
-            <article className="dbe-identity-card">
-              <BsEnvelopeCheck />
-              <span>Correo de respaldo</span>
-              <strong>Obligatorio</strong>
-              <small>Se valida desde el campo de correo</small>
             </article>
           </div>
 
