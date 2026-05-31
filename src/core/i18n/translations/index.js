@@ -10,6 +10,7 @@ import { skillsTranslations } from './skills';
 import { portfolioSearchTranslations } from './portfolioSearch';
 import { profileTranslations } from './profile';
 import { configurateTranslations } from './configurate';
+import { projectsTranslations } from './projects';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'es', label: 'Español', shortLabel: 'ES' },
@@ -32,6 +33,7 @@ const translationModules = [
   portfolioSearchTranslations,
   profileTranslations,
   configurateTranslations,
+  projectsTranslations,
 ];
 
 const createEmptyTranslations = () => (

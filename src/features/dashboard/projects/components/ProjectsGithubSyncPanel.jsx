@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   attachDetectedReposToProject,
   ensureTecnologiasDetectadas,
@@ -79,30 +80,30 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
       <div className="prj-modal prj-modal-sm" role="dialog" aria-modal="true">
         <div className="prj-modal-head">
           <div>
-            <div className="prj-modal-title">Tu participacion en el proyecto</div>
-            <div className="prj-modal-sub">Este repositorio ya pertenece a otro proyecto</div>
+            <div className="prj-modal-title">{t('projects.participation.title')}</div>
+            <div className="prj-modal-sub">{t('projects.confirm.repoInUseTitle')}</div>
           </div>
         </div>
 
         <div className="prj-modal-body">
           <div className="prj-detected-item" style={{ marginBottom: 14 }}>
             <div className="prj-detected-main">
-              <div className="prj-detected-title">{repo?.proyecto?.titulo || 'Proyecto existente'}</div>
+              <div className="prj-detected-title">{repo?.proyecto?.titulo || t('projects.card.defaultTitle')}</div>
               {repo?.url_repositorio && <div className="prj-detected-url">{repo.url_repositorio}</div>}
             </div>
             <div className="prj-detected-side">
-              <span className="prj-detected-pill warn">en uso</span>
+              <span className="prj-detected-pill warn">{t('projects.github.inUse')}</span>
             </div>
           </div>
 
           <div className="row g-3">
             <div className="col-12">
-              <label className="prj-label">Rol</label>
+              <label className="prj-label">{t('projects.participation.roleLabel')}</label>
               <input
                 className="prj-input"
                 value={rol}
                 onChange={(e) => setRol(e.target.value)}
-                placeholder="Ej: Desarrollador backend, Lider tecnico..."
+                placeholder={t('projects.participation.rolePlaceholder')}
                 maxLength={100}
                 disabled={loading}
                 autoFocus
@@ -111,7 +112,7 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
 
             <div className="col-12">
               <label className="prj-label">
-                Descripcion del aporte
+                {t('projects.participation.descriptionLabel')}
                 <span className="prj-char-count">{descripcion.length}/600</span>
               </label>
               <textarea
@@ -119,7 +120,7 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 rows={3}
-                placeholder="Describe brevemente tus contribuciones..."
+                placeholder={t('projects.participation.descriptionPlaceholder')}
                 maxLength={601}
                 disabled={loading}
               />
@@ -129,7 +130,7 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
 
         <div className="prj-modal-foot">
           <button type="button" className="prj-btn-cancel" onClick={onClose} disabled={loading}>
-            <span>Cancelar</span>
+            <span>{t('projects.form.cancel')}</span>
           </button>
           <button
             type="button"
@@ -138,7 +139,7 @@ function GithubParticipationModal({ repo, loading, onClose, onConfirm }) {
             disabled={loading}
           >
             {loading && <span className="prj-spinner" />}
-            <span>{loading ? 'Vinculando...' : 'Ser parte'}</span>
+            <span>{loading ? t('projects.form.saving') : t('projects.github.bePart')}</span>
           </button>
         </div>
       </div>
@@ -150,7 +151,7 @@ export default function ProjectsGithubSyncPanel({
   expandSignal = 0,
   provider = 'github',
   initialSelectedRepos = EMPTY_SELECTED_REPOS,
-  actionLabel = 'Agregar proyecto con repos',
+  actionLabel = null,
   connectInNewTab = false,
   selectedRepos: controlledSelectedRepos = null,
   showCreateButton = true,
@@ -159,8 +160,10 @@ export default function ProjectsGithubSyncPanel({
   onSelectionChange,
   onReposChanged,
 }) {
+  const { t } = useLanguage();
   const providerMeta = PROVIDER_META[provider] || PROVIDER_META.github;
   const panelRef = useRef(null);
+  const effectiveActionLabel = actionLabel || t('projects.form.addProject');
   const normalizedInitialSelectedRepos = useMemo(
     () => normalizeInitialSelectedRepos(initialSelectedRepos),
     [initialSelectedRepos],
@@ -209,12 +212,12 @@ export default function ProjectsGithubSyncPanel({
       setDetectedRepos(normalized);
       return normalized;
     } catch (e) {
-      setError(e.message || `No se pudieron cargar los repositorios detectados de ${providerMeta.name}.`);
+      setError(e.message || t('projects.github.loadError'));
       return [];
     } finally {
       setLoadingRepos(false);
     }
-  }, [provider, providerMeta.name]);
+  }, [provider, providerMeta.name, t]);
 
   useEffect(() => {
     let mounted = true;
@@ -291,34 +294,34 @@ export default function ProjectsGithubSyncPanel({
       const result = await syncGithubRepos({ provider });
       await loadDetectedRepos(false);
       setMostrarRepos(true);
-      setNotice(formatGithubSyncNotice(result?.stats, providerMeta.name));
+      setNotice(formatGithubSyncNotice(result?.stats, providerMeta.name, t));
     } catch (e) {
-      setError(e.message || `No se pudo sincronizar con ${providerMeta.name}.`);
+      setError(e.message || t('projects.github.syncError', { provider: providerMeta.name }));
     } finally {
       setSyncingRepos(false);
     }
-  }, [loadDetectedRepos, provider, providerMeta.name]);
+  }, [loadDetectedRepos, provider, providerMeta.name, t]);
 
   const handleConnectGithub = useCallback(async () => {
     try {
       setConnectingGithub(true);
       setError('');
       const url = await getGithubConnectUrl({ provider });
-      if (!url) throw new Error(`No se pudo iniciar la vinculacion con ${providerMeta.name}.`);
+      if (!url) throw new Error(t('projects.github.connectError', { provider: providerMeta.name }));
 
       if (connectInNewTab) {
         window.open(url, '_blank', 'noopener,noreferrer');
-        setNotice(`Completa la vinculacion de ${providerMeta.name} en la nueva pestana y luego vuelve para sincronizar.`);
+        setNotice(t('projects.github.connectNewTabNotice', { provider: providerMeta.name }));
         setConnectingGithub(false);
         return;
       }
 
       window.location.assign(url);
     } catch (e) {
-      setError(e.message || `No se pudo iniciar la vinculacion con ${providerMeta.name}.`);
+      setError(e.message || t('projects.github.connectError', { provider: providerMeta.name }));
       setConnectingGithub(false);
     }
-  }, [connectInNewTab, provider, providerMeta.name]);
+  }, [connectInNewTab, provider, providerMeta.name, t]);
 
   const toggleSelectedRepo = useCallback((repo) => {
     const item = getRepoSelection(repo);
@@ -402,17 +405,17 @@ export default function ProjectsGithubSyncPanel({
       );
 
       setJoiningRepo(null);
-      setNotice('Tu participacion fue vinculada al proyecto existente.');
+      setNotice(t('projects.github.joinSuccess'));
       await loadDetectedRepos(false);
       if (typeof onReposChanged === 'function') {
         await onReposChanged();
       }
     } catch (e) {
-      setError(e.message || 'No se pudo vincular tu participacion al proyecto.');
+      setError(e.message || t('projects.github.joinError'));
     } finally {
       setJoinLoading(false);
     }
-  }, [joiningRepo, loadDetectedRepos, onReposChanged, provider]);
+  }, [joiningRepo, loadDetectedRepos, onReposChanged, provider, t]);
 
   return (
     <div ref={panelRef} className="prj-github-panel">
@@ -434,7 +437,7 @@ export default function ProjectsGithubSyncPanel({
                   disabled={checkingLinked || loadingRepos || syncingRepos}
                   onClick={handleSync}
                 >
-                  {syncingRepos ? 'Sincronizando...' : 'Sincronizar'}
+                  {syncingRepos ? t('projects.github.syncing') : t('projects.github.syncProvider', { provider: providerMeta.name })}
                 </button>
 
                 <button
@@ -453,7 +456,7 @@ export default function ProjectsGithubSyncPanel({
                 onClick={handleConnectGithub}
                 disabled={checkingLinked || connectingGithub}
               >
-                {connectingGithub ? 'Conectando...' : providerMeta.connectLabel}
+                {connectingGithub ? t('projects.github.syncing') : t('projects.github.connectProvider', { provider: providerMeta.name })}
               </button>
             )}
           </div>
@@ -464,7 +467,7 @@ export default function ProjectsGithubSyncPanel({
 
         {!githubLinked && !checkingLinked && (
           <div className="prj-detected-muted">
-            Sin una cuenta vinculada no se pueden listar repos privados. Para repos publicos, usa Agregar nuevo y pega la URL del repositorio.
+            {t('projects.github.privateHint', { provider: providerMeta.name })}
           </div>
         )}
 
@@ -472,7 +475,7 @@ export default function ProjectsGithubSyncPanel({
           <>
             <div className="prj-github-selected-strip">
               <div className="prj-detected-muted">
-                Seleccionados {effectiveSelectedRepos.length}/{MAX_REPOSITORIOS_GITHUB}
+                {t('projects.tech.select')} {effectiveSelectedRepos.length}/{MAX_REPOSITORIOS_GITHUB}
               </div>
 
               {effectiveSelectedRepos.length > 0 && (
@@ -483,7 +486,7 @@ export default function ProjectsGithubSyncPanel({
                       type="button"
                       className="prj-github-selected-chip"
                       onClick={() => removeSelectedRepo(repo.url)}
-                      title="Quitar repositorio"
+                      title={t('projects.form.removeRepository')}
                     >
                       <RepositoryProviderIcon provider={provider} />
                       {repo.nombre}
@@ -517,7 +520,7 @@ export default function ProjectsGithubSyncPanel({
                       className="prj-input prj-detected-search-input"
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
-                      placeholder="Buscar repositorio por nombre, URL, proyecto o estado..."
+                      placeholder={t('projects.github.searchPlaceholder')}
                       disabled={loadingRepos}
                     />
 
@@ -527,7 +530,7 @@ export default function ProjectsGithubSyncPanel({
                         className="prj-detected-search-clear"
                         onClick={() => setBusqueda('')}
                         disabled={loadingRepos}
-                        title="Limpiar busqueda"
+                        title={t('projects.github.clearSearch')}
                       >
                         x
                       </button>
@@ -540,7 +543,7 @@ export default function ProjectsGithubSyncPanel({
                 ) : detectedRepos.length === 0 ? (
                   <div className="prj-detected-muted">No hay repositorios detectados. Ejecuta la sincronizacion para actualizar la lista.</div>
                 ) : reposFiltrados.length === 0 ? (
-                  <div className="prj-detected-muted">No se encontraron repositorios con "{busqueda}".</div>
+                  <div className="prj-detected-muted">{t('projects.github.noResults', { query: busqueda })}</div>
                 ) : (
                   <div className="prj-detected-list">
                     {reposFiltrados.map((repo) => {
@@ -561,20 +564,20 @@ export default function ProjectsGithubSyncPanel({
                             </div>
                             <div className="prj-detected-url">{url}</div>
                             {enUso && repo?.proyecto?.titulo && (
-                              <div className="prj-detected-url">Proyecto: {repo.proyecto.titulo}</div>
+                              <div className="prj-detected-url">{t('projects.github.project')}: {repo.proyecto.titulo}</div>
                             )}
                           </div>
 
                           <div className="prj-detected-side">
                             {repo?.repo_github?.is_private && (
-                              <span className="prj-detected-pill warn">privado</span>
+                              <span className="prj-detected-pill warn">{t('projects.github.private')}</span>
                             )}
                             <span className={`prj-detected-pill ${enUso ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
                               {enUso
-                                ? 'en uso'
+                                ? t('projects.github.inUse')
                                 : repo?.validacion?.validado
-                                  ? (repo?.validacion?.relacion_github || 'validado')
-                                  : 'sin validar'}
+                                  ? (repo?.validacion?.relacion_github || t('projects.github.validated'))
+                                  : t('projects.github.unvalidated')}
                             </span>
 
                             {enUso ? (
@@ -584,7 +587,7 @@ export default function ProjectsGithubSyncPanel({
                                 onClick={() => setJoiningRepo(repo)}
                                 disabled={!repo?.puede_unirse || joinLoading}
                               >
-                                Ser parte
+                                {t('projects.github.bePart')}
                               </button>
                             ) : (
                               <button
@@ -593,7 +596,7 @@ export default function ProjectsGithubSyncPanel({
                                 onClick={() => toggleSelectedRepo(repo)}
                                 disabled={limitReached}
                               >
-                                {selected ? 'Quitar' : 'Seleccionar'}
+                                {selected ? t('projects.config.remove') : t('projects.github.select')}
                               </button>
                             )}
                           </div>
@@ -620,25 +623,17 @@ export default function ProjectsGithubSyncPanel({
   );
 }
 
-function formatGithubSyncNotice(stats = {}, providerName = 'GitHub') {
+function formatGithubSyncNotice(stats = {}, providerName = 'GitHub', t = null) {
   const creados = Number(stats?.creados ?? 0);
   const actualizados = Number(stats?.actualizados ?? 0);
-  const detalles = Number(stats?.detalles_actualizados ?? 0);
-  const pendientes = Number(stats?.detalles_omitidos_por_limite ?? 0);
 
-  const parts = [
-    `Repositorios sincronizados con ${providerName}.`,
-    `Nuevos: ${Number.isFinite(creados) ? creados : 0}.`,
-    `Actualizados: ${Number.isFinite(actualizados) ? actualizados : 0}.`,
-  ];
-
-  if (Number.isFinite(detalles) && detalles > 0) {
-    parts.push(`Detalles completados: ${detalles}.`);
+  if (typeof t === 'function') {
+    return t('projects.github.syncResult', {
+      provider: providerName,
+      created: Number.isFinite(creados) ? creados : 0,
+      updated: Number.isFinite(actualizados) ? actualizados : 0,
+    });
   }
 
-  if (Number.isFinite(pendientes) && pendientes > 0) {
-    parts.push(`Detalles pendientes por limite: ${pendientes}.`);
-  }
-
-  return parts.join(' ');
+  return `${providerName} sync completed.`;
 }
