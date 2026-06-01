@@ -118,8 +118,8 @@ export default function LoginForm() {
     window.location.href = buildOAuthRedirectUrl(baseUrl, provider);
   };
 
-  const handleSuccessfulAuth = (result) => {
-    persistAuthSession(result);
+  const handleSuccessfulAuth = async (result) => {
+    await persistAuthSession(result, baseUrl);
     window.location.href = "/";
   };
 
@@ -180,7 +180,7 @@ export default function LoginForm() {
         return;
       }
 
-      handleSuccessfulAuth(result);
+      await handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
 
@@ -220,7 +220,7 @@ export default function LoginForm() {
         linkConfirm,
         linkCredential
       );
-      handleSuccessfulAuth(result);
+      await handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
 
@@ -259,7 +259,7 @@ export default function LoginForm() {
 
     try {
       const result = await loginWithPassword(baseUrl, correo, password);
-      handleSuccessfulAuth(result);
+      await handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
 

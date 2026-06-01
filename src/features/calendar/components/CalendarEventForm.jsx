@@ -36,6 +36,7 @@ export default function CalendarEventForm({
   const { t } = useLanguage();
   const [values, setValues] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -56,6 +57,7 @@ export default function CalendarEventForm({
     }
 
     setErrors({});
+    setSubmitting(false);
   }, [open, editingEvent, selectedDate]);
 
   const formattedDate = useMemo(() => formatDateDisplay(values.fecha), [values.fecha]);
@@ -105,8 +107,10 @@ export default function CalendarEventForm({
     return nextErrors;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (submitting) return;
 
     const nextErrors = validate();
     if (Object.keys(nextErrors).length) {
@@ -114,25 +118,31 @@ export default function CalendarEventForm({
       return;
     }
 
-    const result = onSubmit({
-      ...values,
-      titulo: values.titulo.trim().replace(/\s+/g, ' '),
-      descripcion: values.descripcion.trim(),
-    });
+    setSubmitting(true);
 
-    if (result === false) {
-      setErrors((prev) => ({
-        ...prev,
-        form: t('calendar.validation.saveGeneric'),
-      }));
-      return;
-    }
+    try {
+      const result = await onSubmit({
+        ...values,
+        titulo: values.titulo.trim().replace(/\s+/g, ' '),
+        descripcion: values.descripcion.trim(),
+      });
 
-    if (result?.ok === false) {
-      setErrors((prev) => ({
-        ...prev,
-        form: result.message || t('calendar.validation.saveShort'),
-      }));
+      if (result === false) {
+        setErrors((prev) => ({
+          ...prev,
+          form: t('calendar.validation.saveGeneric'),
+        }));
+        return;
+      }
+
+      if (result?.ok === false) {
+        setErrors((prev) => ({
+          ...prev,
+          form: result.message || t('calendar.validation.saveShort'),
+        }));
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -211,8 +221,8 @@ export default function CalendarEventForm({
       {errors.form && <div className="cal-error cal-error-form">{errors.form}</div>}
 
       <div className="cal-form-actions">
-        <button type="button" className="cal-btn cal-btn-secondary" onClick={onCancel}>{t('calendar.actions.cancel')}</button>
-        <button type="submit" className="cal-btn cal-btn-primary">{t('calendar.actions.save')}</button>
+        <button type="button" className="cal-btn cal-btn-secondary" onClick={onCancel} disabled={submitting}>{t('calendar.actions.cancel')}</button>
+        <button type="submit" className="cal-btn cal-btn-primary" disabled={submitting}>{submitting ? t('calendar.actions.processing') : t('calendar.actions.save')}</button>
       </div>
     </form>
   );
