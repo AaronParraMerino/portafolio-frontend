@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import FallbackIcon from './FallbackIcon';
+import { useLanguage } from '../../../../core/i18n';
 
 const PLATS = [
   { key:"linkedin",      match:u=>u.includes("linkedin.com"),                                name:"LinkedIn",
@@ -51,6 +52,7 @@ const PLATS = [
 ];
 
 function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
+  const { t } = useLanguage();
   const [titulo, setTitulo] = useState(red.nombre      || "");
   const [desc,   setDesc]   = useState(red.descripcion || "");
   const [err,    setErr]    = useState({});
@@ -67,8 +69,8 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
   // ── Validación ───────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!titulo.trim()) e.titulo = "Título obligatorio";
-    if (!desc.trim())   e.desc   = "Descripción obligatoria";
+    if (!titulo.trim()) e.titulo = t('links.validation.titleRequired');
+    if (!desc.trim())   e.desc   = t('links.validation.descriptionRequired');
     setErr(e);
     return !Object.keys(e).length;
   };
@@ -115,7 +117,7 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
 
         {/* Header */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
-          <p style={{ margin:0, fontWeight:700, fontSize:16, color:"#0f172a" }}>Editar red social</p>
+          <p style={{ margin:0, fontWeight:700, fontSize:16, color:"#0f172a" }}>{t('links.modal.editTitle')}</p>
           <button
             onClick={onClose}
             style={{ background:"none", border:"none", cursor:"pointer", padding:4, borderRadius:6, display:"flex", color:"#9ca3af" }}
@@ -139,7 +141,7 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
             </div>
             <div style={{ minWidth:0 }}>
               <p style={{ margin:0, fontSize:13, fontWeight:700, color:"#0077b7" }}>
-                {platInfo ? platInfo.name : "Red personalizada"}
+                {platInfo ? platInfo.name : t('links.customNetwork')}
               </p>
               <p style={{ margin:0, fontSize:11, color:"#9ca3af", fontFamily:"monospace",
                 overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
@@ -151,7 +153,7 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
           {/* Título */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
-              Título *
+              {t('links.field.title')}
               {isKnownPlatform && (
                 <span style={{
                   marginLeft:8, fontSize:11, fontWeight:500,
@@ -159,7 +161,7 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
                   border:"1px solid #e5e7eb", borderRadius:4,
                   padding:"1px 6px",
                 }}>
-                  bloqueado — plataforma reconocida
+                  {t('links.lockedKnownPlatform')}
                 </span>
               )}
             </label>
@@ -167,14 +169,14 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
               value={titulo}
               onChange={e => !isKnownPlatform && setTitulo(e.target.value)}
               readOnly={isKnownPlatform}
-              placeholder="Título de la red"
+              placeholder={t('links.field.editTitlePlaceholder')}
               style={inp("titulo", isKnownPlatform)}
               onFocus={e => { if (!isKnownPlatform) e.target.style.border = "1.5px solid #0077b7"; }}
               onBlur={e  => { if (!isKnownPlatform) e.target.style.border = `1.5px solid ${err.titulo ? "#e85555" : "#d1d5db"}`; }}
             />
             {isKnownPlatform && (
               <p style={{ margin:"4px 0 0", fontSize:11, color:"#9ca3af" }}>
-                El título de plataformas reconocidas no se puede modificar.
+                {t('links.lockedTitleHelp')}
               </p>
             )}
             {err.titulo && (
@@ -185,13 +187,13 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
           {/* Descripción */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
-              Descripción *
+              {t('links.field.description')}
             </label>
             <textarea
               value={desc}
               onChange={e => setDesc(e.target.value)}
               rows={3}
-              placeholder="Para qué usas esta red…"
+              placeholder={t('links.field.descriptionPlaceholder')}
               style={{ ...inp("desc", false), resize:"vertical", lineHeight:1.5 }}
               onFocus={e => e.target.style.border = "1.5px solid #0077b7"}
               onBlur={e  => e.target.style.border = `1.5px solid ${err.desc ? "#e85555" : "#d1d5db"}`}
@@ -213,7 +215,7 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
               cursor:"pointer", fontFamily:"inherit",
             }}
           >
-            Cancelar
+            {t('links.action.cancel')}
           </button>
           <button
             onClick={submit}
@@ -224,7 +226,7 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
               cursor:"pointer", fontFamily:"inherit",
             }}
           >
-            Guardar cambios
+            {t('links.action.saveChanges')}
           </button>
         </div>
       </div>

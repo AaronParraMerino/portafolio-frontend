@@ -35,7 +35,9 @@ export default function FeaturedPortfolios() {
   const { t } = useLanguage();
   const [draftSearch, setDraftSearch] = useState('');
   const [search, setSearch] = useState('');
-  const { sections, loading, error } = useFeaturedPortfolios(search);
+  const { sections, loading, error } = useFeaturedPortfolios(search, {
+    defaultErrorMessage: t('featured.error.text'),
+  });
   const [activeKey, setActiveKey] = useState(SECTION_CONFIG[0].key);
   const activeSection = SECTION_CONFIG.find((section) => section.key === activeKey) || SECTION_CONFIG[0];
   const isSearchMode = Boolean(search);

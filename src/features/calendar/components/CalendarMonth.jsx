@@ -1,7 +1,13 @@
-const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+import { useLanguage } from '../../../core/i18n';
 
-function monthLabel(date) {
-  return date.toLocaleDateString('es-ES', {
+const LOCALE_BY_LANGUAGE = {
+  es: 'es-ES',
+  en: 'en-US',
+  pt: 'pt-BR',
+};
+
+function monthLabel(date, language) {
+  return date.toLocaleDateString(LOCALE_BY_LANGUAGE[language] || 'es-ES', {
     month: 'long',
     year: 'numeric',
   });
@@ -16,6 +22,17 @@ export default function CalendarMonth({
   onNextMonth,
   onSelectDate,
 }) {
+  const { t, language } = useLanguage();
+  const weekDays = [
+    t('calendar.week.monday.short'),
+    t('calendar.week.tuesday.short'),
+    t('calendar.week.wednesday.short'),
+    t('calendar.week.thursday.short'),
+    t('calendar.week.friday.short'),
+    t('calendar.week.saturday.short'),
+    t('calendar.week.sunday.short'),
+  ];
+
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -46,21 +63,21 @@ export default function CalendarMonth({
   });
 
   return (
-    <section className="cal-month-card" aria-label="Calendario mensual">
+    <section className="cal-month-card" aria-label={t('calendar.month.aria')}>
       <div className="cal-month-head">
         <div>
-          <div className="cal-month-title">{capitalize(monthLabel(currentMonth))}</div>
-          <small>Selecciona un día para ver sus eventos.</small>
+          <div className="cal-month-title">{capitalize(monthLabel(currentMonth, language))}</div>
+          <small>{t('calendar.month.help')}</small>
         </div>
 
         <div className="cal-month-actions">
-          <button type="button" onClick={onPrevMonth} aria-label="Mes anterior">‹</button>
-          <button type="button" onClick={onNextMonth} aria-label="Mes siguiente">›</button>
+          <button type="button" onClick={onPrevMonth} aria-label={t('calendar.month.prev')}>‹</button>
+          <button type="button" onClick={onNextMonth} aria-label={t('calendar.month.next')}>›</button>
         </div>
       </div>
 
       <div className="cal-grid">
-        {WEEK_DAYS.map((day, index) => (
+        {weekDays.map((day, index) => (
           <div className="cal-dow" key={`${day}-${index}`}>{day}</div>
         ))}
 
@@ -74,13 +91,14 @@ export default function CalendarMonth({
             item.isPastEvent ? 'past-event' : '',
           ].filter(Boolean).join(' ');
 
+          const dateText = formatDateDisplay(item.iso);
           const title = item.isPastEvent
-            ? `Ver historial de eventos del ${formatDateDisplay(item.iso)}`
+            ? t('calendar.day.titlePastEvent', { date: dateText })
             : item.hasEvent
-              ? `Ver eventos del ${formatDateDisplay(item.iso)}`
+              ? t('calendar.day.titleHasEvent', { date: dateText })
               : item.isPast
-                ? `Ver fecha pasada ${formatDateDisplay(item.iso)}`
-                : `Seleccionar ${formatDateDisplay(item.iso)}`;
+                ? t('calendar.day.titlePastDate', { date: dateText })
+                : t('calendar.day.titleSelect', { date: dateText });
 
           return (
             <button

@@ -1,3 +1,5 @@
+import { useLanguage } from '../../../core/i18n';
+
 const TYPE_CLASS = {
   Personal: 'personal',
   Académico: 'academic',
@@ -7,20 +9,31 @@ const TYPE_CLASS = {
   Otro: 'other',
 };
 
+const TYPE_LABEL_KEY = {
+  Personal: 'calendar.type.personal',
+  Académico: 'calendar.type.academic',
+  Trabajo: 'calendar.type.work',
+  Reunión: 'calendar.type.meeting',
+  Entrega: 'calendar.type.delivery',
+  Otro: 'calendar.type.other',
+};
+
 export default function CalendarEventCard({
   event,
   onEdit,
   onDelete,
   canManage = true,
 }) {
+  const { t } = useLanguage();
   const typeClass = TYPE_CLASS[event.tipo] || 'other';
+  const typeLabel = t(TYPE_LABEL_KEY[event.tipo] || 'calendar.type.other');
 
   return (
     <article className={`cal-event-card ${typeClass}${canManage ? '' : ' locked'}`}>
       <strong>{event.titulo}</strong>
 
       <span className="cal-event-time">
-        {event.hora} · {event.tipo}
+        {event.hora} · {typeLabel}
       </span>
 
       {event.descripcion && <p className="cal-event-desc">{event.descripcion}</p>}
@@ -28,10 +41,10 @@ export default function CalendarEventCard({
       {canManage && (
         <div className="cal-event-actions">
           <button type="button" className="edit" onClick={() => onEdit(event)}>
-            Editar
+            {t('calendar.actions.edit')}
           </button>
           <button type="button" className="delete" onClick={() => onDelete(event)}>
-            Eliminar
+            {t('calendar.actions.delete')}
           </button>
         </div>
       )}

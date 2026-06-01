@@ -1,17 +1,20 @@
 // src/features/dashboard/view/components/ViewOsFrame.jsx
+import { useLanguage } from '../../../../core/i18n';
 
 export default function ViewOsFrame({
   frameId = 'none',
-  title = 'Mi Portafolio',
+  title,
   children,
 }) {
+  const { t } = useLanguage();
+  const frameTitle = title || t('view.portfolio.defaultTitle');
   const cardClass = [
     'pf-card',
-        frameId === 'thick' ? 'has-thick-border' : '',
-        frameId === 'mac' ? 'has-mac-bar' : '',
-        frameId === 'linux' ? 'has-linux-bar' : '',
-        frameId === 'windows' ? 'has-win-bar' : '',
-        frameId === 'none' ? 'has-no-frame' : '',
+    frameId === 'thick' ? 'has-thick-border' : '',
+    frameId === 'mac' ? 'has-mac-bar' : '',
+    frameId === 'linux' ? 'has-linux-bar' : '',
+    frameId === 'windows' ? 'has-win-bar' : '',
+    frameId === 'none' ? 'has-no-frame' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -23,7 +26,7 @@ export default function ViewOsFrame({
           <div className="mac-dot mac-dot-green" />
         </div>
 
-        <div className="mac-title">{title}</div>
+        <div className="mac-title">{frameTitle}</div>
 
         <div className="mac-toolbar-icons">
           <div className="mac-toolbar-icon">
@@ -47,7 +50,7 @@ export default function ViewOsFrame({
       </div>
 
       <div className={`linux-bar ${frameId === 'linux' ? 'visible' : ''}`}>
-        <div className="linux-title">{title}</div>
+        <div className="linux-title">{frameTitle}</div>
 
         <div className="linux-dots">
           <div className="linux-dot">
@@ -77,7 +80,7 @@ export default function ViewOsFrame({
           </svg>
         </div>
 
-        <div className="win-title">{title}</div>
+        <div className="win-title">{frameTitle}</div>
 
         <div className="win-dots">
           <div className="win-btn">

@@ -1,10 +1,17 @@
 import VincularCuenta from '../components/VincularCuenta';
 import Header from '../../layout/Header';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function VincularCuentaPage() {
+  const { t } = useLanguage();
+
   return (
     <>
-      <Header eyebrow="CUENTA" title="Vincular Cuenta" subtitle="Configuracion" />
+      <Header
+        eyebrow={t("configurate.header.eyebrow")}
+        title={t("configurate.link.pageTitle")}
+        subtitle={t("configurate.header.title")}
+      />
       <VincularCuenta />
     </>
   );

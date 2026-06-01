@@ -7,6 +7,7 @@ import {
   patchVisibility,
   removeEnlace,
 } from '../services/EnlaceService';
+import { useLanguage } from '../../../../core/i18n';
 
 function getInitialEnlaces() {
   try {
@@ -17,6 +18,7 @@ function getInitialEnlaces() {
 }
 
 export function useEnlace() {
+  const { t } = useLanguage();
   const [redes,   setRedes]   = useState(getInitialEnlaces);
   const [loading, setLoading] = useState(() => getInitialEnlaces().length === 0);
   const [error,   setError]   = useState(null);
@@ -30,11 +32,11 @@ export function useEnlace() {
       const data = await fetchEnlaces({ force: true });
       setRedes(data);
     } catch (err) {
-      setError(err.message ?? 'Error al cargar los enlaces.');
+      setError(err.message ?? t('links.error.load'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -44,7 +46,7 @@ export function useEnlace() {
       const creada = await postEnlace(nueva);
       setRedes(prev => [...prev, creada]);
     } catch (err) {
-      setError(err.message ?? 'Error al crear el enlace.');
+      setError(err.message ?? t('links.error.create'));
     }
   };
 
@@ -54,7 +56,7 @@ export function useEnlace() {
       const result = await putEnlace(actualizada.id, actualizada);
       setRedes(prev => prev.map(r => r.id === actualizada.id ? { ...r, ...result } : r));
     } catch (err) {
-      setError(err.message ?? 'Error al editar el enlace.');
+      setError(err.message ?? t('links.error.edit'));
     }
   };
 
@@ -69,7 +71,7 @@ export function useEnlace() {
     } catch (err) {
       // Revertir si falla
       setRedes(prev => prev.map(r => r.id === id ? { ...r, visible: red.visible } : r));
-      setError(err.message ?? 'Error al cambiar visibilidad.');
+      setError(err.message ?? t('links.error.visibility'));
     }
   };
 
@@ -79,7 +81,7 @@ export function useEnlace() {
       await removeEnlace(id);
       setRedes(prev => prev.filter(r => r.id !== id));
     } catch (err) {
-      setError(err.message ?? 'Error al eliminar el enlace.');
+      setError(err.message ?? t('links.error.delete'));
     }
   };
 

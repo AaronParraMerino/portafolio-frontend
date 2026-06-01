@@ -1,7 +1,8 @@
 import React from "react";
+import { useLanguage } from "../../../../core/i18n";
 
-const formatDateFull = (fechaStr) => {
-  if (!fechaStr) return "Sin fecha";
+const formatDateFull = (fechaStr, t) => {
+  if (!fechaStr) return t("experience.date.empty");
 
   const [year, month, day] = String(fechaStr).slice(0, 10).split("-");
   if (!year || !month || !day) return fechaStr;
@@ -10,14 +11,16 @@ const formatDateFull = (fechaStr) => {
 };
 
 export default function ExperienceDetailModal({ exp, onClose }) {
+  const { t } = useLanguage();
+
   if (!exp) return null;
 
   const isAcademica = exp.tipo_experiencia === "Académica";
 
-  const fechaInicio = formatDateFull(exp.fecha_inicio);
+  const fechaInicio = formatDateFull(exp.fecha_inicio, t);
   const fechaFin = exp.actual
-    ? "Actualidad"
-    : formatDateFull(exp.fecha_fin);
+    ? t("experience.date.current")
+    : formatDateFull(exp.fecha_fin, t);
 
   const handleOverlayClick = (event) => {
     if (event.target === event.currentTarget) {
@@ -402,12 +405,12 @@ export default function ExperienceDetailModal({ exp, onClose }) {
                           isAcademica ? "is-academica" : "is-laboral"
                         }`}
                       >
-                        {isAcademica ? "Académico" : "Laboral"}
+                        {isAcademica ? t("experience.type.academicShort") : t("experience.type.work")}
                       </span>
 
                       {exp.actual && (
                         <span className="edm-current">
-                          Actual
+                          {t("experience.status.current")}
                         </span>
                       )}
                     </div>
@@ -430,8 +433,8 @@ export default function ExperienceDetailModal({ exp, onClose }) {
                   type="button"
                   className="edm-close"
                   onClick={onClose}
-                  aria-label="Cerrar detalle"
-                  title="Cerrar"
+                  aria-label={t("experience.detail.closeAria")}
+                  title={t("experience.actions.close")}
                 >
                   ×
                 </button>
@@ -440,14 +443,14 @@ export default function ExperienceDetailModal({ exp, onClose }) {
               <div className="edm-body">
                 <div className="edm-info-grid">
                   <div className="edm-info-box">
-                    <p className="edm-label">Tipo</p>
+                    <p className="edm-label">{t("experience.field.type")}</p>
                     <p className="edm-value">
-                      {isAcademica ? "Experiencia académica" : "Experiencia laboral"}
+                      {isAcademica ? t("experience.detail.academic") : t("experience.detail.work")}
                     </p>
                   </div>
 
                   <div className="edm-info-box">
-                    <p className="edm-label">Periodo</p>
+                    <p className="edm-label">{t("experience.field.period")}</p>
                     <p className="edm-value">
                       {fechaInicio} — {fechaFin}
                     </p>
@@ -457,13 +460,13 @@ export default function ExperienceDetailModal({ exp, onClose }) {
                 <div className="edm-description">
                   <div className="edm-description-head">
                     <p className="edm-label">
-                      Descripción
+                      {t("experience.field.description")}
                     </p>
                   </div>
 
                   <div className="edm-description-body">
                     <p className="edm-description-text">
-                      {exp.descripcion || "Sin descripción detallada."}
+                      {exp.descripcion || t("experience.detail.noDescription")}
                     </p>
                   </div>
                 </div>
@@ -475,7 +478,7 @@ export default function ExperienceDetailModal({ exp, onClose }) {
                   className="edm-footer-btn"
                   onClick={onClose}
                 >
-                  Cerrar detalle
+                  {t("experience.detail.close")}
                 </button>
               </footer>
             </div>

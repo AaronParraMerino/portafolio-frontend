@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import '../styles/profile.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import { useLanguage } from '../../../../core/i18n';
 
 /* ══════════════════════════════════════════════
    MODAL: Subir imagen (banner o avatar)
 ══════════════════════════════════════════════ */
 function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
+  const { t } = useLanguage();
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
   const [archivo, setArchivo] = useState(null);
@@ -13,7 +15,7 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
   /* NUEVO: panel de confirmación antes de subir */
   const [confirmando, setConfirmando] = useState(false);
 
-  const label = tipo === 'banner' ? 'Banner' : 'Foto de perfil';
+  const label = tipo === 'banner' ? t('profile.image.banner') : t('profile.image.avatar');
 
   const handleFile = (file) => {
     if (!file || !file.type.startsWith('image/')) return;
@@ -52,10 +54,10 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
           <div className="prf-modal-head">
             <div>
               <div className="prf-modal-title">
-                {tipo === 'banner' ? 'Cambiar banner' : 'Cambiar foto de perfil'}
+                {tipo === 'banner' ? t('profile.image.changeBanner') : t('profile.image.changeAvatar')}
               </div>
               <div className="prf-modal-sub">
-                Seleccioná o arrastrá una imagen. JPG, PNG o JPEG — máx. 5 MB.
+                {t('profile.image.uploadInfo')}
               </div>
             </div>
             <button className="prf-modal-close" onClick={onClose} disabled={cargando}>
@@ -73,10 +75,10 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
             >
               {preview ? (
                 <div className="prf-upload-preview-wrap">
-                  <img src={preview} alt="Vista previa"
+                  <img src={preview} alt={t('profile.image.previewAlt')}
                     className={`prf-upload-preview${tipo === "avatar" ? " round" : ""}`} />
                   <button className="prf-upload-remove"
-                    onClick={(e) => { e.stopPropagation(); limpiar(); }} title="Quitar imagen">
+                    onClick={(e) => { e.stopPropagation(); limpiar(); }} title={t('profile.image.removePreview')}>
                     <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
                   </button>
                 </div>
@@ -89,8 +91,8 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
                       <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                   </div>
-                  <div className="prf-upload-text">Arrastrá una imagen aquí</div>
-                  <div className="prf-upload-subtext">o hacé clic para seleccionar</div>
+                  <div className="prf-upload-text">{t('profile.image.dropHere')}</div>
+                  <div className="prf-upload-subtext">{t('profile.image.clickSelect')}</div>
                 </div>
               )}
             </div>
@@ -102,17 +104,17 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
               <button className="prf-btn-outline" style={{ marginTop: 12, fontSize: 12 }}
                 onClick={() => inputRef.current?.click()} disabled={cargando}>
                 <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
-                Elegir otra imagen
+                {t('profile.image.chooseAnother')}
               </button>
             )}
           </div>
 
           <div className="prf-modal-foot">
-            <button className="prf-btn-cancel" onClick={onClose} disabled={cargando}>Cancelar</button>
+            <button className="prf-btn-cancel" onClick={onClose} disabled={cargando}>{t('profile.action.cancel')}</button>
             <button className="prf-btn-save" onClick={handleGuardarClick} disabled={!archivo || cargando}>
               {cargando
-                ? <><div className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Subiendo...</>
-                : <><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" stroke="currentColor" fill="none" strokeWidth="2"/></svg>Guardar {label}</>
+                ? <><div className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> {t('profile.image.uploading')}</>
+                : <><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" stroke="currentColor" fill="none" strokeWidth="2"/></svg>{t('profile.image.saveLabel', { label })}</>
               }
             </button>
           </div>
@@ -122,11 +124,9 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
       {/* Panel de confirmación antes de subir imagen */}
       <ConfirmModal
         open={!!confirmando}
-        title={`¿Guardar ${tipo === "banner" ? "el banner" : "la foto de perfil"}?`}
-        message={`Estás por subir una nueva imagen como ${
-          tipo === "banner" ? "banner de tu perfil" : "foto de perfil"
-        }. La imagen anterior se reemplazará.`}
-        confirmLabel="Sí, guardar"
+        title={tipo === 'banner' ? t('profile.image.saveBannerTitle') : t('profile.image.saveAvatarTitle')}
+        message={tipo === 'banner' ? t('profile.image.saveBannerMessage') : t('profile.image.saveAvatarMessage')}
+        confirmLabel={t('profile.image.confirmSave')}
         variant="blue"
         icon="check"
         loading={cargando}
@@ -141,7 +141,7 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
    MODAL: Confirmar eliminación (sin cambios)
 ══════════════════════════════════════════════ */
 function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
-  const label = tipo === 'banner' ? 'el banner' : 'la foto de perfil';
+  const { t } = useLanguage();
   return (
     <div className="prf-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="prf-modal" style={{ maxWidth: 400 }}>
@@ -155,8 +155,8 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
               </svg>
             </div>
             <div>
-              <div className="prf-modal-title">¿Eliminar {label}?</div>
-              <div className="prf-modal-sub">Esta acción no se puede deshacer.</div>
+              <div className="prf-modal-title">{tipo === 'banner' ? t('profile.image.deleteBannerTitle') : t('profile.image.deleteAvatarTitle')}</div>
+              <div className="prf-modal-sub">{t('profile.image.deleteSubtitle')}</div>
             </div>
           </div>
           <button className="prf-modal-close" onClick={onClose} disabled={cargando}>
@@ -165,16 +165,15 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
         </div>
         <div className="prf-modal-body" style={{ padding: '18px 22px' }}>
           <p style={{ fontSize: 13, color: 'var(--gris-oscuro)', lineHeight: 1.6, margin: 0 }}>
-            Estás por eliminar {label} de tu perfil.
-            {tipo === 'banner' ? ' El banner volverá al gradiente por defecto.' : ' Tu foto de perfil se reemplazará por tus iniciales.'}
+            {tipo === 'banner' ? t('profile.image.deleteBannerMessage') : t('profile.image.deleteAvatarMessage')}
           </p>
         </div>
         <div className="prf-modal-foot">
-          <button className="prf-btn-cancel" onClick={onClose} disabled={cargando}>Cancelar</button>
+          <button className="prf-btn-cancel" onClick={onClose} disabled={cargando}>{t('profile.action.cancel')}</button>
           <button className="prf-btn-save" style={{ background: 'var(--rojo-soft)' }} onClick={onConfirm} disabled={cargando}>
             {cargando
-              ? <><div className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Eliminando...</>
-              : <><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1,3 11,3"/><path d="M4.5 3V1.5h3V3M2 3v7a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0010 10V3"/><line x1="4.5" y1="5.5" x2="4.5" y2="9"/><line x1="7.5" y1="5.5" x2="7.5" y2="9"/></svg>Sí, eliminar</>
+              ? <><div className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> {t('profile.image.deleting')}</>
+              : <><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1,3 11,3"/><path d="M4.5 3V1.5h3V3M2 3v7a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0010 10V3"/><line x1="4.5" y1="5.5" x2="4.5" y2="9"/><line x1="7.5" y1="5.5" x2="7.5" y2="9"/></svg>{t('profile.image.confirmDelete')}</>
             }
           </button>
         </div>
@@ -187,6 +186,7 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
    PROFILE HEADER (sin cambios en la estructura)
 ══════════════════════════════════════════════ */
 export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onEliminarBanner, onSubirAvatar, onEliminarAvatar }) {
+  const { t } = useLanguage();
   const iniciales = perfil.nombre.split(' ').slice(0, 2).map(n => n[0]).join('');
   const [modal,    setModal]    = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -229,12 +229,12 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
           style={bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : undefined}>
           <div className="prf-img-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button className="prf-avatar-btn" style={{ position: 'static', transform: 'none', margin: 0 }}
-              title="Cambiar banner" onClick={() => setModal({ tipo: 'upload-banner' })}>
+              title={t('profile.image.changeBanner')} onClick={() => setModal({ tipo: 'upload-banner' })}>
               <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
             </button>
             {perfil.bannerUrl && (
               <button className="prf-avatar-delete-btn" style={{ position: 'static', transform: 'none', margin: 0 }}
-                title="Eliminar banner" onClick={() => setModal({ tipo: 'delete-banner' })}>
+                title={t('profile.image.deleteBannerTitle')} onClick={() => setModal({ tipo: 'delete-banner' })}>
                 <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <polyline points="1,2.5 11,2.5"/>
                   <path d="M4 2.5V1.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V2.5M2 2.5v7A1.5 1.5 0 003.5 11h5A1.5 1.5 0 0010 9.5v-7"/>
@@ -252,12 +252,12 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
               ? <img src={perfil.avatarUrl} alt={perfil.nombre && `${perfil.nombre} ${perfil.apellido}`} />
               : iniciales}
           </div>
-          <button className="prf-avatar-btn" title="Cambiar foto"
+          <button className="prf-avatar-btn" title={t('profile.image.changeAvatar')}
             onClick={() => setModal({ tipo: 'upload-avatar' })}>
             <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
           </button>
           {perfil.avatarUrl && (
-            <button className="prf-avatar-delete-btn" title="Eliminar foto de perfil"
+            <button className="prf-avatar-delete-btn" title={t('profile.image.deleteAvatarTitle')}
               onClick={() => setModal({ tipo: 'delete-avatar' })}>
               <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <polyline points="1,2.5 11,2.5"/>
@@ -276,7 +276,7 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
           <div className="prf-acciones">
             <button className="prf-btn-primary" onClick={onEditar}>
               <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
-              Editar perfil
+              {t('profile.action.edit')}
             </button>
           </div>
         </div>

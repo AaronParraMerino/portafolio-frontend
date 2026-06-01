@@ -14,6 +14,8 @@
 // participaciones, proyecto_evidencias/evidencias, tipos_proyecto, etc.
 // ═══════════════════════════════════════════
 
+import { DEFAULT_LANGUAGE, translations } from '../../../../core/i18n/translations';
+
 import {
   getCachedDashboardEndpoint,
   invalidateDashboardDerivedCaches,
@@ -27,6 +29,14 @@ const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/
 const TECNOLOGIAS_CACHE_KEY = 'projects_tecnologias_catalogo_cache_v1';
 const PARTICIPANTES_CACHE_PREFIX = 'projects_participantes_cache_v1';
 const githubRepoLanguagesMemoryCache = new Map();
+
+function projectServiceText(key) {
+  const language = typeof window !== 'undefined'
+    ? localStorage.getItem('creafolio_language') || DEFAULT_LANGUAGE
+    : DEFAULT_LANGUAGE;
+
+  return translations[language]?.[key] || translations[DEFAULT_LANGUAGE]?.[key] || key;
+}
 
 // ═══════════════════════════════════════════
 // CONSTANTES
@@ -50,23 +60,23 @@ export const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'md', 'o
 function getSession() {
   const raw = localStorage.getItem('usuario') || sessionStorage.getItem('usuario');
 
-  if (!raw) throw new Error('No hay sesión activa');
+  if (!raw) throw new Error(projectServiceText('projects.service.noSession'));
 
   let user;
 
   try {
     user = JSON.parse(raw);
   } catch {
-    throw new Error('Sesion invalida. Inicia sesion nuevamente');
+    throw new Error(projectServiceText('projects.service.invalidSession'));
   }
 
   const userId = user.id || user.id_usuario || user.idUsuario;
 
-  if (!userId) throw new Error('ID de usuario no encontrado');
+  if (!userId) throw new Error(projectServiceText('projects.service.noUserId'));
 
   const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
 
-  if (!token) throw new Error('Token no encontrado');
+  if (!token) throw new Error(projectServiceText('projects.service.noToken'));
 
   return { userId, token };
 }
@@ -405,7 +415,7 @@ export async function ensureTecnologia(nombre, tipo = null) {
   const cleanNombre = typeof nombre === 'string' ? nombre.trim() : '';
 
   if (!cleanNombre) {
-    throw new Error('Nombre de tecnologia invalido');
+    throw new Error(projectServiceText('projects.service.invalidTechnology'));
   }
 
   const body = tipo ? { tipo } : {};
@@ -1764,7 +1774,7 @@ export async function uploadDocumentos(id, archivos = []) {
   const invalidos = archivos.filter(file => !isDocumentoPermitido(file));
 
   if (invalidos.length > 0) {
-    throw new Error('Solo se aceptan documentos PDF, DOC, DOCX, TXT, RTF, MD u ODT.');
+    throw new Error(projectServiceText('projects.service.invalidDocument'));
   }
 
   const formData = new FormData();

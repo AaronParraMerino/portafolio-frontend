@@ -1,4 +1,11 @@
+import { useLanguage } from '../../../core/i18n';
 import CalendarEventCard from './CalendarEventCard';
+
+const LOCALE_BY_LANGUAGE = {
+  es: 'es-ES',
+  en: 'en-US',
+  pt: 'pt-BR',
+};
 
 export default function CalendarEventList({
   selectedDate,
@@ -9,27 +16,30 @@ export default function CalendarEventList({
   onDelete,
   onDeleteAll,
 }) {
-  const title = formatSelectedDate(selectedDate);
+  const { t, language } = useLanguage();
+  const title = formatSelectedDate(selectedDate, language);
   const isPastDate = selectedDate < today;
   const canManage = !isPastDate;
   const hasEvents = events.length > 0;
+  const countLabel = events.length === 1
+    ? t('calendar.events.countSingular')
+    : t('calendar.events.countPlural');
 
   return (
     <section className="cal-events-section">
       <div className="cal-events-head">
         <div>
-          <h3>Eventos del {title}</h3>
+          <h3>{t('calendar.events.title', { date: title })}</h3>
           <span className="cal-events-date">{formatNumericDate(selectedDate)}</span>
         </div>
         <span className={`cal-event-count${isPastDate && hasEvents ? ' history' : ''}`}>
-          {events.length} {events.length === 1 ? 'evento' : 'eventos'}
+          {events.length} {countLabel}
         </span>
       </div>
 
-
       {hasEvents && events.length >= 2 && canManage && (
         <button type="button" className="cal-delete-day-btn" onClick={onDeleteAll}>
-          Eliminar todos
+          {t('calendar.actions.deleteAll')}
         </button>
       )}
 
@@ -47,16 +57,16 @@ export default function CalendarEventList({
         </div>
       ) : (
         <div className="cal-empty-state">
-          <strong>No hay eventos registrados para esta fecha.</strong>
+          <strong>{t('calendar.empty.title')}</strong>
           {canManage ? (
             <>
-              <p>Puedes crear un nuevo evento usando la fecha seleccionada.</p>
+              <p>{t('calendar.empty.createHelp')}</p>
               <button type="button" className="cal-empty-create" onClick={onCreate}>
-                Crear evento para este día
+                {t('calendar.empty.createButton')}
               </button>
             </>
           ) : (
-            <p>No se pueden crear eventos en fechas pasadas.</p>
+            <p>{t('calendar.empty.pastHelp')}</p>
           )}
         </div>
       )}
@@ -64,11 +74,11 @@ export default function CalendarEventList({
   );
 }
 
-function formatSelectedDate(value) {
+function formatSelectedDate(value, language) {
   if (!value) return '';
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('es-ES', {
+  return date.toLocaleDateString(LOCALE_BY_LANGUAGE[language] || 'es-ES', {
     day: 'numeric',
     month: 'long',
   });

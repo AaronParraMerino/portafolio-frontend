@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
+import { useLanguage } from "../../../core/i18n";
 
 const API = process.env.REACT_APP_API_URL;
 
 export default function CambiarContrasena() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [nueva, setNueva] = useState("");
   const [confirmar, setConfirmar] = useState("");
@@ -19,23 +21,23 @@ export default function CambiarContrasena() {
 
   const hasTokenPort = Boolean(localStorage.getItem("tokenPORT"));
   const defaultRedirect = hasTokenPort ? "/dashboard/settings" : "/auth/login";
-  const returnButtonLabel = hasTokenPort ? "Volver a configuración" : "Ir al login";
+  const returnButtonLabel = hasTokenPort ? t("auth.changePassword.backSettings") : t("auth.changePassword.goLogin");
 
   const handleSubmit = async () => {
     setError("");
 
     if (!hasLength || !hasUpper || !hasNumber) {
-      return setError("La nueva contraseña no cumple los requisitos.");
+      return setError(t("auth.error.passwordRequirements"));
     }
     if (!matches) {
-      return setError("Las contraseñas no coinciden.");
+      return setError(t("auth.error.passwordMismatch"));
     }
 
     const correo = sessionStorage.getItem("correo_recuperacion");
     const codigo = sessionStorage.getItem("codigo_recuperacion");
 
     if (!correo || !codigo) {
-      return setError("Sesión de recuperación inválida. Vuelve a iniciar el proceso.");
+      return setError(t("auth.error.invalidRecoverySession"));
     }
 
     try {
@@ -55,7 +57,7 @@ export default function CambiarContrasena() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "No se pudo actualizar la contraseña");
+      if (!res.ok) throw new Error(data.message || t("auth.error.updatePassword"));
 
       sessionStorage.removeItem("codigo_recuperacion");
       sessionStorage.removeItem("correo_recuperacion");
@@ -94,13 +96,13 @@ export default function CambiarContrasena() {
 
         {!success ? (
           <>
-            <h2 style={{ textAlign: "center", marginBottom: "16px" }}>Cambiar contraseña</h2>
+            <h2 style={{ textAlign: "center", marginBottom: "16px" }}>{t("auth.changePassword.title")}</h2>
 
             <input
               type="password"
               value={nueva}
               onChange={(e) => setNueva(e.target.value)}
-              placeholder="Nueva contraseña"
+              placeholder={t("auth.changePassword.newPassword")}
               style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1.5px solid var(--gris-borde)", marginBottom: "10px", fontFamily: "var(--font)", fontSize: "14px", outline: "none" }}
             />
 
@@ -108,12 +110,12 @@ export default function CambiarContrasena() {
               type="password"
               value={confirmar}
               onChange={(e) => setConfirmar(e.target.value)}
-              placeholder="Confirmar contraseña"
+              placeholder={t("auth.changePassword.confirmNewPassword")}
               style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1.5px solid var(--gris-borde)", marginBottom: "10px", fontFamily: "var(--font)", fontSize: "14px", outline: "none" }}
             />
 
             <p style={{ fontSize: "12px", color: "var(--gris-texto)", fontFamily: "var(--font)" }}>
-              Requisitos: mínimo 6 caracteres, una mayúscula y un número.
+              {t("auth.changePassword.requirements")}
             </p>
 
             {error ? <p style={{ color: "var(--rojo-soft)", fontSize: "13px", fontFamily: "var(--font)" }}>{error}</p> : null}
@@ -123,13 +125,13 @@ export default function CambiarContrasena() {
               disabled={cargando}
               style={{ width: "100%", padding: "12px", background: "var(--azul)", color: "var(--blanco)", border: "none", borderRadius: "8px", marginTop: "8px", cursor: "pointer", fontFamily: "var(--font)", fontWeight: "600" }}
             >
-              {cargando ? "Actualizando..." : "Actualizar contraseña"}
+              {cargando ? t("auth.status.updating") : t("auth.changePassword.submit")}
             </button>
           </>
         ) : (
           <div style={{ textAlign: "center", fontFamily: "var(--font)" }}>
-            <h2 style={{ color: "var(--azul)", marginBottom: "10px" }}>Contraseña actualizada</h2>
-            <p style={{ color: "var(--gris-texto)", marginBottom: "20px" }}>Tu contraseña fue cambiada exitosamente.</p>
+            <h2 style={{ color: "var(--azul)", marginBottom: "10px" }}>{t("auth.changePassword.successTitle")}</h2>
+            <p style={{ color: "var(--gris-texto)", marginBottom: "20px" }}>{t("auth.changePassword.successText")}</p>
             <button
               onClick={handleLoginRedirect}
               style={{ padding: "11px 32px", background: "var(--azul)", color: "var(--blanco)", border: "none", borderRadius: "8px", cursor: "pointer", fontFamily: "var(--font)", fontWeight: "600" }}

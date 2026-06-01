@@ -31,6 +31,7 @@ import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 import { getStoredUser, isAdminUser } from '../../shared/utils/authStorage';
+import { LanguageProvider } from '../i18n';
 
 function RoleGate({ children, adminOnly = false, userOnly = false }) {
   const user = getStoredUser();
@@ -52,8 +53,9 @@ function RoleGate({ children, adminOnly = false, userOnly = false }) {
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
-    <BrowserRouter>
-      <Routes>
+    <LanguageProvider>
+      <BrowserRouter>
+        <Routes>
 
         {/* ── CON Navbar y Footer ── */}
         <Route element={<MainLayout isBackendAvailable={isBackendAvailable} />}>
@@ -100,7 +102,8 @@ export default function AppRouter({ isBackendAvailable = true }) {
         <Route path="/auth/codigo" element={<Codigo />} />
         <Route path="/auth/cambiar-contraseña" element={<CambiarContra />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }

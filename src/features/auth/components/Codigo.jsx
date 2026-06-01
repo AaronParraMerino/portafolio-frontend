@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
+import { useLanguage } from "../../../core/i18n";
 
 const API = process.env.REACT_APP_API_URL;
 
 export default function ModalIngresarCodigo() {
+  const { t } = useLanguage();
   const [codigo, setCodigo] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
@@ -12,8 +14,8 @@ export default function ModalIngresarCodigo() {
 
   const handleEnviar = async () => {
     const correo = sessionStorage.getItem("correo_recuperacion");
-    if (!correo) return setError("Primero ingresa tu correo.");
-    if (codigo.trim().length !== 6) return setError("El código debe tener 6 caracteres.");
+    if (!correo) return setError(t("auth.error.enterEmailFirst"));
+    if (codigo.trim().length !== 6) return setError(t("auth.error.enterSixCharCode"));
 
     try {
       setCargando(true);
@@ -28,7 +30,7 @@ export default function ModalIngresarCodigo() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Código inválido");
+      if (!res.ok) throw new Error(data.message || t("auth.error.invalidCode"));
 
       sessionStorage.setItem("codigo_recuperacion", codigo.toUpperCase());
       navigate("/auth/cambiar-contraseña");
@@ -47,13 +49,13 @@ export default function ModalIngresarCodigo() {
       <div style={styles.modal}>
         <button style={styles.closeBtn} onClick={handleClose}>&#x2715;</button>
 
-        <h2 style={styles.titulo}>Código de Recuperación</h2>
+        <h2 style={styles.titulo}>{t("auth.code.title")}</h2>
 
         <p style={styles.descripcion}>
-          Ingresa el código de 6 caracteres que recibiste en tu correo.
+          {t("auth.code.description")}
         </p>
 
-        <label style={styles.label}>Ingresar código</label>
+        <label style={styles.label}>{t("auth.code.label")}</label>
         <input
           type="text"
           placeholder="A1B2C3"
@@ -66,11 +68,11 @@ export default function ModalIngresarCodigo() {
         {error ? <p style={{ color: "var(--rojo-soft)", fontSize: "13px", marginTop: "10px", fontFamily: "var(--font)" }}>{error}</p> : null}
 
         <button style={styles.btnEnviar} onClick={handleEnviar} disabled={cargando}>
-          {cargando ? "Validando..." : "Enviar código"}
+          {cargando ? t("auth.status.validating") : t("auth.action.sendCode")}
         </button>
 
         <button style={styles.btnSalir} onClick={handleSalir}>
-          Volver al anterior
+          {t("actions.backPrevious")}
         </button>
       </div>
     </div>

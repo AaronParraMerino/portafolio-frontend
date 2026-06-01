@@ -1,28 +1,21 @@
 import { useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import ProjectsDotsMenu from './ProjectsDotsMenu';
 import ProjectsGithubCollaborators from './ProjectsGithubCollaborators';
 import RepositoryProviderIcon, { getRepositoryProvider } from './RepositoryProviderIcon';
 import '../styles/projects.css';
-import { TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/projectsModel';
+import { TIPOS_PROYECTO, DESARROLLADO_PARA, getProjectOptionLabel } from '../model/projectsModel';
 
 /* ════════════════════════════════════════
    Helpers de estado
 ════════════════════════════════════════ */
-function getStatusLabel(p = {}) {
+function getStatusLabel(p = {}, t = null) {
   if (p.estadoLabel) return p.estadoLabel;
 
-  return {
-    publicado: 'Publicado',
-    borrador: 'Borrador',
-    archivado: 'Archivado',
-    sin_especificar: 'Borrador',
-    en_desarrollo: 'En desarrollo',
-    pausado: 'Pausado',
-    terminado: 'Terminado',
-    mantenimiento: 'Mantenimiento',
-    versionado: 'Versionado',
-    cancelado: 'Cancelado',
-  }[p.estado] || p.estado || 'Borrador';
+  const key = p.estado || 'borrador';
+  return typeof t === 'function'
+    ? t(`projects.status.${key}`)
+    : (p.estado || 'Borrador');
 }
 
 function getStatusPillClass(estado) {
@@ -67,13 +60,13 @@ function getPeriodoLabel(proyecto = {}) {
   return `${inicioYear}-${finYear}`;
 }
 
-function formatFecha(date) {
+function formatFecha(date, language = 'es') {
   if (!date) return '';
 
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '';
 
-  return d.toLocaleDateString('es-BO', {
+  return d.toLocaleDateString(language === 'en' ? 'en-US' : language === 'pt' ? 'pt-BR' : 'es-BO', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
@@ -126,12 +119,13 @@ function getDocumentoUrl(doc) {
   );
 }
 
-function getDocumentoNombre(doc) {
-  if (!doc) return 'Documento';
+function getDocumentoNombre(doc, t = null) {
+  const defaultDocument = typeof t === 'function' ? t('projects.card.documents') : 'Documento';
+  if (!doc) return defaultDocument;
 
   if (typeof doc === 'string') {
     const clean = doc.split('?')[0];
-    return clean.split('/').pop() || 'Documento';
+    return clean.split('/').pop() || defaultDocument;
   }
 
   return (
@@ -140,7 +134,7 @@ function getDocumentoNombre(doc) {
     doc.filename ||
     doc.nombre_original ||
     doc.titulo ||
-    getDocumentoNombre(getDocumentoUrl(doc))
+    getDocumentoNombre(getDocumentoUrl(doc), t)
   );
 }
 
@@ -206,11 +200,11 @@ function getSitioWebUrl(proyecto = {}) {
   );
 }
 
-function getTipoLabel(proyecto = {}) {
+function getTipoLabel(proyecto = {}, t = null) {
   const tipoObj = TIPOS_PROYECTO.find(t => t.value === proyecto.tipo);
 
   return (
-    tipoObj?.label ||
+    getProjectOptionLabel(tipoObj, t) ||
     proyecto.tipoLabel ||
     proyecto.tipo_label ||
     proyecto.tipo ||
@@ -218,11 +212,11 @@ function getTipoLabel(proyecto = {}) {
   );
 }
 
-function getDesarrolladoLabel(proyecto = {}) {
+function getDesarrolladoLabel(proyecto = {}, t = null) {
   const desarrolladoObj = DESARROLLADO_PARA.find(d => d.value === proyecto.desarrollado_para);
 
   return (
-    desarrolladoObj?.label ||
+    getProjectOptionLabel(desarrolladoObj, t) ||
     proyecto.desarrolladoParaLabel ||
     proyecto.desarrollado_para_label ||
     ''
@@ -407,16 +401,17 @@ export default function ProjectCard({
   onConfigurar,
   onEstadoProyecto,
 }) {
+  const { t, language } = useLanguage();
   const [idx, setIdx] = useState(0);
   const [mediaExpandida, setMediaExpandida] = useState(false);
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
 
-  const statusLabel = getStatusLabel(proyecto);
+  const statusLabel = getStatusLabel(proyecto, t);
   const pillClass = getStatusPillClass(proyecto.estado);
   const periodoLabel = getPeriodoLabel(proyecto);
 
-  const tipoLabel = getTipoLabel(proyecto);
-  const desarrolladoLabel = getDesarrolladoLabel(proyecto);
+  const tipoLabel = getTipoLabel(proyecto, t);
+  const desarrolladoLabel = getDesarrolladoLabel(proyecto, t);
   const sitioWebUrl = getSitioWebUrl(proyecto);
   const miParticipacion = getMiParticipacion(proyecto);
   const miRol = miParticipacion?.rol || '';
@@ -503,7 +498,7 @@ export default function ProjectCard({
                     {item.tipo === 'imagen' ? (
                       <img
                         src={item.url}
-                        alt={`${proyecto.titulo || 'Proyecto'} – imagen ${i + 1}`}
+                        alt={`${proyecto.titulo || t('projects.card.defaultTitle')} – ${t('projects.carousel.image')} ${i + 1}`}
                         className="prj-carousel-img"
                         loading={prioridadImagen && i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
@@ -519,7 +514,7 @@ export default function ProjectCard({
                           <iframe
                             className="prj-carousel-video"
                             src={item.embedUrl}
-                            title={`${proyecto.titulo || 'Proyecto'} – video ${i + 1}`}
+                            title={`${proyecto.titulo || t('projects.card.defaultTitle')} – ${t('projects.carousel.video')} ${i + 1}`}
                             allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
                             loading="lazy"
@@ -528,7 +523,7 @@ export default function ProjectCard({
                         ) : (
                           <div className="prj-carousel-video-placeholder" aria-hidden="true">
                             <IconYouTube />
-                            <span>Video</span>
+                            <span>{t('projects.carousel.video')}</span>
                           </div>
                         )}
                       </div>
@@ -541,7 +536,7 @@ export default function ProjectCard({
 
               {media[idx]?.tipo === 'youtube' && (
                 <span className="prj-carousel-video-badge">
-                  <IconYouTube /> Video
+                  <IconYouTube /> {t('projects.carousel.video')}
                 </span>
               )}
 
@@ -551,7 +546,7 @@ export default function ProjectCard({
                     type="button"
                     className="prj-carousel-arrow prj-carousel-prev"
                     onClick={(e) => irA(idx - 1, e)}
-                    title="Anterior"
+                    title={t('projects.carousel.previous')}
                   >
                     <svg
                       viewBox="0 0 16 16"
@@ -571,7 +566,7 @@ export default function ProjectCard({
                     type="button"
                     className="prj-carousel-arrow prj-carousel-next"
                     onClick={(e) => irA(idx + 1, e)}
-                    title="Siguiente"
+                    title={t('projects.carousel.next')}
                   >
                     <svg
                       viewBox="0 0 16 16"
@@ -594,7 +589,7 @@ export default function ProjectCard({
                         type="button"
                         className={`prj-carousel-dot${i === idx ? ' active' : ''}${item.tipo === 'youtube' ? ' video' : ''}`}
                         onClick={(e) => irA(i, e)}
-                        title={`Ir a ${item.tipo === 'youtube' ? 'video' : 'imagen'} ${i + 1}`}
+                        title={t('projects.carousel.goTo', { type: item.tipo === 'youtube' ? t('projects.carousel.video') : t('projects.carousel.image'), count: i + 1 })}
                       />
                     ))}
                   </div>
@@ -621,10 +616,10 @@ export default function ProjectCard({
             className="prj-cover-expand-btn"
             onClick={toggleMedia}
             aria-pressed={mediaExpandida}
-            aria-label={mediaExpandida ? 'Reducir galeria del proyecto' : 'Ampliar galeria del proyecto'}
-            title={mediaExpandida ? 'Reducir galería' : 'Ampliar galería'}
+            aria-label={mediaExpandida ? t('projects.carousel.collapseAria') : t('projects.carousel.expandAria')}
+            title={mediaExpandida ? t('projects.carousel.collapse') : t('projects.carousel.expand')}
           >
-            {mediaExpandida ? 'Reducir galería' : 'Ampliar galería'}
+            {mediaExpandida ? t('projects.carousel.collapse') : t('projects.carousel.expand')}
             <IconChevron open={mediaExpandida} />
           </button>
         )}
@@ -668,7 +663,7 @@ export default function ProjectCard({
           ))}
         </div>
 
-        <div className="prj-card-title">{proyecto.titulo || 'Sin título'}</div>
+        <div className="prj-card-title">{proyecto.titulo || t('projects.card.noTitle')}</div>
 
         {!detallesExpandidos && proyecto.descripcion && (
           <div className="prj-card-desc">{proyecto.descripcion}</div>
@@ -713,7 +708,7 @@ export default function ProjectCard({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <IconSite /> Sitio web
+                  <IconSite /> {t('projects.card.demoSite')}
                 </a>
               )}
 
@@ -726,13 +721,13 @@ export default function ProjectCard({
                   rel="noreferrer"
                   title={url}
                 >
-                  <IconYouTube /> Video {videosYoutube.length > 1 ? i + 1 : ''}
+                  <IconYouTube /> {t('projects.carousel.video')} {videosYoutube.length > 1 ? i + 1 : ''}
                 </a>
               ))}
 
               {documentos.map((doc, i) => {
                 const url = getDocumentoUrl(doc);
-                const nombre = getDocumentoNombre(doc);
+                const nombre = getDocumentoNombre(doc, t);
 
                 return (
                   <a
@@ -783,15 +778,15 @@ export default function ProjectCard({
             )}
 
             <div className="prj-detail-grid">
-              <DetailRow label="Estado">
+              <DetailRow label={t('projects.card.status')}>
                 <span className={pillClass}>{statusLabel}</span>
               </DetailRow>
 
-              <DetailRow label="Mi rol">
+              <DetailRow label={t('projects.participation.roleLabel')}>
                 {miRol}
               </DetailRow>
 
-              <DetailRow label="Aporte">
+              <DetailRow label={t('projects.participation.descriptionLabel')}>
                 {miAporte && (
                   <span className="prj-detail-text">
                     {miAporte}
@@ -799,23 +794,23 @@ export default function ProjectCard({
                 )}
               </DetailRow>
 
-              <DetailRow label="Tipo">
+              <DetailRow label={t('projects.card.type')}>
                 {tipoLabel}
               </DetailRow>
 
-              <DetailRow label="Desarrollado para">
+              <DetailRow label={t('projects.card.platform')}>
                 {desarrolladoLabel}
               </DetailRow>
 
-              <DetailRow label="Período">
+              <DetailRow label={t('projects.card.period')}>
                 {periodoLabel}
                 {proyecto.fecha_inicio && (
                   <span className="prj-detail-muted">
-                    Inicio: {formatFecha(proyecto.fecha_inicio)}
+                    {t('projects.form.startDate')}: {formatFecha(proyecto.fecha_inicio, language)}
                     {proyecto.en_curso
-                      ? ' · En curso'
+                      ? ` · ${t('projects.card.current')}`
                       : proyecto.fecha_fin
-                        ? ` · Fin: ${formatFecha(proyecto.fecha_fin)}`
+                        ? ` · ${t('projects.form.endDate')}: ${formatFecha(proyecto.fecha_fin, language)}`
                         : ''}
                   </span>
                 )}
@@ -824,7 +819,7 @@ export default function ProjectCard({
 
             {proyecto.etiquetas?.length > 0 && (
               <div className="prj-detail-section">
-                <div className="prj-detail-section-title">Tecnologías</div>
+                <div className="prj-detail-section-title">{t('projects.card.technologies')}</div>
                 <div className="prj-detail-tags">
                   {proyecto.etiquetas.map(tag => (
                     <TechChip key={`detail-${tag}`} proyecto={proyecto} tag={tag} detail />
@@ -835,7 +830,7 @@ export default function ProjectCard({
 
             {(repositorios.length > 0 || sitioWebUrl || videosYoutube.length > 0 || documentos.length > 0) && (
               <div className="prj-detail-section">
-                <div className="prj-detail-section-title">Enlaces</div>
+                <div className="prj-detail-section-title">{t('projects.modal.linksEvidence')}</div>
 
                 <div className="prj-detail-links">
                   {repositorios.map((repo, i) => (
@@ -845,12 +840,12 @@ export default function ProjectCard({
                       className={repo.provider === 'gitlab' ? 'gl' : 'gh'}
                     >
                       <RepositoryProviderIcon provider={repo.provider} />
-                      Repositorio {repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} {repositorios.length > 1 ? i + 1 : ''}
+                      {t('projects.card.repository')} {repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} {repositorios.length > 1 ? i + 1 : ''}
                     </DetailLink>
                   ))}
 
                   <DetailLink href={sitioWebUrl} className="site">
-                    <IconSite /> Sitio web
+                    <IconSite /> {t('projects.card.demoSite')}
                   </DetailLink>
 
                   {videosYoutube.map((url, i) => (
@@ -859,13 +854,13 @@ export default function ProjectCard({
                       href={url}
                       className="yt"
                     >
-                      <IconYouTube /> Video YouTube {videosYoutube.length > 1 ? i + 1 : ''}
+                      <IconYouTube /> {t('projects.carousel.video')} YouTube {videosYoutube.length > 1 ? i + 1 : ''}
                     </DetailLink>
                   ))}
 
                   {documentos.map((doc, i) => {
                     const url = getDocumentoUrl(doc);
-                    const nombre = getDocumentoNombre(doc);
+                    const nombre = getDocumentoNombre(doc, t);
 
                     return (
                       <DetailLink
@@ -873,7 +868,7 @@ export default function ProjectCard({
                         href={url}
                         className="doc"
                       >
-                        <IconDocument /> {nombre || `Documento ${i + 1}`}
+                        <IconDocument /> {nombre || t('projects.card.document', { count: i + 1 })}
                       </DetailLink>
                     );
                   })}

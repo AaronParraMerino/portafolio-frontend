@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BsCalendar2Plus,
   BsCalendar3,
@@ -18,9 +18,14 @@ import EventsTemplatesPanel from '../../../admin/events/components/EventsTemplat
 import {
   EVENT_PAGE_SIZE,
   buildEventMetrics,
+  createPublisherEvent,
+  createPublisherRequest,
+  fetchEventProfileTargets,
+  fetchPublisherEvents,
   getEventsEmptyState,
   getEventsPageSummary,
   normalizeEvent,
+  updatePublisherEvent,
 } from '../../../admin/events/services/eventsService';
 import '../../../admin/events/styles/events.css';
 import '../styles/dashboard-events.css';
@@ -46,6 +51,7 @@ export default function DashboardEventsPage() {
   const canPublish = isPublisherUser(user);
   const [permissionModalOpen, setPermissionModalOpen] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+  const [notice, setNotice] = useState('');
   const [activeView, setActiveView] = useState('events');
   const [eventModal, setEventModal] = useState(null);
   const [events, setEvents] = useState([]);
@@ -54,6 +60,46 @@ export default function DashboardEventsPage() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [profileTargets, setProfileTargets] = useState(null);
+  const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
+
+  const loadEvents = useCallback(async () => {
+    if (!canPublish) return;
+
+    try {
+      const data = await fetchPublisherEvents();
+      setEvents(data);
+      setNotice('');
+    } catch (error) {
+      setNotice(error.message || 'No se pudieron cargar tus eventos.');
+    }
+  }, [canPublish]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  useEffect(() => {
+    if (!canPublish) return undefined;
+
+    let active = true;
+    setProfileTargetsLoading(true);
+
+    fetchEventProfileTargets()
+      .then((targets) => {
+        if (active) setProfileTargets(targets);
+      })
+      .catch(() => {
+        if (active) setProfileTargets(null);
+      })
+      .finally(() => {
+        if (active) setProfileTargetsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canPublish]);
 
   const normalizedEvents = useMemo(
     () => events.map(normalizeEvent),
@@ -154,23 +200,21 @@ export default function DashboardEventsPage() {
       throw new Error('Ya alcanzaste el limite de 3 eventos este mes.');
     }
 
-    const nextEvent = {
-      ...payload,
-      id: eventModal?.event?.id || `local-${Date.now()}`,
-      date: payload.startsAt || payload.date || '--',
-      status: payload.status || 'borrador',
-      registered: 0,
-      interested: 0,
-      waitlist: 0,
-      communicationsCount: 0,
-    };
+    if (eventModal?.mode === 'edit' && eventModal.event?.id) {
+      await updatePublisherEvent(eventModal.event.id, payload);
+    } else {
+      await createPublisherEvent(payload);
+    }
 
-    setEvents((current) => (
-      eventModal?.mode === 'edit'
-        ? current.map((item) => (String(item.id) === String(eventModal.event.id) ? nextEvent : item))
-        : [nextEvent, ...current]
-    ));
+    await loadEvents();
     setEventModal(null);
+  };
+
+  const handleSubmitPermission = async (payload) => {
+    await createPublisherRequest(payload);
+    setRequestSent(true);
+    setPermissionModalOpen(false);
+    setNotice('Tu solicitud fue enviada para revision administrativa.');
   };
 
   return (
@@ -182,6 +226,10 @@ export default function DashboardEventsPage() {
       />
 
       <div className="dbe-content">
+        {notice ? (
+          <div className="evt-admin-notice">{notice}</div>
+        ) : null}
+
         {!canPublish ? (
           <section className="dbe-gate">
             <div className="dbe-gate-hero">
@@ -336,14 +384,13 @@ export default function DashboardEventsPage() {
         open={permissionModalOpen}
         user={user}
         onClose={() => setPermissionModalOpen(false)}
-        onSubmit={() => {
-          setRequestSent(true);
-          setPermissionModalOpen(false);
-        }}
+        onSubmit={handleSubmitPermission}
       />
 
       <EventFormModal
         modal={eventModal}
+        profileTargets={profileTargets}
+        profileTargetsLoading={profileTargetsLoading}
         onClose={() => setEventModal(null)}
         onSave={handleSaveEvent}
       />

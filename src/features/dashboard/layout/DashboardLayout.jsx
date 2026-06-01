@@ -4,9 +4,11 @@ import Sidebar from './Sidebar';
 import { preloadDashboardData } from '../services/dashboardPrefetchService';
 import BASE_URL from '../../../services/http/const';
 import { getStoredUser } from '../../../shared/utils/authStorage';
+import { useLanguage } from '../../../core/i18n';
 import '../styles/dashboard.css';
 
 export default function DashboardLayout() {
+  const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const [account, setAccount] = useState(() => getStoredUser());
   const paused = account?.estado === 'pausado';
@@ -62,10 +64,11 @@ export default function DashboardLayout() {
       <main className={`dsh-main${collapsed ? ' collapsed' : ''}`}>
         {paused ? (
           <aside className="dsh-paused-banner" role="status">
-            <strong>Cuenta en pausa</strong>
+            <strong>{t('dashboard.paused.badge')}</strong>
             <span>
-              Solo puedes consultar tu informacion. Motivo: {account.razon_pausa
-                || 'Tu cuenta fue puesta en pausa por administracion.'}
+              {t('dashboard.paused.message', {
+                reason: account.razon_pausa || t('dashboard.paused.defaultReason'),
+              })}
             </span>
           </aside>
         ) : null}

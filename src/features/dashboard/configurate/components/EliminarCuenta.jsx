@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearAuthStorage } from "../../../../shared/utils/authStorage";
+import { useLanguage } from "../../../../core/i18n";
 
 export default function EliminarCuenta() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     confirmacion: "",
@@ -52,24 +54,24 @@ export default function EliminarCuenta() {
     const sinContrasena = form.contrasena.trim() === "";
 
     if (sinConfirmacion && sinContrasena) {
-      showToast("error", "Debes completar todos los campos para continuar.");
+      showToast("error", t("configurate.inactive.validation.allFields"));
       return;
     }
 
     if (sinConfirmacion) {
-      showToast("error", 'Escribe "INACTIVAR" en el campo de confirmación.');
+      showToast("error", t("configurate.inactive.validation.confirmationRequired"));
       return;
     }
 
     if (sinContrasena) {
-      showToast("error", "Ingresa tu contraseña para confirmar la desactivación.");
+      showToast("error", t("configurate.inactive.validation.passwordRequired"));
       return;
     }
 
     if (form.confirmacion.toLowerCase() !== "inactivar") {
       showToast(
         "error",
-        'El texto de confirmación no es correcto. Escribe exactamente "INACTIVAR".'
+        t("configurate.inactive.validation.confirmationExact")
       );
       return;
     }
@@ -79,7 +81,7 @@ export default function EliminarCuenta() {
     const token = localStorage.getItem("tokenPORT");
 
     if (!userId || !token) {
-      showToast("error", "No se pudo identificar la sesión actual.");
+      showToast("error", t("configurate.inactive.error.session"));
       return;
     }
 
@@ -101,12 +103,12 @@ export default function EliminarCuenta() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "No se pudo desactivar la cuenta.");
+        throw new Error(data.message || t("configurate.inactive.error.deactivate"));
       }
 
       showToast(
         "success",
-        "Tu cuenta fue desactivada. Todo tu portafolio público quedó oculto."
+        t("configurate.inactive.success.deactivated")
       );
 
       clearAuthStorage();
@@ -129,7 +131,7 @@ export default function EliminarCuenta() {
       >
         <button type="button" style={backButtonStyle} onClick={handleBack}>
           <span style={backIconStyle}>‹</span>
-          Volver
+          {t("actions.back")}
         </button>
 
         {toast && (
@@ -188,7 +190,7 @@ export default function EliminarCuenta() {
                 type="button"
                 onClick={() => setToast(null)}
                 style={toastCloseBtnStyle}
-                aria-label="Cerrar alerta"
+                aria-label={t("actions.close")}
               >
                 ✕
               </button>
@@ -212,14 +214,13 @@ export default function EliminarCuenta() {
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
-            Zona de peligro
+            {t("configurate.section.dangerZone")}
           </div>
 
-          <h1 style={titleStyle}>Cuenta inactiva</h1>
+          <h1 style={titleStyle}>{t("configurate.inactive.title")}</h1>
 
           <p style={subtitleStyle}>
-            Tu cuenta quedará inactiva y tu portafolio público se ocultará.
-            Podrás restablecerla verificando tu correo.
+            {t("configurate.inactive.subtitle")}
           </p>
         </section>
 
@@ -242,15 +243,15 @@ export default function EliminarCuenta() {
           </div>
 
           <div>
-            <p style={warningTitleStyle}>Al dejar tu cuenta inactiva:</p>
+            <p style={warningTitleStyle}>{t("configurate.inactive.warningTitle")}</p>
 
             <ul style={warningListStyle}>
               {[
-                "No podrás iniciar sesión hasta restablecerla",
-                "Tu perfil público quedará oculto",
-                "Tus habilidades, enlaces, experiencias y participaciones visibles quedarán ocultos",
-                "Los recursos compartidos de proyectos seguirán disponibles para otros participantes",
-                "Tus datos se conservarán para una reactivación segura",
+                t("configurate.inactive.warning.item1"),
+                t("configurate.inactive.warning.item2"),
+                t("configurate.inactive.warning.item3"),
+                t("configurate.inactive.warning.item4"),
+                t("configurate.inactive.warning.item5"),
               ].map((item, index) => (
                 <li key={index} style={warningItemStyle}>
                   {item}
@@ -265,11 +266,12 @@ export default function EliminarCuenta() {
         <section style={formStyle}>
           <div style={fieldStyle}>
             <label style={labelStyle}>
-              Escribe{" "}
+              
+              {t("configurate.inactive.confirmationLabelPrefix")}{" "}
               <span style={{ color: "var(--rojo-soft)", fontWeight: 800 }}>
                 INACTIVAR
               </span>{" "}
-              para confirmar
+              {t("configurate.inactive.confirmationLabelSuffix")}
             </label>
 
             <input
@@ -297,14 +299,14 @@ export default function EliminarCuenta() {
           </div>
 
           <div style={fieldStyle}>
-            <label style={labelStyle}>Contraseña</label>
+            <label style={labelStyle}>{t("auth.field.password")}</label>
 
             <input
               type="password"
               name="contrasena"
               value={form.contrasena}
               onChange={handleChange}
-              placeholder="Ingresa tu contraseña"
+              placeholder={t("configurate.inactive.passwordPlaceholder")}
               style={{
                 ...inputStyle,
                 borderColor:
@@ -357,7 +359,7 @@ export default function EliminarCuenta() {
                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
               </svg>
 
-              {loading ? "Desactivando..." : "Desactivar mi cuenta"}
+              {loading ? t("configurate.inactive.deactivating") : t("configurate.inactive.submit")}
             </button>
 
             <button
@@ -368,7 +370,7 @@ export default function EliminarCuenta() {
               }}
               onClick={handleBack}
             >
-              Cancelar
+              {t("actions.cancel")}
             </button>
           </div>
         </section>

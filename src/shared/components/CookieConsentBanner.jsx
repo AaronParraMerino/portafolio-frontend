@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '../../core/i18n';
 import PoliticaCookies from '../../features/auth/components/PoliticasC';
 import {
   aceptarCookiesYGuardarHardware,
@@ -8,6 +9,7 @@ import {
 } from '../../features/auth/services/sessionService';
 
 export default function CookieConsentBanner({ onVisibilityChange }) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const [entering, setEntering] = useState(false);
@@ -115,10 +117,10 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
           type="button"
           style={styles.tab}
           onClick={openBanner}
-          aria-label="Abrir aviso de cookies"
-          title="Abrir cookies"
+          aria-label={t('cookie.openAria')}
+          title={t('cookie.openTitle')}
         >
-          <span style={styles.tabLabel}>Cookies</span>
+          <span style={styles.tabLabel}>{t('cookie.tab')}</span>
         </button>
       )}
 
@@ -133,23 +135,23 @@ export default function CookieConsentBanner({ onVisibilityChange }) {
         role="dialog"
         aria-live="polite"
       >
-        <h4 style={styles.title}>Cookies del sitio</h4>
+        <h4 style={styles.title}>{t('cookie.title')}</h4>
         <p style={styles.text}>
-          Usamos cookies para mejorar tu experiencia. Si aceptas, guardamos consentimiento y huella técnica.
+          {t('cookie.description')}
         </p>
         <button
           type="button"
           style={styles.linkBtn}
           onClick={openPolicyModal}
         >
-          Ver política de cookies
+          {t('cookie.policyLink')}
         </button>
         <div style={styles.actions}>
           <button type="button" style={styles.secondaryBtn} onClick={() => closeBanner(true)}>
-            Cerrar
+            {t('cookie.close')}
           </button>
           <button type="button" style={styles.primaryBtn} onClick={handleAccept}>
-            Aceptar cookies
+            {t('cookie.accept')}
           </button>
         </div>
       </div>

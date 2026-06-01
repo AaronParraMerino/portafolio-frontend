@@ -28,7 +28,7 @@ export default function AdminEventActionModal({
   const label = ACTION_LABELS[action] || 'Confirmar accion';
   const targetName = target.title || target.name || 'Registro seleccionado';
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!reason.trim()) {
@@ -36,9 +36,13 @@ export default function AdminEventActionModal({
       return;
     }
 
-    onConfirm?.({ action, target, reason });
-    setReason('');
-    setMessage('');
+    try {
+      await onConfirm?.({ action, target, reason });
+      setReason('');
+      setMessage('');
+    } catch (error) {
+      setMessage(error.message || 'No se pudo confirmar la accion.');
+    }
   };
 
   return (

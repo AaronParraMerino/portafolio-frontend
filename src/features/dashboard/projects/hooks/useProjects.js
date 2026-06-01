@@ -13,6 +13,7 @@
 // ═══════════════════════════════════════════
 
 import { useState, useEffect, useCallback } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getProyectos,
   getCachedProyectos,
@@ -309,6 +310,7 @@ function normalizarResultadoDocumentos(resultado) {
 // Hook principal
 // ════════════════════════════════════════
 export function useProjects() {
+  const { t } = useLanguage();
   const cache = leerCache();
   const serviceCache = leerCacheServicio();
 
@@ -344,10 +346,10 @@ export function useProjects() {
       })
       .catch(err => {
         console.error('[useProjects] Error cargando proyectos:', err.message);
-        mostrarToast('Error al cargar proyectos', 'error');
+        mostrarToast(t('projects.toast.loadError'), 'error');
       })
       .finally(() => setLoading(false));
-  }, [guardarEnCache, mostrarToast]);
+  }, [guardarEnCache, mostrarToast, t]);
 
   // ════════════════════════════════════════
   // CREAR PROYECTO
@@ -371,7 +373,7 @@ export function useProjects() {
       const proyectoId = getProjectId(creadoMapeado);
 
       if (!proyectoId) {
-        throw new Error('El backend no devolvió ID del proyecto creado');
+        throw new Error(t('projects.service.createdIdMissing'));
       }
 
       let mapeado = creadoMapeado;
@@ -406,13 +408,13 @@ export function useProjects() {
       const actualizados = [mapeado, ...proyectos];
       setProyectos(actualizados);
       guardarEnCache(actualizados);
-      mostrarToast('Proyecto agregado correctamente');
+      mostrarToast(t('projects.toast.created'));
 
       return mapeado;
 
     } catch (err) {
       console.error('[useProjects] Error creando proyecto:', err.message);
-      mostrarToast(err.message || 'Error al crear el proyecto', 'error');
+      mostrarToast(err.message || t('projects.toast.createError'), 'error');
       throw err;
     } finally {
       setGuardando(false);
@@ -440,7 +442,7 @@ export function useProjects() {
       const proyectoId = id || getProjectId(proyectoActual);
 
       if (!proyectoId) {
-        throw new Error('ID de proyecto no encontrado');
+        throw new Error(t('projects.service.projectIdMissing'));
       }
 
       const urlsImagenesAEliminar = resolverUrlsAEliminar(
@@ -509,13 +511,13 @@ export function useProjects() {
 
       setProyectos(actualizados);
       guardarEnCache(actualizados);
-      mostrarToast('Proyecto actualizado correctamente');
+      mostrarToast(t('projects.toast.updated'));
 
       return mapeado;
 
     } catch (err) {
       console.error('[useProjects] Error editando proyecto:', err.message);
-      mostrarToast(err.message || 'Error al actualizar el proyecto', 'error');
+      mostrarToast(err.message || t('projects.toast.updateError'), 'error');
       throw err;
     } finally {
       setGuardando(false);
@@ -535,14 +537,14 @@ export function useProjects() {
     try {
       await eliminarProyecto(id);
 
-      mostrarToast('Proyecto eliminado');
+      mostrarToast(t('projects.toast.deleted'));
 
     } catch (err) {
       setProyectos(previo);
       guardarEnCache(previo);
 
       console.error('[useProjects] Error eliminando proyecto:', err.message);
-      mostrarToast('Error al eliminar el proyecto', 'error');
+      mostrarToast(t('projects.toast.deleteError'), 'error');
     }
   };
 
@@ -556,14 +558,14 @@ export function useProjects() {
     try {
       await desvincularParticipacionProyecto(id);
 
-      mostrarToast('Participacion desvinculada');
+      mostrarToast(t('projects.toast.unlinked'));
 
     } catch (err) {
       setProyectos(previo);
       guardarEnCache(previo);
 
       console.error('[useProjects] Error desvinculando participacion:', err.message);
-      mostrarToast(err.message || 'Error al desvincular la participacion', 'error');
+      mostrarToast(err.message || t('projects.toast.unlinkError'), 'error');
     }
   };
 
@@ -592,12 +594,12 @@ export function useProjects() {
 
       setProyectos(actualizados);
       guardarEnCache(actualizados);
-      mostrarToast('Configuracion actualizada correctamente');
+      mostrarToast(t('projects.toast.configUpdated'));
 
       return actualizados.find(p => p.id === id || p.id_proyecto === id);
     } catch (err) {
       console.error('[useProjects] Error actualizando configuracion:', err.message);
-      mostrarToast(err.message || 'Error al actualizar la configuracion', 'error');
+      mostrarToast(err.message || t('projects.toast.configUpdateError'), 'error');
       throw err;
     } finally {
       setGuardando(false);
@@ -618,7 +620,7 @@ export function useProjects() {
 
     } catch (err) {
       console.error('[useProjects] Error refrescando proyectos:', err.message);
-      mostrarToast('Error al refrescar proyectos', 'error');
+      mostrarToast(t('projects.toast.refreshError'), 'error');
       throw err;
     } finally {
       setLoading(false);

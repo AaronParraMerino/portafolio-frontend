@@ -13,7 +13,8 @@ const initialState = {
   meta: {},
 };
 
-export default function useFeaturedPortfolios(search = '') {
+export default function useFeaturedPortfolios(search = '', options = {}) {
+  const defaultErrorMessage = options.defaultErrorMessage || 'No se pudieron cargar los portafolios.';
   const getInitialSections = () => ({
     ...initialState,
     ...(getCachedFeaturedPortfolios(search) || {}),
@@ -42,7 +43,7 @@ export default function useFeaturedPortfolios(search = '') {
         }
       } catch (err) {
         if (mounted) {
-          setError(err?.message || 'No se pudieron cargar los portafolios.');
+          setError(err?.message || defaultErrorMessage);
         }
       } finally {
         if (mounted) {
@@ -56,7 +57,7 @@ export default function useFeaturedPortfolios(search = '') {
     return () => {
       mounted = false;
     };
-  }, [search]);
+  }, [search, defaultErrorMessage]);
 
   return { sections, loading, error };
 }
