@@ -5,6 +5,7 @@ import {
   BsTelephone,
   BsX,
 } from 'react-icons/bs';
+import CachedUserAvatar from '../../users/components/CachedUserAvatar';
 import EventsEmptyState from './EventsEmptyState';
 
 export default function AdminPublisherRequestsPanel({
@@ -27,9 +28,7 @@ export default function AdminPublisherRequestsPanel({
             {requests.map((request) => (
               <article key={request.id || request.email} className="evt-admin-request-card">
                 <div className="evt-admin-request-head">
-                  <span className="evt-admin-request-avatar">
-                    <BsPersonCheck />
-                  </span>
+                  <CachedUserAvatar user={request.user} className="evt-admin-request-avatar" />
                   <div>
                     <strong>{request.name}</strong>
                     <span>{request.organization} · {request.role}</span>

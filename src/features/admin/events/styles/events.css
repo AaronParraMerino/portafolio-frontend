@@ -1424,6 +1424,14 @@
   width: 19px;
 }
 
+.evt-admin-request-avatar img {
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
 .evt-admin-request-head strong,
 .evt-admin-event-main strong {
   color: var(--negro-texto, #111827);
@@ -1688,6 +1696,7 @@
   cursor: pointer;
   display: flex;
   justify-content: center;
+  max-width: 520px;
   min-height: 160px;
   transition: border-color .18s ease, background .18s ease;
 }
@@ -1741,8 +1750,10 @@
   background: #fbfcfd;
   border: 1.5px dashed var(--adm-primary, #0f766e);
   border-radius: 14px;
+  max-width: 520px;
   overflow: hidden;
   position: relative;
+  width: 100%;
 }
 
 .evt-image-preview img {
@@ -2040,6 +2051,15 @@
 .evt-target-search {
   max-width: 420px;
   position: relative;
+}
+
+.evt-target-search--inside {
+  max-width: none;
+}
+
+.evt-field--compact {
+  margin-top: 12px;
+  max-width: 360px;
 }
 
 .evt-profile-checklist-grid {
