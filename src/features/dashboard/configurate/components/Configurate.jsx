@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Header from "../../layout/Header";
+import { useLanguage } from "../../../../core/i18n";
 
 export default function Configurate() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
@@ -61,9 +63,9 @@ export default function Configurate() {
   return (
     <div style={pageStyle}>
       <Header
-        eyebrow="CUENTA"
-        title="Configuración"
-        subtitle="Gestiona ajustes de cuenta, seguridad y accesos."
+        eyebrow={t("configurate.header.eyebrow")}
+        title={t("configurate.header.title")}
+        subtitle={t("configurate.header.subtitle")}
       />
 
       <main
@@ -74,7 +76,7 @@ export default function Configurate() {
       >
         <section style={settingsPanelStyle}>
           <div style={sectionLabelStyle}>
-            <span style={labelTextStyle}>Gestión de cuenta</span>
+            <span style={labelTextStyle}>{t("configurate.section.accountManagement")}</span>
             <div style={dividerStyle} />
           </div>
 
@@ -109,9 +111,9 @@ export default function Configurate() {
                 </div>
 
                 <div style={cardContentStyle}>
-                  <h3 style={cardTitleStyle}>Vincular cuenta</h3>
+                  <h3 style={cardTitleStyle}>{t("configurate.card.linkAccount.title")}</h3>
                   <p style={cardTextStyle}>
-                    Conecta Google, Discord, GitHub y GitLab.
+                    {t("configurate.card.linkAccount.description")}
                   </p>
                 </div>
               </div>
@@ -149,9 +151,9 @@ export default function Configurate() {
                 </div>
 
                 <div style={cardContentStyle}>
-                  <h3 style={cardTitleStyle}>Cambiar contraseña</h3>
+                  <h3 style={cardTitleStyle}>{t("configurate.card.changePassword.title")}</h3>
                   <p style={cardTextStyle}>
-                    Actualiza tu contraseña de acceso de forma segura.
+                    {t("configurate.card.changePassword.description")}
                   </p>
                 </div>
               </div>
@@ -190,11 +192,12 @@ export default function Configurate() {
                 </div>
 
                 <div style={cardContentStyle}>
+                  
                   <h3 style={cardTitleStyle}>
-                    Cerrar sesión en dispositivos
+                    {t("configurate.card.activeSessions.title")}
                   </h3>
                   <p style={cardTextStyle}>
-                    Administra sesiones activas en otros dispositivos.
+                    {t("configurate.card.activeSessions.description")}
                   </p>
                 </div>
               </div>
@@ -204,8 +207,9 @@ export default function Configurate() {
           </div>
 
           <div style={{ ...sectionLabelStyle, marginTop: 12 }}>
+            
             <span style={{ ...labelTextStyle, color: "var(--rojo-soft)" }}>
-              Zona de peligro
+              {t("configurate.section.dangerZone")}
             </span>
             <div
               style={{
@@ -248,10 +252,10 @@ export default function Configurate() {
 
               <div style={cardContentStyle}>
                 <h3 style={{ ...cardTitleStyle, color: "var(--rojo-soft)" }}>
-                  Eliminar cuenta
+                  {t("configurate.card.inactiveAccount.title")}
                 </h3>
                 <p style={cardTextStyle}>
-                  Esta acción es permanente e irreversible.
+                  {t("configurate.card.inactiveAccount.description")}
                 </p>
               </div>
             </div>

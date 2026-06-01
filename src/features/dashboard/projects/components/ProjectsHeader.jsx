@@ -1,5 +1,6 @@
 import { FiPlus } from 'react-icons/fi';
 import Header from '../../layout/Header';
+import { useLanguage } from '../../../../core/i18n';
 
 /* ════════════════════════════════════════
    ProjectsHeader
@@ -9,14 +10,16 @@ import Header from '../../layout/Header';
    ─ onAgregar  fn()   abre el modal de nuevo proyecto
 ════════════════════════════════════════ */
 export default function ProjectsHeader({ onAgregar }) {
+  const { t } = useLanguage();
+
   return (
     <Header
-      title="Mis Proyectos"
+      title={t('projects.header.title')}
       actions={[
         {
-          label: 'Agregar nuevo',
-          title: 'Agregar nuevo proyecto',
-          ariaLabel: 'Agregar nuevo proyecto',
+          label: t('projects.header.add'),
+          title: t('projects.header.addProject'),
+          ariaLabel: t('projects.header.addProject'),
           icon: <FiPlus />,
           onClick: onAgregar,
         },

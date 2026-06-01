@@ -5,6 +5,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { Link } from "react-router-dom";
 import Navbar from "../../../shared/components/layout/Navbar";
 import {
+  BlockedAccountModal,
   LinkInfoModal,
   LinkVerificationModal,
   LoginErrorModal,
@@ -25,12 +26,14 @@ import {
   validateLoginFields,
 } from "../services/loginAuthService";
 import "./LoginForm.css";
+import { useLanguage } from "../../../core/i18n";
 
 const INITIAL_LINK_STEP = "info";
 const INITIAL_REACTIVATION_STEP = "info";
-const CONNECTION_ERROR = "Error de conexion. Intente nuevamente.";
+const CONNECTION_ERROR_KEY = "auth.error.connection";
 
 export default function LoginForm() {
+  const { t } = useLanguage();
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const baseUrl = process.env.REACT_APP_API_URL;
 
@@ -42,6 +45,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [blocked, setBlocked] = useState(null);
 
   const [linkConfirm, setLinkConfirm] = useState(null);
   const [linkStep, setLinkStep] = useState(INITIAL_LINK_STEP);
@@ -66,11 +70,18 @@ export default function LoginForm() {
       return;
     }
 
+    if (oauthState.oauthError === "blocked") {
+      setBlocked({
+        razon: oauthState.razon || t("auth.error.accountBlockedByAdmin"),
+      });
+      return;
+    }
+
     setError(
       OAUTH_ERROR_MESSAGES[oauthState.oauthError] ||
-        "No se pudo completar la autenticacion."
+        t("auth.error.oauthComplete")
     );
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const element = googleButtonRef.current;
@@ -101,13 +112,14 @@ export default function LoginForm() {
 
   const closeError = () => setError("");
   const closeSuccess = () => setSuccess("");
+  const closeBlocked = () => setBlocked(null);
 
   const handleOAuthRedirect = (provider) => {
     window.location.href = buildOAuthRedirectUrl(baseUrl, provider);
   };
 
-  const handleSuccessfulAuth = (result) => {
-    persistAuthSession(result);
+  const handleSuccessfulAuth = async (result) => {
+    await persistAuthSession(result, baseUrl);
     window.location.href = "/";
   };
 
@@ -116,6 +128,15 @@ export default function LoginForm() {
       correo: payload.correo || fallbackEmail,
       step: INITIAL_REACTIVATION_STEP,
     });
+    setError("");
+    setSuccess("");
+  };
+
+  const handleBlockedAccount = (payload) => {
+    setBlocked({
+      razon: payload.razon || t("auth.error.accountBlockedByAdmin"),
+    });
+    setReactivate(null);
     setError("");
     setSuccess("");
   };
@@ -147,7 +168,7 @@ export default function LoginForm() {
     const idToken = credentialResponse?.credential;
 
     if (!idToken) {
-      setError("No se pudo obtener el token de Google");
+      setError(t("auth.error.googleToken"));
       return;
     }
 
@@ -159,7 +180,7 @@ export default function LoginForm() {
         return;
       }
 
-      handleSuccessfulAuth(result);
+      await handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
 
@@ -168,7 +189,12 @@ export default function LoginForm() {
         return;
       }
 
-      setError(payload?.message || "No se pudo iniciar sesion con Google");
+      if (payload?.status === "blocked_account") {
+        handleBlockedAccount(payload);
+        return;
+      }
+
+      setError(payload?.message || t("auth.error.googleLogin"));
     }
   };
 
@@ -179,8 +205,8 @@ export default function LoginForm() {
       const isPassword = linkConfirm.verificationMethod === "password";
       setLinkCredError(
         isPassword
-          ? "Ingresa tu contrasena."
-          : "Ingresa el codigo de 6 digitos."
+          ? t("auth.error.enterPassword")
+          : t("auth.error.enterSixDigitCode")
       );
       return;
     }
@@ -194,21 +220,27 @@ export default function LoginForm() {
         linkConfirm,
         linkCredential
       );
-      handleSuccessfulAuth(result);
+      await handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
 
       if (payload?.status === "wrong_credentials") {
         setLinkCredError(
           linkConfirm.verificationMethod === "password"
-            ? "Contrasena incorrecta. Intentalo de nuevo."
-            : "Codigo incorrecto o expirado."
+            ? t("auth.error.wrongPassword")
+            : t("auth.error.wrongCode")
         );
         return;
       }
 
+      if (payload?.status === "blocked_account") {
+        resetLinkConfirm();
+        handleBlockedAccount(payload);
+        return;
+      }
+
       resetLinkConfirm();
-      setError(payload?.message || "No se pudo vincular la cuenta.");
+      setError(payload?.message || t("auth.error.linkAccount"));
     } finally {
       setLinkLoading(false);
     }
@@ -227,7 +259,7 @@ export default function LoginForm() {
 
     try {
       const result = await loginWithPassword(baseUrl, correo, password);
-      handleSuccessfulAuth(result);
+      await handleSuccessfulAuth(result);
     } catch (err) {
       const payload = err.payload;
 
@@ -236,13 +268,18 @@ export default function LoginForm() {
         return;
       }
 
-      setError(payload?.message || "Correo o contrasena incorrectos");
+      if (payload?.status === "blocked_account") {
+        handleBlockedAccount(payload);
+        return;
+      }
+
+      setError(payload?.message || t("auth.error.invalidCredentials"));
     }
   };
 
   const startReactivation = async (email = reactivate?.correo) => {
     if (!email) {
-      setReactivationError("No se pudo identificar el correo de la cuenta.");
+      setReactivationError(t("auth.error.noAccountEmail"));
       return;
     }
 
@@ -254,7 +291,7 @@ export default function LoginForm() {
       setReactivate({ correo: email, step: "code" });
     } catch (err) {
       setReactivationError(
-        err.payload?.message || err.message || CONNECTION_ERROR
+        err.payload?.message || err.message || t(CONNECTION_ERROR_KEY)
       );
     } finally {
       setReactivationLoading(false);
@@ -263,7 +300,7 @@ export default function LoginForm() {
 
   const confirmReactivation = async () => {
     if (!reactivationCode.trim() || reactivationCode.trim().length !== 6) {
-      setReactivationError("Ingresa el codigo de 6 caracteres.");
+      setReactivationError(t("auth.error.enterSixCharCode"));
       return;
     }
 
@@ -281,11 +318,11 @@ export default function LoginForm() {
       setReactivationCode("");
       setError("");
       setSuccess(
-        result.message || "Cuenta restablecida. Inicia sesion nuevamente."
+        result.message || t("auth.success.accountRestored")
       );
     } catch (err) {
       setReactivationError(
-        err.payload?.message || err.message || CONNECTION_ERROR
+        err.payload?.message || err.message || t(CONNECTION_ERROR_KEY)
       );
     } finally {
       setReactivationLoading(false);
@@ -299,7 +336,7 @@ export default function LoginForm() {
       <div className="login-container">
         <div className="login-card">
           <div className="login-left">
-            <h2>Bienvenido!</h2>
+            <h2>{t("auth.login.welcome")}</h2>
             <img
               src="/img/logo sansimon.png"
               alt="Logo"
@@ -308,7 +345,7 @@ export default function LoginForm() {
           </div>
 
           <div className="login-right">
-            <h1 className="login-title">Inicio de sesion</h1>
+            <h1 className="login-title">{t("auth.login.title")}</h1>
 
             <div className="login-avatar">
               <FaUserCircle size={80} color="#0077b7" />
@@ -321,7 +358,7 @@ export default function LoginForm() {
                 handleLogin();
               }}
             >
-              <label htmlFor="correo">Correo Electronico:</label>
+              <label htmlFor="correo">{t("auth.field.email")}:</label>
               <input
                 id="correo"
                 type="email"
@@ -331,7 +368,7 @@ export default function LoginForm() {
                 autoComplete="email"
               />
 
-              <label htmlFor="password">Contrasena:</label>
+              <label htmlFor="password">{t("auth.field.password")}:</label>
               <div className="password-container">
                 <input
                   id="password"
@@ -348,7 +385,7 @@ export default function LoginForm() {
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={
-                    showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
+                    showPassword ? t("auth.action.hidePassword") : t("auth.action.showPassword")
                   }
                 >
                   {showPassword ? (
@@ -361,11 +398,11 @@ export default function LoginForm() {
 
               <div className="login-actions">
                 <Link to="/auth/forgot-password" className="forgot">
-                  Olvidaste Contrasena?
+                  {t("auth.login.forgotPassword")}
                 </Link>
 
                 <button className="login-btn-primary" type="submit">
-                  Iniciar Sesion
+                  {t("auth.login.submit")}
                 </button>
 
                 {googleClientId ? (
@@ -374,7 +411,7 @@ export default function LoginForm() {
                       onSuccess={handleGoogleLogin}
                       onError={() =>
                         setError(
-                          "La autenticacion con Google fue cancelada o fallo"
+                          t("auth.error.googleCancelled")
                         )
                       }
                       text="continue_with"
@@ -390,11 +427,11 @@ export default function LoginForm() {
                     type="button"
                     onClick={() =>
                       setError(
-                        "Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google"
+                        t("auth.error.googleConfig")
                       )
                     }
                   >
-                    Continuar con Google
+                    {t("auth.action.continueGoogle")}
                   </button>
                 )}
 
@@ -429,9 +466,9 @@ export default function LoginForm() {
               </div>
 
               <p className="register">
-                No tienes una cuenta?{" "}
+                {t("auth.login.noAccount")}{" "}
                 <span onClick={() => (window.location.href = "/auth/Register")}>
-                  Registrate
+                  {t("auth.login.registerLink")}
                 </span>
               </p>
             </form>
@@ -439,6 +476,7 @@ export default function LoginForm() {
         </div>
 
         <LoginErrorModal message={error} onClose={closeError} />
+        <BlockedAccountModal blocked={blocked} onClose={closeBlocked} />
         <LoginSuccessModal message={success} onClose={closeSuccess} />
 
         {linkConfirm && linkStep === "info" && (

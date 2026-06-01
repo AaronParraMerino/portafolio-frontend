@@ -1,15 +1,10 @@
 import { useMemo, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 
-const LEVELS = [
-  { value: 'basico', label: 'Básico' },
-  { value: 'intermedio', label: 'Intermedio' },
-  { value: 'avanzado', label: 'Avanzado' },
-  { value: 'experto', label: 'Experto' },
-];
+const LEVEL_VALUES = ['basico', 'intermedio', 'avanzado', 'experto'];
 
 const normalizeText = (value) => String(value || '').trim().replace(/\s+/g, ' ');
 const sameText = (a, b) => normalizeText(a).toLowerCase() === normalizeText(b).toLowerCase();
-const levelLabel = (value) => LEVELS.find((level) => level.value === value)?.label || value;
 
 const SkillLevelTagInput = ({
   label,
@@ -18,10 +13,13 @@ const SkillLevelTagInput = ({
   onChange,
   suggestions = [],
 }) => {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [levelValue, setLevelValue] = useState('');
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState('');
+
+  const levelLabel = (value) => t(`portfolioSearch.level.${value}`);
 
   const filteredSuggestions = useMemo(() => {
     const query = inputValue.trim().toLowerCase();
@@ -39,12 +37,12 @@ const SkillLevelTagInput = ({
     const item = normalizeText(rawValue);
 
     if (!item) {
-      setError('Escribe una habilidad.');
+      setError(t('portfolioSearch.skill.error.name'));
       return;
     }
 
     if (!levelValue) {
-      setError('Selecciona el nivel para esta habilidad.');
+      setError(t('portfolioSearch.skill.error.level'));
       return;
     }
 
@@ -82,7 +80,7 @@ const SkillLevelTagInput = ({
   const handleSuggestionClick = (suggestion) => {
     if (!levelValue) {
       setInputValue(String(suggestion || ''));
-      setError('Selecciona el nivel para agregar esta habilidad.');
+      setError(t('portfolioSearch.skill.error.suggestionLevel'));
       return;
     }
 
@@ -100,7 +98,13 @@ const SkillLevelTagInput = ({
               <span className={`ps-tag ps-level-tag level-${value.nivel}`} key={`${value.item}-${value.nivel}`}>
                 <span>{value.item}</span>
                 <strong>{levelLabel(value.nivel)}</strong>
-                <button type="button" onClick={() => removeValue(value.item)} aria-label={`Quitar ${value.item}`}>×</button>
+                <button
+                  type="button"
+                  onClick={() => removeValue(value.item)}
+                  aria-label={t('portfolioSearch.filters.remove', { label: value.item })}
+                >
+                  ×
+                </button>
               </span>
             ))}
           </div>
@@ -145,11 +149,11 @@ const SkillLevelTagInput = ({
               setLevelValue(event.target.value);
               if (error) setError('');
             }}
-            aria-label="Nivel"
+            aria-label={t('portfolioSearch.skill.levelAria')}
           >
-            <option value="">Nivel</option>
-            {LEVELS.map((level) => (
-              <option key={level.value} value={level.value}>{level.label}</option>
+            <option value="">{t('portfolioSearch.skill.levelPlaceholder')}</option>
+            {LEVEL_VALUES.map((level) => (
+              <option key={level} value={level}>{levelLabel(level)}</option>
             ))}
           </select>
           <button type="button" className="ps-add-tag" onClick={() => addValue(inputValue)}>+</button>

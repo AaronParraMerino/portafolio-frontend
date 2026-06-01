@@ -26,6 +26,19 @@ function requestUrl(input) {
   return '';
 }
 
+async function isApplicationSessionUnauthorized(response) {
+  try {
+    const data = await response.clone().json();
+    const message = String(data?.message || '').trim().toLowerCase();
+
+    return message.includes('unauthenticated')
+      || message.includes('no hay sesion activa')
+      || message.includes('no autenticado');
+  } catch {
+    return false;
+  }
+}
+
 export function clearAuthStorage() {
   // Clear auth/user keys in both storages to avoid stale mixed state.
   localStorage.removeItem('tokenPORT');
@@ -34,6 +47,17 @@ export function clearAuthStorage() {
   sessionStorage.removeItem('tokenPORT');
   sessionStorage.removeItem('usuario');
   sessionStorage.removeItem('perfil_cache');
+
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith('notifications-cache:v1:')) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Cache is only an optimization.
+  }
 }
 
 export function getStoredUser() {
@@ -56,11 +80,16 @@ export function normalizeUserRole(user = getStoredUser()) {
   const role = String(value || '').trim().toLowerCase();
 
   if (role === 'admin' || role === 'administrador') return 'admin';
+  if (role === 'publicador' || role === 'publisher' || role === 'publicante') return 'publicador';
   return 'usuario';
 }
 
 export function isAdminUser(user = getStoredUser()) {
   return normalizeUserRole(user) === 'admin';
+}
+
+export function isPublisherUser(user = getStoredUser()) {
+  return normalizeUserRole(user) === 'publicador';
 }
 
 export function getDashboardHomePath(user = getStoredUser()) {
@@ -91,7 +120,12 @@ export function installAuth401Interceptor() {
     const isBackendCall = requestUrl(input).startsWith(BASE_URL);
     const isProtectedCall = hasBearerToken(init);
 
-    if (res.status === 401 && isBackendCall && isProtectedCall) {
+    if (
+      res.status === 401
+      && isBackendCall
+      && isProtectedCall
+      && await isApplicationSessionUnauthorized(res)
+    ) {
       clearAuthStorage();
       emitAuthExpired();
     }

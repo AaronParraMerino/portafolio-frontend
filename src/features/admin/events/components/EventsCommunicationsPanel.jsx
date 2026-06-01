@@ -49,6 +49,9 @@ export default function EventsCommunicationsPanel({
   communications,
   onCreateCommunication,
   onEditCommunication,
+  title = 'Anuncios de plataforma',
+  kicker = 'Comunicaciones',
+  createLabel = 'Nuevo anuncio',
 }) {
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
@@ -62,24 +65,36 @@ export default function EventsCommunicationsPanel({
   return (
     <div className="evt-view-body">
       <section className="evt-sheet">
+        {!onCreateCommunication ? (
+          <div className="evt-admin-notification-context">
+            <strong>Centro de notificaciones administrativas</strong>
+            <p>
+              Aqui se revisan las notificaciones generadas por decisiones del administrador:
+              aprobaciones de publicantes, rechazos, pausas, suspensiones, activaciones y eliminaciones de eventos.
+            </p>
+          </div>
+        ) : null}
+
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Comunicaciones</span>
-            <h2 className="evt-sheet-title">Anuncios de plataforma</h2>
+            <span className="evt-sheet-kicker">{kicker}</span>
+            <h2 className="evt-sheet-title">{title}</h2>
           </div>
 
           <div className="evt-view-toolbar-actions">
             <button type="button" className="evt-icon-btn" title="Filtros" aria-label="Filtros">
               <BsFunnel />
             </button>
-            <button
-              type="button"
-              className="evt-context-btn evt-context-btn--primary"
-              onClick={onCreateCommunication}
-            >
-              <BsPlusLg />
-              Nuevo anuncio
-            </button>
+            {onCreateCommunication ? (
+              <button
+                type="button"
+                className="evt-context-btn evt-context-btn--primary"
+                onClick={onCreateCommunication}
+              >
+                <BsPlusLg />
+                {createLabel}
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -179,9 +194,9 @@ export default function EventsCommunicationsPanel({
                     <button
                       type="button"
                       className="evt-mini-action"
-                      onClick={() => onEditCommunication(item)}
+                      onClick={() => onEditCommunication?.(item)}
                     >
-                      Editar
+                      Revisar
                     </button>
                   </div>
                 </article>

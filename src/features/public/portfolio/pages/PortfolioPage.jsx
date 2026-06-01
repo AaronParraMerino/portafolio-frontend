@@ -13,6 +13,7 @@ import ViewExperience from '../../../dashboard/view/components/ViewExperience';
 import ViewProjects from '../../../dashboard/view/components/ViewProjects';
 import { FONTS, getAutoTextColor, getFullName } from '../../../dashboard/view/model/viewModel';
 import { usePublicPortfolio } from '../hooks/usePublicPortfolio';
+import { useLanguage } from '../../../../core/i18n';
 
 const backBarStyle = {
   alignItems: 'center',
@@ -52,10 +53,11 @@ const backIndicatorStyle = {
 };
 
 function PublicPortfolioBackButton() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state || {};
-  const backLabel = typeof state.backLabel === 'string' ? state.backLabel : 'Volver atras';
+  const backLabel = typeof state.backLabel === 'string' ? state.backLabel : t('publicPortfolio.backDefault');
   const backFallback = typeof state.backFallback === 'string' ? state.backFallback : '/portafolios';
   const hasPreviousEntry = typeof window !== 'undefined'
     && window.history.length > 1
@@ -81,12 +83,13 @@ function PublicPortfolioBackButton() {
         <FiArrowLeft aria-hidden="true" size={17} />
         <span>{backLabel}</span>
       </button>
-      <span style={backIndicatorStyle}>Vista anterior</span>
+      <span style={backIndicatorStyle}>{t('publicPortfolio.previousView')}</span>
     </div>
   );
 }
 
 export default function PortfolioPage() {
+  const { t } = useLanguage();
   const { userId } = useParams();
   const { data, loading, error } = usePublicPortfolio(userId);
   const {
@@ -104,7 +107,7 @@ export default function PortfolioPage() {
     ? getAutoTextColor(config?.cardBg || '#ffffff')
     : (config?.textColor || '#111827');
   const visibilidad = config?.visibilidad || {};
-  const title = `${getFullName(perfil)} - Portafolio`;
+  const title = `${getFullName(perfil)} - ${t('publicPortfolio.titleSuffix')}`;
   const hasPortfolioContent = Boolean(perfil)
     || redes.length > 0
     || stats.length > 0
@@ -120,7 +123,7 @@ export default function PortfolioPage() {
           <PublicPortfolioBackButton />
           <div className="dash-loading dash-loading--page" role="status" aria-live="polite">
             <span className="dash-loading-spinner" />
-            <span>Cargando portafolio publico...</span>
+            <span>{t('publicPortfolio.loading')}</span>
           </div>
         </div>
       </div>
@@ -133,10 +136,10 @@ export default function PortfolioPage() {
         <div className="page public-portfolio-main">
           <PublicPortfolioBackButton />
           <section className="public-portfolio-state">
-            <h1>Portafolio no disponible</h1>
+            <h1>{t('publicPortfolio.unavailableTitle')}</h1>
             <p>{error}</p>
             <Link className="public-portfolio-link" to="/portafolios">
-              Volver a portafolios
+              {t('publicPortfolio.backToPortfolios')}
             </Link>
           </section>
         </div>
@@ -186,7 +189,7 @@ export default function PortfolioPage() {
           <ViewProjects
             proyectos={proyectos}
             visibilidad={visibilidad}
-            fetchParticipants
+            showUnvalidatedParticipants
           />
         </ViewOsFrame>
       </div>

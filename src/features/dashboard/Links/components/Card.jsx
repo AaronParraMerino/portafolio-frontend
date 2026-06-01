@@ -1,6 +1,7 @@
 import FallbackIcon from './FallbackIcon';
 import Toggle from './Toggle';
 import IconBtn from './IconBtn';
+import { useLanguage } from '../../../../core/i18n';
 
 const PLATS = [
   { key:"linkedin", match:u=>u.includes("linkedin.com"), name:"LinkedIn",
@@ -202,6 +203,7 @@ const checkIsKnownPlatform = (red) =>
   PLATS.some(x => x.match((red.url || "").toLowerCase()));
 
 function Card({ red, onToggle, onEdit, isOculta }) {
+  const { t } = useLanguage();
   const conn = red.conectado && !isOculta;
 
   // Detecta si es plataforma conocida usando key O URL como fallback
@@ -245,12 +247,12 @@ function Card({ red, onToggle, onEdit, isOculta }) {
             color: red.visible ? "#16a34a" : "#7c3aed",
             border: `1px solid ${red.visible ? "rgba(22,163,74,.2)" : "rgba(124,58,237,.2)"}`,
           }}>
-            {red.visible ? "Visible" : "Oculto"}
+            {red.visible ? t('links.status.visible') : t('links.status.hidden')}
           </span>
           <Toggle on={red.visible} onChange={() => onToggle(red.id)} />
         </div>
         <span style={{ fontSize: 12, fontWeight: 600, color: conn ? "#16a34a" : "#e85555" }}>
-          {conn ? "● Conectado" : "● Desconectado"}
+          {conn ? t('links.status.connected') : t('links.status.disconnected')}
         </span>
         <div style={{ display: "flex", gap: 6 }}>
           <IconBtn
@@ -259,7 +261,7 @@ function Card({ red, onToggle, onEdit, isOculta }) {
             bg={isOculta ? "#f3f4f6" : "#e8f4fb"}
             hbg="#b8ddf0"
             bc={isOculta ? "#e5e7eb" : "rgba(0,119,183,.2)"}
-            title={isOculta ? "No disponible (oculto)" : "Editar"}
+            title={isOculta ? t('links.action.unavailableHidden') : t('links.action.edit')}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 
 function getInitials(name = '') {
   const parts = String(name)
@@ -46,7 +47,7 @@ function getParticipantName(participante = {}) {
     participante.login ||
     participante.email ||
     participante.correo ||
-    'Participante'
+    participante.__defaultName || 'Participante'
   );
 }
 
@@ -75,17 +76,27 @@ function getParticipantContribution(participante = {}) {
 }
 
 export default function ProjectParticipantAvatar({ participante = {} }) {
+  const { t } = useLanguage();
+  const participanteTraducido = { ...participante, __defaultName: t('projects.participation.defaultName') };
+  const originalAvatar = participante.avatar_url || '';
+  const preferredAvatar = participante.avatar_thumb_url || originalAvatar;
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageSource, setImageSource] = useState(preferredAvatar);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
-  const nombre = getParticipantName(participante);
+  const nombre = getParticipantName(participanteTraducido);
   const github = cleanText(participante.github_username || participante.login);
-  const owner = isOwner(participante);
-  const rol = getParticipantRole(participante);
-  const aporte = getParticipantContribution(participante);
+  const owner = isOwner(participanteTraducido);
+  const rol = getParticipantRole(participanteTraducido);
+  const aporte = getParticipantContribution(participanteTraducido);
   const roleDetail = rol ? ` - ${rol}` : '';
   const githubDetail = github ? ` (@${github})` : '';
   const label = `${nombre}${githubDetail}${roleDetail}`;
+
+  useEffect(() => {
+    setImageFailed(false);
+    setImageSource(preferredAvatar);
+  }, [preferredAvatar]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -128,12 +139,19 @@ export default function ProjectParticipantAvatar({ participante = {} }) {
           setOpen(value => !value);
         }}
       >
-        {participante.avatar_url && !imageFailed ? (
+        {imageSource && !imageFailed ? (
           <img
-            src={participante.avatar_url}
+            src={imageSource}
             alt=""
             loading="lazy"
-            onError={() => setImageFailed(true)}
+            onError={() => {
+              if (imageSource !== originalAvatar && originalAvatar) {
+                setImageSource(originalAvatar);
+                return;
+              }
+
+              setImageFailed(true);
+            }}
           />
         ) : (
           <span className="prj-collab-initials">{getInitials(nombre)}</span>
@@ -144,7 +162,7 @@ export default function ProjectParticipantAvatar({ participante = {} }) {
         <div
           className="prj-collab-popover"
           role="dialog"
-          aria-label={`Detalles de ${nombre}`}
+          aria-label={`${t('projects.participation.defaultName')}: ${nombre}`}
           onClick={(event) => event.stopPropagation()}
         >
           <div className="prj-collab-popover-head">
@@ -155,14 +173,14 @@ export default function ProjectParticipantAvatar({ participante = {} }) {
 
             {owner && (
               <span className="prj-collab-owner-badge">
-                Owner
+                {t('projects.card.owner')}
               </span>
             )}
 
             <button
               type="button"
               className="prj-collab-popover-close"
-              aria-label="Cerrar detalles del participante"
+              aria-label={t('projects.participation.closeDetails')}
               onClick={(event) => {
                 event.stopPropagation();
                 setOpen(false);
@@ -173,10 +191,10 @@ export default function ProjectParticipantAvatar({ participante = {} }) {
           </div>
 
           <div className="prj-collab-popover-info">
-            <span>Mi rol</span>
+            <span>{t('projects.participation.roleLabel')}</span>
             <strong>{rol || '-'}</strong>
 
-            <span>Aporte</span>
+            <span>{t('projects.participation.descriptionLabel')}</span>
             <p>{aporte || '-'}</p>
           </div>
         </div>

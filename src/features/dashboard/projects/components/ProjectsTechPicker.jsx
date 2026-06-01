@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import ProjectsTechModal from './ProjectsTechModal';
 import '../styles/projects.css';
 
@@ -56,18 +57,36 @@ function getTechColor(tech) {
   return tech?.color || '';
 }
 
-function isDarkColor(color = '') {
-  const hex = String(color || '').trim().replace('#', '');
 
-  if (!/^[0-9a-f]{6}$/i.test(hex)) {
-    return false;
-  }
+const CATEGORY_KEY_BY_NAME = {
+  Frontend: 'projects.category.frontend',
+  Backend: 'projects.category.backend',
+  'Móvil': 'projects.category.mobile',
+  Mobile: 'projects.category.mobile',
+  Lenguaje: 'projects.category.language',
+  Language: 'projects.category.language',
+  Framework: 'projects.category.framework',
+  Libreria: 'projects.category.library',
+  Librería: 'projects.category.library',
+  Library: 'projects.category.library',
+  BD: 'projects.category.database',
+  'Base de datos': 'projects.category.database',
+  DevOps: 'projects.category.devops',
+  Herramienta: 'projects.category.tool',
+  Tool: 'projects.category.tool',
+  Servicio: 'projects.category.service',
+  Service: 'projects.category.service',
+  Plataforma: 'projects.category.platform',
+  Platform: 'projects.category.platform',
+  Personalizado: 'projects.category.custom',
+  Custom: 'projects.category.custom',
+  Otro: 'projects.category.other',
+  Other: 'projects.category.other',
+};
 
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-
-  return ((r * 299 + g * 587 + b * 114) / 1000) < 96;
+function getCategoryLabel(category, t) {
+  const key = CATEGORY_KEY_BY_NAME[category] || 'projects.category.other';
+  return typeof t === 'function' ? t(key) : category;
 }
 
 function colorWithAlpha(color = '', alphaHex = '24') {
@@ -114,6 +133,7 @@ export default function ProjectsTechPicker({
   catalogoExtra = [],
   onAgregarExtra,
 }) {
+  const { t } = useLanguage();
   const [busqueda, setBusqueda] = useState('');
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -220,7 +240,7 @@ export default function ProjectsTechPicker({
     emitirCambio(selectedList.filter(s => s !== nombre));
   };
 
-  const handleConfirmarNueva = async (tech) => {
+  const handleConfirmarTecnologia = async (tech) => {
     let finalTech = tech;
 
     if (typeof onAgregarExtra === 'function') {
@@ -244,7 +264,7 @@ export default function ProjectsTechPicker({
           role="button"
           tabIndex={0}
           aria-expanded={panelAbierto}
-          aria-label="Seleccionar tecnologías"
+          aria-label={t('projects.tech.select')}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -253,22 +273,21 @@ export default function ProjectsTechPicker({
           }}
         >
           {selectedList.length === 0 ? (
-            <span className="prj-tech-placeholder">Seleccionar tecnologías...</span>
+            <span className="prj-tech-placeholder">{t('projects.tech.select')}...</span>
           ) : (
             <div className="prj-tech-chips" onClick={(e) => e.stopPropagation()}>
               {selectedList.map(s => {
                 const tech = getSelectedTech(s);
-                const dark = isDarkColor(tech.color);
                 const chipStyle = tech.color
                   ? {
                       '--tech-color': tech.color,
-                      '--tech-bg': dark ? '#111827' : colorWithAlpha(tech.color, '24'),
-                      '--tech-text': dark ? '#ffffff' : '#111827',
+                      '--tech-bg': colorWithAlpha(tech.color, '24'),
+                      '--tech-text': '#111827',
                     }
                   : undefined;
 
                 return (
-                <span key={s} className={`prj-tag-chip prj-tech-chip${dark ? ' dark' : ''}`} style={chipStyle}>
+                <span key={s} className="prj-tag-chip prj-tech-chip" style={chipStyle}>
                   <span className="prj-tech-chip-icon" aria-hidden="true">
                     {tech.icono_url ? (
                       <img src={tech.icono_url} alt="" />
@@ -285,8 +304,8 @@ export default function ProjectsTechPicker({
                       e.stopPropagation();
                       quitarSeleccionada(s);
                     }}
-                    title={`Quitar ${s}`}
-                    aria-label={`Quitar ${s}`}
+                    title={`${t('projects.config.remove')} ${s}`}
+                    aria-label={`${t('projects.config.remove')} ${s}`}
                   >
                     <svg viewBox="0 0 12 12">
                       <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.4" />
@@ -332,7 +351,7 @@ export default function ProjectsTechPicker({
                 <input
                   ref={inputRef}
                   className="prj-tech-search-input"
-                  placeholder="Buscar tecnología..."
+                  placeholder={t('projects.tech.searchPlaceholder')}
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   onKeyDown={(e) => {
@@ -346,7 +365,7 @@ export default function ProjectsTechPicker({
                   <button
                     type="button"
                     className="prj-tech-search-clear"
-                    title="Limpiar búsqueda"
+                    title={t('projects.tech.clearSearch')}
                     onClick={() => {
                       setBusqueda('');
                       inputRef.current?.focus();
@@ -366,12 +385,12 @@ export default function ProjectsTechPicker({
                   e.stopPropagation();
                   setModalAbierto(true);
                 }}
-                title="Agregar una tecnología que no está en la lista"
+                title={t('projects.tech.addCustomHint')}
               >
                 <svg viewBox="0 0 12 12">
                   <path d="M6 1v10M1 6h10" stroke="currentColor" fill="none" strokeWidth="2.2" />
                 </svg>
-                Nueva
+                {t('projects.tech.newTechnology')}
               </button>
             </div>
 
@@ -383,7 +402,7 @@ export default function ProjectsTechPicker({
                 </svg>
 
                 <span>
-                  No encontramos &ldquo;{busqueda}&rdquo; en el catálogo.{' '}
+                  {t('projects.tech.noResults', { query: busqueda })}{' '}
                   <button
                     type="button"
                     className="prj-tech-no-results-link"
@@ -392,7 +411,7 @@ export default function ProjectsTechPicker({
                       setModalAbierto(true);
                     }}
                   >
-                    Crear nueva tecnología
+                    {t('projects.tech.newTechnology')}
                   </button>
                 </span>
               </div>
@@ -400,11 +419,11 @@ export default function ProjectsTechPicker({
 
             <div className="prj-tech-list">
               {!hayCategorias && !sinResultados ? (
-                <div className="prj-tech-empty">Cargando catálogo...</div>
+                <div className="prj-tech-empty">{t('skills.loading')}</div>
               ) : hayCategorias ? (
                 Object.entries(porCategoria).map(([cat, items]) => (
                   <div key={cat} className="prj-tech-group">
-                    <div className="prj-tech-group-label">{cat}</div>
+                    <div className="prj-tech-group-label">{getCategoryLabel(cat, t)}</div>
 
                     {items.map(tech => {
                       const checked = selectedList.includes(tech.nombre);
@@ -414,7 +433,7 @@ export default function ProjectsTechPicker({
                         <label
                           key={tech.id}
                           className={`prj-tech-item${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}`}
-                          title={disabled ? `Máximo ${MAX_TECHS} tecnologías` : undefined}
+                          title={disabled ? t('projects.validation.maxRepos', { count: MAX_TECHS }) : undefined}
                         >
                           <input
                             type="checkbox"
@@ -438,7 +457,7 @@ export default function ProjectsTechPicker({
                           <span className="prj-tech-nombre">{tech.nombre}</span>
 
                           {tech.categoria && (
-                            <span className="prj-tech-custom-badge">{tech.categoria}</span>
+                            <span className="prj-tech-custom-badge">{getCategoryLabel(tech.categoria, t)}</span>
                           )}
 
                           {checked && (
@@ -455,7 +474,7 @@ export default function ProjectsTechPicker({
             </div>
 
             <div className="prj-tech-footer">
-              <span>{selectedList.length} seleccionadas · máx. {MAX_TECHS}</span>
+              <span>{selectedList.length} {t('projects.tech.select')} · {t('projects.tech.max')} {MAX_TECHS}</span>
 
               {selectedList.length > 0 && (
                 <button
@@ -463,7 +482,7 @@ export default function ProjectsTechPicker({
                   className="prj-tech-clear-all"
                   onClick={() => emitirCambio([])}
                 >
-                  Limpiar todo
+                  {t('portfolioSearch.filters.clearAll')}
                 </button>
               )}
             </div>
@@ -474,7 +493,7 @@ export default function ProjectsTechPicker({
       {modalAbierto && (
         <ProjectsTechModal
           catalogoTotal={catalogoTotal}
-          onConfirmar={handleConfirmarNueva}
+          onConfirmar={handleConfirmarTecnologia}
           onCerrar={() => setModalAbierto(false)}
         />
       )}

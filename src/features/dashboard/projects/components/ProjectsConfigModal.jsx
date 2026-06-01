@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import '../styles/projects.css';
 import {
   getProyectoParticipantes,
@@ -6,15 +7,11 @@ import {
 } from '../services/projectsService';
 
 const DEFAULT_CONFIG = {
-  modo_union: 'github_validado',
-  requiere_aprobacion_union: true,
   permitir_participantes_sin_validacion: false,
   puede_editar_proyecto: 'participantes_validados',
   puede_administrar_proyecto: 'propietarios',
   github_nivel_autoridad: 'maintainer',
   github_prevalece_sobre_creador: true,
-  enlace_union_activo: false,
-  visibilidad_github_validado_usuario: 'visible',
   visibilidad_usuario_sin_validacion: 'visible',
   permitir_remover_participantes_sin_validacion: false,
 };
@@ -49,6 +46,7 @@ function isUnvalidatedParticipant(participante = {}) {
 }
 
 export default function ProjectsConfigModal({ proyecto, guardando = false, onGuardar, onCancelar }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(DEFAULT_CONFIG);
   const [participantesSinValidacion, setParticipantesSinValidacion] = useState([]);
   const [loadingParticipantes, setLoadingParticipantes] = useState(false);
@@ -60,7 +58,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
       ...DEFAULT_CONFIG,
       ...(proyecto?.configuracion || {}),
     });
-  }, [proyecto]);
+  }, [proyecto, t]);
 
   useEffect(() => {
     const projectId = getProjectId(proyecto);
@@ -81,7 +79,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
       })
       .catch((error) => {
         if (!active) return;
-        setParticipantesError(error.message || 'No se pudieron cargar participantes sin validacion.');
+        setParticipantesError(error.message || t('projects.config.loadParticipantsError'));
         setParticipantesSinValidacion([]);
       })
       .finally(() => {
@@ -91,7 +89,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
     return () => {
       active = false;
     };
-  }, [proyecto]);
+  }, [proyecto, t]);
 
   if (!proyecto) return null;
 
@@ -114,8 +112,8 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
     const idParticipacion = participante?.id_participacion || participante?.id;
     if (!projectId || !idParticipacion) return;
 
-    const nombre = participante.nombre || participante.github_username || 'este participante';
-    const confirmed = window.confirm(`Vas a quitar la participacion sin validacion de ${nombre}.`);
+    const nombre = participante.nombre || participante.github_username || t('projects.participation.defaultName');
+    const confirmed = window.confirm(t('projects.confirm.unlinkMessage', { title: nombre }));
     if (!confirmed) return;
 
     try {
@@ -124,7 +122,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
       await removerParticipanteSinValidacion(projectId, idParticipacion);
       setParticipantesSinValidacion(prev => prev.filter(item => String(item.id_participacion || item.id) !== String(idParticipacion)));
     } catch (error) {
-      setParticipantesError(error.message || 'No se pudo quitar la participacion.');
+      setParticipantesError(error.message || t('projects.config.removeParticipantError'));
     } finally {
       setRemovingId(null);
     }
@@ -139,7 +137,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
       >
         <div className="prj-modal-head">
           <div>
-            <div className="prj-modal-title">Configuracion del proyecto</div>
+            <div className="prj-modal-title">{t('projects.config.title')}</div>
             <div className="prj-modal-sub">{proyecto.titulo}</div>
           </div>
           <button type="button" className="prj-modal-close" onClick={onCancelar} disabled={guardando}>
@@ -151,123 +149,111 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
 
         <div className="prj-modal-body">
           <div className="prj-form-section">
-            <div className="prj-section-label">Permisos</div>
+            <div className="prj-section-label">{t('projects.config.subtitle')}</div>
             <div className="prj-config-grid">
               <label>
-                <span className="prj-label">Quienes pueden editar</span>
+                <span className="prj-label">{t('projects.config.editPermission')}</span>
                 <select
                   className="prj-select"
                   value={form.puede_editar_proyecto}
                   onChange={(e) => setValue('puede_editar_proyecto', e.target.value)}
                 >
-                  <option value="propietarios">Solo propietarios</option>
-                  <option value="autoridad_github">Duenios del repositorio</option>
-                  <option value="participantes_validados">Participantes validados</option>
-                  <option value="participantes">Todos los participantes</option>
+                  <option value="propietarios">{t('projects.config.owners')}</option>
+                  <option value="autoridad_github">{t('projects.config.githubAuthority')}</option>
+                  <option value="participantes_validados">{t('projects.config.participantsValidated')}</option>
+                  <option value="participantes">{t('projects.config.participants')}</option>
                 </select>
               </label>
 
               <label>
-                <span className="prj-label">Quienes administran</span>
+                <span className="prj-label">{t('projects.config.adminPermission')}</span>
                 <select
                   className="prj-select"
                   value={form.puede_administrar_proyecto}
                   onChange={(e) => setValue('puede_administrar_proyecto', e.target.value)}
                 >
                   <option value="propietarios">Propietarios del proyecto</option>
-                  <option value="autoridad_github">Duenios del repositorio</option>
+                  <option value="autoridad_github">{t('projects.config.githubAuthority')}</option>
                 </select>
               </label>
 
               <label>
-                <span className="prj-label">Nivel GitHub requerido</span>
+                <span className="prj-label">{t('projects.config.githubAuthority')}</span>
                 <select
                   className="prj-select"
                   value={form.github_nivel_autoridad}
                   onChange={(e) => setValue('github_nivel_autoridad', e.target.value)}
                 >
-                  <option value="owner">Owner</option>
-                  <option value="maintainer">Maintainer/Admin</option>
-                  <option value="admin_push">Admin o push</option>
+                  <option value="owner">{t('projects.card.owner')}</option>
+                  <option value="maintainer">{t('projects.config.maintainer')}</option>
+                  <option value="admin_push">Admin / push</option>
                 </select>
               </label>
 
               <label>
-                <span className="prj-label">Modo de union</span>
-                <select
-                  className="prj-select"
-                  value={form.modo_union}
-                  onChange={(e) => setValue('modo_union', e.target.value)}
-                >
-                  <option value="cerrado">Cerrado</option>
-                  <option value="por_solicitud">Por solicitud</option>
-                  <option value="enlace_autenticado">Enlace autenticado</option>
-                  <option value="github_validado">GitHub validado</option>
-                </select>
-              </label>
-
-              <label>
-                <span className="prj-label">Participantes sin validacion</span>
+                <span className="prj-label">{t('projects.config.unvalidatedParticipants')}</span>
                 <select
                   className="prj-select"
                   value={form.visibilidad_usuario_sin_validacion}
                   onChange={(e) => setValue('visibilidad_usuario_sin_validacion', e.target.value)}
                 >
-                  <option value="visible">Mostrar en participantes</option>
-                  <option value="oculto">Ocultar en participantes</option>
+                  <option value="visible">{t('projects.config.visible')}</option>
+                  <option value="oculto">{t('projects.config.hidden')}</option>
                 </select>
               </label>
             </div>
           </div>
 
           <div className="prj-form-section">
-            <div className="prj-section-label">Reglas</div>
+            <div className="prj-section-label">{t('projects.config.subtitle')}</div>
             <div className="prj-config-checks">
-              <CheckRow
-                name="requiere_aprobacion_union"
-                checked={form.requiere_aprobacion_union}
-                label="Requerir aprobacion para unirse"
-                onChange={setValue}
-              />
               <CheckRow
                 name="permitir_participantes_sin_validacion"
                 checked={form.permitir_participantes_sin_validacion}
-                label="Permitir participantes sin validacion GitHub"
+                label={t('projects.config.allowUnvalidated')}
                 onChange={setValue}
               />
               <CheckRow
                 name="permitir_remover_participantes_sin_validacion"
                 checked={form.permitir_remover_participantes_sin_validacion}
-                label="Permitir remover participantes sin validacion"
+                label={t('projects.config.allowRemoveUnvalidated')}
                 onChange={setValue}
               />
             </div>
           </div>
 
           <div className="prj-form-section">
-            <div className="prj-section-label">Participantes sin validacion</div>
+            <div className="prj-section-label">{t('projects.config.unvalidatedParticipants')}</div>
 
             {participantesError && (
               <div className="prj-config-error">{participantesError}</div>
             )}
 
             {loadingParticipantes ? (
-              <div className="prj-config-muted">Cargando participantes...</div>
+              <div className="prj-config-muted">{t('projects.config.loadingParticipants')}</div>
             ) : participantesSinValidacion.length === 0 ? (
-              <div className="prj-config-muted">No hay participantes sin validacion.</div>
+              <div className="prj-config-muted">{t('projects.config.unvalidatedParticipants')}</div>
             ) : (
               <div className="prj-config-participants">
                 {participantesSinValidacion.map((participante) => {
                   const idParticipacion = participante.id_participacion || participante.id;
-                  const nombre = participante.nombre || participante.github_username || 'Participante';
+                  const nombre = participante.nombre || participante.github_username || t('projects.participation.defaultName');
                   const esPropietario = Boolean(participante.es_propietario || participante.tipo_rol === 'owner');
                   const puedeQuitarParticipante = puedeRemoverSinValidacion && !esPropietario;
 
                   return (
                     <div key={idParticipacion || nombre} className="prj-config-participant">
                       <div className="prj-config-participant-avatar">
-                        {participante.avatar_url ? (
-                          <img src={participante.avatar_url} alt="" />
+                        {(participante.avatar_thumb_url || participante.avatar_url) ? (
+                          <img
+                            src={participante.avatar_thumb_url || participante.avatar_url}
+                            alt=""
+                            onError={(event) => {
+                              if (participante.avatar_url && event.currentTarget.src !== participante.avatar_url) {
+                                event.currentTarget.src = participante.avatar_url;
+                              }
+                            }}
+                          />
                         ) : (
                           <span>{getInitials(nombre)}</span>
                         )}
@@ -276,7 +262,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                       <div className="prj-config-participant-main">
                         <div className="prj-config-participant-name">{nombre}</div>
                         <div className="prj-config-participant-meta">
-                          {participante.email || participante.github_username || 'Sin validacion GitHub'}
+                          {participante.email || participante.github_username || t('projects.participation.unvalidatedGithub')}
                         </div>
                       </div>
 
@@ -287,13 +273,13 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                         onClick={() => handleRemoveParticipant(participante)}
                         title={
                           esPropietario
-                            ? 'No se puede quitar al propietario del proyecto'
+                            ? t('projects.config.cannotRemoveOwner')
                             : puedeRemoverSinValidacion
-                              ? 'Quitar participacion'
-                              : 'Activa y guarda la regla para remover participantes sin validacion'
+                              ? t('projects.config.remove')
+                              : t('projects.config.allowRemoveUnvalidated')
                         }
                       >
-                        {removingId === idParticipacion ? 'Quitando...' : 'Quitar'}
+                        {removingId === idParticipacion ? t('projects.form.saving') : t('projects.config.remove')}
                       </button>
                     </div>
                   );
@@ -305,11 +291,11 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
 
         <div className="prj-modal-foot">
           <button type="button" className="prj-btn-cancel" onClick={onCancelar} disabled={guardando}>
-            Cancelar
+            {t('projects.config.cancel')}
           </button>
           <button type="submit" className="prj-btn-save" disabled={guardando}>
             {guardando ? <span className="prj-spinner" /> : null}
-            Guardar configuracion
+            {t('projects.config.save')}
           </button>
         </div>
       </form>

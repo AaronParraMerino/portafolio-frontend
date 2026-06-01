@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useLanguage } from "../../../core/i18n";
 
 export default function PoliticaPrivacidad({ onClose }) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(true);
 
   const handleClose = () => {
@@ -20,19 +22,19 @@ export default function PoliticaPrivacidad({ onClose }) {
     <div style={styles.overlay}>
       <div style={styles.modal}>
         <div style={styles.headerBar}>
-          <span style={styles.headerBarTitle}>Política de Privacidad</span>
-          <button onClick={handleClose} style={styles.closeBtn} aria-label="Cerrar">×</button>
+          <span style={styles.headerBarTitle}>{t("auth.privacy.title")}</span>
+          <button onClick={handleClose} style={styles.closeBtn} aria-label={t("actions.close")}>×</button>
         </div>
 
         <div style={styles.body}>
           <div style={styles.titleRow}>
             <span style={styles.shieldIcon}>🛡️</span>
-            <h1 style={styles.mainTitle}>POLÍTICA DE PRIVACIDAD</h1>
+            <h1 style={styles.mainTitle}>{t("auth.privacy.heading")}</h1>
           </div>
 
-          <p style={styles.date}>Fecha de entrada en vigor: 23 de marzo de 2026</p>
+          <p style={styles.date}>{t("auth.policy.effectiveDate")}</p>
 
-          <h2 style={styles.sectionTitle}>Tu privacidad es lo primero</h2>
+          <h2 style={styles.sectionTitle}>{t("auth.privacy.firstTitle")}</h2>
           <p style={styles.p}>
             El objetivo del sistema es permitir a los usuarios crear y gestionar un portafolio digital de proyectos
             de software, con el fin de organizar y presentar su experiencia, habilidades, logros y evidencia
@@ -168,7 +170,7 @@ export default function PoliticaPrivacidad({ onClose }) {
         </div>
 
         <div style={styles.footer}>
-          <button onClick={handleAccept} style={styles.btnPrimary}>Aceptar</button>
+          <button onClick={handleAccept} style={styles.btnPrimary}>{t("actions.accept")}</button>
         </div>
       </div>
     </div>

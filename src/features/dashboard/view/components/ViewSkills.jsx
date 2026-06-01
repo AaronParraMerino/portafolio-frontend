@@ -6,6 +6,7 @@ import {
   getSkillProgress,
   normalizeSkillLevel,
 } from '../../skills/model/skillLevel';
+import { useLanguage } from '../../../../core/i18n';
 
 function getSkillPercentage(skill) {
   const fromSkill = Number(skill?.porcentaje);
@@ -17,11 +18,11 @@ function getSkillPercentage(skill) {
   return getSkillProgress(skill?.nivel);
 }
 
-function SkillCard({ skill, soft = false }) {
+function SkillCard({ skill, soft = false, t }) {
   const normalizedLevel = normalizeSkillLevel(skill.nivel);
   const pct = getSkillPercentage(skill);
   const progressColor = getSkillLevelColor(skill.nivel);
-  const levelLabel = getSkillLevelLabel(skill.nivel);
+  const levelLabel = t(`skills.level.${normalizedLevel}`, {}, getSkillLevelLabel(skill.nivel));
   const shortLabel = getSkillLevelShortLabel(skill.nivel);
 
   return (
@@ -36,7 +37,7 @@ function SkillCard({ skill, soft = false }) {
           <div
             className="sk-level-circle"
             title={levelLabel}
-            aria-label={`Nivel ${levelLabel}`}
+            aria-label={t('view.skills.levelAria', { level: levelLabel })}
           >
             {shortLabel}
           </div>
@@ -53,7 +54,7 @@ function SkillCard({ skill, soft = false }) {
             </div>
 
             <p className="sk-view-desc">
-              {skill.descripcion || 'Sin descripción adicional.'}
+              {skill.descripcion || t('view.skills.noDescription')}
             </p>
           </div>
         </div>
@@ -61,7 +62,7 @@ function SkillCard({ skill, soft = false }) {
         <div className="sk-view-progress">
           <div className="sk-view-track-label">
             <span className="sk-view-track-title">
-              Dominio
+              {t('view.skills.domain')}
             </span>
 
             <span className="sk-view-pct">
@@ -91,6 +92,7 @@ function SubsectionTitle({ children }) {
 }
 
 export default function ViewSkills({ habilidades, visibilidad }) {
+  const { t } = useLanguage();
   const tecnicas = (habilidades?.tecnicas || []).filter(skill =>
     isVisible(visibilidad, 'habilidades', skill.id)
   );
@@ -105,18 +107,18 @@ export default function ViewSkills({ habilidades, visibilidad }) {
     <section className="pf-sec">
       <div className="pf-sec-top">
         <div>
-          <h2 className="pf-sec-title">Habilidades</h2>
-          <div className="pf-sec-subtitle">Tecnologías y competencias</div>
+          <h2 className="pf-sec-title">{t('view.skills.title')}</h2>
+          <div className="pf-sec-subtitle">{t('view.skills.subtitle')}</div>
         </div>
       </div>
 
       {!!tecnicas.length && (
         <>
-          <SubsectionTitle>Técnicas</SubsectionTitle>
+          <SubsectionTitle>{t('view.skills.technical')}</SubsectionTitle>
 
           <div className="sk-list">
             {tecnicas.map(skill => (
-              <SkillCard key={skill.id} skill={skill} />
+              <SkillCard key={skill.id} skill={skill} t={t} />
             ))}
           </div>
         </>
@@ -124,11 +126,11 @@ export default function ViewSkills({ habilidades, visibilidad }) {
 
       {!!blandas.length && (
         <>
-          <SubsectionTitle>Blandas</SubsectionTitle>
+          <SubsectionTitle>{t('view.skills.soft')}</SubsectionTitle>
 
           <div className="sk-soft-grid">
             {blandas.map(skill => (
-              <SkillCard key={skill.id} skill={skill} soft />
+              <SkillCard key={skill.id} skill={skill} soft t={t} />
             ))}
           </div>
         </>

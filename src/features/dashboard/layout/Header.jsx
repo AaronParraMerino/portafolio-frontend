@@ -1,3 +1,5 @@
+import { useLanguage } from '../../../core/i18n';
+
 const toArray = (actions) => {
   if (!actions) return [];
   return Array.isArray(actions) ? actions.filter(Boolean) : [actions];
@@ -30,7 +32,10 @@ export default function Header({
   actionLabel,
   onAction,
 }) {
-  const fallbackTitle = breadcrumb.find((item) => item.active)?.label || breadcrumb.at(-1)?.label || 'Dashboard';
+  const { t } = useLanguage();
+  const fallbackTitle = breadcrumb.find((item) => item.active)?.label
+    || breadcrumb.at(-1)?.label
+    || t('dashboard.header.defaultTitle');
   const visibleTitle = title || fallbackTitle;
   const visibleActions = [
     ...toArray(actions),
@@ -54,7 +59,7 @@ export default function Header({
     <header className={headerClassName}>
       <div className="dash-module-header-copy">
         {hasBreadcrumb ? (
-          <nav className="dash-module-header-breadcrumb" aria-label="Ubicacion actual">
+          <nav className="dash-module-header-breadcrumb" aria-label={t('dashboard.header.currentLocation')}>
             {breadcrumb.map((item, index) => (
               <span
                 key={item.key || `${item.label}-${index}`}
@@ -84,7 +89,6 @@ export default function Header({
           {visibleActions.map((action, index) => {
             const {
               label,
-              loadingLabel = 'Cargando...',
               icon,
               variant = 'primary',
               disabled = false,
@@ -96,6 +100,7 @@ export default function Header({
               ariaLabel,
               className: actionClassName = '',
             } = action;
+            const loadingLabel = action.loadingLabel || t('dashboard.header.loading');
             const actionLabel = loading ? loadingLabel : label;
             const actionClasses = [
               'dash-module-header-action',

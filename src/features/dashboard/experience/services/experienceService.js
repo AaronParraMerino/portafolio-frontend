@@ -1,4 +1,5 @@
 import BASE_URL from '../../../../services/http/const';
+import { DEFAULT_LANGUAGE, translations } from '../../../../core/i18n/translations';
 import {
   getCachedDashboardEndpoint,
   invalidateDashboardDerivedCaches,
@@ -6,12 +7,42 @@ import {
   writeCachedDashboardEndpoint,
 } from '../../services/dashboardCache';
 
+
+const LANGUAGE_STORAGE_KEY = 'creafolio_language';
+
+const getStoredLanguage = () => {
+  if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
+  const language = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return translations[language] ? language : DEFAULT_LANGUAGE;
+};
+
+const translate = (key, params = {}) => {
+  const language = getStoredLanguage();
+  const text = translations[language]?.[key] ?? translations[DEFAULT_LANGUAGE]?.[key] ?? key;
+
+  return Object.entries(params).reduce(
+    (result, [paramKey, value]) => result.replaceAll(`{${paramKey}}`, String(value)),
+    text,
+  );
+};
+
+const EXPERIENCE_TYPE_WORK = 'Laboral';
+const EXPERIENCE_TYPE_ACADEMIC = 'Académica';
+
+const isAcademicType = (value = '') => (
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') === 'academica'
+);
+
 const getAuthData = () => {
   const token = localStorage.getItem('tokenPORT');
   const usuarioRaw = localStorage.getItem('usuario');
-  if (!token || !usuarioRaw) throw new Error('No hay sesión activa.');
+  if (!token || !usuarioRaw) throw new Error(translate('experience.service.error.noSession'));
   const usuario = JSON.parse(usuarioRaw);
-  if (!usuario?.id_usuario) throw new Error('No se encontró el usuario autenticado.');
+  if (!usuario?.id_usuario) throw new Error(translate('experience.service.error.noUser'));
   return { token, userId: usuario.id_usuario };
 };
 
@@ -25,7 +56,7 @@ const parseJson = async (res) => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const details = data?.errors ? ` ${JSON.stringify(data.errors)}` : '';
-    throw new Error(`${data?.message || 'Error en la solicitud.'}${details}`);
+    throw new Error(`${data?.message || translate('experience.service.error.request')}${details}`);
   }
   return data;
 };
@@ -59,7 +90,7 @@ const writeExperienciasCache = (userId, items = []) => {
 // Traducción: Lo que viene de Laravel hacia React
 const toFrontModel = (exp) => ({
   id: exp.id_experiencia ?? exp.id,
-  tipo_experiencia: exp.tipo === 'academica' ? 'Académica' : 'Laboral',
+  tipo_experiencia: exp.tipo === 'academica' ? EXPERIENCE_TYPE_ACADEMIC : EXPERIENCE_TYPE_WORK,
   empresa: exp.institucion ?? '',
   puesto: exp.cargo ?? '',
   fecha_inicio: normalizeDate(exp.fecha_inicio),
@@ -74,7 +105,7 @@ const toBackModel = (formData) => {
   const isActual = toBoolean(formData.actual);
 
   return {
-    tipo: formData.tipo_experiencia === 'Académica' ? 'academica' : 'laboral',
+    tipo: isAcademicType(formData.tipo_experiencia) ? 'academica' : 'laboral',
     institucion: formData.empresa.trim(),
     cargo: formData.puesto.trim(),
     descripcion: formData.descripcion?.trim() || null,

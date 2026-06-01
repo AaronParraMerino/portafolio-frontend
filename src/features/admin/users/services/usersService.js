@@ -1,3 +1,5 @@
+import BASE_URL from '../../../../services/http/const';
+
 export const USER_PAGE_SIZE = 10;
 
 export const USER_MANAGEMENT_VIEWS = [
@@ -11,7 +13,7 @@ export const USER_STATUS_FILTERS = [
   { id: 'todos', label: 'Todos' },
   { id: 'activo', label: 'Activos' },
   { id: 'pausado', label: 'Pausados' },
-  { id: 'suspendido', label: 'Suspendidos' },
+  { id: 'bloqueado', label: 'Bloqueados' },
   { id: 'inactivo', label: 'Inactivos' },
 ];
 
@@ -24,17 +26,45 @@ export const USER_STATUS_META = {
   pausado: {
     label: 'Pausado',
     tone: 'warning',
-    helper: 'Acceso detenido temporalmente.',
+    helper: 'Solo lectura temporal.',
   },
-  suspendido: {
-    label: 'Suspendido',
+  bloqueado: {
+    label: 'Bloqueado',
     tone: 'danger',
     helper: 'Sin acceso indefinido.',
   },
   inactivo: {
     label: 'Inactivo',
     tone: 'muted',
-    helper: 'Sin actividad reciente.',
+    helper: 'Cuenta desactivada por el usuario.',
+  },
+};
+
+export const USER_ROLE_META = {
+  administrador: {
+    label: 'Administrador',
+    tone: 'primary',
+    helper: 'Gestion completa del sistema.',
+  },
+  admin: {
+    label: 'Administrador',
+    tone: 'primary',
+    helper: 'Gestion completa del sistema.',
+  },
+  usuario: {
+    label: 'Usuario',
+    tone: 'muted',
+    helper: 'Acceso regular al portafolio.',
+  },
+  publicante: {
+    label: 'Publicante',
+    tone: 'info',
+    helper: 'Puede crear eventos con limite mensual.',
+  },
+  publicador: {
+    label: 'Publicante',
+    tone: 'info',
+    helper: 'Puede crear eventos con limite mensual.',
   },
 };
 
@@ -58,15 +88,21 @@ export const USER_STATS = [
     tone: 'warning',
   },
   {
-    id: 'suspendido',
-    label: 'Suspendidos',
+    id: 'bloqueado',
+    label: 'Bloqueados',
     helper: 'Acceso restringido',
     tone: 'danger',
   },
   {
+    id: 'publicantes',
+    label: 'Publicantes',
+    helper: 'Pueden publicar eventos',
+    tone: 'info',
+  },
+  {
     id: 'inactivo',
     label: 'Inactivos',
-    helper: 'Sin actividad reciente',
+    helper: 'Cuentas desactivadas',
     tone: 'muted',
   },
 ];
@@ -74,6 +110,7 @@ export const USER_STATS = [
 export const USER_TABLE_COLUMNS = [
   { id: 'selection', label: '' },
   { id: 'user', label: 'Usuario' },
+  { id: 'role', label: 'Rol' },
   { id: 'status', label: 'Estado' },
   { id: 'sessions', label: 'Sesiones' },
   { id: 'lastAccess', label: 'Ultimo acceso' },
@@ -81,11 +118,28 @@ export const USER_TABLE_COLUMNS = [
   { id: 'actions', label: '' },
 ];
 
+export const USER_ROLE_ACTIONS = [
+  {
+    id: 'asignar_publicante',
+    label: 'Asignar rol publicante',
+    description: 'Habilita la creacion de eventos con limite de 3 publicaciones mensuales.',
+    tone: 'success',
+    targetRole: 'publicante',
+  },
+  {
+    id: 'quitar_publicante',
+    label: 'Quitar rol publicante',
+    description: 'Retira el permiso para crear eventos y registra un motivo administrativo.',
+    tone: 'danger',
+    targetRole: 'usuario',
+  },
+];
+
 export const USER_BULK_ACTIONS = [
   { id: 'activar', label: 'Activar', tone: 'success' },
   { id: 'pausar', label: 'Pausar', tone: 'warning' },
-  { id: 'suspender', label: 'Suspender', tone: 'danger' },
-  { id: 'eliminar', label: 'Eliminar', tone: 'danger' },
+  { id: 'bloquear', label: 'Bloquear', tone: 'danger' },
+  { id: 'inactivar', label: 'Inactivar', tone: 'danger' },
 ];
 
 export const USER_DETAIL_ACTIONS = [
@@ -98,19 +152,19 @@ export const USER_DETAIL_ACTIONS = [
   {
     id: 'pausar',
     label: 'Pausar cuenta',
-    description: 'Bloquea el acceso temporalmente sin eliminar la cuenta.',
+    description: 'Mantiene el contenido visible y limita la cuenta a consultas.',
     tone: 'warning',
   },
   {
-    id: 'suspender',
-    label: 'Suspender cuenta',
+    id: 'bloquear',
+    label: 'Bloquear cuenta',
     description: 'Mantiene el bloqueo hasta una revision manual del equipo.',
     tone: 'danger',
   },
   {
-    id: 'eliminar',
-    label: 'Eliminar usuario',
-    description: 'Accion irreversible disponible cuando se integre el backend.',
+    id: 'inactivar',
+    label: 'Inactivar cuenta',
+    description: 'Desactiva la cuenta, oculta su contenido y cierra sus sesiones.',
     tone: 'danger',
   },
 ];
@@ -119,8 +173,9 @@ export const USER_COMMUNICATION_SEGMENTS = [
   { id: 'todos', label: 'Todos', status: null },
   { id: 'activos', label: 'Activos', status: 'activo' },
   { id: 'pausados', label: 'Pausados', status: 'pausado' },
-  { id: 'suspendidos', label: 'Suspendidos', status: 'suspendido' },
+  { id: 'bloqueados', label: 'Bloqueados', status: 'bloqueado' },
   { id: 'inactivos', label: 'Inactivos', status: 'inactivo' },
+  { id: 'publicantes', label: 'Publicantes', role: 'publicante' },
   { id: 'seleccionados', label: 'Seleccionados', status: null },
 ];
 
@@ -173,10 +228,16 @@ export function estimateUsersAudience({
   const selectedStatuses = USER_COMMUNICATION_SEGMENTS
     .filter((segment) => segment.status && segments.includes(segment.id))
     .map((segment) => segment.status);
+  const selectedRoles = USER_COMMUNICATION_SEGMENTS
+    .filter((segment) => segment.role && segments.includes(segment.id))
+    .map((segment) => segment.role);
 
-  if (!selectedStatuses.length) return 0;
+  if (!selectedStatuses.length && !selectedRoles.length) return 0;
 
-  return users.filter((user) => selectedStatuses.includes(user.estado)).length;
+  return users.filter((user) => (
+    selectedStatuses.includes(user.estado)
+    || selectedRoles.includes(getUserRoleValue(user))
+  )).length;
 }
 
 export function createUsersDirectoryShell() {
@@ -188,17 +249,173 @@ export function createUsersDirectoryShell() {
     sourceReady: false,
     supportsMutations: false,
     supportsSessions: false,
+    supportsActivation: false,
+    supportsPausing: false,
+    supportsBlocking: false,
+    supportsCommunications: false,
+    supportsRoleManagement: false,
     pageSize: USER_PAGE_SIZE,
   };
 }
 
+export async function fetchUsersDirectory() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+
+  if (!token) {
+    throw new Error('No hay sesion administrativa activa.');
+  }
+
+  const response = await fetch(`${BASE_URL}/administrador/usuarios`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload?.message || 'No se pudo cargar la lista de usuarios.');
+  }
+
+  return normalizeUsersDirectory(payload);
+}
+
+function getAdminRequestHeaders() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+
+  if (!token) {
+    throw new Error('No hay sesion administrativa activa.');
+  }
+
+  return {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+async function parseAdminResponse(response, fallbackMessage) {
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload?.message || fallbackMessage);
+  }
+
+  return payload;
+}
+
+export async function fetchUserSessions(userId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/sesiones`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudieron cargar las sesiones.');
+
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
+export async function closeUserSession(userId, sessionId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/sesiones/${sessionId}`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudo cerrar la sesion.');
+}
+
+export async function closeAllUserSessions(userId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/sesiones`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudieron cerrar las sesiones.');
+}
+
+export async function inactivateUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}`, {
+    method: 'DELETE',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo inactivar la cuenta.');
+}
+
+export async function activateUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/activar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo activar la cuenta.');
+}
+
+export async function blockUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/bloquear`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo bloquear la cuenta.');
+}
+
+export async function pauseUserAccount(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/pausar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo pausar la cuenta.');
+}
+
+export async function updateUserRole(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/rol`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar el rol del usuario.');
+}
+
+export async function sendAdminNotice(payload) {
+  const response = await fetch(`${BASE_URL}/administrador/notificaciones`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo enviar el aviso.');
+}
+
 export function normalizeUsersDirectory(payload = {}) {
   const base = createUsersDirectoryShell();
+  const items = Array.isArray(payload.items) ? payload.items : base.items;
 
   return {
     ...base,
     ...payload,
-    items: Array.isArray(payload.items) ? payload.items : base.items,
+    items: getUniqueUsersById(items),
     communications: Array.isArray(payload.communications) ? payload.communications : base.communications,
     history: Array.isArray(payload.history) ? payload.history : base.history,
     templates: Array.isArray(payload.templates) ? payload.templates : base.templates,
@@ -208,12 +425,28 @@ export function normalizeUsersDirectory(payload = {}) {
   };
 }
 
+function getUniqueUsersById(users = []) {
+  const uniqueUsers = new Map();
+
+  users.forEach((user) => {
+    const id = user?.id ?? user?.id_usuario ?? user?.usuario_id;
+
+    if (id === undefined || id === null) return;
+    if (!uniqueUsers.has(String(id))) {
+      uniqueUsers.set(String(id), user);
+    }
+  });
+
+  return Array.from(uniqueUsers.values());
+}
+
 export function buildUsersMetrics(users = []) {
   return {
     total: users.length,
     activo: users.filter((user) => user.estado === 'activo').length,
     pausado: users.filter((user) => user.estado === 'pausado').length,
-    suspendido: users.filter((user) => user.estado === 'suspendido').length,
+    bloqueado: users.filter((user) => user.estado === 'bloqueado').length,
+    publicantes: users.filter((user) => getUserRoleValue(user) === 'publicante').length,
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   };
 }
@@ -244,6 +477,21 @@ export function buildUsersWorkspaceCounts({
 
 export function getUserStatusMeta(status) {
   return USER_STATUS_META[status] || USER_STATUS_META.inactivo;
+}
+
+export function getUserRoleValue(user = {}) {
+  const rawRole = String(user.rol || user.role || user.tipo || 'usuario').trim().toLowerCase();
+
+  if (rawRole === 'publicador' || rawRole === 'publisher') return 'publicante';
+  if (rawRole === 'admin') return 'administrador';
+
+  return rawRole || 'usuario';
+}
+
+export function getUserRoleMeta(user = {}) {
+  const role = getUserRoleValue(user);
+
+  return USER_ROLE_META[role] || USER_ROLE_META.usuario;
 }
 
 export function getUserInitials(name = '') {

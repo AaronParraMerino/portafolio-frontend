@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import '../styles/profile.css';
+import { useLanguage } from '../../../../core/i18n';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 
 const EyeOpen = () => (
@@ -24,17 +25,18 @@ const ICONS = {
 };
 
 const CAMPOS = [
-  { key: 'correo',    label: 'Correo electrónico' },
-  { key: 'pais',      label: 'País' },
-  { key: 'ciudad',    label: 'Ciudad' },
-  { key: 'profesion', label: 'Profesión' },
-  { key: 'telefono',  label: 'Teléfono' },
-  { key: 'biografia', label: 'Acerca de mí' },
+  { key: 'correo',    labelKey: 'profile.field.email' },
+  { key: 'pais',      labelKey: 'profile.field.country' },
+  { key: 'ciudad',    labelKey: 'profile.field.city' },
+  { key: 'profesion', labelKey: 'profile.field.profession' },
+  { key: 'telefono',  labelKey: 'profile.field.phone' },
+  { key: 'biografia', labelKey: 'profile.field.about' },
 ];
 
 const SIEMPRE_VISIBLE = ['nombre'];
 
 export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
+  const { t } = useLanguage();
   /* NUEVO: estado del panel de confirmación de visibilidad */
   const [confirm, setConfirm] = useState(null); // null | { key, label, nextVisible }
 
@@ -55,11 +57,12 @@ export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
     <>
       <div className="prf-card">
         <div className="prf-card-head">
-          <span className="prf-card-title">Controla qué información es pública</span>
+          <span className="prf-card-title">{t('profile.visibility.title')}</span>
         </div>
 
         <div className="prf-lista">
-          {CAMPOS.map(({ key, label }) => {
+          {CAMPOS.map(({ key, labelKey }) => {
+            const label = t(labelKey);
             const valor   = perfil[key] || null;
             const visible = perfil.visibilidad?.[key] ?? true;
             const siempre = SIEMPRE_VISIBLE.includes(key);
@@ -79,7 +82,7 @@ export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
                   <div>
                     <span className="prf-campo-label">{label}</span>
                     <span className={`prf-campo-valor${!valor ? ' empty' : ''}`}>
-                      {valor || 'Sin completar'}
+                      {valor || t('profile.empty.default')}
                     </span>
                   </div>
                 </div>
@@ -87,19 +90,19 @@ export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
                 <div className="prf-fila-right">
                   {siempre ? (
                     <span className="prf-pill prf-pill-siempre">
-                      <EyeOpen /> Siempre visible
+                      <EyeOpen /> {t('profile.visibility.alwaysVisible')}
                     </span>
                   ) : (
                     <>
                       <span className={`prf-pill ${visible ? 'prf-pill-visible' : 'prf-pill-oculto'}`}>
-                        {visible ? <><EyeOpen /> Visible</> : <><EyeClosed /> Oculto</>}
+                        {visible ? <><EyeOpen /> {t('profile.visibility.visible')}</> : <><EyeClosed /> {t('profile.visibility.hidden')}</>}
                       </span>
                       {/* Toggle → abre panel de confirmación */}
                       <button
                         className={`prf-toggle ${visible ? 'on' : 'off'}`}
                         onClick={() => handleToggleClick(key, label, visible)}
-                        title={visible ? 'Ocultar' : 'Mostrar'}
-                        aria-label={visible ? `Ocultar ${label}` : `Mostrar ${label}`}
+                        title={visible ? t('profile.visibility.hide') : t('profile.visibility.show')}
+                        aria-label={visible ? `${t('profile.visibility.hide')} ${label}` : `${t('profile.visibility.show')} ${label}`}
                       >
                         <span className="prf-toggle-thumb" />
                       </button>
@@ -115,13 +118,13 @@ export default function ProfileInfo({ perfil, onToggleVisibilidad }) {
       {/* Panel de confirmación de visibilidad */}
       <ConfirmModal
         open={!!confirm}
-        title={confirm?.nextVisible ? `¿Hacer visible ${confirm.label}?` : `¿Ocultar ${confirm?.label}?`}
+        title={confirm?.nextVisible ? t('profile.visibility.makeVisibleTitle', { field: confirm.label }) : t('profile.visibility.hideTitle', { field: confirm?.label || '' })}
         message={
           confirm?.nextVisible
-            ? `${confirm.label} será visible para cualquier persona que visite tu perfil público.`
-            : `${confirm?.label} quedará oculto y no será visible en tu perfil público.`
+            ? t('profile.visibility.makeVisibleMessage', { field: confirm.label })
+            : t('profile.visibility.hideMessage', { field: confirm?.label || '' })
         }
-        confirmLabel={confirm?.nextVisible ? 'Sí, hacer visible' : 'Sí, ocultar'}
+        confirmLabel={confirm?.nextVisible ? t('profile.visibility.confirmShow') : t('profile.visibility.confirmHide')}
         variant="blue"
         icon="check"
         loading={false}

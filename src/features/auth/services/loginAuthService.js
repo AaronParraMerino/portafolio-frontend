@@ -20,6 +20,56 @@ export const PROVIDER_LABELS = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const LANGUAGE_STORAGE_KEY = 'creafolio_language';
+const SUPPORTED_LANGUAGE_CODES = ['es', 'en', 'pt'];
+
+function normalizeLanguagePreference(value) {
+  return SUPPORTED_LANGUAGE_CODES.includes(value) ? value : 'es';
+}
+
+function extractLanguagePreference(payload = {}) {
+  const value =
+    payload?.idioma_preferido ??
+    payload?.idioma ??
+    payload?.language ??
+    payload?.data?.idioma_preferido ??
+    payload?.data?.idioma ??
+    payload?.data?.language ??
+    payload?.usuario?.idioma_preferido ??
+    payload?.user?.idioma_preferido;
+
+  return SUPPORTED_LANGUAGE_CODES.includes(value) ? value : null;
+}
+
+function saveLanguagePreference(language) {
+  localStorage.setItem(
+    LANGUAGE_STORAGE_KEY,
+    normalizeLanguagePreference(language)
+  );
+}
+
+async function loadLanguagePreferenceFromBackend(baseUrl, token) {
+  if (!baseUrl || !token) return null;
+
+  try {
+    const response = await fetch(`${baseUrl}/usuarios/preferencia-idioma`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json().catch(() => ({}));
+    return extractLanguagePreference(data);
+  } catch {
+    return null;
+  }
+}
+
+
 function getBaseSessionToken() {
   return sessionStorage.getItem(BASE_SESSION_TOKEN_KEY);
 }
@@ -44,9 +94,28 @@ export function validateLoginFields(correo, password) {
   return "";
 }
 
-export function persistAuthSession(result) {
-  localStorage.setItem("tokenPORT", result.token);
+export async function persistAuthSession(result, baseUrl = '') {
+  const token = result?.token || '';
+
+  if (token) {
+    localStorage.setItem("tokenPORT", token);
+  }
+
   localStorage.setItem("usuario", JSON.stringify(result.data));
+
+  const payloadLanguage = extractLanguagePreference(result);
+
+  if (payloadLanguage) {
+    saveLanguagePreference(payloadLanguage);
+  }
+
+  const backendLanguage = await loadLanguagePreferenceFromBackend(baseUrl, token);
+
+  if (backendLanguage) {
+    saveLanguagePreference(backendLanguage);
+  } else if (!payloadLanguage) {
+    saveLanguagePreference('es');
+  }
 }
 
 export function cleanOAuthErrorFromUrl() {
@@ -56,12 +125,14 @@ export function cleanOAuthErrorFromUrl() {
   if (!oauthError) return null;
 
   const correo = params.get("correo") || "";
+  const razon = params.get("razon") || "";
   params.delete("oauth_error");
+  params.delete("razon");
 
   const cleaned = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
   window.history.replaceState({}, "", cleaned);
 
-  return { oauthError, correo };
+  return { oauthError, correo, razon };
 }
 
 export function buildOAuthRedirectUrl(baseUrl, provider) {

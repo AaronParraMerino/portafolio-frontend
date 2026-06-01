@@ -1,10 +1,17 @@
 import CambiarContraseña from '../components/CambiarContraseña';
 import Header from '../../layout/Header';
+import { useLanguage } from '../../../../core/i18n';
 
-export default function CambiarContraPage() {
+export default function CambiarContraseñaPage() {
+  const { t } = useLanguage();
+
   return (
     <>
-      <Header eyebrow="CUENTA" title="Cambiar Contrasena" subtitle="Configuracion" />
+      <Header
+        eyebrow={t("configurate.header.eyebrow")}
+        title={t("configurate.password.pageTitle")}
+        subtitle={t("configurate.header.title")}
+      />
       <CambiarContraseña />
     </>
   );

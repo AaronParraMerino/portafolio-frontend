@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import { FiPlus } from 'react-icons/fi';
 import '../styles/projects.css';
 import { useProjects } from '../hooks/useProjects';
@@ -9,33 +10,34 @@ import ProjectsEdit        from '../components/ProjectsEdit';
 import ProjectsConfigModal from '../components/ProjectsConfigModal';
 import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
-import { ESTADOS_PROYECTO } from '../model/projectsModel';
+import { ESTADOS_PROYECTO, getProjectOptionLabel } from '../model/projectsModel';
 
 const ESTADO_DETALLE = {
-  publicado: 'Visible como proyecto publicado.',
-  borrador: 'Guardado sin publicarse todavia.',
-  archivado: 'Fuera del listado activo.',
-  en_desarrollo: 'Trabajo activo o en progreso.',
-  pausado: 'Temporalmente detenido.',
-  terminado: 'Desarrollo finalizado.',
-  mantenimiento: 'En soporte o mejoras continuas.',
-  versionado: 'Con versiones o entregas iterativas.',
-  cancelado: 'Proyecto cancelado.',
+  publicado: 'projects.statusDetail.publicado',
+  borrador: 'projects.statusDetail.borrador',
+  archivado: 'projects.statusDetail.archivado',
+  en_desarrollo: 'projects.statusDetail.en_desarrollo',
+  pausado: 'projects.statusDetail.pausado',
+  terminado: 'projects.statusDetail.terminado',
+  mantenimiento: 'projects.statusDetail.mantenimiento',
+  versionado: 'projects.statusDetail.versionado',
+  cancelado: 'projects.statusDetail.cancelado',
 };
 
 const ESTADO_SECCIONES = [
   {
-    label: 'Publicacion',
+    labelKey: 'projects.statusSection.publication',
     estados: ['borrador', 'publicado', 'archivado'],
   },
   {
-    label: 'Desarrollo',
+    labelKey: 'projects.statusSection.development',
     estados: ['en_desarrollo', 'pausado', 'terminado', 'mantenimiento', 'versionado', 'cancelado'],
   },
 ];
 
-function getEstadoLabel(value) {
-  return ESTADOS_PROYECTO.find((estado) => estado.value === value)?.label || value || 'Pendiente';
+function getEstadoLabel(value, t = null) {
+  const option = ESTADOS_PROYECTO.find((estado) => estado.value === value);
+  return option ? getProjectOptionLabel(option, t) : (value || 'Pendiente');
 }
 
 function normalizarEstadoSeleccionable(value) {
@@ -67,6 +69,7 @@ function ProjectsBackgroundActivity({ active, label }) {
 }
 
 export default function ProjectsPage() {
+  const { t } = useLanguage();
   const {
     proyectos, loading, guardando, toast,
     crearNuevo, editarExistente, eliminar, desvincularParticipacion, actualizarConfiguracion, refrescar,
@@ -88,9 +91,9 @@ export default function ProjectsPage() {
 
   const headerActions = [
     {
-      label: 'Agregar nuevo',
-      title: 'Agregar nuevo proyecto',
-      ariaLabel: 'Agregar nuevo proyecto',
+      label: t('projects.header.add'),
+      title: t('projects.header.addProject'),
+      ariaLabel: t('projects.header.addProject'),
       icon: <FiPlus />,
       onClick: () => setEditando('nuevo'),
     },
@@ -171,7 +174,7 @@ export default function ProjectsPage() {
     const nuevoEstado = normalizarEstadoSeleccionable(estadoSeleccionado);
 
     if (!nuevoEstado) {
-      setEstadoError('El estado del proyecto es obligatorio.');
+      setEstadoError(t('projects.validation.statusRequired'));
       return;
     }
 
@@ -229,19 +232,19 @@ export default function ProjectsPage() {
   const hayCambioEstado = estadoSeleccionado !== estadoActualProyecto;
   const loadingInicial = loading && !cargaInicialTerminada && proyectos.length === 0;
   const activityLabel = guardando
-    ? 'Guardando cambios...'
+    ? t('projects.activity.saving')
     : loading
-      ? 'Actualizando proyectos...'
+      ? t('projects.activity.loading')
       : '';
 
   // ── Loading ──
   if (loadingInicial) {
     return (
       <div className="prj-page">
-        <Header title="Mis Proyectos" actions={headerActions} />
+        <Header title={t('projects.header.title')} actions={headerActions} />
         <div className="dash-loading dash-loading--page" role="status" aria-live="polite">
           <span className="dash-loading-spinner" />
-          <span>Cargando proyectos...</span>
+          <span>{t('projects.loading.title')}...</span>
         </div>
       </div>
     );
@@ -250,7 +253,7 @@ export default function ProjectsPage() {
   return (
     <div className="prj-page">
 
-      <Header title="Mis Proyectos" actions={headerActions} />
+      <Header title={t('projects.header.title')} actions={headerActions} />
 
       <div className="prj-content">
 
@@ -299,18 +302,18 @@ export default function ProjectsPage() {
 
       <ConfirmModal
         open={!!estadoProyecto}
-        title="Estado del proyecto"
-        subtitle={estadoProyecto?.titulo || 'Proyecto'}
+        title={t('projects.statusModal.title')}
+        subtitle={estadoProyecto?.titulo || t('projects.card.defaultTitle')}
         message={(
           <div className="prj-state-modal">
             <div className="prj-state-summary">
-              Estado actual: <strong>{getEstadoLabel(estadoActualProyecto)}</strong>
+              {t('projects.statusModal.title')}: <strong>{getEstadoLabel(estadoActualProyecto, t)}</strong>
             </div>
 
-            <div className="prj-state-options" role="radiogroup" aria-label="Estado del proyecto">
+            <div className="prj-state-options" role="radiogroup" aria-label={t('projects.statusModal.title')}>
               {ESTADO_SECCIONES.map((section) => (
-                <div key={section.label} className="prj-state-section">
-                  <div className="prj-state-section-title">{section.label}</div>
+                <div key={section.labelKey} className="prj-state-section">
+                  <div className="prj-state-section-title">{t(section.labelKey)}</div>
 
                   <div className="prj-state-section-options">
                     {section.estados
@@ -335,12 +338,12 @@ export default function ProjectsPage() {
                           >
                             <span className={`prj-state-dot ${estado.value}`} />
                             <span className="prj-state-option-main">
-                              <span className="prj-state-label">{estado.label}</span>
+                              <span className="prj-state-label">{getProjectOptionLabel(estado, t)}</span>
                               <span className="prj-state-description">
-                                {ESTADO_DETALLE[estado.value]}
+                                {t(ESTADO_DETALLE[estado.value])}
                               </span>
                             </span>
-                            {current && <span className="prj-state-current-badge">Actual</span>}
+                            {current && <span className="prj-state-current-badge">{t('projects.statusModal.current')}</span>}
                           </button>
                         );
                       })}
@@ -356,8 +359,8 @@ export default function ProjectsPage() {
             )}
           </div>
         )}
-        confirmLabel={!estadoSeleccionado ? 'Seleccionar estado' : hayCambioEstado ? 'Guardar estado' : 'Mantener estado'}
-        cancelLabel="Cancelar"
+        confirmLabel={!estadoSeleccionado ? t('projects.statusModal.select') : hayCambioEstado ? t('projects.statusModal.save') : t('projects.statusModal.save')}
+        cancelLabel={t('projects.statusModal.cancel')}
         variant="blue"
         icon="info"
         onConfirm={handleGuardarEstadoProyecto}
@@ -366,9 +369,9 @@ export default function ProjectsPage() {
 
       <ConfirmModal
         open={!!confirmDel}
-        title="¿Eliminar proyecto?"
-        message={`Estás por eliminar "${confirmDel?.titulo}". Esta acción es permanente y no se puede deshacer.`}
-        confirmLabel="Sí, eliminar"
+        title={t('projects.confirm.deleteTitle')}
+        message={t('projects.confirm.deleteMessage', { title: confirmDel?.titulo || t('projects.card.defaultTitle') })}
+        confirmLabel={t('projects.confirm.delete')}
         variant="red"
         icon="warning"
         onConfirm={async () => { await eliminar(confirmDel.id); setConfirmDel(null); }}
@@ -377,9 +380,9 @@ export default function ProjectsPage() {
 
       <ConfirmModal
         open={!!confirmDetach}
-        title="¿Desvincular participación?"
-        message={`Vas a quitar tu participación de "${confirmDetach?.titulo}". El proyecto seguirá existiendo para los demás participantes.`}
-        confirmLabel="Sí, desvincularme"
+        title={t('projects.confirm.unlinkTitle')}
+        message={t('projects.confirm.unlinkMessage', { title: confirmDetach?.titulo || t('projects.card.defaultTitle') })}
+        confirmLabel={t('projects.confirm.unlink')}
         variant="blue"
         icon="warning"
         onConfirm={async () => { await desvincularParticipacion(confirmDetach.id); setConfirmDetach(null); }}

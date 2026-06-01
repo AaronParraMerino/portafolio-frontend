@@ -1,4 +1,5 @@
 import '../styles/projects.css';
+import { useLanguage } from '../../../../core/i18n';
 import ProjectCard from './ProjectCard';
 
 /* ════════════════════════════════════════
@@ -30,6 +31,8 @@ export default function ProjectsGrid({
   onEstadoProyecto,
   onAgregar,
 }) {
+  const { t } = useLanguage();
+
   const handleAgregar = () => {
     if (typeof onAgregar === 'function') {
       onAgregar();
@@ -50,11 +53,11 @@ export default function ProjectsGrid({
               </svg>
 
               <div className="prj-empty-title">
-                Sin resultados para &ldquo;{busqueda}&rdquo;
+                {t('projects.empty.searchTitle', { query: busqueda })}
               </div>
 
               <div className="prj-empty-sub">
-                Prueba con otro nombre, tecnología, tipo o estado
+                {t('projects.empty.searchText')}
               </div>
             </>
           ) : (
@@ -65,11 +68,11 @@ export default function ProjectsGrid({
               </svg>
 
               <div className="prj-empty-title">
-                Sin proyectos en esta categoría
+                {t('projects.empty.categoryTitle')}
               </div>
 
               <div className="prj-empty-sub">
-                Agrega un proyecto para empezar
+                {t('projects.empty.categoryText')}
               </div>
             </>
           )}
@@ -81,6 +84,7 @@ export default function ProjectsGrid({
         <ProjectCard
           key={getProjectKey(p, index)}
           proyecto={p}
+          prioridadImagen={index < 3}
           onEditar={onEditar}
           onEliminar={onEliminar}
           onDesvincular={onDesvincular}
@@ -108,8 +112,8 @@ export default function ProjectsGrid({
           </svg>
         </div>
 
-        <div className="prj-add-label">Agregar nuevo proyecto</div>
-        <div className="prj-add-sub">Muestra tu siguiente trabajo al mundo</div>
+        <div className="prj-add-label">{t('projects.empty.addLabel')}</div>
+        <div className="prj-add-sub">{t('projects.empty.addSub')}</div>
       </div>
 
     </div>

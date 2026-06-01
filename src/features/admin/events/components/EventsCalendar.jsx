@@ -77,6 +77,7 @@ export default function EventsCalendar({
   events,
   onEditEvent,
   onCommunicate,
+  showActions = true,
 }) {
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState(null);
@@ -234,14 +235,16 @@ export default function EventsCalendar({
                         </span>
                       </div>
                     </div>
-                    <div className="evt-card-actions">
-                      <button type="button" className="evt-btn evt-btn--ghost" onClick={() => onCommunicate(event)}>
-                        Comunicar
-                      </button>
-                      <button type="button" className="evt-btn evt-btn--primary" onClick={() => onEditEvent(event)}>
-                        Editar
-                      </button>
-                    </div>
+                    {showActions ? (
+                      <div className="evt-card-actions">
+                        <button type="button" className="evt-btn evt-btn--ghost" onClick={() => onCommunicate(event)}>
+                          Comunicar
+                        </button>
+                        <button type="button" className="evt-btn evt-btn--primary" onClick={() => onEditEvent(event)}>
+                          Editar
+                        </button>
+                      </div>
+                    ) : null}
                   </article>
                 );
               }) : (

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../../../core/i18n';
 
 /* ── Datos ── */
 const CHIPS_LEFT = [
@@ -24,14 +25,15 @@ const CHIPS_TOP = [
 ];
 
 const STATS = [
-  { num: '1,240+', lbl: 'Desarrolladores' },
-  { num: '380+',   lbl: 'Proyectos'       },
-  { num: '95',     lbl: 'Contrataciones', red: true },
-  { num: '18+',    lbl: 'Tecnologías'    },
+  { num: '1,240+', labelKey: 'hero.stats.developers' },
+  { num: '380+',   labelKey: 'hero.stats.projects' },
+  { num: '95',     labelKey: 'hero.stats.hires', red: true },
+  { num: '18+',    labelKey: 'hero.stats.technologies' },
 ];
 
 
 export default function Hero() {
+  const { t } = useLanguage();
   const heroRef = useRef(null);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -513,7 +515,7 @@ export default function Hero() {
         </div>
 
         {/* Buscador público — esquina superior izquierda */}
-        <div className="spk-search-box" aria-label="Buscador público de portafolios">
+        <div className="spk-search-box" aria-label={t('hero.search.aria')}>
           <form className="spk-portfolio-search" onSubmit={handleSubmit}>
             <div className="spk-search-input-wrap">
               <span className="spk-search-icon" aria-hidden="true">
@@ -527,13 +529,13 @@ export default function Hero() {
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar habilidad, profesión, tecnología o nombre..."
-                aria-label="Buscar portafolios"
+                placeholder={t('hero.search.placeholder')}
+                aria-label={t('hero.search.aria')}
               />
             </div>
 
             <button className="spk-search-btn" type="submit">
-              Buscar
+              {t('hero.search.button')}
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14" />
                 <path d="M13 6l6 6-6 6" />
@@ -548,7 +550,7 @@ export default function Hero() {
                 <path d="M7 12h10" />
                 <path d="M10 18h4" />
               </svg>
-              Búsqueda avanzada
+              {t('hero.advancedSearch')}
             </button>
           </div>
         </div>
@@ -559,15 +561,15 @@ export default function Hero() {
           {/* Badge institución */}
           <div className="spk-badge">
             <div className="spk-badge-dot" />
-            Universidad Mayor de San Simón · Cochabamba, Bolivia
+            {t('hero.badge')}
           </div>
 
           {/* Título */}
           <h1 className="spk-hero-title">
-            <span className="spk-title-blue">CreaFolio</span>{' '}
-            <span className="spk-title-dark">donde</span>
+            <span className="spk-title-blue">{t('hero.title.brand')}</span>{' '}
+            <span className="spk-title-dark">{t('hero.title.line1')}</span>
             <br />
-            <span className="spk-title-dark">el talento es visible</span>
+            <span className="spk-title-dark">{t('hero.title.line2')}</span>
           </h1>
 
           {/* Divisor */}
@@ -575,19 +577,17 @@ export default function Hero() {
 
           {/* Descripción */}
           <p className="spk-hero-desc">
-            <strong>CreaFolio</strong> es la vitrina digital para desarrolladores de software bolivianos.
-            Creá tu portafolio profesional, publicá tus proyectos reales y conectá directamente
-            con las empresas que buscan tu stack.
+            <strong>{t('hero.description.prefix')}</strong> {t('hero.description.text')}
           </p>
 
 
 
           {/* Mini stats */}
           <div className="spk-stats">
-            {STATS.map(({ num, lbl, red }) => (
-              <div key={lbl} className={`spk-stat${red ? ' stat-red' : ''}`}>
+            {STATS.map(({ num, labelKey, red }) => (
+              <div key={labelKey} className={`spk-stat${red ? ' stat-red' : ''}`}>
                 <div className="spk-stat-num">{num}</div>
-                <div className="spk-stat-lbl">{lbl}</div>
+                <div className="spk-stat-lbl">{t(labelKey)}</div>
               </div>
             ))}
           </div>
@@ -596,7 +596,7 @@ export default function Hero() {
 
         {/* Scroll hint */}
         <div className="spk-scroll-hint" aria-hidden="true">
-          <span>Scroll</span>
+          <span>{t('hero.scroll')}</span>
           <div className="spk-scroll-line" />
         </div>
 
@@ -604,4 +604,3 @@ export default function Hero() {
     </>
   );
 }
-

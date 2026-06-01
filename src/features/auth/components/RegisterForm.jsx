@@ -16,8 +16,10 @@ import PoliticaCookies from "./PoliticasC";
 import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import "./RegisterForm.css";
+import { useLanguage } from "../../../core/i18n";
 
 export default function RegisterForm() {
+  const { t } = useLanguage();
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   const BASE_URL = process.env.REACT_APP_API_URL;
 
@@ -53,17 +55,17 @@ export default function RegisterForm() {
     if (!oauthError) return;
 
     const errorMap = {
-      unsupported: "Proveedor OAuth no soportado.",
-      cancelled: "Inicio de sesión cancelado.",
-      invalid: "No se pudo validar la cuenta OAuth.",
-      blocked: "Usuario bloqueado.",
+      unsupported: t("auth.error.oauthUnsupported"),
+      cancelled: t("auth.error.oauthCancelled"),
+      invalid: t("auth.error.oauthInvalid"),
+      blocked: t("auth.error.userBlocked"),
       provider_conflict:
-        "Ya existe otra cuenta de ese proveedor vinculada a este correo.",
-      already_linked: "Esta cuenta OAuth ya está vinculada a otra cuenta.",
-      parse: "No se pudo procesar la autenticación.",
+        t("auth.error.providerConflict"),
+      already_linked: t("auth.error.alreadyLinked"),
+      parse: t("auth.error.oauthParse"),
     };
 
-    setError(errorMap[oauthError] || "No se pudo completar la autenticación.");
+    setError(errorMap[oauthError] || t("auth.error.oauthComplete"));
 
     params.delete("oauth_error");
 
@@ -72,7 +74,7 @@ export default function RegisterForm() {
     }`;
 
     window.history.replaceState({}, "", cleaned);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const element = googleButtonRef.current;
@@ -111,7 +113,7 @@ export default function RegisterForm() {
     setNombre(limpio);
 
     if (valor !== limpio) {
-      setErrorNombre("No se permiten números ni caracteres especiales.");
+      setErrorNombre(t("auth.error.onlyLetters"));
       setTimeout(() => setErrorNombre(""), 2500);
     }
   };
@@ -123,7 +125,7 @@ export default function RegisterForm() {
     setApellido(limpio);
 
     if (valor !== limpio) {
-      setErrorApellido("No se permiten números ni caracteres especiales.");
+      setErrorApellido(t("auth.error.onlyLetters"));
       setTimeout(() => setErrorApellido(""), 2500);
     }
   };
@@ -150,7 +152,7 @@ export default function RegisterForm() {
     const idToken = credentialResponse?.credential;
 
     if (!idToken) {
-      setError("No se pudo obtener el token de Google");
+      setError(t("auth.error.googleToken"));
       return;
     }
 
@@ -172,7 +174,7 @@ export default function RegisterForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.message || "No se pudo iniciar sesión con Google");
+        setError(result.message || t("auth.error.googleLogin"));
         return;
       }
 
@@ -191,7 +193,7 @@ export default function RegisterForm() {
       localStorage.setItem("usuario", JSON.stringify(result.data));
       window.location.href = "/";
     } catch (err) {
-      setError("Error de conexión. Intente nuevamente.");
+      setError(t("auth.error.connection"));
     }
   };
 
@@ -202,8 +204,8 @@ export default function RegisterForm() {
       const isPassword = linkConfirm.verificationMethod === "password";
       setLinkCredError(
         isPassword
-          ? "Ingresa tu contraseña."
-          : "Ingresa el código de 6 dígitos."
+          ? t("auth.error.enterPassword")
+          : t("auth.error.enterSixDigitCode")
       );
       return;
     }
@@ -240,12 +242,12 @@ export default function RegisterForm() {
         if (result.status === "wrong_credentials") {
           setLinkCredError(
             linkConfirm.verificationMethod === "password"
-              ? "Contraseña incorrecta. Inténtalo de nuevo."
-              : "Código incorrecto o expirado."
+              ? t("auth.error.wrongPassword")
+              : t("auth.error.wrongCode")
           );
         } else {
           setLinkConfirm(null);
-          setError(result.message || "No se pudo vincular la cuenta.");
+          setError(result.message || t("auth.error.linkAccount"));
         }
 
         return;
@@ -256,7 +258,7 @@ export default function RegisterForm() {
       window.location.href = "/";
     } catch (err) {
       setLinkConfirm(null);
-      setError("Error de conexión. Intente nuevamente.");
+      setError(t("auth.error.connection"));
     } finally {
       setLinkLoading(false);
     }
@@ -278,27 +280,27 @@ export default function RegisterForm() {
       !trimmedConfirmPassword ||
       !trimmedTelefono
     ) {
-      setError("Por favor llene todos los campos");
+      setError(t("auth.error.requiredFields"));
       return;
     }
 
     if (!trimmedCorreo.includes("@") || !trimmedCorreo.includes(".")) {
-      setError("Correo inválido");
+      setError(t("auth.error.invalidEmail"));
       return;
     }
 
     if (trimmedPassword !== trimmedConfirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError(t("auth.error.passwordMismatch"));
       return;
     }
 
     if (trimmedPassword.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+      setError(t("auth.error.passwordMin"));
       return;
     }
 
     if (!acceptedTerms) {
-      setError("Debe aceptar los términos y condiciones");
+      setError(t("auth.error.acceptTerms"));
       return;
     }
 
@@ -322,7 +324,7 @@ export default function RegisterForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.message || "Error al registrar usuario");
+        setError(result.message || t("auth.error.register"));
         return;
       }
 
@@ -331,7 +333,7 @@ export default function RegisterForm() {
 
       window.location.href = "/";
     } catch (err) {
-      setError("Error de conexión. Intente nuevamente.");
+      setError(t("auth.error.connection"));
     }
   };
 
@@ -342,13 +344,13 @@ export default function RegisterForm() {
       <div className="reg-container">
         <div className="reg-card">
           <div className="reg-left">
-            <h2 className="reg-title">Crear cuenta</h2>
+            <h2 className="reg-title">{t("auth.register.title")}</h2>
 
             <ConfirmModal
               open={!!error}
-              title="¡Error!"
+              title={t("auth.modal.errorTitle")}
               message={error}
-              confirmLabel="Aceptar"
+              confirmLabel={t("actions.accept")}
               variant="red"
               icon="warning"
               onConfirm={() => setError("")}
@@ -358,14 +360,13 @@ export default function RegisterForm() {
             {linkConfirm && linkStep === "info" && (
               <ConfirmModal
                 open={true}
-                title="Cuenta existente detectada"
-                message={`Ya existe una cuenta con el correo ${
-                  linkConfirm.correo
-                }. ¿Deseas vincular tu cuenta de ${getProviderName(
-                  linkConfirm.provider
-                )} a esa cuenta?`}
-                confirmLabel="Sí, vincular"
-                cancelLabel="Cancelar"
+                title={t("auth.modal.existingTitle")}
+                message={t("auth.modal.existingMessage", {
+                  email: linkConfirm.correo,
+                  provider: getProviderName(linkConfirm.provider),
+                })}
+                confirmLabel={t("auth.action.linkAccount")}
+                cancelLabel={t("actions.cancel")}
                 variant="yellow"
                 icon="warning"
                 onConfirm={() => setLinkStep("verify")}
@@ -383,13 +384,13 @@ export default function RegisterForm() {
                   <div className="reg-link-modal-overlay">
                     <div className="reg-link-modal-card">
                       <h3 className="reg-link-modal-title">
-                        Confirmar vinculación
+                        {t("auth.modal.confirmLinkTitle")}
                       </h3>
 
                       <p className="reg-link-modal-message">
                         {isPassword
-                          ? `Ingresa la contraseña de la cuenta ${linkConfirm.correo} para confirmar.`
-                          : `Ingresa el código de 6 dígitos que enviamos a ${linkConfirm.correo}.`}
+                          ? t("auth.modal.confirmPasswordText", { email: linkConfirm.correo })
+                          : t("auth.modal.confirmCodeText", { email: linkConfirm.correo })}
                       </p>
 
                       <input
@@ -404,7 +405,7 @@ export default function RegisterForm() {
                           !linkLoading &&
                           handleConfirmLink()
                         }
-                        placeholder={isPassword ? "Tu contraseña" : "123456"}
+                        placeholder={isPassword ? t("auth.placeholder.password") : "123456"}
                         maxLength={isPassword ? undefined : 6}
                         autoFocus
                       />
@@ -426,7 +427,7 @@ export default function RegisterForm() {
                           }}
                           disabled={linkLoading}
                         >
-                          Atrás
+                          {t("actions.back")}
                         </button>
 
                         <button
@@ -436,8 +437,8 @@ export default function RegisterForm() {
                           disabled={linkLoading || !linkCredential}
                         >
                           {linkLoading
-                            ? "Verificando..."
-                            : "Confirmar vinculación"}
+                            ? t("auth.status.verifying")
+                            : t("auth.action.confirmLink")}
                         </button>
                       </div>
                     </div>
@@ -456,7 +457,7 @@ export default function RegisterForm() {
                 <div className="reg-field">
                   <label htmlFor="nombre">
                     <FaUserCircle className="reg-icon" />
-                    Nombre
+                    {t("auth.field.firstName")}
                   </label>
 
                   <input
@@ -466,7 +467,7 @@ export default function RegisterForm() {
                     onChange={handleNombre}
                     maxLength={30}
                     autoComplete="given-name"
-                    placeholder="Tu nombre"
+                    placeholder={t("auth.placeholder.firstName")}
                   />
                 </div>
 
@@ -479,7 +480,7 @@ export default function RegisterForm() {
                 <div className="reg-field">
                   <label htmlFor="apellido">
                     <FaUserCircle className="reg-icon" />
-                    Apellido
+                    {t("auth.field.lastName")}
                   </label>
 
                   <input
@@ -489,7 +490,7 @@ export default function RegisterForm() {
                     onChange={handleApellido}
                     maxLength={30}
                     autoComplete="family-name"
-                    placeholder="Tu apellido"
+                    placeholder={t("auth.placeholder.lastName")}
                   />
                 </div>
 
@@ -501,7 +502,7 @@ export default function RegisterForm() {
               <div className="reg-field">
                 <label htmlFor="correo">
                   <FaEnvelope className="reg-icon" />
-                  Correo
+                  {t("auth.field.email")}
                 </label>
 
                 <input
@@ -517,7 +518,7 @@ export default function RegisterForm() {
               <div className="reg-field">
                 <label htmlFor="password">
                   <FaLock className="reg-icon" />
-                  Contraseña
+                  {t("auth.field.password")}
                 </label>
 
                 <div className="input-eye">
@@ -534,7 +535,7 @@ export default function RegisterForm() {
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
                     aria-label={
-                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                      showPassword ? t("auth.action.hidePassword") : t("auth.action.showPassword")
                     }
                   >
                     {showPassword ? (
@@ -549,7 +550,7 @@ export default function RegisterForm() {
               <div className="reg-field">
                 <label htmlFor="confirmPassword">
                   <FaLock className="reg-icon" />
-                  Confirmar contraseña
+                  {t("auth.field.confirmPassword")}
                 </label>
 
                 <input
@@ -565,7 +566,7 @@ export default function RegisterForm() {
               <div className="reg-field">
                 <label htmlFor="telefono">
                   <FaPhone className="reg-icon" />
-                  Número de contacto
+                  {t("auth.field.phone")}
                 </label>
 
                 <input
@@ -574,7 +575,7 @@ export default function RegisterForm() {
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
                   autoComplete="tel"
-                  placeholder="Tu número de contacto"
+                  placeholder={t("auth.placeholder.phone")}
                 />
               </div>
 
@@ -587,31 +588,31 @@ export default function RegisterForm() {
                 />
 
                 <label htmlFor="terms">
-                  Acepto los términos y condiciones
+                  {t("auth.register.acceptTerms")}
                 </label>
               </div>
 
               <p className="reg-terms">
-                Al hacer clic en «Aceptar» aceptas{" "}
+                {t("auth.register.acceptPrefix")}{" "}
                 <button
                   type="button"
                   className="reg-terms-link"
                   onClick={() => setShowModalPrivacidad(true)}
                 >
-                  Política de Privacidad
+                  {t("auth.privacy.title")}
                 </button>{" "}
-                y la{" "}
+                {t("auth.register.andCookie")}{" "}
                 <button
                   type="button"
                   className="reg-terms-link"
                   onClick={() => setShowModalCookies(true)}
                 >
-                  Política de Cookies
+                  {t("auth.cookies.title")}
                 </button>
               </p>
 
               <button className="btn-accept" type="submit">
-                Aceptar
+                {t("actions.accept")}
               </button>
 
               {googleClientId ? (
@@ -620,7 +621,7 @@ export default function RegisterForm() {
                     onSuccess={handleGoogleLogin}
                     onError={() =>
                       setError(
-                        "La autenticación con Google fue cancelada o falló"
+                        t("auth.error.googleCancelled")
                       )
                     }
                     text="continue_with"
@@ -636,11 +637,11 @@ export default function RegisterForm() {
                   type="button"
                   onClick={() =>
                     setError(
-                      "Configura REACT_APP_GOOGLE_CLIENT_ID para usar Google"
+                      t("auth.error.googleConfig")
                     )
                   }
                 >
-                  Continuar con Google
+                  {t("auth.action.continueGoogle")}
                 </button>
               )}
 
@@ -674,16 +675,16 @@ export default function RegisterForm() {
               </div>
 
               <p className="reg-login-link">
-                ¿Ya tienes una cuenta?{" "}
+                {t("auth.register.haveAccount")}{" "}
                 <button type="button" onClick={handleGoToLogin}>
-                  Iniciar sesión
+                  {t("auth.login.submit")}
                 </button>
               </p>
             </form>
           </div>
 
           <div className="reg-right">
-            <h2>¡Bienvenido!</h2>
+            <h2>{t("auth.login.welcome")}</h2>
 
             <img
               src="/img/logo sansimon.png"

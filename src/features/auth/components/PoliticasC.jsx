@@ -1,29 +1,19 @@
 import { useState } from "react";
 import { aceptarCookiesYGuardarHardware } from "../services/sessionService";
+import { useLanguage } from "../../../core/i18n";
 
-const cookieTypes = [
-  {
-    tipo: "Cookies",
-    descripcion: (
-      <>
-        Una cookie es un pequeño archivo que se almacena en tu dispositivo y
-        permite el correcto funcionamiento del sistema de portafolios.
-        Utilizamos dos tipos de cookies:
-        <br /><br />
-        <strong>· Cookies de sesión:</strong> se almacenan temporalmente mientras navegas en el sistema.
-        <br />
-        <strong>· Cookies persistentes:</strong> permanecen en tu dispositivo para recordarte en futuras visitas.
-      </>
-    ),
-  },
-  { tipo: "Almacenamiento local", descripcion: "Permite guardar preferencias y configuraciones del usuario directamente en el navegador para mejorar la experiencia." },
-  { tipo: "Píxeles", descripcion: "Pequeños fragmentos de código que nos ayudan a medir el rendimiento y la interacción dentro de la plataforma." },
-  { tipo: "Almacenamiento local", descripcion: "Este portafolio utiliza almacenamiento local para guardar información directamente en tu dispositivo. Esto permite mejorar tu experiencia al navegar." },
-  { tipo: "Otras tecnologías similares", descripcion: "También se pueden emplear tecnologías similares, como identificadores o pequeñas herramientas de seguimiento, con el fin de analizar el uso del sitio." },
-];
 
 export default function PoliticaCookies({ onClose }) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(true);
+
+  const translatedCookieTypes = [
+    { tipo: t("auth.cookies.type.cookies"), descripcion: t("auth.cookies.desc.cookies") },
+    { tipo: t("auth.cookies.type.localStorage"), descripcion: t("auth.cookies.desc.localStorage") },
+    { tipo: t("auth.cookies.type.pixels"), descripcion: t("auth.cookies.desc.pixels") },
+    { tipo: t("auth.cookies.type.deviceStorage"), descripcion: t("auth.cookies.desc.deviceStorage") },
+    { tipo: t("auth.cookies.type.similar"), descripcion: t("auth.cookies.desc.similar") },
+  ];
 
   const handleClose = () => {
     setVisible(false);
@@ -48,39 +38,31 @@ export default function PoliticaCookies({ onClose }) {
     <div style={styles.overlay}>
       <div style={styles.modal}>
         <div style={styles.header}>
-          <span style={styles.headerTitle}>Política de Cookies</span>
-          <button onClick={handleClose} style={styles.closeBtn} aria-label="Cerrar">×</button>
+          <span style={styles.headerTitle}>{t("auth.cookies.title")}</span>
+          <button onClick={handleClose} style={styles.closeBtn} aria-label={t("actions.close")}>×</button>
         </div>
 
         <div style={styles.body}>
           <div style={styles.titleRow}>
             <span style={styles.cookieIcon}>🍪</span>
-            <h1 style={styles.title}>POLITICA DE COOKIES</h1>
+            <h1 style={styles.title}>{t("auth.cookies.heading")}</h1>
           </div>
 
-          <p style={styles.date}>Fecha de entrada en vigor: 23 de marzo de 2026</p>
+          <p style={styles.date}>{t("auth.policy.effectiveDate")}</p>
 
-          <p style={styles.paragraph}>
-            En nuestro sistema de portafolios de proyectos de software, creemos que es fundamental ser transparentes
-            sobre cómo recopilamos y utilizamos tus datos.
-          </p>
-          <p style={styles.paragraph}>
-            Utilizamos cookies y tecnologías similares para recopilar y utilizar información como parte del
-            funcionamiento del sistema.
-          </p>
-          <p style={styles.paragraph}>
-            Al continuar utilizando nuestros servicios, aceptas el uso de cookies conforme a lo descrito en esta Política.
-          </p>
+          <p style={styles.paragraph}>{t("auth.cookies.paragraph1")}</p>
+          <p style={styles.paragraph}>{t("auth.cookies.paragraph2")}</p>
+          <p style={styles.paragraph}>{t("auth.cookies.paragraph3")}</p>
 
           <table style={styles.table}>
             <thead>
               <tr>
-                <th style={{ ...styles.th, width: "30%" }}>Tipos de Tecnología</th>
-                <th style={styles.th}>Descripción</th>
+                <th style={{ ...styles.th, width: "30%" }}>{t("auth.cookies.technologyTypes")}</th>
+                <th style={styles.th}>{t("auth.cookies.description")}</th>
               </tr>
             </thead>
             <tbody>
-              {cookieTypes.map((row, i) => (
+              {translatedCookieTypes.map((row, i) => (
                 <tr key={i}>
                   <td style={{ ...styles.td, color: "#555" }}>{row.tipo}</td>
                   <td style={styles.td}>{row.descripcion}</td>
@@ -91,7 +73,7 @@ export default function PoliticaCookies({ onClose }) {
         </div>
 
         <div style={styles.footer}>
-          <button onClick={handleAccept} style={styles.btnPrimary}>Aceptar cookies</button>
+          <button onClick={handleAccept} style={styles.btnPrimary}>{t("auth.cookies.accept")}</button>
         </div>
       </div>
     </div>

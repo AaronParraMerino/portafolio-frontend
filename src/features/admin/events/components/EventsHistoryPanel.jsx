@@ -1,12 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
-  BsBell,
   BsClockHistory,
-  BsEnvelope,
   BsFileText,
-  BsMegaphone,
-  BsPhone,
   BsSearch,
+  BsShieldCheck,
 } from 'react-icons/bs';
 import {
   EVENT_COMMUNICATION_STATUS,
@@ -15,12 +12,6 @@ import {
   getEventCommunicationTypeMeta,
 } from '../services/eventsService';
 import EventsEmptyState from './EventsEmptyState';
-
-const CHANNEL_ICONS = {
-  inapp: BsBell,
-  email: BsEnvelope,
-  push: BsPhone,
-};
 
 function matchesHistoryFilters(item, query, typeFilter, statusFilter) {
   const normalizedQuery = query.trim().toLowerCase();
@@ -34,6 +25,11 @@ function matchesHistoryFilters(item, query, typeFilter, statusFilter) {
     item.title,
     item.description,
     item.target,
+    item.actor,
+    item.action,
+    item.entity,
+    item.reason,
+    item.module,
     item.type,
     item.status,
     item.date,
@@ -59,7 +55,7 @@ export default function EventsHistoryPanel({
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
             <span className="evt-sheet-kicker">Historial</span>
-            <h2 className="evt-sheet-title">Trazabilidad de eventos</h2>
+            <h2 className="evt-sheet-title">Bitacora administrativa de eventos</h2>
           </div>
         </div>
 
@@ -73,8 +69,8 @@ export default function EventsHistoryPanel({
               className="evt-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar historial..."
-              aria-label="Buscar historial"
+              placeholder="Buscar por accion, actor, evento o motivo..."
+              aria-label="Buscar bitacora administrativa"
             />
           </div>
 
@@ -110,11 +106,11 @@ export default function EventsHistoryPanel({
             <table className="evt-history-table">
               <thead>
                 <tr>
-                  <th>Registro</th>
-                  <th>Tipo</th>
+                  <th>Accion</th>
+                  <th>Actor</th>
+                  <th>Entidad</th>
                   <th>Estado</th>
-                  <th>Destino</th>
-                  <th>Canales</th>
+                  <th>Detalle</th>
                   <th>Fecha</th>
                 </tr>
               </thead>
@@ -128,18 +124,19 @@ export default function EventsHistoryPanel({
                       <td>
                         <div className="evt-history-main">
                           <span className="evt-history-icon">
-                            <BsMegaphone />
+                            <BsShieldCheck />
                           </span>
                           <span>
-                            <strong>{item.title}</strong>
-                            {item.description ? <small>{item.description}</small> : null}
+                            <strong>{item.action || item.title}</strong>
+                            <small>{item.module || 'Eventos'} · {typeMeta.label}</small>
                           </span>
                         </div>
                       </td>
                       <td>
-                        <span className={`evt-type-badge evt-type-badge--${typeMeta.tone}`}>
-                          {typeMeta.label}
-                        </span>
+                        <strong className="evt-history-actor">{item.actor}</strong>
+                      </td>
+                      <td>
+                        <span className="evt-history-entity">{item.entity || item.target}</span>
                       </td>
                       <td>
                         <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
@@ -147,15 +144,11 @@ export default function EventsHistoryPanel({
                           {statusMeta.label}
                         </span>
                       </td>
-                      <td>{item.target}</td>
                       <td>
-                        <div className="evt-channel-icons">
-                          {item.channels.map((channel) => {
-                            const Icon = CHANNEL_ICONS[channel] || BsBell;
-
-                            return <Icon key={channel} title={channel} />;
-                          })}
-                          {!item.channels.length ? <span>Sin canal</span> : null}
+                        <div className="evt-history-detail">
+                          <span>{item.description || item.reason || 'Sin detalle adicional.'}</span>
+                          {item.reason ? <small>Motivo: {item.reason}</small> : null}
+                          {item.ip ? <small>IP: {item.ip}</small> : null}
                         </div>
                       </td>
                       <td>{item.date}</td>
@@ -171,8 +164,8 @@ export default function EventsHistoryPanel({
             title={sourceReady ? 'Sin registros encontrados' : 'Sin historial disponible'}
             description={sourceReady
               ? 'No hay registros que coincidan con la busqueda o los filtros actuales.'
-              : 'Aqui se mostraran envios, cambios de estado y acciones administrativas de eventos.'}
-            hint="La tabla permite revisar la trazabilidad de eventos y anuncios."
+              : 'Aqui se mostraran aprobaciones, rechazos, pausas, suspensiones y cambios administrativos.'}
+            hint="La bitacora permite auditar acciones, actores, motivos y eventos afectados."
           />
         )}
       </section>
@@ -181,15 +174,15 @@ export default function EventsHistoryPanel({
         <div className="evt-chip-list">
           <span className="evt-chip">
             <BsFileText />
-            Cambios de agenda
+            Cambios de estado
           </span>
           <span className="evt-chip">
             <BsFileText />
-            Comunicaciones emitidas
+            Solicitudes revisadas
           </span>
           <span className="evt-chip">
             <BsFileText />
-            Estados de participacion
+            Motivos administrativos
           </span>
         </div>
       </section>

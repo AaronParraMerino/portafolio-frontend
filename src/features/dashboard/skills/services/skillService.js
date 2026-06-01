@@ -1,10 +1,24 @@
 import BASE_URL from '../../../../services/http/const';
+import { DEFAULT_LANGUAGE, translations } from '../../../../core/i18n/translations';
 import {
   getCachedDashboardEndpoint,
   invalidateDashboardDerivedCaches,
   readCachedDashboardEndpoint,
   writeCachedDashboardEndpoint,
 } from '../../services/dashboardCache';
+
+
+const translateService = (key, params = {}) => {
+  const language = typeof window !== 'undefined'
+    ? (localStorage.getItem('creafolio_language') || DEFAULT_LANGUAGE)
+    : DEFAULT_LANGUAGE;
+  const text = translations[language]?.[key] || translations[DEFAULT_LANGUAGE]?.[key] || key;
+
+  return Object.entries(params).reduce(
+    (result, [paramKey, value]) => result.replaceAll(`{${paramKey}}`, String(value)),
+    text,
+  );
+};
 
 const VALID_SKILL_TYPES = ['tecnica', 'blanda'];
 const VALID_LEVELS = ['basico', 'intermedio', 'avanzado', 'experto'];
@@ -122,13 +136,13 @@ const getAuthData = () => {
   const usuarioRaw = localStorage.getItem('usuario');
 
   if (!token || !usuarioRaw) {
-    throw new Error('No hay sesión activa.');
+    throw new Error(translateService('skills.service.error.noSession'));
   }
 
   const usuario = JSON.parse(usuarioRaw);
 
   if (!usuario?.id_usuario) {
-    throw new Error('No se encontró el usuario autenticado.');
+    throw new Error(translateService('skills.service.error.noUser'));
   }
 
   return { token, userId: usuario.id_usuario };
@@ -170,7 +184,7 @@ const getFirstValidationError = (errors) => {
 
 const normalizeApiErrorMessage = (message = '', errors = null) => {
   const validationError = getFirstValidationError(errors);
-  const rawMessage = validationError || message || 'Error en la solicitud.';
+  const rawMessage = validationError || message || translateService('skills.service.error.request');
   const msg = normalizeSkillText(rawMessage);
 
   if (
@@ -179,7 +193,7 @@ const normalizeApiErrorMessage = (message = '', errors = null) => {
     msg.includes('ya tienes') ||
     msg.includes('usuario ya tiene')
   ) {
-    return 'Ya tienes esta habilidad registrada en tu perfil.';
+    return translateService('skills.service.error.owned');
   }
 
   if (
@@ -189,22 +203,22 @@ const normalizeApiErrorMessage = (message = '', errors = null) => {
     msg.includes('unique')
   ) {
     if (msg.includes('tecnica') || msg.includes('tecnico')) {
-      return 'Esta habilidad ya existe registrada como habilidad técnica.';
+      return translateService('skills.service.error.duplicateTechnical');
     }
 
     if (msg.includes('blanda') || msg.includes('blando')) {
-      return 'Esta habilidad ya existe registrada como habilidad blanda.';
+      return translateService('skills.service.error.duplicateSoft');
     }
 
-    return 'Esta habilidad ya existe en el catálogo. Revisa si está registrada como técnica o blanda.';
+    return translateService('skills.service.error.duplicateCatalog');
   }
 
   if (msg.includes('nivel')) {
-    return 'Selecciona un nivel válido para la habilidad.';
+    return translateService('skills.service.error.validLevel');
   }
 
   if (msg.includes('tipo')) {
-    return 'Selecciona un tipo válido: técnica o blanda.';
+    return translateService('skills.service.error.validType');
   }
 
   if (msg.includes('nombre')) {
@@ -255,27 +269,27 @@ const validateCatalogSkillPayload = (nombre, tipo, descripcion = '') => {
   const cleanType = normalizeSkillType(tipo);
 
   if (!cleanName) {
-    throw new Error('Ingresa el nombre de la habilidad.');
+    throw new Error(translateService('skills.service.error.nameRequired'));
   }
 
   if (cleanName.length < 2) {
-    throw new Error('El nombre de la habilidad debe tener al menos 2 caracteres.');
+    throw new Error(translateService('skills.service.error.nameMin'));
   }
 
   if (cleanName.length > 40) {
-    throw new Error('El nombre de la habilidad no debe superar los 40 caracteres.');
+    throw new Error(translateService('skills.service.error.nameMax'));
   }
 
   if (!/[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ0-9+#.]/.test(cleanName)) {
-    throw new Error('El nombre de la habilidad debe contener letras, números o símbolos válidos.');
+    throw new Error(translateService('skills.service.error.namePattern'));
   }
 
   if (!VALID_SKILL_TYPES.includes(cleanType)) {
-    throw new Error('Selecciona un tipo válido: técnica o blanda.');
+    throw new Error(translateService('skills.service.error.validType'));
   }
 
   if (cleanDescription.length > 255) {
-    throw new Error('La descripción no debe superar los 255 caracteres.');
+    throw new Error(translateService('skills.service.error.descMax'));
   }
 
   return {
@@ -290,11 +304,11 @@ const validateUserSkillPayload = (catalogoId, nivel) => {
   const cleanLevel = normalizeLevel(nivel);
 
   if (!skillId || Number.isNaN(skillId)) {
-    throw new Error('Selecciona una habilidad válida del catálogo.');
+    throw new Error(translateService('skills.service.error.validCatalog'));
   }
 
   if (!VALID_LEVELS.includes(cleanLevel)) {
-    throw new Error('Selecciona un nivel válido para la habilidad.');
+    throw new Error(translateService('skills.service.error.validLevel'));
   }
 
   return {
@@ -426,11 +440,11 @@ export const updateUserSkill = async (id, nivel) => {
   const cleanLevel = normalizeLevel(nivel);
 
   if (!skillId || Number.isNaN(skillId)) {
-    throw new Error('No se encontró la habilidad que deseas actualizar.');
+    throw new Error(translateService('skills.service.error.updateNotFound'));
   }
 
   if (!VALID_LEVELS.includes(cleanLevel)) {
-    throw new Error('Selecciona un nivel válido para la habilidad.');
+    throw new Error(translateService('skills.service.error.validLevel'));
   }
 
   const res = await fetch(`${BASE_URL}/habilidades/usuario/${userId}/${skillId}`, {
@@ -457,7 +471,7 @@ export const deleteUserSkill = async (id) => {
   const skillId = Number(id);
 
   if (!skillId || Number.isNaN(skillId)) {
-    throw new Error('No se encontró la habilidad que deseas eliminar.');
+    throw new Error(translateService('skills.service.error.deleteNotFound'));
   }
 
   const res = await fetch(`${BASE_URL}/habilidades/usuario/${userId}/${skillId}`, {
