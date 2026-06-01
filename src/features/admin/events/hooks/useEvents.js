@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  applyAdminEventAction,
+  approvePublisherRequest,
   buildEventMetrics,
   buildEventWorkspaceCounts,
   createAdminEvent,
@@ -15,6 +17,7 @@ import {
   normalizePublisherRequest,
   normalizeEventTemplate,
   normalizeEventsWorkspace,
+  rejectPublisherRequest,
   updateAdminEvent,
   updateAdminEventCommunication,
   updateAdminEventTemplate,
@@ -243,6 +246,18 @@ export function useEventsWorkspace() {
     setCommunicationModal(null);
   };
 
+  const handleAdminAction = async ({ action, target, reason }) => {
+    if (action === 'aceptar') {
+      await approvePublisherRequest(target.id, reason);
+    } else if (action === 'rechazar') {
+      await rejectPublisherRequest(target.id, reason);
+    } else {
+      await applyAdminEventAction(target.id, action, reason);
+    }
+
+    await loadWorkspace();
+  };
+
   return {
     sourceReady,
     supportsMutations,
@@ -283,5 +298,6 @@ export function useEventsWorkspace() {
     onEditCommunication: handleEditCommunication,
     onCloseCommunicationModal: handleCloseCommunicationModal,
     onSaveCommunication: handleSaveCommunication,
+    onAdminAction: handleAdminAction,
   };
 }
