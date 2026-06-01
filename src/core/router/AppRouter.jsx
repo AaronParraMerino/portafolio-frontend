@@ -11,6 +11,7 @@ import AdminDashboardLayout from '../../features/admin/layout/AdminDashboardLayo
 import AdminDashboardPage from '../../features/admin/dashboard/AdminDashboardPage';
 import UsersPage from '../../features/admin/users/pages/UsersPage';
 import EventsPage from '../../features/admin/events/pages/EventsPage';
+import DashboardEventsPage from '../../features/dashboard/events/pages/EventsPage';
 import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
 import CookiesPage from '../../features/auth/pages/CookiesPage';
@@ -67,6 +68,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="experience" element={<ExperiencePage />} />
             <Route path="skills" element={<SkillsPage />} />
+            <Route path="events" element={<DashboardEventsPage />} />
               <Route path="settings" element={<ConfiguratePage />} />
             <Route path="settings/vincular-cuenta" element={<VincularCuentaPage />} />
             <Route path="settings/cambiar-contraseña" element={<CambiarContraPage />} />

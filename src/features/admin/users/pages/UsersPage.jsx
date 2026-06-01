@@ -26,6 +26,7 @@ export default function UsersPage() {
     supportsPausing,
     supportsBlocking,
     supportsCommunications,
+    supportsRoleManagement,
     users,
     communications,
     historyItems,
@@ -80,9 +81,9 @@ export default function UsersPage() {
   const headerActions = [
     {
       key: 'communication',
-      label: 'Aviso a usuarios',
-      title: 'Crear aviso a usuarios',
-      ariaLabel: 'Crear aviso a usuarios',
+      label: 'Aviso general',
+      title: 'Crear aviso general del sistema',
+      ariaLabel: 'Crear aviso general del sistema',
       icon: <BsMegaphone />,
       variant: 'primary',
       onClick: () => onOpenNoticeModal(),
@@ -186,6 +187,7 @@ export default function UsersPage() {
         supportsActivation={supportsActivation}
         supportsPausing={supportsPausing}
         supportsBlocking={supportsBlocking}
+        supportsRoleManagement={supportsRoleManagement}
         onOpenDirectNotice={onOpenDirectNoticeModal}
         onClose={onCloseUser}
         onSelectAction={onSelectAction}

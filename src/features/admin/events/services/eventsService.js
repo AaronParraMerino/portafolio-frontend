@@ -3,11 +3,9 @@ import BASE_URL from '../../../../services/http/const';
 export const EVENT_PAGE_SIZE = 9;
 
 export const EVENT_WORKSPACE_VIEWS = [
+  { id: 'requests', label: 'Solicitudes' },
   { id: 'events', label: 'Eventos' },
-  { id: 'communications', label: 'Comunicaciones' },
-  { id: 'calendar', label: 'Calendario' },
   { id: 'history', label: 'Historial' },
-  { id: 'templates', label: 'Plantillas' },
 ];
 
 export const EVENT_STATUS_FILTERS = [
@@ -15,6 +13,8 @@ export const EVENT_STATUS_FILTERS = [
   { id: 'activo', label: 'Activos', tone: 'success' },
   { id: 'programado', label: 'Programados', tone: 'warning' },
   { id: 'borrador', label: 'Borradores', tone: 'muted' },
+  { id: 'pausado', label: 'Pausados', tone: 'warning' },
+  { id: 'suspendido', label: 'Suspendidos', tone: 'danger' },
   { id: 'cancelado', label: 'Cancelados', tone: 'danger' },
 ];
 
@@ -117,33 +117,27 @@ export const EVENT_COMMUNICATION_CHANNELS = [
 
 export const EVENT_STATS = [
   {
-    id: 'total',
-    label: 'Total eventos',
-    helper: 'Registros disponibles',
+    id: 'requests',
+    label: 'Solicitudes',
+    helper: 'Publicantes por revisar',
     tone: 'primary',
   },
   {
     id: 'activo',
-    label: 'Activos',
-    helper: 'En ejecucion o visibles',
+    label: 'Eventos activos',
+    helper: 'Publicados y visibles',
     tone: 'success',
   },
   {
-    id: 'programado',
-    label: 'Programados',
-    helper: 'Con fecha definida',
+    id: 'pausado',
+    label: 'Pausados',
+    helper: 'Requieren seguimiento',
     tone: 'warning',
   },
   {
-    id: 'comunicaciones',
-    label: 'Comunicaciones',
-    helper: 'Comunicaciones vinculadas',
-    tone: 'info',
-  },
-  {
-    id: 'cancelado',
-    label: 'Cancelados',
-    helper: 'Fuera de agenda',
+    id: 'suspendido',
+    label: 'Suspendidos',
+    helper: 'Fuera de publicacion',
     tone: 'danger',
   },
 ];
@@ -151,6 +145,7 @@ export const EVENT_STATS = [
 export function createEventsWorkspaceShell() {
   return {
     events: [],
+    publisherRequests: [],
     communications: [],
     templates: [],
     history: [],
@@ -174,6 +169,9 @@ export function normalizeEventsWorkspace(payload = {}) {
     ...base,
     ...payload,
     events: Array.isArray(payload.events) ? payload.events : base.events,
+    publisherRequests: Array.isArray(payload.publisherRequests)
+      ? payload.publisherRequests
+      : (Array.isArray(payload.requests) ? payload.requests : base.publisherRequests),
     communications: Array.isArray(payload.communications) ? payload.communications : base.communications,
     templates: Array.isArray(payload.templates) ? payload.templates : base.templates,
     history: Array.isArray(payload.history) ? payload.history : base.history,
@@ -211,6 +209,34 @@ async function parseAdminResponse(response, fallbackMessage) {
   }
 
   return payload;
+}
+
+function buildEventFormData(payload = {}, method = null) {
+  const formData = new FormData();
+
+  if (method) {
+    formData.append('_method', method);
+  }
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || key === 'imagePreview') return;
+
+    if (key === 'imageFile') {
+      if (value instanceof File) {
+        formData.append('imagen_portada', value);
+      }
+      return;
+    }
+
+    if (Array.isArray(value) || (typeof value === 'object' && !(value instanceof File))) {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+
+    formData.append(key, value);
+  });
+
+  return formData;
 }
 
 export async function fetchEventsWorkspace() {
@@ -300,6 +326,90 @@ export async function updateAdminEventTemplate(templateId, payload) {
   return parseAdminResponse(response, 'No se pudo actualizar la plantilla.');
 }
 
+export async function approvePublisherRequest(requestId, reason) {
+  const response = await fetch(`${BASE_URL}/administrador/publicantes/solicitudes/${requestId}/aprobar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motivo: reason }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo aprobar la solicitud.');
+}
+
+export async function rejectPublisherRequest(requestId, reason) {
+  const response = await fetch(`${BASE_URL}/administrador/publicantes/solicitudes/${requestId}/rechazar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motivo: reason }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo rechazar la solicitud.');
+}
+
+export async function applyAdminEventAction(eventId, action, reason) {
+  const endpoint = action === 'eliminar'
+    ? `${BASE_URL}/administrador/eventos/${eventId}`
+    : `${BASE_URL}/administrador/eventos/${eventId}/${action}`;
+  const response = await fetch(endpoint, {
+    method: action === 'eliminar' ? 'DELETE' : 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motivo: reason }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo aplicar la accion administrativa.');
+}
+
+export async function createPublisherRequest(payload) {
+  const response = await fetch(`${BASE_URL}/publicante/solicitudes`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo enviar la solicitud.');
+}
+
+export async function fetchPublisherEvents() {
+  const response = await fetch(`${BASE_URL}/publicante/eventos`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudieron cargar tus eventos.');
+
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
+export async function createPublisherEvent(payload) {
+  const response = await fetch(`${BASE_URL}/publicante/eventos`, {
+    method: 'POST',
+    headers: getAdminRequestHeaders(),
+    body: buildEventFormData(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear el evento.');
+}
+
+export async function updatePublisherEvent(eventId, payload) {
+  const response = await fetch(`${BASE_URL}/publicante/eventos/${eventId}`, {
+    method: 'POST',
+    headers: getAdminRequestHeaders(),
+    body: buildEventFormData(payload, 'PUT'),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar el evento.');
+}
+
 export function normalizeEvent(item = {}) {
   const segments = item.segments || item.segmentos || item.segs || [];
   const channels = item.channels || item.canales || [];
@@ -315,6 +425,12 @@ export function normalizeEvent(item = {}) {
     date: item.date || item.fecha || item.fecha_inicio || item.fechaEvento || '--',
     time: item.time || item.hora || item.hora_inicio || '',
     location: item.location || item.lugar || item.ubicacion || 'Sin lugar',
+    imageUrl: item.imageUrl || item.image_url || item.imagen_url || item.banner_url || item.imagen || '',
+    imagePreview: item.imagePreview || item.preview || '',
+    imageFile: item.imageFile || null,
+    publisherId: item.publisherId || item.publicante_id || item.usuario_creador_id || item.usuario_id,
+    publisherName: item.publisherName || item.publicante || item.nombre_publicante || item.creador?.nombre || item.usuario?.nombre || 'Publicante sin nombre',
+    publisherEmail: item.publisherEmail || item.correo_publicante || item.creador?.correo || item.usuario?.correo || 'Sin correo',
     capacity: Number(item.capacity ?? item.cupo ?? item.cupos ?? 0),
     registered: Number(item.registered ?? item.inscritos ?? item.asistentes ?? 0),
     interested: Number(item.interested ?? item.interesados ?? 0),
@@ -348,6 +464,25 @@ export function normalizeEventCommunication(item = {}) {
   };
 }
 
+export function normalizePublisherRequest(item = {}) {
+  return {
+    id: item.id || item.id_solicitud || item.requestId,
+    userId: item.userId || item.usuario_id || item.id_usuario,
+    name: item.name || item.nombre || item.legalName || item.nombre_legal || 'Usuario sin nombre',
+    email: item.email || item.correo || item.backupEmail || item.correo_respaldo || 'Sin correo',
+    phone: item.phone || item.telefono || 'Sin telefono',
+    documentId: item.documentId || item.documento || item.ci || 'Sin documento',
+    organization: item.organization || item.organizacion || 'Independiente',
+    role: item.role || item.cargo || 'No especificado',
+    reason: item.reason || item.motivo || 'Sin motivo registrado.',
+    experience: item.experience || item.experiencia || '',
+    links: item.links || item.enlaces || '',
+    status: item.status || item.estado || 'pendiente',
+    date: item.date || item.fecha || item.createdAt || item.creado || '--',
+    raw: item,
+  };
+}
+
 export function normalizeEventTemplate(item = {}) {
   const channels = item.channels || item.canales || [];
 
@@ -373,6 +508,12 @@ export function normalizeEventHistoryItem(item = {}) {
     status: item.status || item.estado || 'enviado',
     target: item.target || item.destino || item.eventTitle || item.evento || 'Sin destino',
     date: item.date || item.fecha || item.createdAt || item.creado || '--',
+    actor: item.actor || item.usuario || item.admin || item.adminName || item.nombre_admin || 'Sistema',
+    module: item.module || item.modulo || 'Eventos',
+    action: item.action || item.accion || item.title || item.titulo || 'Accion registrada',
+    reason: item.reason || item.motivo || item.observacion || '',
+    entity: item.entity || item.entidad || item.eventTitle || item.evento || item.target || item.destino || 'Registro',
+    ip: item.ip || item.ip_address || '',
     channels: Array.isArray(channels) ? channels : [],
     raw: item,
   };
@@ -394,14 +535,16 @@ export function getEventCommunicationStatusMeta(status) {
   return EVENT_COMMUNICATION_STATUS.find((item) => item.id === status) || EVENT_COMMUNICATION_STATUS[1];
 }
 
-export function buildEventMetrics(events = [], communications = []) {
+export function buildEventMetrics(events = [], communications = [], requests = []) {
   const normalizedEvents = events.map(normalizeEvent);
 
   return {
     total: normalizedEvents.length,
+    requests: requests.length,
     activo: normalizedEvents.filter((event) => event.status === 'activo').length,
     programado: normalizedEvents.filter((event) => event.status === 'programado').length,
-    comunicaciones: communications.length,
+    pausado: normalizedEvents.filter((event) => event.status === 'pausado').length,
+    suspendido: normalizedEvents.filter((event) => ['suspendido', 'cancelado'].includes(event.status)).length,
     cancelado: normalizedEvents.filter((event) => event.status === 'cancelado').length,
   };
 }
@@ -412,21 +555,20 @@ export function buildEventWorkspaceCounts({
   communications = [],
   templates = [],
   history = [],
+  requests = [],
 }) {
   if (!sourceReady) {
     return {
+      requests: '--',
       events: '--',
-      communications: '--',
-      calendar: '--',
       history: '--',
       templates: '--',
     };
   }
 
   return {
+    requests: requests.length,
     events: events.length,
-    communications: communications.length,
-    calendar: events.filter((event) => normalizeEvent(event).date && normalizeEvent(event).date !== '--').length,
     history: history.length,
     templates: templates.length,
   };

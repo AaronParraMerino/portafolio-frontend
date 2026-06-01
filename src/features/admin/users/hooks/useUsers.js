@@ -12,6 +12,7 @@ import {
   normalizeUsersDirectory,
   pauseUserAccount,
   sendAdminNotice,
+  updateUserRole,
 } from '../services/usersService';
 
 export function useUsersDirectory() {
@@ -68,6 +69,7 @@ export function useUsersDirectory() {
   const supportsPausing = !!directory.supportsPausing;
   const supportsBlocking = !!directory.supportsBlocking;
   const supportsCommunications = !!directory.supportsCommunications;
+  const supportsRoleManagement = !!directory.supportsRoleManagement;
 
   const metrics = useMemo(() => buildUsersMetrics(users), [users]);
   const viewCounts = useMemo(() => buildUsersWorkspaceCounts({
@@ -91,6 +93,8 @@ export function useUsersDirectory() {
         user.nombre,
         user.email,
         user.estado,
+        user.rol,
+        user.role,
       ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(normalizedQuery));
@@ -227,7 +231,7 @@ export function useUsersDirectory() {
   };
 
   const handleConfirmAction = async () => {
-    if (!activeUser || !['activar', 'pausar', 'bloquear', 'inactivar'].includes(pendingActionId)) return;
+    if (!activeUser || !['activar', 'pausar', 'bloquear', 'inactivar', 'asignar_publicante', 'quitar_publicante'].includes(pendingActionId)) return;
 
     setActionSubmitting(true);
     setActionError('');
@@ -237,34 +241,56 @@ export function useUsersDirectory() {
       const isActivation = pendingActionId === 'activar';
       const isPausing = pendingActionId === 'pausar';
       const isBlocking = pendingActionId === 'bloquear';
+      const isRoleAssign = pendingActionId === 'asignar_publicante';
+      const isRoleRemove = pendingActionId === 'quitar_publicante';
+      const isRoleAction = isRoleAssign || isRoleRemove;
+
+      if (isRoleAction && actionMessage.trim().length < 10) {
+        setActionError('Escribe un motivo de al menos 10 caracteres para cambiar el rol.');
+        setActionSubmitting(false);
+        return;
+      }
+
       const actionPayload = {
         razon: actionMessage.trim() || null,
         ...(isPausing || isBlocking ? {} : { canales: actionChannels }),
       };
-      const response = isActivation
-        ? await activateUserAccount(activeUser.id, actionPayload)
-        : (isPausing
-          ? await pauseUserAccount(activeUser.id, actionPayload)
-          : isBlocking
-          ? await blockUserAccount(activeUser.id, actionPayload)
-          : await inactivateUserAccount(activeUser.id, actionPayload));
+
+      const nextRole = isRoleAssign ? 'publicante' : 'usuario';
+      const response = isRoleAction
+        ? (supportsRoleManagement
+          ? await updateUserRole(activeUser.id, { rol: nextRole, razon: actionMessage.trim() })
+          : { message: 'Rol actualizado en la vista de gestion. La integracion persistente queda lista para backend.' })
+        : (isActivation
+          ? await activateUserAccount(activeUser.id, actionPayload)
+          : (isPausing
+            ? await pauseUserAccount(activeUser.id, actionPayload)
+            : isBlocking
+            ? await blockUserAccount(activeUser.id, actionPayload)
+            : await inactivateUserAccount(activeUser.id, actionPayload)));
       setDirectory((current) => ({
         ...current,
         items: current.items.map((user) => (
           String(user.id) === String(activeUser.id)
             ? {
               ...user,
-              estado: isActivation ? 'activo' : (isPausing ? 'pausado' : (isBlocking ? 'bloqueado' : 'inactivo')),
-              sesionesActivas: isActivation || isPausing ? user.sesionesActivas : 0,
+              ...(isRoleAction
+                ? { rol: nextRole, role: nextRole }
+                : {
+                  estado: isActivation ? 'activo' : (isPausing ? 'pausado' : (isBlocking ? 'bloqueado' : 'inactivo')),
+                  sesionesActivas: isActivation || isPausing ? user.sesionesActivas : 0,
+                }),
             }
             : user
         )),
       }));
-      setActionSuccess(response?.message || (isActivation
+      setActionSuccess(response?.message || (isRoleAction
+        ? (isRoleAssign ? 'Rol publicante asignado correctamente.' : 'Rol publicante retirado correctamente.')
+        : (isActivation
         ? 'Cuenta activada correctamente.'
         : (isPausing
           ? 'Cuenta pausada correctamente.'
-          : (isBlocking ? 'Cuenta bloqueada correctamente.' : 'Cuenta inactivada correctamente.'))));
+          : (isBlocking ? 'Cuenta bloqueada correctamente.' : 'Cuenta inactivada correctamente.')))));
       setPendingActionId('');
       setActionMessage('');
       setActionChannels(['inapp', 'email']);
@@ -275,6 +301,8 @@ export function useUsersDirectory() {
           ? 'No se pudo pausar la cuenta.'
           : pendingActionId === 'bloquear'
           ? 'No se pudo bloquear la cuenta.'
+          : pendingActionId === 'asignar_publicante' || pendingActionId === 'quitar_publicante'
+          ? 'No se pudo actualizar el rol del usuario.'
           : 'No se pudo inactivar la cuenta.')));
     } finally {
       setActionSubmitting(false);
@@ -365,6 +393,7 @@ export function useUsersDirectory() {
     supportsPausing,
     supportsBlocking,
     supportsCommunications,
+    supportsRoleManagement,
     users,
     communications,
     historyItems,

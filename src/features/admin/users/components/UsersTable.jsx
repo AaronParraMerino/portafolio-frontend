@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   getUserSessionCount,
+  getUserRoleMeta,
   getUserStatusMeta,
   USER_TABLE_COLUMNS,
 } from '../services/usersService';
@@ -30,6 +31,16 @@ function ColumnIcon({ id }) {
       <svg viewBox="0 0 20 20" {...props}>
         <path d="M10 2.5 4.5 5v4.2c0 3.1 2 6 5.5 8.3 3.5-2.3 5.5-5.2 5.5-8.3V5L10 2.5Z" />
         <path d="m7.8 9.9 1.5 1.5 3-3" />
+      </svg>
+    );
+  }
+
+  if (id === 'role') {
+    return (
+      <svg viewBox="0 0 20 20" {...props}>
+        <path d="M10 2.5 15.5 5v4.5c0 3.3-2.1 6.1-5.5 8-3.4-1.9-5.5-4.7-5.5-8V5L10 2.5Z" />
+        <path d="M7.5 10h5" />
+        <path d="M10 7.5v5" />
       </svg>
     );
   }
@@ -160,6 +171,7 @@ export default function UsersTable({
               {users.map((user) => {
                 const isSelected = selectedIds.includes(String(user.id));
                 const statusMeta = getUserStatusMeta(user.estado);
+                const roleMeta = getUserRoleMeta(user);
                 const sessionCount = getUserSessionCount(user);
 
                 const isSessionsOpen = String(openSessionsUserId) === String(user.id);
@@ -186,6 +198,12 @@ export default function UsersTable({
                           <span>{user.email || 'Sin correo registrado'}</span>
                         </div>
                       </div>
+                    </td>
+
+                    <td>
+                      <span className={`usr-role-badge usr-role-badge--${roleMeta.tone}`}>
+                        {roleMeta.label}
+                      </span>
                     </td>
 
                     <td>

@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
-import { clearAuthStorage } from '../../../shared/utils/authStorage';
+import { clearAuthStorage, getStoredUser, isPublisherUser } from '../../../shared/utils/authStorage';
 import { useDashboardSummary } from '../hooks/useDashboardSummary';
 import { useLanguage } from '../../../core/i18n';
 
@@ -73,6 +73,19 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    label: 'Publicar',
+    items: [
+      {
+        id: 'events',
+        label: 'Eventos',
+        to: '/dashboard/events',
+        badgeVariant: 'teal',
+        lockedForUsers: true,
+        icon: (<><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" /><path d="m9 15 2 2 4-5" /></>),
+      },
+    ],
+  },
+  {
     labelKey: 'dashboard.sidebar.section.account',
     items: [
       {
@@ -117,6 +130,7 @@ const BADGE_STYLES = {
   blue: { background: 'var(--azul)', color: '#fff' },
   gray: { background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.4)' },
   amber: { background: 'rgba(245,158,11,.2)', color: '#fbbf24' },
+  teal: { background: 'rgba(20,184,166,.2)', color: '#5eead4' },
 };
 
 export default function Sidebar({ collapsed, paused = false, onToggle }) {
@@ -126,6 +140,8 @@ export default function Sidebar({ collapsed, paused = false, onToggle }) {
   const activeId = getActiveId(location.pathname);
   const summary = useDashboardSummary(location.pathname);
   const BASE_URL = process.env.REACT_APP_API_URL;
+  const storedUser = getStoredUser();
+  const canPublishEvents = isPublisherUser(storedUser);
 
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -230,6 +246,7 @@ export default function Sidebar({ collapsed, paused = false, onToggle }) {
     if (id === 'skills') return String(counts.skills ?? 0);
     if (id === 'experience') return String(counts.experiences ?? 0);
     if (id === 'networks') return String(counts.links ?? 0);
+    if (id === 'events') return canPublishEvents ? '3/mes' : 'Permiso';
 
     return null;
   };
@@ -237,12 +254,12 @@ export default function Sidebar({ collapsed, paused = false, onToggle }) {
   const NavContent = ({ inDrawer = false }) => (
     <>
       {NAV_SECTIONS.map((section, si) => (
-        <div className="dsh-nav-section" key={section.labelKey} style={{ paddingTop: si === 0 ? 18 : undefined }}>
-          <div className="dsh-nav-section-label">{t(section.labelKey)}</div>
+        <div className="dsh-nav-section" key={section.labelKey || section.label} style={{ paddingTop: si === 0 ? 18 : undefined }}>
+          <div className="dsh-nav-section-label">{section.labelKey ? t(section.labelKey) : section.label}</div>
 
           {section.items.map((item) => {
             const badge = getItemBadge(item.id);
-            const itemLabel = t(item.labelKey);
+            const itemLabel = item.labelKey ? t(item.labelKey) : item.label;
             const itemTag = item.tagKey ? t(item.tagKey) : item.tag;
 
             return (
