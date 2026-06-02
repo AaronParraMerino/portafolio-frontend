@@ -6,7 +6,7 @@ import {
   wasCookieDismissed,
   markCookieDismissed,
 } from '../../features/auth/services/sessionService';
-
+#borar
 export default function CookieConsentBanner({ onVisibilityChange }) {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);

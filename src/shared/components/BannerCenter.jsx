@@ -14,6 +14,7 @@ const DISMISSED_NOTICES_KEY = 'banner_center_dismissed_notices_v1';
 const EXIT_ANIMATION_MS = 550;
 const PROMOTE_ANIMATION_MS = 1000;
 const EMPTY_NOTICES = [];
+const MAX_VISIBLE_ITEMS = 4;
 
 const sortByStoredOrder = (list) => {
   try {
@@ -117,36 +118,46 @@ function normalizeGlobalNotice(item = {}) {
 function getNoticeToneStyles(item = {}) {
   const priority = String(item.priority || '').toLowerCase();
   const type = String(item.type || '').toLowerCase();
+  const isCritical = priority === 'critica';
+  const isHigh = priority === 'alta';
 
-  if (priority === 'critica') {
-    return styles.noticeDanger;
-  }
-
-  if (priority === 'alta') {
-    return styles.noticeWarning;
+  if (isCritical) {
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeLegal,
+      ...styles.noticeCritical,
+    };
   }
 
   if (type === 'legal_cumplimiento') {
-    return styles.noticeDangerSoft;
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeLegal,
+      ...(isHigh ? styles.noticeHigh : null),
+    };
   }
 
   if (type === 'operacional_tecnico') {
-    return styles.noticeWarning;
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeOperational,
+      ...(isHigh ? styles.noticeHigh : null),
+    };
   }
 
   if (type === 'comunicacion_marketing_global') {
-    return styles.noticeSuccess;
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeMarketing,
+      ...(isHigh ? styles.noticeHigh : null),
+    };
   }
 
-  if (type === 'negocio_logistica_eventos') {
-    return styles.noticePrimary;
-  }
-
-  if (priority === 'baja') {
-    return styles.noticeSuccess;
-  }
-
-  return styles.noticePrimary;
+  return {
+    ...styles.noticeShell,
+    ...styles.noticeBusiness,
+    ...(isHigh ? styles.noticeHigh : null),
+  };
 }
 
 export default function BannerCenter({ notices = EMPTY_NOTICES }) {
@@ -346,12 +357,12 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
   const hasItems = items.length > 0;
   const pendingCount = items.length;
   const activeItem = items[0] ?? null;
-  const titleItems = items.slice(1);
+  const titleItems = items.slice(1, MAX_VISIBLE_ITEMS);
 
   // El primer banner se muestra expandido directamente, sin animación de entrada.
 
   useEffect(() => {
-    const currentVisibleIds = items.slice(0, 3).map((item) => item.id);
+    const currentVisibleIds = items.slice(0, MAX_VISIBLE_ITEMS).map((item) => item.id);
     const previousVisibleIds = previousVisibleIdsRef.current;
 
     if (previousVisibleIds.length > 0) {
@@ -531,11 +542,11 @@ const styles = {
   },
   banner: {
     width: '100%',
-    background: '#0d1b2a',
-    color: '#e0e7ff',
-    border: '1px solid #1b263b',
+    background: 'var(--azul-deep)',
+    color: 'var(--blanco)',
+    border: '1px solid rgba(184, 221, 240, 0.38)',
     borderRadius: '12px',
-    boxShadow: '0 14px 40px rgba(0,0,0,0.35)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34)',
     padding: '12px',
     maxHeight: '240px',
     overflow: 'hidden',
@@ -543,35 +554,44 @@ const styles = {
     opacity: 1,
     transition: `transform ${EXIT_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${EXIT_ANIMATION_MS}ms ease, margin-top ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), padding ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), max-height ${PROMOTE_ANIMATION_MS}ms ease, box-shadow ${PROMOTE_ANIMATION_MS}ms ease`,
   },
-  noticePrimary: {
-    background: '#0d2f4f',
-    color: '#e7f3ff',
-    borderColor: '#1d6fb8',
-    boxShadow: '0 14px 40px rgba(13, 47, 79, 0.34)',
+  noticeShell: {
+    backgroundColor: 'var(--azul-deep)',
+    backgroundImage: `
+      linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02)),
+      linear-gradient(rgba(184, 221, 240, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184, 221, 240, 0.12) 1px, transparent 1px)
+    `,
+    backgroundSize: 'auto, 38px 38px, 38px 38px',
+    borderLeft: '5px solid var(--azul)',
+    color: 'var(--blanco)',
   },
-  noticeSuccess: {
-    background: '#0f342d',
-    color: '#e6fff8',
-    borderColor: '#1f8a70',
-    boxShadow: '0 14px 40px rgba(15, 52, 45, 0.34)',
+  noticeBusiness: {
+    borderColor: 'rgba(184, 221, 240, 0.48)',
+    borderLeftColor: 'var(--azul)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(255,255,255,0.12)',
   },
-  noticeWarning: {
-    background: '#3b2a08',
-    color: '#fff7db',
-    borderColor: '#c48212',
-    boxShadow: '0 14px 40px rgba(59, 42, 8, 0.34)',
+  noticeOperational: {
+    borderColor: 'var(--amarillo-borde)',
+    borderLeftColor: 'var(--amarillo)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(251, 191, 36, 0.18)',
   },
-  noticeDanger: {
-    background: '#4a1018',
-    color: '#ffe8ec',
-    borderColor: '#d53f55',
-    boxShadow: '0 14px 40px rgba(74, 16, 24, 0.38)',
+  noticeMarketing: {
+    borderColor: 'var(--verde-borde)',
+    borderLeftColor: 'var(--verde)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(52, 211, 153, 0.18)',
   },
-  noticeDangerSoft: {
-    background: '#341c2b',
-    color: '#fff0f7',
-    borderColor: '#a54d7a',
-    boxShadow: '0 14px 40px rgba(52, 28, 43, 0.34)',
+  noticeLegal: {
+    borderColor: 'var(--rojo-borde)',
+    borderLeftColor: 'var(--rojo-soft)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(232, 85, 85, 0.20)',
+  },
+  noticeHigh: {
+    borderWidth: '1px 1px 1px 6px',
+    boxShadow: '0 16px 46px rgba(0, 79, 124, 0.42), inset 0 1px 0 rgba(255,255,255,0.16)',
+  },
+  noticeCritical: {
+    borderWidth: '1px 1px 1px 7px',
+    boxShadow: '0 18px 52px rgba(201, 64, 64, 0.30), inset 0 1px 0 rgba(232, 85, 85, 0.24)',
   },
   bannerStacked: {
     marginTop: '0',
@@ -607,7 +627,7 @@ const styles = {
     margin: 0,
     fontSize: '12px',
     lineHeight: 1.45,
-    color: '#c8d5f4',
+    color: 'rgba(255, 255, 255, 0.86)',
   },
   mainContent: {
     opacity: 1,
@@ -647,17 +667,17 @@ const styles = {
   },
   primaryBtn: {
     border: 'none',
-    background: '#1d4ed8',
-    color: '#fff',
+    background: 'var(--blanco)',
+    color: 'var(--azul-deep)',
     borderRadius: '8px',
     padding: '7px 10px',
     fontSize: '12px',
     cursor: 'pointer',
   },
   secondaryBtn: {
-    border: '1px solid #334155',
-    background: '#111827',
-    color: '#cbd5e1',
+    border: '1px solid rgba(255,255,255,0.28)',
+    background: 'rgba(255,255,255,0.08)',
+    color: 'var(--blanco)',
     borderRadius: '8px',
     padding: '7px 10px',
     fontSize: '12px',
