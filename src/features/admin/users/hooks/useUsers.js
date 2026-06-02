@@ -259,7 +259,7 @@ export function useUsersDirectory() {
       const nextRole = isRoleAssign ? 'publicante' : 'usuario';
       const response = isRoleAction
         ? (supportsRoleManagement
-          ? await updateUserRole(activeUser.id, { rol: nextRole, razon: actionMessage.trim() })
+          ? await updateUserRole(activeUser.id, { rol: nextRole, razon: actionMessage.trim(), canales: actionChannels })
           : { message: 'Rol actualizado en la vista de gestion. La integracion persistente queda lista para backend.' })
         : (isActivation
           ? await activateUserAccount(activeUser.id, actionPayload)
