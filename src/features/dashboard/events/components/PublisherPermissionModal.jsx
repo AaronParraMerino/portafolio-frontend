@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   BsCheck2,
-  BsEnvelopeCheck,
   BsExclamationTriangle,
   BsInfoCircle,
   BsPhone,
@@ -161,6 +160,7 @@ export default function PublisherPermissionModal({
   }));
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   if (!open) return null;
 
@@ -250,13 +250,14 @@ export default function PublisherPermissionModal({
   const handleChange = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setTouched((current) => ({ ...current, [field]: true }));
+    setSubmitError('');
   };
 
   const handleBlur = (field) => {
     setTouched((current) => ({ ...current, [field]: true }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitAttempted(true);
     setTouched({
@@ -274,21 +275,26 @@ export default function PublisherPermissionModal({
 
     if (hasErrors) return;
 
-    onSubmit?.({
-      ...form,
-      currentEmail,
-      currentPhone: currentPhoneValue,
-      referencePhone: referencePhoneValue,
-      backupEmail: normalize(form.backupEmail),
-      requesterName: displayName,
-    });
-    setForm({
-      ...DEFAULT_FORM,
-      currentPhoneCountry: detectedCountry.code,
-      referencePhoneCountry: detectedCountry.code,
-    });
-    setTouched({});
-    setSubmitAttempted(false);
+    try {
+      await onSubmit?.({
+        ...form,
+        currentEmail,
+        currentPhone: currentPhoneValue,
+        referencePhone: referencePhoneValue,
+        backupEmail: normalize(form.backupEmail),
+        requesterName: displayName,
+      });
+      setForm({
+        ...DEFAULT_FORM,
+        currentPhoneCountry: detectedCountry.code,
+        referencePhoneCountry: detectedCountry.code,
+      });
+      setTouched({});
+      setSubmitAttempted(false);
+      setSubmitError('');
+    } catch (error) {
+      setSubmitError(error.message || 'No se pudo enviar la solicitud.');
+    }
   };
 
   return (
@@ -314,6 +320,12 @@ export default function PublisherPermissionModal({
               Revisa los campos marcados antes de enviar la solicitud.
             </div>
           ) : null}
+          {submitError ? (
+            <div className="dbe-form-error-banner" role="alert">
+              <BsExclamationTriangle />
+              {submitError}
+            </div>
+          ) : null}
 
           <div className="dbe-review-warning">
             <BsInfoCircle />
@@ -331,12 +343,6 @@ export default function PublisherPermissionModal({
               <span>Telefono actual</span>
               <strong>{detectedPhone || 'No registrado'}</strong>
               <small>{detectedPhone ? 'Tomado de tu perfil' : 'Completa este dato para continuar'}</small>
-            </article>
-            <article className="dbe-identity-card">
-              <BsEnvelopeCheck />
-              <span>Correo de respaldo</span>
-              <strong>Obligatorio</strong>
-              <small>Se valida desde el campo de correo</small>
             </article>
           </div>
 

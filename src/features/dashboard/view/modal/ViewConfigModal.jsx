@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import { useLanguage } from '../../../../core/i18n';
 
 import {
   ACCENT_COLORS,
@@ -17,7 +18,7 @@ import {
   isVisible,
 } from '../model/viewModel';
 
-function Swatch({ color, active, onClick }) {
+function Swatch({ color, active, onClick, label }) {
   return (
     <button
       type="button"
@@ -25,7 +26,7 @@ function Swatch({ color, active, onClick }) {
       style={{ background: color }}
       onClick={onClick}
       title={color}
-      aria-label={`Seleccionar color ${color}`}
+      aria-label={label}
     />
   );
 }
@@ -181,6 +182,7 @@ function VisibilityGroup({
   defaultOpen = false,
   searchable = false,
   searchPlaceholder = 'Buscar...',
+  t,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [search, setSearch] = useState('');
@@ -265,8 +267,8 @@ function VisibilityGroup({
 
           <span className="vis-item-label">
             {searchable && search.trim()
-              ? `Mostrar resultados encontrados (${filteredItems.length})`
-              : 'Mostrar todo'}
+              ? t('view.config.visibility.showResults', { count: filteredItems.length })
+              : t('view.config.visibility.showAll')}
           </span>
         </label>
 
@@ -274,7 +276,7 @@ function VisibilityGroup({
 
         {filteredItems.length === 0 && (
           <div className="vis-empty">
-            No se encontraron resultados.
+            {t('view.config.visibility.noResults')}
           </div>
         )}
 
@@ -303,7 +305,7 @@ function VisibilityGroup({
 
               {item.type && (
                 <span className={`vis-item-type vis-type-${item.type}`}>
-                  {item.type === 'tec' ? 'Técnica' : 'Blanda'}
+                  {item.type === 'tec' ? t('view.type.technical') : t('view.type.soft')}
                 </span>
               )}
             </label>
@@ -348,6 +350,7 @@ export default function ViewConfigModal({
   saving = false,
   onClose,
 }) {
+  const { t } = useLanguage();
   const [tab, setTab] = useState('apariencia');
   const [resetOpen, setResetOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -384,38 +387,38 @@ export default function ViewConfigModal({
       perfil: [
         {
           id: 'nombre',
-          label: 'Nombre completo',
+          label: t('view.config.visibility.profile.name'),
           sub: `${data?.perfil?.nombre || ''} ${data?.perfil?.apellido || ''}`.trim(),
         },
         {
           id: 'profesion',
-          label: 'Profesión',
+          label: t('view.config.visibility.profile.profession'),
           sub: data?.perfil?.profesion,
         },
         {
           id: 'ubicacion',
-          label: 'Ubicación',
+          label: t('view.config.visibility.profile.location'),
           sub: `${data?.perfil?.ciudad || ''}, ${data?.perfil?.pais || ''}`,
         },
         {
           id: 'telefono',
-          label: 'Teléfono',
+          label: t('view.config.visibility.profile.phone'),
           sub: data?.perfil?.telefono,
         },
         {
           id: 'correo',
-          label: 'Correo electrónico',
+          label: t('view.config.visibility.profile.email'),
           sub: data?.perfil?.correo,
         },
         {
           id: 'redes',
-          label: 'Redes sociales',
+          label: t('view.config.visibility.profile.social'),
           sub: `${data?.redes?.length || 0} enlaces`,
         },
         {
           id: 'biografia',
-          label: 'Acerca de mí',
-          sub: 'Biografía pública',
+          label: t('view.config.visibility.profile.about'),
+          sub: t('view.config.visibility.profile.publicBio'),
         },
       ],
 
@@ -453,22 +456,22 @@ export default function ViewConfigModal({
       })),
 
       proyecto_detalles: [
-        { id: 'media', label: 'Imagenes y videos destacados', sub: 'Carrusel superior de cada proyecto' },
-        { id: 'estado', label: 'Estado del proyecto', sub: 'Publicado, borrador, archivado o desarrollo' },
-        { id: 'tipo', label: 'Tipo o categoria', sub: 'Web, API, educativo, e-commerce, etc.' },
-        { id: 'descripcion', label: 'Descripcion principal', sub: 'Resumen publico del proyecto' },
-        { id: 'tecnologias', label: 'Tecnologias', sub: 'Stack y herramientas usadas' },
-        { id: 'repositorios', label: 'Repositorios', sub: 'Links y datos tecnicos' },
-        { id: 'demo', label: 'Demo o sitio web', sub: 'Enlace publico del producto' },
-        { id: 'videos', label: 'Videos', sub: 'Enlaces o evidencias de video' },
-        { id: 'documentos', label: 'Documentos', sub: 'PDF, documentacion o presentaciones' },
-        { id: 'fechas', label: 'Fechas', sub: 'Anio y periodo del proyecto' },
-        { id: 'rol', label: 'Rol propio', sub: 'Participacion dentro del proyecto' },
-        { id: 'aporte', label: 'Aporte realizado', sub: 'Descripcion de tu contribucion' },
-        { id: 'participantes', label: 'Cantidad de participantes', sub: 'Colaboradores visibles del proyecto' },
+        { id: 'media', label: t('view.config.visibility.projectDetails.media'), sub: t('view.config.visibility.projectDetails.mediaSub') },
+        { id: 'estado', label: t('view.config.visibility.projectDetails.status'), sub: t('view.config.visibility.projectDetails.statusSub') },
+        { id: 'tipo', label: t('view.config.visibility.projectDetails.type'), sub: t('view.config.visibility.projectDetails.typeSub') },
+        { id: 'descripcion', label: t('view.config.visibility.projectDetails.description'), sub: t('view.config.visibility.projectDetails.descriptionSub') },
+        { id: 'tecnologias', label: t('view.config.visibility.projectDetails.technologies'), sub: t('view.config.visibility.projectDetails.technologiesSub') },
+        { id: 'repositorios', label: t('view.config.visibility.projectDetails.repositories'), sub: t('view.config.visibility.projectDetails.repositoriesSub') },
+        { id: 'demo', label: t('view.config.visibility.projectDetails.demo'), sub: t('view.config.visibility.projectDetails.demoSub') },
+        { id: 'videos', label: t('view.config.visibility.projectDetails.videos'), sub: t('view.config.visibility.projectDetails.videosSub') },
+        { id: 'documentos', label: t('view.config.visibility.projectDetails.documents'), sub: t('view.config.visibility.projectDetails.documentsSub') },
+        { id: 'fechas', label: t('view.config.visibility.projectDetails.dates'), sub: t('view.config.visibility.projectDetails.datesSub') },
+        { id: 'rol', label: t('view.config.visibility.projectDetails.role'), sub: t('view.config.visibility.projectDetails.roleSub') },
+        { id: 'aporte', label: t('view.config.visibility.projectDetails.contribution'), sub: t('view.config.visibility.projectDetails.contributionSub') },
+        { id: 'participantes', label: t('view.config.visibility.projectDetails.participants'), sub: t('view.config.visibility.projectDetails.participantsSub') },
       ],
     };
-  }, [data]);
+  }, [data, t]);
 
   const allVisibleVisibility = useMemo(
     () => buildAllVisibleVisibility(visibilityItems),
@@ -544,7 +547,7 @@ export default function ViewConfigModal({
       onClose();
     } catch (error) {
       setSaveConfirmOpen(false);
-      setSaveError(error?.message || 'No se pudieron guardar los cambios. Revisa tu conexion e intenta nuevamente.');
+      setSaveError(error?.message || t('view.config.error.save'));
     }
   };
 
@@ -562,13 +565,13 @@ export default function ViewConfigModal({
           className="cfg-drawer open"
           role="dialog"
           aria-modal="true"
-          aria-label="Editar portafolio"
+          aria-label={t('view.config.title')}
         >
           <div className="cfg-head">
             <div>
-              <div className="cfg-head-title">Editar portafolio</div>
+              <div className="cfg-head-title">{t('view.config.title')}</div>
               <div className="cfg-head-sub">
-                Apariencia y visibilidad de tu vista pública
+                {t('view.config.subtitle')}
               </div>
             </div>
 
@@ -576,7 +579,7 @@ export default function ViewConfigModal({
               type="button"
               className="cfg-close"
               onClick={requestClose}
-              aria-label="Cerrar modal"
+              aria-label={t('actions.close')}
               disabled={saving}
             >
               <svg viewBox="0 0 11 11">
@@ -593,7 +596,7 @@ export default function ViewConfigModal({
               className={`cfg-tab ${tab === 'apariencia' ? 'active' : ''}`}
               onClick={() => setTab('apariencia')}
             >
-              Apariencia
+              {t('view.config.tabs.appearance')}
             </button>
 
             <button
@@ -601,7 +604,7 @@ export default function ViewConfigModal({
               className={`cfg-tab ${tab === 'visibilidad' ? 'active' : ''}`}
               onClick={() => setTab('visibilidad')}
             >
-              Visibilidad
+              {t('view.config.tabs.visibility')}
             </button>
           </div>
 
@@ -612,8 +615,8 @@ export default function ViewConfigModal({
                 {/* BANNER */}
                 <div className="cfg-section full">
                     <SectionHead
-                    title="Banner"
-                    sub="Foto de Mi Perfil o colores personalizados"
+                    title={t('view.config.banner.title')}
+                    sub={t('view.config.banner.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <rect x="1" y="1" width="12" height="8" rx="2" />
@@ -625,12 +628,12 @@ export default function ViewConfigModal({
                     <SourceToggle
                     value={safeConfig.heroBgSource || 'custom'}
                     onChange={value => patchConfig({ heroBgSource: value })}
-                    leftLabel="Usar banner"
-                    rightLabel="Personalizar"
+                    leftLabel={t('view.config.source.banner')}
+                    rightLabel={t('view.config.source.customize')}
                     />
 
                     <div className={`cfg-block ${safeConfig.heroBgSource === 'foto' ? 'disabled' : ''}`}>
-                    <MiniLabel>Color de fondo</MiniLabel>
+                    <MiniLabel>{t('view.config.backgroundColor')}</MiniLabel>
 
                     <div className="swatch-row cfg-space-bottom">
                         {HERO_COLORS.map(color => (
@@ -639,17 +642,18 @@ export default function ViewConfigModal({
                             color={color}
                             active={safeConfig.heroColor === color}
                             onClick={() => patchConfig({ heroColor: color })}
+                            label={t('view.config.selectColor', { color })}
                         />
                         ))}
                     </div>
 
-                    <MiniLabel>Patrón</MiniLabel>
+                    <MiniLabel>{t('view.config.pattern')}</MiniLabel>
 
                     <div className="pattern-options">
                         {PATTERNS.map(pattern => (
                         <PatternButton
                             key={pattern.id}
-                            pattern={pattern}
+                            pattern={{ ...pattern, label: t(`view.pattern.${pattern.id}`) }}
                             active={safeConfig.heroPattern === pattern.id}
                             onClick={() => patchConfig({ heroPattern: pattern.id })}
                         />
@@ -661,8 +665,8 @@ export default function ViewConfigModal({
                 {/* AVATAR */}
                 <div className="cfg-section">
                     <SectionHead
-                    title="Avatar"
-                    sub="Foto o color de fondo"
+                    title={t('view.config.avatar.title')}
+                    sub={t('view.config.avatar.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <circle cx="7" cy="5" r="2.5" />
@@ -674,8 +678,8 @@ export default function ViewConfigModal({
                     <SourceToggle
                     value={safeConfig.avatarBgSource || 'custom'}
                     onChange={value => patchConfig({ avatarBgSource: value })}
-                    leftLabel="Usar avatar"
-                    rightLabel="Personalizar"
+                    leftLabel={t('view.config.source.avatar')}
+                    rightLabel={t('view.config.source.customize')}
                     />
 
                     <div className={`cfg-block ${safeConfig.avatarBgSource === 'foto' ? 'disabled' : ''}`}>
@@ -686,6 +690,7 @@ export default function ViewConfigModal({
                             color={color}
                             active={safeConfig.avatarColor === color}
                             onClick={() => patchConfig({ avatarColor: color })}
+                            label={t('view.config.selectColor', { color })}
                         />
                         ))}
                     </div>
@@ -695,8 +700,8 @@ export default function ViewConfigModal({
                 {/* ACENTO */}
                 <div className="cfg-section">
                     <SectionHead
-                    title="Color de acento"
-                    sub="Barras, panel izquierdo, botones y énfasis"
+                    title={t('view.config.accent.title')}
+                    sub={t('view.config.accent.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <path d="M7 1l1.5 4H13l-3.5 2.5 1.3 4L7 9 3.2 11.5l1.3-4L1 5h4.5z" />
@@ -711,6 +716,7 @@ export default function ViewConfigModal({
                         color={color}
                         active={safeConfig.accentColor === color}
                         onClick={() => patchConfig({ accentColor: color })}
+                        label={t('view.config.selectColor', { color })}
                         />
                     ))}
                     </div>
@@ -719,8 +725,8 @@ export default function ViewConfigModal({
                 {/* FONDO */}
                 <div className="cfg-section full">
                     <SectionHead
-                    title="Fondo del portafolio"
-                    sub="Color de fondo de la tarjeta"
+                    title={t('view.config.card.title')}
+                    sub={t('view.config.card.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <rect x="1" y="1" width="12" height="12" rx="2" />
@@ -736,6 +742,7 @@ export default function ViewConfigModal({
                         color={color}
                         active={safeConfig.cardBg === color}
                         onClick={() => patchConfig({ cardBg: color })}
+                        label={t('view.config.selectColor', { color })}
                         />
                     ))}
                     </div>
@@ -744,8 +751,8 @@ export default function ViewConfigModal({
                 {/* COLOR DE TEXTO */}
                 <div className="cfg-section full">
                 <SectionHead
-                    title="Color de texto"
-                    sub="Automático según fondo o color personalizado"
+                    title={t('view.config.text.title')}
+                    sub={t('view.config.text.subtitle')}
                     icon={(
                     <svg viewBox="0 0 14 14">
                         <path d="M3 11h8" />
@@ -758,11 +765,11 @@ export default function ViewConfigModal({
                 <div className="cfg-toggle-row cfg-toggle-row-spaced">
                     <div>
                     <div className="cfg-toggle-label">
-                        Cambio automático de texto
+                        {t('view.config.text.auto')}
                     </div>
 
                     <div className="cfg-toggle-sub">
-                        Ajusta el texto a claro u oscuro según el fondo del portafolio
+                        {t('view.config.text.autoHelp')}
                     </div>
                     </div>
 
@@ -770,12 +777,12 @@ export default function ViewConfigModal({
                     type="button"
                     className={`cfg-toggle ${safeConfig.textColorAuto ? '' : 'off'}`}
                     onClick={() => patchConfig({ textColorAuto: !safeConfig.textColorAuto })}
-                    aria-label="Cambiar modo automático del color de texto"
+                    aria-label={t('view.config.text.autoAria')}
                     />
                 </div>
 
                 <div className={`cfg-block ${safeConfig.textColorAuto ? 'disabled' : ''}`}>
-                    <MiniLabel space>Color personalizado</MiniLabel>
+                    <MiniLabel space>{t('view.config.text.custom')}</MiniLabel>
 
                     <div className="swatch-row">
                     {TEXT_COLORS.map(color => (
@@ -784,6 +791,7 @@ export default function ViewConfigModal({
                         color={color}
                         active={(safeConfig.textColor || '#111827') === color}
                         onClick={() => patchConfig({ textColor: color })}
+                        label={t('view.config.selectColor', { color })}
                         />
                     ))}
                     </div>
@@ -793,8 +801,8 @@ export default function ViewConfigModal({
                 {/* TIPOGRAFÍA */}
                 <div className="cfg-section full">
                     <SectionHead
-                    title="Tipografía"
-                    sub="Fuente principal del portafolio"
+                    title={t('view.config.font.title')}
+                    sub={t('view.config.font.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <path d="M2 3h10M7 3v8M4 11h6" />
@@ -806,7 +814,7 @@ export default function ViewConfigModal({
                     {FONTS.map(font => (
                         <FontOption
                         key={font.id}
-                        font={font}
+                        font={{ ...font, preview: t(`view.font.${font.id}.preview`) }}
                         active={(safeConfig.fontId || 'inter') === font.id}
                         onClick={() => patchConfig({ fontId: font.id })}
                         />
@@ -817,8 +825,8 @@ export default function ViewConfigModal({
                 {/* MARCO */}
                 <div className="cfg-section full">
                     <SectionHead
-                    title="Marco"
-                    sub="Estilo visual de la ventana del portafolio"
+                    title={t('view.config.frame.title')}
+                    sub={t('view.config.frame.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <rect x="1.5" y="2" width="11" height="10" rx="1.5" />
@@ -836,7 +844,7 @@ export default function ViewConfigModal({
                         onClick={() => patchConfig({ frameId: frame.id })}
                         >
                         <FramePreview frameId={frame.id} />
-                        <span className="border-opt-label">{frame.label}</span>
+                        <span className="border-opt-label">{t(`view.frame.${frame.id}`)}</span>
                         </button>
                     ))}
                     </div>
@@ -845,8 +853,8 @@ export default function ViewConfigModal({
                 {/* DISPONIBILIDAD */}
                 <div className="cfg-section full">
                     <SectionHead
-                    title="Disponibilidad"
-                    sub="Badge en tu perfil público"
+                    title={t('view.config.availability.title')}
+                    sub={t('view.config.availability.subtitle')}
                     icon={(
                         <svg viewBox="0 0 14 14">
                         <circle cx="7" cy="7" r="5" />
@@ -858,11 +866,11 @@ export default function ViewConfigModal({
                     <div className="cfg-toggle-row">
                     <div>
                         <div className="cfg-toggle-label">
-                        Disponible para proyectos
+                        {t('view.identity.available')}
                         </div>
 
                         <div className="cfg-toggle-sub">
-                        Visible para reclutadores
+                        {t('view.config.availability.help')}
                         </div>
                     </div>
 
@@ -870,7 +878,7 @@ export default function ViewConfigModal({
                         type="button"
                         className={`cfg-toggle ${safeConfig.disponible ? '' : 'off'}`}
                         onClick={() => patchConfig({ disponible: !safeConfig.disponible })}
-                        aria-label="Cambiar disponibilidad"
+                        aria-label={t('view.config.availability.aria')}
                     />
                     </div>
                 </div>
@@ -881,18 +889,18 @@ export default function ViewConfigModal({
               <div className="cfg-tab-panel active">
                 <div className="cfg-section full">
                   <p className="vis-intro">
-                    Elige qué información se mostrará en la vista pública de tu
-                    portafolio. Los cambios se aplican al guardar.
+                    {t('view.config.visibility.intro')}
                   </p>
 
                   <VisibilityGroup
-                    title="Perfil"
+                    title={t('view.config.visibility.groups.profile')}
                     group="perfil"
                     items={visibilityItems.perfil}
                     config={safeConfig}
                     onToggle={handleToggleVisibility}
                     onToggleMany={handleToggleManyVisibility}
                     defaultOpen
+                    t={t}
                     icon={(
                       <svg viewBox="0 0 14 14">
                         <circle cx="7" cy="5" r="2.5" />
@@ -902,12 +910,13 @@ export default function ViewConfigModal({
                   />
 
                   <VisibilityGroup
-                    title="Estadísticas"
+                    title={t('view.config.visibility.groups.stats')}
                     group="stats"
                     items={visibilityItems.stats}
                     config={safeConfig}
                     onToggle={handleToggleVisibility}
                     onToggleMany={handleToggleManyVisibility}
+                    t={t}
                     icon={(
                       <svg viewBox="0 0 14 14">
                         <path d="M2 12V7M7 12V3M12 12V5" />
@@ -916,14 +925,15 @@ export default function ViewConfigModal({
                   />
 
                   <VisibilityGroup
-                    title="Habilidades"
+                    title={t('view.config.visibility.groups.skills')}
                     group="habilidades"
                     items={visibilityItems.habilidades}
                     config={safeConfig}
                     onToggle={handleToggleVisibility}
                     onToggleMany={handleToggleManyVisibility}
                     searchable
-                    searchPlaceholder="Buscar habilidad..."
+                    t={t}
+                    searchPlaceholder={t('view.config.visibility.searchSkill')}
                     icon={(
                       <svg viewBox="0 0 14 14">
                         <path d="M2 10l3-6 3 6 3-6 1 6" />
@@ -932,14 +942,15 @@ export default function ViewConfigModal({
                   />
 
                   <VisibilityGroup
-                    title="Experiencia"
+                    title={t('view.config.visibility.groups.experience')}
                     group="experiencias"
                     items={visibilityItems.experiencias}
                     config={safeConfig}
                     onToggle={handleToggleVisibility}
                     onToggleMany={handleToggleManyVisibility}
                     searchable
-                    searchPlaceholder="Buscar experiencia..."
+                    t={t}
+                    searchPlaceholder={t('view.config.visibility.searchExperience')}
                     icon={(
                       <svg viewBox="0 0 14 14">
                         <rect x="2" y="4" width="10" height="8" rx="1.5" />
@@ -949,14 +960,15 @@ export default function ViewConfigModal({
                   />
 
                   <VisibilityGroup
-                    title="Proyectos"
+                    title={t('view.config.visibility.groups.projects')}
                     group="proyectos"
                     items={visibilityItems.proyectos}
                     config={safeConfig}
                     onToggle={handleToggleVisibility}
                     onToggleMany={handleToggleManyVisibility}
                     searchable
-                    searchPlaceholder="Buscar proyecto..."
+                    t={t}
+                    searchPlaceholder={t('view.config.visibility.searchProject')}
                     icon={(
                       <svg viewBox="0 0 14 14">
                         <rect x="2" y="2" width="10" height="10" rx="2" />
@@ -966,13 +978,14 @@ export default function ViewConfigModal({
                   />
 
                   <VisibilityGroup
-                    title="Detalles de proyectos"
+                    title={t('view.config.visibility.groups.projectDetails')}
                     group="proyecto_detalles"
                     items={visibilityItems.proyecto_detalles}
                     config={safeConfig}
                     onToggle={handleToggleVisibility}
                     onToggleMany={handleToggleManyVisibility}
                     defaultOpen
+                    t={t}
                     icon={(
                       <svg viewBox="0 0 14 14">
                         <rect x="2" y="2" width="10" height="10" rx="2" />
@@ -1001,7 +1014,7 @@ export default function ViewConfigModal({
               onClick={() => setResetOpen(true)}
               disabled={saving}
             >
-              Restaurar
+              {t('view.config.restore')}
             </button>
 
             <button
@@ -1010,7 +1023,7 @@ export default function ViewConfigModal({
               onClick={requestSave}
               disabled={saving}
             >
-              {saving ? 'Guardando...' : 'Aplicar cambios'}
+              {saving ? t('actions.saving') : t('view.config.applyChanges')}
             </button>
           </div>
         </div>
@@ -1020,11 +1033,11 @@ export default function ViewConfigModal({
         open={resetOpen}
         variant="yellow"
         icon="warning"
-        title="Restaurar configuración"
-        subtitle="Volver a los valores iniciales"
-        message="Se restaurarán los colores, el marco, la disponibilidad y la visibilidad inicial del portafolio."
-        confirmLabel="Restaurar"
-        cancelLabel="Cancelar"
+        title={t('view.config.restoreTitle')}
+        subtitle={t('view.config.restoreSubtitle')}
+        message={t('view.config.restoreMessage')}
+        confirmLabel={t('view.config.restore')}
+        cancelLabel={t('actions.cancel')}
         onConfirm={() => {
           setDraftConfig(cloneConfig({
             ...DEFAULT_CONFIG,
@@ -1039,15 +1052,15 @@ export default function ViewConfigModal({
         open={saveConfirmOpen}
         variant="green"
         icon="check"
-        title="Aplicar cambios"
-        subtitle="Confirmacion de guardado"
+        title={t('view.config.applyChanges')}
+        subtitle={t('view.config.saveSubtitle')}
         message={
           hasUnsavedChanges
-            ? 'Deseas guardar la personalizacion y aplicar esta visibilidad al portafolio publico?'
-            : 'No detectamos cambios nuevos, pero puedes confirmar para sincronizar nuevamente la configuracion.'
+            ? t('view.config.saveMessage')
+            : t('view.config.noChangesMessage')
         }
-        confirmLabel="Si, guardar"
-        cancelLabel="Cancelar"
+        confirmLabel={t('actions.saveConfirm')}
+        cancelLabel={t('actions.cancel')}
         loading={saving}
         onConfirm={handleConfirmSave}
         onClose={() => !saving && setSaveConfirmOpen(false)}
@@ -1057,11 +1070,11 @@ export default function ViewConfigModal({
         open={discardOpen}
         variant="yellow"
         icon="warning"
-        title="Salir sin guardar"
-        subtitle="Cambios pendientes"
-        message="Si sales ahora, los cambios de personalizacion y visibilidad no se guardaran ni se veran en el portafolio publico."
-        confirmLabel="Salir sin guardar"
-        cancelLabel="Seguir editando"
+        title={t('view.config.discardTitle')}
+        subtitle={t('view.config.discardSubtitle')}
+        message={t('view.config.discardMessage')}
+        confirmLabel={t('view.config.discardConfirm')}
+        cancelLabel={t('view.config.keepEditing')}
         onConfirm={() => {
           setDiscardOpen(false);
           setDraftConfig(cloneConfig(config));

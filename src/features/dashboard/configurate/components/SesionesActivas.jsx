@@ -5,18 +5,21 @@ import {
   closeSessionById,
   fetchMySessions,
 } from "../services/ConfigurateServices";
+import { useLanguage } from "../../../../core/i18n";
 
-const relativeTime = (dateInput) => {
-  if (!dateInput) return "Sin actividad reciente";
+const localeByLanguage = { es: "es", en: "en", pt: "pt-BR" };
+
+const relativeTime = (dateInput, language, t) => {
+  if (!dateInput) return t("configurate.sessions.noRecentActivity");
 
   const now = Date.now();
   const date = new Date(dateInput).getTime();
 
-  if (Number.isNaN(date)) return "Sin actividad reciente";
+  if (Number.isNaN(date)) return t("configurate.sessions.noRecentActivity");
 
   const diffSeconds = Math.floor((date - now) / 1000);
   const absSeconds = Math.abs(diffSeconds);
-  const rtf = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat(localeByLanguage[language] || "es", { numeric: "auto" });
 
   if (absSeconds < 60) return rtf.format(diffSeconds, "second");
   if (absSeconds < 3600) return rtf.format(Math.round(diffSeconds / 60), "minute");
@@ -25,21 +28,21 @@ const relativeTime = (dateInput) => {
   return rtf.format(Math.round(diffSeconds / 86400), "day");
 };
 
-const toUiSession = (item) => {
+const toUiSession = (item, language, t) => {
   const browser =
     [item.navegador_nombre, item.navegador_version].filter(Boolean).join(" ") ||
-    "Navegador desconocido";
+    t("configurate.sessions.unknownBrowser");
 
   const location =
     [item.pais_codigo, item.ip_address].filter(Boolean).join(" · ") ||
-    "Ubicación no disponible";
+    t("configurate.sessions.locationUnavailable");
 
   return {
     id: item.id_rastreo_interno,
-    os: item.sistema_operativo || "Sistema desconocido",
+    os: item.sistema_operativo || t("configurate.sessions.unknownSystem"),
     browser,
     location,
-    time: relativeTime(item.ultima_actividad),
+    time: relativeTime(item.ultima_actividad, language, t),
     current: Boolean(item.is_current),
     icon: item.es_movil ? "mobile" : "desktop",
   };
@@ -47,6 +50,7 @@ const toUiSession = (item) => {
 
 export default function SesionesActivas() {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,14 +80,14 @@ export default function SesionesActivas() {
     setError("");
 
     try {
-      const data = await fetchMySessions();
-      setSessions(data.map(toUiSession));
+      const data = await fetchMySessions(t);
+      setSessions(data.map((item) => toUiSession(item, language, t)));
     } catch (err) {
-      setError(err.message || "No se pudieron cargar las sesiones");
+      setError(err.message || t("configurate.sessions.error.load"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [language, t]);
 
   useEffect(() => {
     loadSessions();
@@ -94,10 +98,10 @@ export default function SesionesActivas() {
     setError("");
 
     try {
-      await closeSessionById(id);
+      await closeSessionById(id, t);
       setSessions((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      setError(err.message || "No se pudo cerrar la sesión");
+      setError(err.message || t("configurate.sessions.error.close"));
     } finally {
       setBusyIds((prev) => prev.filter((item) => item !== id));
     }
@@ -108,10 +112,10 @@ export default function SesionesActivas() {
     setError("");
 
     try {
-      await closeOtherSessions();
+      await closeOtherSessions(t);
       await loadSessions();
     } catch (err) {
-      setError(err.message || "No se pudieron cerrar las demás sesiones");
+      setError(err.message || t("configurate.sessions.error.closeOthers"));
     } finally {
       setClosingAll(false);
     }
@@ -127,7 +131,7 @@ export default function SesionesActivas() {
       >
         <button type="button" style={backButtonStyle} onClick={handleBack}>
           <span style={backIconStyle}>‹</span>
-          Volver
+          {t("actions.back")}
         </button>
 
         <section style={headerStyle}>
@@ -145,13 +149,13 @@ export default function SesionesActivas() {
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
-            Configuración
+            {t("configurate.header.title")}
           </div>
 
-          <h1 style={titleStyle}>Sesiones activas</h1>
+          <h1 style={titleStyle}>{t("configurate.sessions.title")}</h1>
 
           <p style={subtitleStyle}>
-            Estas son las sesiones abiertas en tu cuenta actualmente.
+            {t("configurate.sessions.subtitle")}
           </p>
         </section>
 
@@ -163,7 +167,7 @@ export default function SesionesActivas() {
             style={loadingBoxStyle}
           >
             <span className="dash-loading-spinner" />
-            <span>Cargando sesiones...</span>
+            <span>{t("configurate.sessions.loading")}</span>
           </div>
         )}
 
@@ -171,7 +175,7 @@ export default function SesionesActivas() {
 
         {!loading && !error && sessions.length === 0 && (
           <div style={emptyStateStyle}>
-            No se encontraron sesiones activas.
+            {t("configurate.sessions.empty")}
           </div>
         )}
 
@@ -228,7 +232,7 @@ export default function SesionesActivas() {
 
                       {session.current && (
                         <span style={currentBadgeStyle}>
-                          ● Este dispositivo
+                          ● {t("configurate.sessions.currentDevice")}
                         </span>
                       )}
                     </div>
@@ -251,7 +255,7 @@ export default function SesionesActivas() {
                     onClick={() => handleClose(session.id)}
                     type="button"
                   >
-                    {isBusy ? "Cerrando..." : "Cerrar sesión"}
+                    {isBusy ? t("configurate.sessions.closing") : t("configurate.sessions.closeSession")}
                   </button>
                 )}
               </article>
@@ -287,8 +291,8 @@ export default function SesionesActivas() {
             </svg>
 
             {closingAll
-              ? "Cerrando sesiones..."
-              : "Cerrar todas las demás sesiones"}
+              ? t("configurate.sessions.closingSessions")
+              : t("configurate.sessions.closeOtherSessions")}
           </button>
         )}
       </main>

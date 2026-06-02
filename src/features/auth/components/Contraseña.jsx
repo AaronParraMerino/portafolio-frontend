@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
+import { useLanguage } from "../../../core/i18n";
 
 const API = process.env.REACT_APP_API_URL;
 
 export default function RecuperacionAcceso() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [cargando, setCargando] = useState(false);
   const [msg, setMsg] = useState("");
@@ -27,10 +29,10 @@ export default function RecuperacionAcceso() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al solicitar recuperación");
+      if (!res.ok) throw new Error(data.message || t("auth.error.recoveryRequest"));
 
       sessionStorage.setItem("correo_recuperacion", email);
-      setMsg(data.message || "Correo enviado");
+      setMsg(data.message || t("auth.recovery.emailSent"));
       navigate("/auth/Codigo");
     } catch (e) {
       setError(e.message);
@@ -43,15 +45,15 @@ export default function RecuperacionAcceso() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--fondo)", fontFamily: "var(--font)" }}>
       <div style={{ backgroundColor: "var(--blanco)", borderRadius: "12px", padding: "40px 36px", width: "100%", maxWidth: "400px", boxShadow: "0 2px 16px rgba(0,0,0,0.08)" }}>
         <h1 style={{ fontSize: "22px", fontWeight: "600", color: "var(--azul)", marginBottom: "10px", textAlign: "center" }}>
-          Recuperación de Contraseña
+          {t("auth.recovery.title")}
         </h1>
 
         <p style={{ fontSize: "14px", color: "var(--gris-texto)", marginBottom: "24px", lineHeight: "1.5" }}>
-          Te enviaremos un código al correo para recuperar tu cuenta.
+          {t("auth.recovery.description")}
         </p>
 
         <label htmlFor="email" style={{ fontSize: "13px", fontWeight: "500", color: "var(--gris-oscuro)", display: "block", marginBottom: "6px" }}>
-          Correo Electrónico
+          {t("auth.field.email")}
         </label>
 
         <input
@@ -71,7 +73,7 @@ export default function RecuperacionAcceso() {
           disabled={!email || cargando}
           style={{ width: "100%", padding: "12px", backgroundColor: email && !cargando ? "var(--azul)" : "var(--azul-mid)", color: "var(--blanco)", border: "none", borderRadius: "8px", fontSize: "15px", fontWeight: "500", cursor: email && !cargando ? "pointer" : "not-allowed", fontFamily: "var(--font)" }}
         >
-          {cargando ? "Enviando..." : "Enviar código"}
+          {cargando ? t("auth.status.sending") : t("auth.action.sendCode")}
         </button>
 
         <button
@@ -79,7 +81,7 @@ export default function RecuperacionAcceso() {
           onClick={() => navigate("/auth/Login")}
           style={{ fontSize: "13px", color: "var(--azul)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "block", margin: "16px auto 0", fontFamily: "var(--font)" }}
         >
-          Volver al inicio de sesión
+          {t("auth.recovery.backLogin")}
         </button>
       </div>
     </div>

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { getInitial } from '../model/viewModel';
+import { useLanguage } from '../../../../core/i18n';
 
 function resolveImage(primary, fallback) {
   return primary || fallback || null;
 }
 
 export default function ViewHero({ perfil, config }) {
+  const { t } = useLanguage();
   const preferredBannerUrl = resolveImage(perfil?.bannerUrl, perfil?.foto_fondo);
   const originalBannerUrl = resolveImage(perfil?.bannerOriginalUrl, perfil?.foto_fondo);
   const [bannerUrl, setBannerUrl] = useState(preferredBannerUrl);
@@ -49,7 +51,7 @@ export default function ViewHero({ perfil, config }) {
           {useAvatarPhoto ? (
             <img
               src={avatarUrl}
-              alt="Foto de perfil"
+              alt={t('view.hero.profilePhotoAlt')}
               className="pf-avatar-img"
             />
           ) : (

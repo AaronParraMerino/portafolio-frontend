@@ -24,6 +24,7 @@ export default function EventsPage() {
     viewCounts,
     errorMessage,
     onViewChange,
+    onAdminAction,
   } = useEventsWorkspace();
 
   const handleOpenAction = (target, action) => {
@@ -31,10 +32,15 @@ export default function EventsPage() {
     setActionNotice('');
   };
 
-  const handleConfirmAction = ({ action, target }) => {
+  const handleConfirmAction = async ({ action, target, reason }) => {
     const targetName = target.title || target.name || 'registro';
-    setActionNotice(`Accion "${action}" preparada para ${targetName}.`);
-    setActionModal(null);
+    try {
+      await onAdminAction({ action, target, reason });
+      setActionNotice(`Accion "${action}" aplicada para ${targetName}.`);
+      setActionModal(null);
+    } catch (error) {
+      setActionNotice(error.message || `No se pudo aplicar la accion "${action}".`);
+    }
   };
 
   return (

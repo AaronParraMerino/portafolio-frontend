@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import '../styles/projects.css';
+import { useLanguage } from '../../../../core/i18n';
 
 /* ════════════════════════════════════════
    ProjectsDotsMenu — Menú de 3 puntos por card
@@ -18,6 +19,7 @@ export default function ProjectsDotsMenu({
   onConfigurar,
   onEstadoProyecto,
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const permisos = proyecto?.permisos || {};
@@ -66,8 +68,8 @@ export default function ProjectsDotsMenu({
       <button
         className="prj-dots-btn"
         type="button"
-        title="Opciones"
-        aria-label="Opciones del proyecto"
+        title={t('projects.menu.options')}
+        aria-label={t('projects.menu.optionsProject')}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(v => !v)}
@@ -91,7 +93,7 @@ export default function ProjectsDotsMenu({
               <svg viewBox="0 0 14 14">
                 <path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z" />
               </svg>
-              Editar
+              {t('projects.menu.edit')}
             </button>
           )}
 
@@ -106,7 +108,7 @@ export default function ProjectsDotsMenu({
                 <path d="M7 1.5v2M7 10.5v2M2.2 4.2l1.7 1M10.1 8.8l1.7 1M2.2 9.8l1.7-1M10.1 5.2l1.7-1" />
                 <circle cx="7" cy="7" r="2" />
               </svg>
-              Configurar
+              {t('projects.menu.configure')}
             </button>
           )}
 
@@ -123,7 +125,7 @@ export default function ProjectsDotsMenu({
                 <circle cx="3.5" cy="7" r=".7" fill="currentColor" stroke="none" />
                 <circle cx="3.5" cy="10.5" r=".7" fill="currentColor" stroke="none" />
               </svg>
-              Estado del proyecto
+              {t('projects.menu.changeStatus')}
             </button>
           )}
 
@@ -139,7 +141,7 @@ export default function ProjectsDotsMenu({
               <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M5.5 2.5h-2A1.5 1.5 0 002 4v6a1.5 1.5 0 001.5 1.5h2M8 4l3 3-3 3M11 7H5" />
               </svg>
-              Desvincularme
+              {t('projects.menu.unlink')}
             </button>
           )}
 
@@ -153,7 +155,7 @@ export default function ProjectsDotsMenu({
               <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M1 3.5h12M5 3.5V2a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1.5M3 3.5v8a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0011 11.5v-8M5.5 6v4M8.5 6v4" />
               </svg>
-              Eliminar
+              {t('projects.menu.delete')}
             </button>
           )}
         </div>

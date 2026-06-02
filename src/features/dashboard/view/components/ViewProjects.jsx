@@ -1,6 +1,7 @@
 // src/features/dashboard/view/components/ViewProjects.jsx
 
 import { useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import ProjectsGithubCollaborators from '../../projects/components/ProjectsGithubCollaborators';
 import { DESARROLLADO_PARA, TIPOS_PROYECTO } from '../../projects/model/projectsModel';
 import '../../projects/styles/projects.css';
@@ -27,22 +28,10 @@ function normalizeText(value = '') {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function getStatusLabel(proyecto = {}) {
-  if (proyecto.estadoLabel) return proyecto.estadoLabel;
+function getStatusLabel(proyecto = {}, t) {
+  const status = proyecto.estado || 'borrador';
 
-  return {
-    publicado: 'Publicado',
-    borrador: 'Borrador',
-    archivado: 'Archivado',
-    sin_especificar: 'Borrador',
-    desarrollo: 'En desarrollo',
-    en_desarrollo: 'En desarrollo',
-    pausado: 'Pausado',
-    terminado: 'Terminado',
-    mantenimiento: 'Mantenimiento',
-    versionado: 'Versionado',
-    cancelado: 'Cancelado',
-  }[proyecto.estado] || proyecto.estado || 'Borrador';
+  return t(`projects.status.${status}`, {}, proyecto.estadoLabel || proyecto.estado || t('projects.status.borrador'));
 }
 
 function getStatusPillClass(estado) {
@@ -61,27 +50,26 @@ function getStatusPillClass(estado) {
   }[estado] || 'prj-pill prj-pill-draft';
 }
 
-function getTipoLabel(proyecto = {}) {
+function getTipoLabel(proyecto = {}, t) {
   const tipoObj = TIPOS_PROYECTO.find(tipo => tipo.value === proyecto.tipo);
+  const value = tipoObj?.value || proyecto.tipo || '';
 
-  return (
-    tipoObj?.label ||
-    proyecto.tipoLabel ||
-    proyecto.tipo_label ||
-    proyecto.tipo ||
-    ''
-  );
+  if (value) {
+    return t(`projects.type.${value}`, {}, proyecto.tipoLabel || proyecto.tipo_label || tipoObj?.label || value);
+  }
+
+  return proyecto.tipoLabel || proyecto.tipo_label || '';
 }
 
-function getDesarrolladoLabel(proyecto = {}) {
+function getDesarrolladoLabel(proyecto = {}, t) {
   const item = DESARROLLADO_PARA.find(op => op.value === proyecto.desarrollado_para);
+  const value = item?.value || proyecto.desarrollado_para || '';
 
-  return (
-    item?.label ||
-    proyecto.desarrolladoParaLabel ||
-    proyecto.desarrollado_para_label ||
-    ''
-  );
+  if (value) {
+    return t(`projects.platform.${value}`, {}, proyecto.desarrolladoParaLabel || proyecto.desarrollado_para_label || item?.label || value);
+  }
+
+  return proyecto.desarrolladoParaLabel || proyecto.desarrollado_para_label || '';
 }
 
 function formatParticipationRole(value = '') {
@@ -151,13 +139,15 @@ function getPeriodoLabel(proyecto = {}) {
   return `${inicioYear}-${finYear}`;
 }
 
-function formatFecha(date) {
+function formatFecha(date, language = 'es') {
   if (!date) return '';
 
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return '';
 
-  return d.toLocaleDateString('es-BO', {
+  const locale = language === 'en' ? 'en-US' : language === 'pt' ? 'pt-BR' : 'es-BO';
+
+  return d.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
@@ -204,7 +194,7 @@ function getDocumentoUrl(doc) {
 }
 
 function getDocumentoNombre(doc) {
-  if (!doc) return 'Documento';
+  if (!doc) return '';
 
   if (typeof doc === 'string') {
     const clean = doc.split('?')[0];
@@ -418,7 +408,7 @@ function DetailLink({ href, children, className = '' }) {
   );
 }
 
-function useProjectMedia({ proyecto, showMedia, showVideos }) {
+function useProjectMedia({ proyecto, showMedia, showVideos, t }) {
   const [idx, setIdx] = useState(0);
   const [mediaExpandida, setMediaExpandida] = useState(false);
   const images = getProjectImages(proyecto);
@@ -456,7 +446,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                     {item.tipo === 'imagen' ? (
                       <img
                         src={item.url}
-                        alt={`${proyecto.titulo || 'Proyecto'} imagen ${i + 1}`}
+                        alt={t('view.projects.imageAlt', { title: proyecto.titulo || t('view.projects.defaultTitle'), number: i + 1 })}
                         className="prj-carousel-img"
                         loading={i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
@@ -472,7 +462,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                           <iframe
                             className="prj-carousel-video"
                             src={item.embedUrl}
-                            title={`${proyecto.titulo || 'Proyecto'} video ${i + 1}`}
+                            title={t('view.projects.videoTitle', { title: proyecto.titulo || t('view.projects.defaultTitle'), number: i + 1 })}
                             allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
                             loading="lazy"
@@ -481,7 +471,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                         ) : (
                           <div className="prj-carousel-video-placeholder" aria-hidden="true">
                             <IconYouTube />
-                            <span>Video</span>
+                            <span>{t('view.projects.video')}</span>
                           </div>
                         )}
                       </div>
@@ -494,7 +484,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
 
               {media[safeIdx]?.tipo === 'youtube' && (
                 <span className="prj-carousel-video-badge">
-                  <IconYouTube /> Video
+                  <IconYouTube /> {t('view.projects.video')}
                 </span>
               )}
 
@@ -504,8 +494,8 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                     type="button"
                     className="prj-carousel-arrow prj-carousel-prev"
                     onClick={(event) => goTo(safeIdx - 1, event)}
-                    title="Anterior"
-                    aria-label="Medio anterior"
+                    title={t('view.projects.previous')}
+                    aria-label={t('view.projects.previousMedia')}
                   >
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M10 3L5 8l5 5" />
@@ -516,8 +506,8 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                     type="button"
                     className="prj-carousel-arrow prj-carousel-next"
                     onClick={(event) => goTo(safeIdx + 1, event)}
-                    title="Siguiente"
-                    aria-label="Medio siguiente"
+                    title={t('view.projects.next')}
+                    aria-label={t('view.projects.nextMedia')}
                   >
                     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M6 3l5 5-5 5" />
@@ -531,8 +521,8 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
                         type="button"
                         className={`prj-carousel-dot${i === safeIdx ? ' active' : ''}${item.tipo === 'youtube' ? ' video' : ''}`}
                         onClick={(event) => goTo(i, event)}
-                        title={`Ir a ${item.tipo === 'youtube' ? 'video' : 'imagen'} ${i + 1}`}
-                        aria-label={`Ir a ${item.tipo === 'youtube' ? 'video' : 'imagen'} ${i + 1}`}
+                        title={t(item.tipo === 'youtube' ? 'view.projects.goToVideo' : 'view.projects.goToImage', { number: i + 1 })}
+                        aria-label={t(item.tipo === 'youtube' ? 'view.projects.goToVideo' : 'view.projects.goToImage', { number: i + 1 })}
                       />
                     ))}
                   </div>
@@ -562,10 +552,10 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
               setMediaExpandida(value => !value);
             }}
             aria-pressed={mediaExpandida}
-            aria-label={mediaExpandida ? 'Reducir galeria del proyecto' : 'Ampliar galeria del proyecto'}
-            title={mediaExpandida ? 'Reducir galeria' : 'Ampliar galeria'}
+            aria-label={mediaExpandida ? t('view.projects.collapseGalleryAria') : t('view.projects.expandGalleryAria')}
+            title={mediaExpandida ? t('view.projects.collapseGallery') : t('view.projects.expandGallery')}
           >
-            {mediaExpandida ? 'Reducir galeria' : 'Ampliar galeria'}
+            {mediaExpandida ? t('view.projects.collapseGallery') : t('view.projects.expandGallery')}
             <IconChevron open={mediaExpandida} />
           </button>
         )}
@@ -574,7 +564,7 @@ function useProjectMedia({ proyecto, showMedia, showVideos }) {
   };
 }
 
-function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalidatedParticipants }) {
+function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalidatedParticipants, t, language }) {
   const [detallesExpandidos, setDetallesExpandidos] = useState(false);
   const showMedia = detailVisible(visibilidad, 'media');
   const showEstado = detailVisible(visibilidad, 'estado');
@@ -590,11 +580,11 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
   const showAporte = detailVisible(visibilidad, 'aporte');
   const showParticipantes = detailVisible(visibilidad, 'participantes');
 
-  const media = useProjectMedia({ proyecto, showMedia, showVideos });
-  const statusLabel = getStatusLabel(proyecto);
+  const media = useProjectMedia({ proyecto, showMedia, showVideos, t });
+  const statusLabel = getStatusLabel(proyecto, t);
   const pillClass = getStatusPillClass(proyecto.estado);
-  const tipoLabel = getTipoLabel(proyecto);
-  const desarrolladoLabel = getDesarrolladoLabel(proyecto);
+  const tipoLabel = getTipoLabel(proyecto, t);
+  const desarrolladoLabel = getDesarrolladoLabel(proyecto, t);
   const periodoLabel = getPeriodoLabel(proyecto);
   const repositorios = getProjectRepos(proyecto);
   const videos = getProjectVideos(proyecto);
@@ -652,19 +642,19 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
 
             {showTipo && desarrolladoLabel && (
               <span className="prj-pill prj-pill-device">
-                Para: {desarrolladoLabel}
+                {t('view.projects.for')} {desarrolladoLabel}
               </span>
             )}
 
             {showRol && miRol && (
               <span className="prj-pill prj-pill-role">
-                Rol: {miRol}
+                {t('view.projects.role')} {miRol}
               </span>
             )}
           </div>
         )}
 
-        <div className="prj-card-title">{proyecto.titulo || 'Proyecto'}</div>
+        <div className="prj-card-title">{proyecto.titulo || t('view.projects.defaultTitle')}</div>
 
         {!detallesExpandidos && showDescripcion && proyecto.descripcion && (
           <div className="prj-card-desc">{proyecto.descripcion}</div>
@@ -672,7 +662,7 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
 
         {!detallesExpandidos && showAporte && miAporte && (
           <div className="prj-card-contribution">
-            <span>Mi aporte</span>
+            <span>{t('view.projects.myContribution')}</span>
             <p>{miAporte}</p>
           </div>
         )}
@@ -696,19 +686,19 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
 
               {showDemo && sitioWebUrl && (
                 <a href={sitioWebUrl} className="prj-proj-link prj-proj-link-demo" target="_blank" rel="noreferrer">
-                  <IconSite /> Sitio web
+                  <IconSite /> {t('view.projects.website')}
                 </a>
               )}
 
               {showVideos && videos.map((url, i) => (
                 <a key={`video-${url}-${i}`} href={url} className="prj-proj-link prj-proj-link-yt" target="_blank" rel="noreferrer" title={url}>
-                  <IconYouTube /> Video {videos.length > 1 ? i + 1 : ''}
+                  <IconYouTube /> {t('view.projects.video')} {videos.length > 1 ? i + 1 : ''}
                 </a>
               ))}
 
               {showDocumentos && documentos.map((doc, i) => (
                 <a key={`doc-${doc.url}-${i}`} href={doc.url} className="prj-proj-link prj-proj-link-doc" target="_blank" rel="noreferrer" title={doc.nombre}>
-                  <IconDocument /> Doc {documentos.length > 1 ? i + 1 : ''}
+                  <IconDocument /> {t('view.projects.docShort')} {documentos.length > 1 ? i + 1 : ''}
                 </a>
               ))}
             </div>
@@ -741,7 +731,7 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
                 setDetallesExpandidos(value => !value);
               }}
             >
-              {detallesExpandidos ? 'Ocultar detalles' : 'Ver detalles'}
+              {detallesExpandidos ? t('view.projects.hideDetails') : t('view.projects.viewDetails')}
               <IconChevron open={detallesExpandidos} />
             </button>
           </div>
@@ -757,46 +747,46 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
 
             {showAporte && miAporte && (
               <div className="prj-card-contribution">
-                <span>Mi aporte</span>
+                <span>{t('view.projects.myContribution')}</span>
                 <p>{miAporte}</p>
               </div>
             )}
 
             <div className="prj-detail-grid">
               {showEstado && (
-                <DetailRow label="Estado">
+                <DetailRow label={t('view.projects.status')}>
                   <span className={pillClass}>{statusLabel}</span>
                 </DetailRow>
               )}
 
               {showRol && (
-                <DetailRow label="Mi rol">
+                <DetailRow label={t('view.projects.myRole')}>
                   {miRol}
                 </DetailRow>
               )}
 
               {showTipo && (
-                <DetailRow label="Tipo">
+                <DetailRow label={t('view.projects.type')}>
                   {tipoLabel}
                 </DetailRow>
               )}
 
               {showTipo && (
-                <DetailRow label="Desarrollado para">
+                <DetailRow label={t('view.projects.developedFor')}>
                   {desarrolladoLabel}
                 </DetailRow>
               )}
 
               {showFechas && (
-                <DetailRow label="Periodo">
+                <DetailRow label={t('view.projects.period')}>
                   {periodoLabel}
                   {proyecto.fecha_inicio && (
                     <span className="prj-detail-muted">
-                      Inicio: {formatFecha(proyecto.fecha_inicio)}
+                      {t('view.projects.start')} {formatFecha(proyecto.fecha_inicio, language)}
                       {proyecto.en_curso
-                        ? ' - En curso'
+                        ? ` - ${t('view.projects.inProgress')}`
                         : proyecto.fecha_fin
-                          ? ` - Fin: ${formatFecha(proyecto.fecha_fin)}`
+                          ? ` - ${t('view.projects.end')} ${formatFecha(proyecto.fecha_fin, language)}`
                           : ''}
                     </span>
                   )}
@@ -806,7 +796,7 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
 
             {showTecnologias && techs.length > 0 && (
               <div className="prj-detail-section">
-                <div className="prj-detail-section-title">Tecnologias</div>
+                <div className="prj-detail-section-title">{t('view.projects.technologies')}</div>
                 <div className="prj-detail-tags">
                   {techs.map(tag => (
                     <TechChip key={`detail-${tag}`} proyecto={proyecto} tag={tag} detail />
@@ -820,7 +810,7 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
               || (showVideos && videos.length > 0)
               || (showDocumentos && documentos.length > 0) ? (
                 <div className="prj-detail-section">
-                  <div className="prj-detail-section-title">Enlaces</div>
+                  <div className="prj-detail-section-title">{t('view.projects.links')}</div>
 
                   <div className="prj-detail-links">
                     {showRepositorios && repositorios.map((url, i) => (
@@ -831,19 +821,19 @@ function ViewProjectCard({ proyecto, visibilidad, fetchParticipants, showUnvalid
 
                     {showDemo && (
                       <DetailLink href={sitioWebUrl} className="site">
-                        <IconSite /> Sitio web
+                        <IconSite /> {t('view.projects.website')}
                       </DetailLink>
                     )}
 
                     {showVideos && videos.map((url, i) => (
                       <DetailLink key={`detail-video-${url}-${i}`} href={url} className="yt">
-                        <IconYouTube /> Video YouTube {videos.length > 1 ? i + 1 : ''}
+                        <IconYouTube /> {t('view.projects.video')} YouTube {videos.length > 1 ? i + 1 : ''}
                       </DetailLink>
                     ))}
 
                     {showDocumentos && documentos.map((doc, i) => (
                       <DetailLink key={`detail-doc-${doc.url}-${i}`} href={doc.url} className="doc">
-                        <IconDocument /> {doc.nombre || `Documento ${i + 1}`}
+                        <IconDocument /> {doc.nombre || t('view.projects.documentWithNumber', { number: i + 1 })}
                       </DetailLink>
                     ))}
                   </div>
@@ -873,6 +863,7 @@ export default function ViewProjects({
   fetchParticipants = false,
   showUnvalidatedParticipants = false,
 }) {
+  const { t, language } = useLanguage();
   const visibles = proyectos.filter(proyecto =>
     isVisible(visibilidad, 'proyectos', proyecto.id)
   );
@@ -883,8 +874,8 @@ export default function ViewProjects({
     <section className="pf-sec">
       <div className="pf-sec-top">
         <div>
-          <h2 className="pf-sec-title">Proyectos</h2>
-          <div className="pf-sec-subtitle">Portafolio destacado</div>
+          <h2 className="pf-sec-title">{t('view.projects.title')}</h2>
+          <div className="pf-sec-subtitle">{t('view.projects.subtitle')}</div>
         </div>
       </div>
 
@@ -896,6 +887,8 @@ export default function ViewProjects({
             visibilidad={visibilidad}
             fetchParticipants={fetchParticipants}
             showUnvalidatedParticipants={showUnvalidatedParticipants}
+            t={t}
+            language={language}
           />
         ))}
       </div>

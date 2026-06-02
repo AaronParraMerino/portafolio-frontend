@@ -1,103 +1,140 @@
-import { useEffect, useMemo, useState } from 'react';
+// src/features/calendar/hooks/useCalendarEvents.js
 
-const STORAGE_KEY = 'creafolio_calendar_events_v1';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../../core/i18n';
+import {
+  createCalendarEvent,
+  deleteCalendarEvent,
+  deleteCalendarEventsByDate,
+  getCalendarEvents,
+  updateCalendarEvent,
+} from '../services/calendarService';
+
+const OLD_STORAGE_KEY = 'creafolio_calendar_events_v1';
 
 function todayISO() {
   return toISODate(new Date());
 }
 
-function initialMockEvents(today) {
-  const tomorrow = addDays(today, 1);
-  const nextWeek = addDays(today, 7);
-
-  return [
-    {
-      id: 'demo-1',
-      titulo: 'Reunión de Sprint',
-      descripcion: 'Revisión de avances con el equipo y pendientes para QA.',
-      fecha: today,
-      hora: '10:00',
-      tipo: 'Trabajo',
-    },
-    {
-      id: 'demo-2',
-      titulo: 'Entrega de informe individual',
-      descripcion: 'Subir evidencias, pruebas unitarias y descripción de actividades.',
-      fecha: today,
-      hora: '18:00',
-      tipo: 'Académico',
-    },
-    {
-      id: 'demo-3',
-      titulo: 'Revisión de portafolio',
-      descripcion: 'Verificar diseño, cards y datos visibles del portafolio público.',
-      fecha: tomorrow,
-      hora: '16:30',
-      tipo: 'Reunión',
-    },
-    {
-      id: 'demo-4',
-      titulo: 'Demo con QA',
-      descripcion: 'Presentar flujo de calendario y validaciones principales.',
-      fecha: nextWeek,
-      hora: '09:30',
-      tipo: 'Entrega',
-    },
-  ];
+function getMonthDateFromISO(isoDate) {
+  const [year, month] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, 1);
 }
 
-function readStoredEvents(today) {
-  if (typeof window === 'undefined') return initialMockEvents(today);
+function getEventId(event) {
+  return event?.id_evento ?? event?.id ?? event?.uuid;
+}
 
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return initialMockEvents(today);
+function getCalendarErrorMessage(error, t) {
+  const payload = error?.payload || {};
+  const errors = payload?.errors || {};
+  const rawMessage = [
+    payload?.message,
+    error?.message,
+    ...Object.values(errors).flat(),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
 
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : initialMockEvents(today);
-  } catch {
-    return initialMockEvents(today);
+  if (
+    errors.fecha ||
+    rawMessage.includes('fecha field must be a date after') ||
+    rawMessage.includes('date after or equal to today') ||
+    rawMessage.includes('fecha no puede ser anterior')
+  ) {
+    return t('calendar.validation.noPastDate');
   }
+
+  if (errors.hora || rawMessage.includes('hora')) {
+    return t('calendar.validation.timeRequired');
+  }
+
+  if (errors.titulo || rawMessage.includes('titulo') || rawMessage.includes('title')) {
+    return t('calendar.validation.titleRequired');
+  }
+
+  if (
+    rawMessage.includes('ya existe') ||
+    rawMessage.includes('already exists') ||
+    rawMessage.includes('misma fecha y hora')
+  ) {
+    return t('calendar.feedback.timeConflict');
+  }
+
+  return t('calendar.validation.saveGeneric');
 }
 
 export default function useCalendarEvents() {
+  const { t } = useLanguage();
+
   const today = useMemo(() => todayISO(), []);
   const [open, setOpen] = useState(false);
-  const [events, setEvents] = useState(() => readStoredEvents(today));
+  const [events, setEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(today);
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    const [year, month] = today.split('-').map(Number);
-    return new Date(year, month - 1, 1);
-  });
+  const [currentMonth, setCurrentMonth] = useState(() => getMonthDateFromISO(today));
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('create');
   const [editingEvent, setEditingEvent] = useState(null);
   const [feedback, setFeedback] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const loadEvents = useCallback(async ({ silent = false } = {}) => {
+    if (!open) return;
+
+    if (!silent) {
+      setLoading(true);
+    }
+
+    try {
+      const backendEvents = await getCalendarEvents();
+      setEvents(backendEvents);
+    } catch (error) {
+      setFeedback(error.message || t('calendar.validation.saveShort'));
+
+      // Importante:
+      // No limpiamos events aquí para evitar que los eventos cargados desaparezcan
+      // si el backend tarda, falla o devuelve un error temporal.
+    } finally {
+      if (!silent) {
+        setLoading(false);
+      }
+    }
+  }, [open, t]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  }, [events]);
+    localStorage.removeItem(OLD_STORAGE_KEY);
+  }, []);
 
   useEffect(() => {
     if (!feedback) return undefined;
-    const timer = setTimeout(() => setFeedback(''), 3200);
+
+    const timer = setTimeout(() => {
+      setFeedback('');
+    }, 3200);
+
     return () => clearTimeout(timer);
   }, [feedback]);
 
   useEffect(() => {
     if (!open) return;
 
-    const [year, month] = today.split('-').map(Number);
     setSelectedDate(today);
-    setCurrentMonth(new Date(year, month - 1, 1));
+    setCurrentMonth(getMonthDateFromISO(today));
     setFormOpen(false);
     setEditingEvent(null);
     setFormMode('create');
     setFeedback('');
   }, [open, today]);
 
-  const eventDates = useMemo(() => new Set(events.map((event) => event.fecha)), [events]);
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  const eventDates = useMemo(() => (
+    new Set(events.map((event) => event.fecha))
+  ), [events]);
 
   const selectedEvents = useMemo(() => (
     events
@@ -123,7 +160,7 @@ export default function useCalendarEvents() {
     setFormMode('create');
 
     if (date < today) {
-      setFeedback('Fecha pasada seleccionada. Los eventos quedan solo como historial.');
+      setFeedback(t('calendar.feedback.pastSelected'));
     }
 
     return true;
@@ -131,7 +168,7 @@ export default function useCalendarEvents() {
 
   const openCreate = (date = selectedDate) => {
     if (date < today) {
-      setFeedback('No se pueden crear eventos en fechas pasadas.');
+      setFeedback(t('calendar.feedback.noCreatePast'));
       setFormOpen(false);
       return false;
     }
@@ -141,6 +178,7 @@ export default function useCalendarEvents() {
     setFormMode('create');
     setFormOpen(true);
     setFeedback('');
+
     return true;
   };
 
@@ -148,7 +186,7 @@ export default function useCalendarEvents() {
     if (!event) return false;
 
     if (event.fecha < today) {
-      setFeedback('No se pueden editar eventos de fechas pasadas. Este evento queda como historial.');
+      setFeedback(t('calendar.feedback.noEditPast'));
       setFormOpen(false);
       setEditingEvent(null);
       setFormMode('create');
@@ -160,6 +198,7 @@ export default function useCalendarEvents() {
     setFormMode('edit');
     setFormOpen(true);
     setFeedback('');
+
     return true;
   };
 
@@ -173,75 +212,119 @@ export default function useCalendarEvents() {
     events.some((event) => (
       event.fecha === payload.fecha &&
       event.hora === payload.hora &&
-      event.id !== editingEvent?.id
+      getEventId(event) !== getEventId(editingEvent)
     ))
   );
 
-  const saveEvent = (payload) => {
+  const saveEvent = async (payload) => {
     if (editingEvent?.fecha < today) {
-      const message = 'No se puede modificar un evento de una fecha pasada.';
+      const message = t('calendar.feedback.noModifyPast');
       setFeedback(message);
       return { ok: false, message };
     }
 
     if (payload.fecha < today) {
-      const message = 'La fecha del evento no puede ser anterior a la fecha actual.';
+      const message = t('calendar.feedback.eventDatePast');
       setFeedback(message);
       return { ok: false, message };
     }
 
     if (hasTimeConflict(payload)) {
-      const message = 'Ya existe un evento registrado para esta fecha y hora. Cambia la hora o selecciona otra fecha.';
+      const message = t('calendar.feedback.timeConflict');
       setFeedback(message);
       return { ok: false, message };
     }
 
-    if (editingEvent) {
-      setEvents((prev) => prev.map((event) => (
-        event.id === editingEvent.id
-          ? { ...event, ...payload }
-          : event
-      )));
-      setSelectedDate(payload.fecha);
-      setFeedback('Evento actualizado correctamente.');
-    } else {
-      const newEvent = {
-        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        ...payload,
-      };
-      setEvents((prev) => [newEvent, ...prev]);
-      setSelectedDate(payload.fecha);
-      setFeedback('Evento creado correctamente.');
-    }
+    try {
+      if (editingEvent) {
+        const eventId = getEventId(editingEvent);
+        const updatedEvent = await updateCalendarEvent(eventId, payload);
 
-    closeForm();
-    return true;
+        setEvents((prev) => prev.map((event) => (
+          getEventId(event) === eventId ? updatedEvent : event
+        )));
+
+        setSelectedDate(updatedEvent.fecha || payload.fecha);
+        setCurrentMonth(getMonthDateFromISO(updatedEvent.fecha || payload.fecha));
+        setFeedback(t('calendar.feedback.updated'));
+      } else {
+        const newEvent = await createCalendarEvent(payload);
+
+        setEvents((prev) => {
+          const newId = getEventId(newEvent);
+          const withoutDuplicate = prev.filter((event) => getEventId(event) !== newId);
+          return [newEvent, ...withoutDuplicate];
+        });
+
+        setSelectedDate(newEvent.fecha || payload.fecha);
+        setCurrentMonth(getMonthDateFromISO(newEvent.fecha || payload.fecha));
+        setFeedback(t('calendar.feedback.created'));
+      }
+
+      closeForm();
+
+      // Recargamos en segundo plano para sincronizar con backend,
+      // pero sin borrar eventos si falla.
+      loadEvents({ silent: true });
+
+      return { ok: true };
+    } catch (error) {
+      const message = getCalendarErrorMessage(error, t);
+      setFeedback(message);
+      return { ok: false, message };
+    }
   };
 
-  const deleteEvent = (eventToDelete) => {
+  const deleteEvent = async (eventToDelete) => {
     if (!eventToDelete) return false;
 
     if (eventToDelete.fecha < today) {
-      setFeedback('No se pueden eliminar eventos de fechas pasadas. Este evento queda como historial.');
+      setFeedback(t('calendar.feedback.noDeletePast'));
       return false;
     }
 
-    setEvents((prev) => prev.filter((event) => event.id !== eventToDelete.id));
-    setFeedback('Evento eliminado correctamente.');
-    return true;
+    try {
+      await deleteCalendarEvent(getEventId(eventToDelete));
+
+      setEvents((prev) => (
+        prev.filter((event) => getEventId(event) !== getEventId(eventToDelete))
+      ));
+
+      setFeedback(t('calendar.feedback.deleted'));
+
+      return true;
+    } catch (error) {
+      setFeedback(getCalendarErrorMessage(error, t));
+      return false;
+    }
   };
 
-  const deleteEventsByDate = (date) => {
+  const deleteEventsByDate = async (date) => {
     if (date < today) {
-      setFeedback('No se pueden eliminar eventos de fechas pasadas. Estos eventos quedan como historial.');
+      setFeedback(t('calendar.feedback.noDeletePastMany'));
       return false;
     }
 
     const amount = events.filter((event) => event.fecha === date).length;
-    setEvents((prev) => prev.filter((event) => event.fecha !== date));
-    setFeedback(`${amount} ${amount === 1 ? 'evento eliminado' : 'eventos eliminados'} correctamente.`);
-    closeForm();
-    return true;
+
+    try {
+      await deleteCalendarEventsByDate(date);
+
+      setEvents((prev) => prev.filter((event) => event.fecha !== date));
+
+      setFeedback(
+        amount === 1
+          ? t('calendar.feedback.deletedOne')
+          : t('calendar.feedback.deletedMany', { count: amount })
+      );
+
+      closeForm();
+
+      return true;
+    } catch (error) {
+      setFeedback(error.message || t('calendar.validation.saveShort'));
+      return false;
+    }
   };
 
   return {
@@ -257,6 +340,7 @@ export default function useCalendarEvents() {
     formMode,
     editingEvent,
     feedback,
+    loading,
     goPrevMonth,
     goNextMonth,
     selectDate,
@@ -266,6 +350,7 @@ export default function useCalendarEvents() {
     saveEvent,
     deleteEvent,
     deleteEventsByDate,
+    reloadEvents: loadEvents,
   };
 }
 
@@ -273,12 +358,6 @@ function toISODate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
-function addDays(isoDate, amount) {
-  const [year, month, day] = isoDate.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + amount);
-  return toISODate(date);
+  return `${year}-${month}-${day}`;
 }

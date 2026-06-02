@@ -1,4 +1,5 @@
 import '../styles/projects.css';
+import { useLanguage } from '../../../../core/i18n';
 import ProjectsRepositoriesSyncBar from './ProjectsRepositoriesSyncBar';
 
 /* ════════════════════════════════════════
@@ -18,11 +19,11 @@ import ProjectsRepositoriesSyncBar from './ProjectsRepositoriesSyncBar';
 ════════════════════════════════════════ */
 
 const TABS = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'publicado', label: 'Publicados' },
-  { id: 'desarrollo', label: 'En desarrollo' },
-  { id: 'borrador', label: 'Borradores' },
-  { id: 'archivado', label: 'Archivados' },
+  { id: 'todos', labelKey: 'projects.filters.all' },
+  { id: 'publicado', labelKey: 'projects.filters.published' },
+  { id: 'desarrollo', labelKey: 'projects.filters.development' },
+  { id: 'borrador', labelKey: 'projects.filters.drafts' },
+  { id: 'archivado', labelKey: 'projects.filters.archived' },
 ];
 
 export default function ProjectsFilters({
@@ -37,6 +38,8 @@ export default function ProjectsFilters({
   onAgregarConRepos,
   onReposChanged,
 }) {
+  const { t } = useLanguage();
+
   const handleBusqueda = (value) => {
     if (typeof onBusqueda === 'function') {
       onBusqueda(value);
@@ -67,10 +70,10 @@ export default function ProjectsFilters({
         <input
           className="prj-search-input"
           type="text"
-          placeholder="Buscar por nombre, tecnología, tipo o estado..."
+          placeholder={t('projects.filters.searchPlaceholder')}
           value={busqueda}
           onChange={(e) => handleBusqueda(e.target.value)}
-          aria-label="Buscar proyectos"
+          aria-label={t('projects.filters.searchAria')}
         />
 
         {busqueda && (
@@ -78,8 +81,8 @@ export default function ProjectsFilters({
             className="prj-search-clear"
             type="button"
             onClick={() => handleBusqueda('')}
-            title="Limpiar búsqueda"
-            aria-label="Limpiar búsqueda"
+            title={t('projects.filters.clearSearch')}
+            aria-label={t('projects.filters.clearSearch')}
           >
             <svg viewBox="0 0 12 12">
               <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2" />
@@ -107,7 +110,7 @@ export default function ProjectsFilters({
                 className={`prj-tab${filtro === tab.id ? ' active' : ''}`}
                 onClick={() => handleFiltro(tab.id)}
               >
-                {tab.label}
+                {t(tab.labelKey)}
 
                 {count > 0 && (
                   <span className="prj-tab-count">{count}</span>
@@ -121,11 +124,11 @@ export default function ProjectsFilters({
           className="prj-sort-select"
           value={orden}
           onChange={(e) => handleOrden(e.target.value)}
-          aria-label="Ordenar proyectos"
+          aria-label={t('projects.filters.sortAria')}
         >
-          <option value="recientes">Más recientes</option>
-          <option value="antiguos">Más antiguos</option>
-          <option value="alfa">Alfabético</option>
+          <option value="recientes">{t('projects.filters.sort.recent')}</option>
+          <option value="antiguos">{t('projects.filters.sort.oldest')}</option>
+          <option value="alfa">{t('projects.filters.sort.alpha')}</option>
         </select>
       </div>
     </>

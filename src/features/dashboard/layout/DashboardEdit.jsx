@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLanguage } from '../../../core/i18n';
 import '../styles/dashboard.css';
 
 const CloseIcon = () => (
@@ -59,6 +60,8 @@ export default function DashboardEdit({
   className = '',
   ariaLabel,
 }) {
+  const { t } = useLanguage();
+
   useEffect(() => {
     if (!onClose || closeDisabled) return undefined;
 
@@ -84,6 +87,8 @@ export default function DashboardEdit({
     }
   };
 
+  const closeLabel = t('dashboard.edit.close');
+
   return (
     <div className="dash-edit-overlay" onClick={handleOverlayClick}>
       <div className={modalClassName} role="dialog" aria-modal="true" aria-label={ariaLabel || title}>
@@ -99,8 +104,8 @@ export default function DashboardEdit({
               className="dash-edit-close"
               onClick={onClose}
               disabled={closeDisabled}
-              title="Cerrar"
-              aria-label="Cerrar"
+              title={closeLabel}
+              aria-label={closeLabel}
             >
               <CloseIcon />
             </button>

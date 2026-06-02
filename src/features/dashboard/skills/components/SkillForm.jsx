@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "../../../../core/i18n";
 import { getCatalogSkills, getCachedCatalogSkills } from "../services/skillService";
 import SkillCatalogModal from "./SkillCatalogModal";
 
@@ -23,17 +24,24 @@ const getSkillName = (skill) =>
 const getSkillType = (skill) =>
   String(skill?.tipo ?? skill?.habilidad?.tipo ?? "").toLowerCase();
 
-const typeLabel = (tipo) => (tipo === "tecnica" ? "técnica" : "blanda");
+const typeLabel = (tipo, t) => t(`skills.type.${tipo}`);
 
-const buildDuplicateMessage = (duplicate, requestedTipo, typedName) => {
+const buildDuplicateMessage = (duplicate, requestedTipo, typedName, t) => {
   const duplicateTipo = getSkillType(duplicate);
   const duplicateName = getSkillName(duplicate) || typedName;
 
   if (duplicateTipo === requestedTipo) {
-    return `La habilidad "${duplicateName}" ya existe como habilidad ${typeLabel(duplicateTipo)}. Selecciónala desde el catálogo en lugar de crearla nuevamente.`;
+    return t("skills.form.duplicateSame", {
+      name: duplicateName,
+      type: typeLabel(duplicateTipo, t),
+    });
   }
 
-  return `La habilidad "${duplicateName}" ya está registrada como habilidad ${typeLabel(duplicateTipo)}. No puedes crearla como habilidad ${typeLabel(requestedTipo)}.`;
+  return t("skills.form.duplicateOther", {
+    name: duplicateName,
+    existingType: typeLabel(duplicateTipo, t),
+    requestedType: typeLabel(requestedTipo, t),
+  });
 };
 
 const getInitialCatalog = () => {
@@ -45,6 +53,7 @@ const getInitialCatalog = () => {
 };
 
 export default function SkillForm({ onSave, onCancel, editData, userSkills = [] }) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     tipo: "",
     catalogo_habilidad_id: "",
@@ -80,10 +89,10 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
   }, [editData]);
 
   const levelStyles = {
-    basico: { color: "var(--gris-texto)", bg: "var(--fondo)", label: "Básico" },
-    intermedio: { color: "var(--verde-hover)", bg: "var(--verde-chip)", label: "Intermedio" },
-    avanzado: { color: "var(--azul)", bg: "var(--azul-light)", label: "Avanzado" },
-    experto: { color: "var(--violeta-hover)", bg: "var(--violeta-chip)", label: "Experto" },
+    basico: { color: "var(--gris-texto)", bg: "var(--fondo)", label: t("skills.level.basico") },
+    intermedio: { color: "var(--verde-hover)", bg: "var(--verde-chip)", label: t("skills.level.intermedio") },
+    avanzado: { color: "var(--azul)", bg: "var(--azul-light)", label: t("skills.level.avanzado") },
+    experto: { color: "var(--violeta-hover)", bg: "var(--violeta-chip)", label: t("skills.level.experto") },
   };
 
   const findCatalogExact = (name) => {
@@ -127,18 +136,18 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
     }
 
     if (normalized.length < 2) {
-      return { ok: false, message: "La habilidad debe tener al menos 2 caracteres." };
+      return { ok: false, message: t("skills.form.error.minLength") };
     }
 
     if (cleanValue.length > 40) {
-      return { ok: false, message: "La habilidad no puede superar los 40 caracteres." };
+      return { ok: false, message: t("skills.form.error.maxLength") };
     }
 
     const duplicate = findCatalogExact(cleanValue);
     if (duplicate) {
       return {
         ok: false,
-        message: buildDuplicateMessage(duplicate, tipoActual, cleanValue),
+        message: buildDuplicateMessage(duplicate, tipoActual, cleanValue, t),
       };
     }
 
@@ -166,7 +175,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
       setSuggestions([]);
       setErrors((prev) => ({
         ...prev,
-        tipo: "Selecciona primero si la habilidad es técnica o blanda.",
+        tipo: t("skills.form.error.selectTypeFirst"),
         habilidad: "",
       }));
       return;
@@ -193,7 +202,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
     if (duplicate && getSkillType(duplicate) !== selectedTipo) {
       setFieldError(
         "habilidad",
-        buildDuplicateMessage(duplicate, selectedTipo, value.trim())
+        buildDuplicateMessage(duplicate, selectedTipo, value.trim(), t)
       );
       return;
     }
@@ -209,7 +218,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
         nombre_habilidad: getSkillName(skill),
       });
       setSuggestions([]);
-      setErrors({ habilidad: `Ya tienes "${getSkillName(skill)}" registrada en tu perfil.` });
+      setErrors({ habilidad: t("skills.toast.duplicateOwned", { name: getSkillName(skill) }) });
       return;
     }
 
@@ -224,7 +233,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
 
   const handleOpenCatalogModal = () => {
     if (!formData.tipo) {
-      setErrors({ tipo: "Selecciona si la habilidad es técnica o blanda." });
+      setErrors({ tipo: t("skills.form.error.selectType") });
       return;
     }
 
@@ -238,7 +247,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
       }
 
       if (userAlreadyHasSkill(cleanName)) {
-        setErrors({ habilidad: `Ya tienes "${cleanName}" registrada en tu perfil.` });
+        setErrors({ habilidad: t("skills.toast.duplicateOwned", { name: cleanName }) });
         return;
       }
     }
@@ -250,7 +259,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
   const handleCreatedInCatalog = (newSkill) => {
     if (userAlreadyHasSkill(newSkill)) {
       setShowCatalogModal(false);
-      setErrors({ habilidad: `Ya tienes "${getSkillName(newSkill)}" registrada en tu perfil.` });
+      setErrors({ habilidad: t("skills.toast.duplicateOwned", { name: getSkillName(newSkill) }) });
       return;
     }
 
@@ -269,28 +278,28 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
     const nextErrors = {};
 
     if (!formData.tipo) {
-      nextErrors.tipo = "Selecciona si la habilidad es técnica o blanda.";
+      nextErrors.tipo = t("skills.form.error.selectType");
     }
 
     if (!formData.nivel) {
-      nextErrors.nivel = "Selecciona un nivel para la habilidad.";
+      nextErrors.nivel = t("skills.form.error.selectLevel");
     }
 
     if (!editData && !formData.nombre_habilidad.trim()) {
-      nextErrors.habilidad = "Debes buscar o crear una habilidad antes de guardar.";
+      nextErrors.habilidad = t("skills.form.error.searchOrCreate");
     }
 
     if (!editData && formData.nombre_habilidad.trim() && !formData.catalogo_habilidad_id) {
       const duplicate = findCatalogExact(formData.nombre_habilidad);
       if (duplicate) {
-        nextErrors.habilidad = buildDuplicateMessage(duplicate, formData.tipo, formData.nombre_habilidad.trim());
+        nextErrors.habilidad = buildDuplicateMessage(duplicate, formData.tipo, formData.nombre_habilidad.trim(), t);
       } else {
-        nextErrors.habilidad = "Selecciona una habilidad del catálogo o crea una nueva.";
+        nextErrors.habilidad = t("skills.form.error.selectOrCreate");
       }
     }
 
     if (!editData && userAlreadyHasSkill(formData.nombre_habilidad)) {
-      nextErrors.habilidad = `Ya tienes "${formData.nombre_habilidad.trim()}" registrada en tu perfil.`;
+      nextErrors.habilidad = t("skills.toast.duplicateOwned", { name: formData.nombre_habilidad.trim() });
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -439,12 +448,12 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
         <div className="skill-modal-card">
           <div className="skill-modal-head">
             <span className="fw-bold text-white" style={{ fontSize: "1.1rem" }}>
-              {editData ? "Editar Habilidad" : "Registrar Habilidad"}
+              {editData ? t("skills.form.title.edit") : t("skills.form.title.create")}
             </span>
             <button
               className="btn-close btn-close-white"
               onClick={onCancel}
-              aria-label="Cerrar modal"
+              aria-label={t("skills.form.close")}
               disabled={isSubmitting}
             ></button>
           </div>
@@ -452,7 +461,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
           <form onSubmit={handleSubmit} className="p-4">
             {!editData && (
               <div className="mb-4">
-                <label className="skill-form-label">Tipo de Habilidad</label>
+                <label className="skill-form-label">{t("skills.form.type")}</label>
                 <div className="btn-group w-100 shadow-sm">
                   <input
                     type="radio"
@@ -461,7 +470,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
                     checked={formData.tipo === "tecnica"}
                     onChange={() => handleTypeChange("tecnica")}
                   />
-                  <label className="btn btn-outline-primary skill-type-label" htmlFor="t-tec">Técnica</label>
+                  <label className="btn btn-outline-primary skill-type-label" htmlFor="t-tec">{t("skills.type.technicalLabel")}</label>
                   <input
                     type="radio"
                     className="btn-check"
@@ -469,19 +478,19 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
                     checked={formData.tipo === "blanda"}
                     onChange={() => handleTypeChange("blanda")}
                   />
-                  <label className="btn btn-outline-primary skill-type-label" htmlFor="t-bla">Blanda</label>
+                  <label className="btn btn-outline-primary skill-type-label" htmlFor="t-bla">{t("skills.type.softLabel")}</label>
                 </div>
                 {errors.tipo && <div className="text-danger small mt-1">{errors.tipo}</div>}
               </div>
             )}
 
             <div className="mb-4 position-relative">
-              <label className="form-label fw-bold">Nombre de Habilidad *</label>
+              <label className="form-label fw-bold">{t("skills.form.nameRequired")}</label>
               <div className="input-group">
                 <input
                   type="text"
                   className={`form-control skill-input ${errors.habilidad ? "is-invalid" : ""}`}
-                  placeholder={formData.tipo ? "Escribe para buscar..." : "Primero selecciona técnica o blanda"}
+                  placeholder={formData.tipo ? t("skills.form.searchPlaceholder") : t("skills.form.selectTypeFirst")}
                   value={formData.nombre_habilidad}
                   onChange={handleSearch}
                   disabled={!!editData || !formData.tipo}
@@ -492,7 +501,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
                     className="btn skill-new-btn"
                     onClick={handleOpenCatalogModal}
                   >
-                    + Nueva
+                    {t("skills.form.new")}
                   </button>
                 )}
               </div>
@@ -515,7 +524,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
             </div>
 
             <div className="mb-4">
-              <label className="form-label fw-bold small">Nivel de dominio</label>
+              <label className="form-label fw-bold small">{t("skills.form.level")}</label>
               <div className="row g-2">
                 {Object.entries(levelStyles).map(([lvl, config]) => (
                   <div className="col-6" key={lvl}>
@@ -552,14 +561,14 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
                 onClick={onCancel}
                 disabled={isSubmitting}
               >
-                Cancelar
+                {t("skills.common.cancel")}
               </button>
               <button
                 type="submit"
                 className="skill-btn-primary"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Guardando..." : editData ? "Guardar Cambios" : "Guardar Habilidad"}
+                {isSubmitting ? t("skills.form.saving") : editData ? t("skills.form.saveChanges") : t("skills.form.saveSkill")}
               </button>
             </div>
           </form>

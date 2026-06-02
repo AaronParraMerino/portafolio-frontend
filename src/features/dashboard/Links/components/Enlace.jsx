@@ -8,10 +8,12 @@ import Modal from './Modal';
 import ModalEditar from './ModalEditar';
 import Toggle from './Toggle';
 import { useEnlace } from '../hooks/useEnlace';
+import { useLanguage } from '../../../../core/i18n';
 
 const POR_PAG = 4;
 
 function ModalConfirmar({ nombre, onCancel, onConfirm }) {
+  const { t } = useLanguage();
   return (
     <>
       <div onClick={onCancel} style={{ position:"fixed",inset:0,background:"rgba(17,24,39,.55)",zIndex:50,backdropFilter:"blur(2px)",animation:"fi .18s ease" }} />
@@ -22,13 +24,13 @@ function ModalConfirmar({ nombre, onCancel, onConfirm }) {
             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#e85555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
           </svg>
         </div>
-        <p style={{ margin:"0 0 8px",textAlign:"center",fontWeight:700,fontSize:16,color:"#0f172a" }}>¿Eliminar este enlace?</p>
-        <p style={{ margin:"0 0 6px",textAlign:"center",fontSize:13,color:"#6b7280" }}>Estás a punto de eliminar</p>
+        <p style={{ margin:"0 0 8px",textAlign:"center",fontWeight:700,fontSize:16,color:"#0f172a" }}>{t('links.confirm.title')}</p>
+        <p style={{ margin:"0 0 6px",textAlign:"center",fontSize:13,color:"#6b7280" }}>{t('links.confirm.message')}</p>
         <p style={{ margin:"0 0 20px",textAlign:"center",fontWeight:700,fontSize:14,color:"#e85555" }}>"{nombre}"</p>
-        <p style={{ margin:"0 0 22px",textAlign:"center",fontSize:12,color:"#9ca3af",background:"#f9fafb",borderRadius:7,padding:"8px 12px" }}>Esta acción no se puede deshacer.</p>
+        <p style={{ margin:"0 0 22px",textAlign:"center",fontSize:12,color:"#9ca3af",background:"#f9fafb",borderRadius:7,padding:"8px 12px" }}>{t('links.confirm.warning')}</p>
         <div style={{ display:"flex",gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1,padding:"10px 0",borderRadius:8,border:"1.5px solid #d1d5db",background:"#fff",color:"#374151",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit" }}>Cancelar</button>
-          <button onClick={onConfirm} style={{ flex:1,padding:"10px 0",borderRadius:8,border:"none",background:"#e85555",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit" }}>Sí, eliminar</button>
+          <button onClick={onCancel} style={{ flex:1,padding:"10px 0",borderRadius:8,border:"1.5px solid #d1d5db",background:"#fff",color:"#374151",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit" }}>{t('links.action.cancel')}</button>
+          <button onClick={onConfirm} style={{ flex:1,padding:"10px 0",borderRadius:8,border:"none",background:"#e85555",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit" }}>{t('links.confirm.confirm')}</button>
         </div>
       </div>
       <style>{`@keyframes fi{from{opacity:0}to{opacity:1}} @keyframes su{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}`}</style>
@@ -37,6 +39,8 @@ function ModalConfirmar({ nombre, onCancel, onConfirm }) {
 }
 
 export default function RedesSociales() {
+
+  const { t } = useLanguage();
 
   const navigate = useNavigate();
 
@@ -85,11 +89,11 @@ export default function RedesSociales() {
 
   if (loading) return (
     <div style={{ fontFamily:"var(--font)" }}>
-      <Header title="Redes Profesionales" />
+      <Header title={t('links.page.title')} />
       <div style={{ maxWidth:640,margin:"0 auto",padding:"24px 16px 40px" }}>
         <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
           <span className="dash-loading-spinner" />
-          <span>Cargando enlaces...</span>
+          <span>{t('links.loading')}</span>
         </div>
       </div>
     </div>
@@ -101,11 +105,11 @@ export default function RedesSociales() {
 
       {/* BANNER */}
       <Header
-        title="Redes Profesionales"
+        title={t('links.page.title')}
         actions={[
           {
-            label: "Agregar nueva",
-            title: "Agregar nueva red profesional",
+            label: t('links.action.add'),
+            title: t('links.action.addTitle'),
             icon: <FiPlus />,
             onClick: () => setModal(true),
           },
@@ -121,23 +125,23 @@ export default function RedesSociales() {
           </div>
         )}
 
-        <p style={{ margin:"0 0 14px",fontSize:13,color:"#6b7280" }}>Tus perfiles en plataformas profesionales y repositorios de código</p>
+        <p style={{ margin:"0 0 14px",fontSize:13,color:"#6b7280" }}>{t('links.page.subtitle')}</p>
 
         <div style={{ border:"1.5px solid #93c5fd",borderRadius:8,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,background:"#fff" }}>
           <div>
-            <p style={{ margin:0,fontWeight:700,fontSize:13,color:"#0077b7" }}>Redes profesionales visibles en portafolio publico</p>
-            <p style={{ margin:"2px 0 0",fontSize:12,color:"#6b7280" }}>{secActiva ? "Los visitantes veran los enlaces a tu perfil" : "Sección desactivada — no visible en portafolio"}</p>
+            <p style={{ margin:0,fontWeight:700,fontSize:13,color:"#0077b7" }}>{t('links.section.visibleTitle')}</p>
+            <p style={{ margin:"2px 0 0",fontSize:12,color:"#6b7280" }}>{secActiva ? t('links.section.visibleDescription') : t('links.section.disabledDescription')}</p>
           </div>
           <div style={{ display:"flex",alignItems:"center",gap:10 }}>
             <Toggle on={secActiva} onChange={setSecActiva}/>
-            <span style={{ fontSize:13,fontWeight:600,minWidth:68,color:secActiva?"#16a34a":"#e85555" }}>{secActiva ? "Activo" : "Desactivado"}</span>
+            <span style={{ fontSize:13,fontWeight:600,minWidth:68,color:secActiva?"#16a34a":"#e85555" }}>{secActiva ? t('links.status.active') : t('links.status.disabled')}</span>
           </div>
         </div>
 
         {secActiva ? (
           <>
             {activas.length === 0
-              ? <div style={{ border:"1.5px dashed #d1d5db",borderRadius:8,padding:"28px",textAlign:"center",color:"#9ca3af",fontSize:13 }}>Sin redes activas. Agrega una nueva o activa alguna oculta.</div>
+              ? <div style={{ border:"1.5px dashed #d1d5db",borderRadius:8,padding:"28px",textAlign:"center",color:"#9ca3af",fontSize:13 }}>{t('links.empty.active')}</div>
               : <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
                   {pgdA.map(r => <Card key={r.id} red={r} onToggle={handleToggle} onDelete={pedirEliminar} onEdit={handleEdit} isOculta={false}/>)}
                 </div>
@@ -146,20 +150,20 @@ export default function RedesSociales() {
               <div/>
               {activas.length > POR_PAG ? <Pager total={activas.length} page={pgA} perPage={POR_PAG} onChange={setPgA}/> : <div/>}
               <div style={{ display:"flex",justifyContent:"flex-end" }}>
-                <button onClick={() => navigate(-1)} style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>Salir</button>
+                <button onClick={() => navigate(-1)} style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>{t('links.action.exit')}</button>
               </div>
             </div>
           </>
         ) : (
           <>
             <div style={{ border:"1.5px dashed rgba(232,85,85,.3)",borderRadius:8,padding:"14px 22px",textAlign:"center",marginBottom:ocultas.length > 0 ? 14 : 0 }}>
-              <p style={{ margin:0,fontWeight:700,color:"#e85555",fontSize:13 }}>Sección desactivada</p>
-              <p style={{ margin:"4px 0 0",fontSize:12,color:"#9ca3af" }}>{ocultas.length > 0 ? "Estas redes no son visibles en tu portafolio público." : "Activa el interruptor de arriba para mostrar tus redes."}</p>
+              <p style={{ margin:0,fontWeight:700,color:"#e85555",fontSize:13 }}>{t('links.section.disabledTitle')}</p>
+              <p style={{ margin:"4px 0 0",fontSize:12,color:"#9ca3af" }}>{ocultas.length > 0 ? t('links.section.disabledWithHidden') : t('links.section.disabledNoHidden')}</p>
             </div>
             {ocultas.length > 0 && (
               <div style={{ animation:"fadeUp .2s ease both" }}>
                 <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:10 }}>
-                  <span style={{ fontSize:12,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:".5px" }}>Ocultos / No visibles</span>
+                  <span style={{ fontSize:12,fontWeight:700,color:"#6b7280",textTransform:"uppercase",letterSpacing:".5px" }}>{t('links.hidden.title')}</span>
                   <span style={{ fontSize:11,fontWeight:600,padding:"1px 7px",borderRadius:20,background:"#f3f4f6",color:"#6b7280",border:"1px solid #e5e7eb" }}>{ocultas.length}</span>
                 </div>
                 <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
@@ -169,7 +173,7 @@ export default function RedesSociales() {
               </div>
             )}
             <div style={{ display:"flex",justifyContent:"flex-end",marginTop:20 }}>
-              <button onClick={() => navigate(-1)} style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>Salir</button>
+              <button onClick={() => navigate(-1)} style={{ padding:"9px 28px",borderRadius:7,border:"none",background:"#e85555",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>{t('links.action.exit')}</button>
             </div>
           </>
         )}

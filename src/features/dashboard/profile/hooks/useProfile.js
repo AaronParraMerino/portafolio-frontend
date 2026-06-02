@@ -2,6 +2,7 @@
 // useProfile
 // ═══════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getProfile,
   updateProfile,
@@ -80,6 +81,7 @@ function limpiarCache() {
 let _cargaIniciada = false;
 
 export function useProfile() {
+  const { t } = useLanguage();
   // Inicializar con caché si existe → pantalla instantánea
   const [perfil,    setPerfil]    = useState(() => leerCache());
   const [loading,   setLoading]   = useState(!leerCache()); // false si hay caché
@@ -137,10 +139,10 @@ export function useProfile() {
       setPerfil(mapeado);
       escribirCache(mapeado);
       setEditando(false);
-      mostrarToast('Perfil actualizado correctamente');
+      mostrarToast(t('profile.toast.updated'));
     } catch (err) {
       console.error('[useProfile] Error guardando perfil:', err.message);
-      mostrarToast('Error al guardar los cambios', 'error');
+      mostrarToast(t('profile.toast.updateError'), 'error');
     } finally {
       setGuardando(false);
     }
@@ -182,10 +184,10 @@ export function useProfile() {
           escribirCache(revertido);
           return revertido;
         });
-        mostrarToast('Error al cambiar visibilidad', 'error');
+        mostrarToast(t('profile.toast.visibilityError'), 'error');
       }
     }, 400);
-  }, [perfil]);
+  }, [perfil,t]);
 
   // ── Subir imagen ──
   // OPTIMIZACIÓN 3: pasamos el método correcto según si ya existe imagen.
@@ -241,10 +243,10 @@ export function useProfile() {
         });
       }
 
-      mostrarToast(tipo === 'avatar' ? 'Foto de perfil actualizada' : 'Banner actualizado');
+      mostrarToast(tipo === 'avatar' ? t('profile.toast.avatarUpdated') : t('profile.toast.bannerUpdated'));
     } catch (error) {
       console.error('[useProfile] Error subiendo imagen:', error.message);
-      mostrarToast('Error al subir la imagen', 'error');
+      mostrarToast(t('profile.toast.uploadError'), 'error');
       throw error;
     }
   };
@@ -264,10 +266,10 @@ export function useProfile() {
         escribirCache(nuevo);
         return nuevo;
       });
-      mostrarToast(tipo === 'avatar' ? 'Foto de perfil eliminada' : 'Banner eliminado');
+      mostrarToast(tipo === 'avatar' ? t('profile.toast.avatarDeleted') : t('profile.toast.bannerDeleted'));
     } catch (err) {
       console.error('[useProfile] Error eliminando imagen:', err.message);
-      mostrarToast('Error al eliminar la imagen', 'error');
+      mostrarToast(t('profile.toast.deleteError'), 'error');
       throw new Error('delete-failed');
     }
   };

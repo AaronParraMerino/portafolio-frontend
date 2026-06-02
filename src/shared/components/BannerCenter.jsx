@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '../../core/i18n';
 import PoliticaCookies from '../../features/auth/components/PoliticasC';
 import {
   aceptarCookiesYGuardarHardware,
@@ -185,12 +186,12 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
     if (!wasCookieAccepted() && !wasCookieDismissed()) {
       base.push({
         id: 'cookie-banner',
-        title: 'Cookies del sitio',
-        description: 'Usamos cookies para mejorar tu experiencia. Si aceptas, guardamos consentimiento y huella tecnica.',
-        linkLabel: 'Ver politica de cookies',
+        title: t('cookie.title'),
+        description: t('cookie.description'),
+        linkLabel: t('cookie.policyLink'),
         linkAction: 'open-policy',
-        primaryLabel: 'Aceptar',
-        secondaryLabel: 'Cerrar',
+        primaryLabel: t('cookie.acceptShort'),
+        secondaryLabel: t('cookie.close'),
         autoHideMs: 35000,
       });
     }
@@ -470,10 +471,10 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
           type="button"
           style={styles.tab}
           onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Abrir banners' : 'Cerrar banners'}
-          title={collapsed ? 'Mostrar banners' : 'Colapsar banners'}
+          aria-label={collapsed ? t('banner.openAria') : t('banner.closeAria')}
+          title={collapsed ? t('banner.showTitle') : t('banner.collapseTitle')}
         >
-          <span style={styles.tabLabel}>Avisos</span>
+          <span style={styles.tabLabel}>{t('banner.tab')}</span>
           <span style={styles.tabBadge}>{pendingCount}</span>
         </button>
       )}

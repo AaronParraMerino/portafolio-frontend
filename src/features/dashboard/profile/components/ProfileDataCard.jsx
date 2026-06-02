@@ -1,4 +1,5 @@
 import '../styles/profile.css';
+import { useLanguage } from '../../../../core/i18n';
 
 // Íconos por campo — dan identidad visual sin emojis
 const IconMail = () => (
@@ -66,41 +67,42 @@ function Campo({ label, icon, children, full = false, isEmpty = false }) {
 }
 
 export default function ProfileDataCard({ perfil, onEditar }) {
-  const empty = (text) => <span className="prf-datacard-empty">{text}</span>;
+  const { t } = useLanguage();
+  const empty = (key = 'profile.empty.default') => <span className="prf-datacard-empty">{t(key)}</span>;
 
   return (
     <div className="prf-datacard">
 
       <div className="prf-card-head">
-        <span className="prf-card-title">Datos personales</span>
+        <span className="prf-card-title">{t('profile.data.title')}</span>
       </div>
 
       <div className="prf-datacard-divider" />
 
       <div className="prf-datacard-fields">
 
-        <Campo label="Correo electrónico" icon={<IconMail />} isEmpty={!perfil.correo}>
-          {perfil.correo || empty('Sin completar')}
+        <Campo label={t('profile.field.email')} icon={<IconMail />} isEmpty={!perfil.correo}>
+          {perfil.correo || empty()}
         </Campo>
 
-        <Campo label="País" icon={<IconGlobe />} isEmpty={!perfil.pais}>
-          {perfil.pais || empty('—')}
+        <Campo label={t('profile.field.country')} icon={<IconGlobe />} isEmpty={!perfil.pais}>
+          {perfil.pais || empty('profile.empty.dash')}
         </Campo>
 
-        <Campo label="Ciudad" icon={<IconPin />} isEmpty={!perfil.ciudad}>
-          {perfil.ciudad || empty('—')}
+        <Campo label={t('profile.field.city')} icon={<IconPin />} isEmpty={!perfil.ciudad}>
+          {perfil.ciudad || empty('profile.empty.dash')}
         </Campo>
 
-        <Campo label="Profesión" icon={<IconBriefcase />} isEmpty={!perfil.profesion}>
-          {perfil.profesion || empty('Sin completar')}
+        <Campo label={t('profile.field.profession')} icon={<IconBriefcase />} isEmpty={!perfil.profesion}>
+          {perfil.profesion || empty()}
         </Campo>
 
-        <Campo label="Teléfono" icon={<IconPhone />} isEmpty={!perfil.telefono}>
-          {perfil.telefono || empty('Sin completar')}
+        <Campo label={t('profile.field.phone')} icon={<IconPhone />} isEmpty={!perfil.telefono}>
+          {perfil.telefono || empty()}
         </Campo>
 
-        <Campo label="Acerca de mí" icon={<IconUser />} full isEmpty={!perfil.biografia}>
-          {perfil.biografia || empty('Sin completar')}
+        <Campo label={t('profile.field.about')} icon={<IconUser />} full isEmpty={!perfil.biografia}>
+          {perfil.biografia || empty()}
         </Campo>
 
       </div>

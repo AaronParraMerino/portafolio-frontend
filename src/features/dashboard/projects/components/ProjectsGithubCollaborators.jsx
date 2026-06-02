@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getProyectoParticipantesCache,
   getProyectoParticipantes,
@@ -123,7 +124,7 @@ function mergeParticipants(...groups) {
     map.set(key, {
       ...current,
       ...participante,
-      nombre: current?.nombre || participante.nombre || participante.github_username || 'Participante',
+      nombre: current?.nombre || participante.nombre || participante.github_username || participante.__defaultName || 'Participante',
       avatar_url: current?.avatar_url || participante.avatar_url || '',
       github_username: current?.github_username || participante.github_username || '',
       email: current?.email || participante.email || participante.correo || '',
@@ -148,13 +149,13 @@ function mergeParticipants(...groups) {
 const PARTICIPANT_GROUPS = [
   {
     key: 'usuario_github_validado',
-    label: 'Validados',
+    labelKey: 'projects.github.validated',
     match: (participante) => participante.tipo_participante === 'usuario_github_validado'
       || (participante.tiene_cuenta && participante.validacion_github),
   },
   {
     key: 'usuario_sin_validacion_github',
-    label: 'Sin validacion',
+    labelKey: 'projects.participation.unvalidated',
     match: (participante) => participante.tipo_participante === 'usuario_sin_validacion_github'
       || (participante.id_usuario && !participante.validacion_github),
   },
@@ -183,7 +184,7 @@ function groupParticipants(participantes = []) {
     } else {
       groups.push({
         key: 'usuario_sin_validacion_github',
-        label: 'Sin validacion',
+        labelKey: 'projects.participation.unvalidated',
         items: unassigned,
       });
     }
@@ -207,13 +208,13 @@ function ParticipantsList({ participantes = [] }) {
   );
 }
 
-function ParticipantGroup({ label, participantes = [] }) {
+function ParticipantGroup({ label, labelKey, participantes = [] }) {
   if (participantes.length === 0) return null;
 
   return (
     <div className="prj-collab-row">
       <div className="prj-collab-label">
-        <span>{label}</span>
+        <span>{labelKey ? label : label}</span>
         <span>{participantes.length}</span>
       </div>
       <ParticipantsList participantes={participantes} />
@@ -229,6 +230,7 @@ export default function ProjectsGithubCollaborators({
   validatedOnly = false,
   compact = false,
 }) {
+  const { t } = useLanguage();
   const directParticipants = useMemo(
     () => normalizeProyectoParticipantes(proyecto, { includeCurrentUserFallback: false }),
     [proyecto]
@@ -341,7 +343,7 @@ export default function ProjectsGithubCollaborators({
   return (
     <div className={`prj-collaborators${detail ? ' detail' : ''}${compact ? ' compact' : ''}`} aria-busy={loading}>
       <div className="prj-collab-head">
-        <span>Participantes</span>
+        <span>{t('projects.config.participants')}</span>
         <span>{counter}</span>
       </div>
 
@@ -361,7 +363,7 @@ export default function ProjectsGithubCollaborators({
           {groupedParticipants.map((group) => (
             <ParticipantGroup
               key={group.key}
-              label={group.label}
+              label={group.labelKey ? t(group.labelKey) : group.label}
               participantes={group.items}
             />
           ))}

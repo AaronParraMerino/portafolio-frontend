@@ -1,13 +1,10 @@
 import { useMemo, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 
-const EXPERIENCE_TYPES = [
-  { value: 'laboral', label: 'Laboral' },
-  { value: 'academica', label: 'Académica' },
-];
+const EXPERIENCE_TYPES = ['laboral', 'academica'];
 
 const normalizeText = (value) => String(value || '').trim().replace(/\s+/g, ' ');
 const sameText = (a, b) => normalizeText(a).toLowerCase() === normalizeText(b).toLowerCase();
-const typeLabel = (value) => EXPERIENCE_TYPES.find((type) => type.value === value)?.label || value;
 
 const ExperienceTagInput = ({
   label,
@@ -16,10 +13,13 @@ const ExperienceTagInput = ({
   onChange,
   suggestions = [],
 }) => {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState('');
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState('');
+
+  const typeLabel = (value) => t(`portfolioSearch.experience.${value}`);
 
   const filteredSuggestions = useMemo(() => {
     const query = inputValue.trim().toLowerCase();
@@ -45,12 +45,12 @@ const ExperienceTagInput = ({
     const cargo = normalizeText(rawValue);
 
     if (!cargo) {
-      setError('Escribe un cargo o puesto.');
+      setError(t('portfolioSearch.experience.error.position'));
       return;
     }
 
     if (!selectedTypes.length) {
-      setError('Selecciona si la experiencia es laboral, académica o ambas.');
+      setError(t('portfolioSearch.experience.error.type'));
       return;
     }
 
@@ -88,7 +88,7 @@ const ExperienceTagInput = ({
   const handleSuggestionClick = (suggestion) => {
     if (!selectedTypes.length) {
       setInputValue(String(suggestion || ''));
-      setError('Selecciona si la experiencia es laboral, académica o ambas para agregarla.');
+      setError(t('portfolioSearch.experience.error.suggestionType'));
       return;
     }
 
@@ -110,7 +110,13 @@ const ExperienceTagInput = ({
                     <strong className={`ps-exp-mini ${type}`} key={type}>{typeLabel(type)}</strong>
                   ))}
                 </span>
-                <button type="button" onClick={() => removeValue(value.cargo)} aria-label={`Quitar ${value.cargo}`}>×</button>
+                <button
+                  type="button"
+                  onClick={() => removeValue(value.cargo)}
+                  aria-label={t('portfolioSearch.filters.remove', { label: value.cargo })}
+                >
+                  ×
+                </button>
               </span>
             ))}
           </div>
@@ -152,16 +158,18 @@ const ExperienceTagInput = ({
             {EXPERIENCE_TYPES.map((type) => (
               <button
                 type="button"
-                key={type.value}
-                className={`ps-select-chip ${selectedTypes.includes(type.value) ? 'active' : ''} exp-${type.value}`}
-                onClick={() => toggleType(type.value)}
+                key={type}
+                className={`ps-select-chip ${selectedTypes.includes(type) ? 'active' : ''} exp-${type}`}
+                onClick={() => toggleType(type)}
               >
-                {type.label}
+                {typeLabel(type)}
               </button>
             ))}
           </div>
 
-          <button type="button" className="ps-add-exp" onClick={() => addValue(inputValue)}>Agregar experiencia</button>
+          <button type="button" className="ps-add-exp" onClick={() => addValue(inputValue)}>
+            {t('portfolioSearch.experience.add')}
+          </button>
         </div>
 
         {error && <span className="ps-field-error">{error}</span>}
@@ -171,4 +179,3 @@ const ExperienceTagInput = ({
 };
 
 export default ExperienceTagInput;
-

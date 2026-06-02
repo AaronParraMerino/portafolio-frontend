@@ -211,6 +211,34 @@ async function parseAdminResponse(response, fallbackMessage) {
   return payload;
 }
 
+function buildEventFormData(payload = {}, method = null) {
+  const formData = new FormData();
+
+  if (method) {
+    formData.append('_method', method);
+  }
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || key === 'imagePreview') return;
+
+    if (key === 'imageFile') {
+      if (value instanceof File) {
+        formData.append('imagen_portada', value);
+      }
+      return;
+    }
+
+    if (Array.isArray(value) || (typeof value === 'object' && !(value instanceof File))) {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+
+    formData.append(key, value);
+  });
+
+  return formData;
+}
+
 export async function fetchEventsWorkspace() {
   const response = await fetch(`${BASE_URL}/administrador/eventos/workspace`, {
     headers: getAdminRequestHeaders(),
@@ -296,6 +324,90 @@ export async function updateAdminEventTemplate(templateId, payload) {
   });
 
   return parseAdminResponse(response, 'No se pudo actualizar la plantilla.');
+}
+
+export async function approvePublisherRequest(requestId, reason) {
+  const response = await fetch(`${BASE_URL}/administrador/publicantes/solicitudes/${requestId}/aprobar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motivo: reason }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo aprobar la solicitud.');
+}
+
+export async function rejectPublisherRequest(requestId, reason) {
+  const response = await fetch(`${BASE_URL}/administrador/publicantes/solicitudes/${requestId}/rechazar`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motivo: reason }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo rechazar la solicitud.');
+}
+
+export async function applyAdminEventAction(eventId, action, reason) {
+  const endpoint = action === 'eliminar'
+    ? `${BASE_URL}/administrador/eventos/${eventId}`
+    : `${BASE_URL}/administrador/eventos/${eventId}/${action}`;
+  const response = await fetch(endpoint, {
+    method: action === 'eliminar' ? 'DELETE' : 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ motivo: reason }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo aplicar la accion administrativa.');
+}
+
+export async function createPublisherRequest(payload) {
+  const response = await fetch(`${BASE_URL}/publicante/solicitudes`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo enviar la solicitud.');
+}
+
+export async function fetchPublisherEvents() {
+  const response = await fetch(`${BASE_URL}/publicante/eventos`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudieron cargar tus eventos.');
+
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
+export async function createPublisherEvent(payload) {
+  const response = await fetch(`${BASE_URL}/publicante/eventos`, {
+    method: 'POST',
+    headers: getAdminRequestHeaders(),
+    body: buildEventFormData(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear el evento.');
+}
+
+export async function updatePublisherEvent(eventId, payload) {
+  const response = await fetch(`${BASE_URL}/publicante/eventos/${eventId}`, {
+    method: 'POST',
+    headers: getAdminRequestHeaders(),
+    body: buildEventFormData(payload, 'PUT'),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar el evento.');
 }
 
 export function normalizeEvent(item = {}) {

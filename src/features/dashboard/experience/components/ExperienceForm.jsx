@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "../../../../core/i18n";
 import DashboardEdit, {
   DashboardEditBody,
   DashboardEditFieldError,
@@ -7,11 +8,13 @@ import DashboardEdit, {
   DashboardEditSpinner,
 } from "../../layout/DashboardEdit";
 
+const WORK_TYPE = "Laboral";
 const ACADEMIC_TYPE = "Acad\u00e9mica";
 
 export default function ExperienceForm({ onSave, onCancel, editData }) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
-    tipo_experiencia: "Laboral",
+    tipo_experiencia: WORK_TYPE,
     empresa: "",
     puesto: "",
     fecha_inicio: "",
@@ -29,20 +32,20 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.empresa.trim()) newErrors.empresa = "Este campo es obligatorio";
-    if (!formData.puesto.trim()) newErrors.puesto = "Este campo es obligatorio";
-    if (!formData.fecha_inicio) newErrors.fecha_inicio = "La fecha de inicio es obligatoria";
+    if (!formData.empresa.trim()) newErrors.empresa = t("experience.validation.required");
+    if (!formData.puesto.trim()) newErrors.puesto = t("experience.validation.required");
+    if (!formData.fecha_inicio) newErrors.fecha_inicio = t("experience.validation.startRequired");
 
     if (!formData.actual) {
       if (!formData.fecha_fin) {
-        newErrors.fecha_fin = "La fecha de fin es obligatoria";
+        newErrors.fecha_fin = t("experience.validation.endRequired");
       } else {
         const inicio = new Date(formData.fecha_inicio);
         const fin = new Date(formData.fecha_fin);
         if (inicio > fin) {
-          newErrors.fecha_fin = "La fecha de inicio no puede ser mayor a la fecha fin";
+          newErrors.fecha_fin = t("experience.validation.startAfterEnd");
         } else if (formData.fecha_inicio === formData.fecha_fin) {
-          newErrors.fecha_fin = "Las fechas no pueden ser iguales";
+          newErrors.fecha_fin = t("experience.validation.sameDates");
         }
       }
     }
@@ -70,26 +73,26 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
 
   return (
     <DashboardEdit
-      title={editData ? "Editar experiencia" : "Agregar experiencia"}
-      subtitle="Completa los datos para mantener tu portafolio actualizado."
+      title={editData ? t("experience.form.title.edit") : t("experience.form.title.add")}
+      subtitle={t("experience.form.subtitle")}
       onClose={onCancel}
       closeDisabled={isSubmitting}
-      ariaLabel={editData ? "Editar experiencia" : "Agregar experiencia"}
+      ariaLabel={editData ? t("experience.form.title.edit") : t("experience.form.title.add")}
     >
       <form onSubmit={handleSubmit} style={{ display: "contents" }}>
         <DashboardEditBody>
-          <DashboardEditSection label="Datos de experiencia">
+          <DashboardEditSection label={t("experience.form.section.data")}>
             <div className="row g-3">
               <div className="col-12 dash-edit-field">
-                <label className="dash-edit-label">Tipo de experiencia</label>
+                <label className="dash-edit-label">{t("experience.field.type")}</label>
                 <div className="dash-edit-segmented">
                   <button
                     type="button"
-                    className={`dash-edit-segmented-btn${formData.tipo_experiencia === "Laboral" ? " active" : ""}`}
-                    onClick={() => patchForm({ tipo_experiencia: "Laboral" })}
-                    aria-pressed={formData.tipo_experiencia === "Laboral"}
+                    className={`dash-edit-segmented-btn${formData.tipo_experiencia === WORK_TYPE ? " active" : ""}`}
+                    onClick={() => patchForm({ tipo_experiencia: WORK_TYPE })}
+                    aria-pressed={formData.tipo_experiencia === WORK_TYPE}
                   >
-                    Laboral
+                    {t("experience.type.work")}
                   </button>
                   <button
                     type="button"
@@ -97,18 +100,18 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
                     onClick={() => patchForm({ tipo_experiencia: ACADEMIC_TYPE })}
                     aria-pressed={formData.tipo_experiencia === ACADEMIC_TYPE}
                   >
-                    Academica
+                    {t("experience.type.academic")}
                   </button>
                 </div>
               </div>
 
               <div className="col-md-6 col-12 dash-edit-field">
-                <label className="dash-edit-label">Empresa / Institucion <span className="dash-edit-required">*</span></label>
+                <label className="dash-edit-label">{t("experience.field.companyInstitution")} <span className="dash-edit-required">*</span></label>
                 <input
                   type="text"
                   className={`form-control dash-edit-input${errors.empresa ? " dash-edit-input-error" : ""}`}
                   maxLength={30}
-                  placeholder="Ej: Google, UMSS, Facebook..."
+                  placeholder={t("experience.placeholder.company")}
                   value={formData.empresa}
                   onChange={(e) => {
                     patchForm({ empresa: e.target.value });
@@ -124,11 +127,11 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
               </div>
 
               <div className="col-md-6 col-12 dash-edit-field">
-                <label className="dash-edit-label">Puesto / Cargo <span className="dash-edit-required">*</span></label>
+                <label className="dash-edit-label">{t("experience.field.position")} <span className="dash-edit-required">*</span></label>
                 <input
                   type="text"
                   className={`form-control dash-edit-input${errors.puesto ? " dash-edit-input-error" : ""}`}
-                  placeholder="Ej: Desarrollador, QA, Docente..."
+                  placeholder={t("experience.placeholder.position")}
                   value={formData.puesto}
                   onChange={(e) => {
                     patchForm({ puesto: e.target.value });
@@ -140,7 +143,7 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
 
               <div className="col-12 dash-edit-field">
                 <label className="dash-edit-label">
-                  Descripcion de tareas
+                  {t("experience.field.taskDescription")}
                   <span className="dash-edit-char-count" style={{ color: "var(--gris-texto)" }}>
                     {formData.descripcion.length}/200
                   </span>
@@ -149,14 +152,14 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
                   className="form-control dash-edit-textarea"
                   rows="3"
                   maxLength={200}
-                  placeholder="Describe tus logros y responsabilidades..."
+                  placeholder={t("experience.placeholder.description")}
                   value={formData.descripcion}
                   onChange={(e) => patchForm({ descripcion: e.target.value })}
                 />
               </div>
 
               <div className="col-md-6 col-12 dash-edit-field">
-                <label className="dash-edit-label">Fecha Inicio <span className="dash-edit-required">*</span></label>
+                <label className="dash-edit-label">{t("experience.field.startDate")} <span className="dash-edit-required">*</span></label>
                 <input
                   type="date"
                   className={`form-control dash-edit-input${errors.fecha_inicio ? " dash-edit-input-error" : ""}`}
@@ -171,7 +174,7 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
 
               <div className="col-md-6 col-12 dash-edit-field">
                 <label className="dash-edit-label">
-                  Fecha Fin {formData.actual ? <span className="text-muted">(deshabilitado)</span> : <span className="dash-edit-required">*</span>}
+                  {t("experience.field.endDate")} {formData.actual ? <span className="text-muted">{t("experience.form.disabled")}</span> : <span className="dash-edit-required">*</span>}
                 </label>
                 <input
                   type="date"
@@ -199,7 +202,7 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
                     }}
                   />
                   <label className="form-check-label small fw-bold text-muted" htmlFor="checkAct">
-                    Actualmente trabajo/estudio aqui
+                    {t("experience.form.currentlyHere")}
                   </label>
                 </div>
               </div>
@@ -214,7 +217,7 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
             onClick={onCancel}
             disabled={isSubmitting}
           >
-            Cancelar
+            {t("experience.actions.cancel")}
           </button>
           <button
             type="submit"
@@ -224,9 +227,9 @@ export default function ExperienceForm({ onSave, onCancel, editData }) {
             {isSubmitting ? (
               <>
                 <DashboardEditSpinner />
-                Procesando...
+                {t("experience.actions.processing")}
               </>
-            ) : editData ? "Actualizar registro" : "Guardar experiencia"}
+            ) : editData ? t("experience.actions.updateRecord") : t("experience.actions.saveExperience")}
           </button>
         </DashboardEditFooter>
       </form>

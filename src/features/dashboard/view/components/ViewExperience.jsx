@@ -1,11 +1,13 @@
 // src/features/dashboard/view/components/ViewExperience.jsx
 import { isVisible } from '../model/viewModel';
-function ExperienceBadge({ tipo }) {
+import { useLanguage } from '../../../../core/i18n';
+
+function ExperienceBadge({ tipo, t }) {
   const isAcademico = tipo === 'academico' || tipo === 'academica';
 
   return (
     <span className={`tl-badge ${isAcademico ? 'b-academico' : 'b-laboral'}`}>
-      {isAcademico ? 'Académico' : 'Laboral'}
+      {isAcademico ? t('view.experience.academic') : t('view.experience.work')}
     </span>
   );
 }
@@ -19,7 +21,26 @@ function SubsectionTitle({ children }) {
   );
 }
 
-function ExperienceCard({ experiencia }) {
+function formatMonthYear(value, language) {
+  if (!value) return '';
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const locale = language === 'en' ? 'en-US' : language === 'pt' ? 'pt-BR' : 'es-BO';
+  return new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric' }).format(date);
+}
+
+function getExperienceDates(experiencia, language, t) {
+  const from = formatMonthYear(experiencia.fechaInicio, language);
+  const to = experiencia.actual
+    ? t('view.experience.present')
+    : formatMonthYear(experiencia.fechaFin, language);
+
+  if (from && to) return `${from} - ${to}`;
+  return from || to || experiencia.fechas || '';
+}
+
+function ExperienceCard({ experiencia, t, language }) {
   const isAcademico = experiencia.tipo === 'academico' || experiencia.tipo === 'academica';
 
   return (
@@ -30,17 +51,17 @@ function ExperienceCard({ experiencia }) {
         <div className="exp-body">
           <div className="exp-top">
             <div className="exp-badges">
-              <ExperienceBadge tipo={experiencia.tipo} />
+              <ExperienceBadge tipo={experiencia.tipo} t={t} />
 
               {experiencia.actual && (
                 <span className="b-current">
-                  Actual
+                  {t('view.experience.current')}
                 </span>
               )}
             </div>
 
             <span className="exp-dates">
-              {experiencia.fechas}
+              {getExperienceDates(experiencia, language, t)}
             </span>
           </div>
 
@@ -62,12 +83,13 @@ function ExperienceCard({ experiencia }) {
 }
 
 export default function ViewExperience({ experiencias = [], visibilidad }) {
-const visibles = experiencias.filter(exp =>
-  isVisible(visibilidad, 'experiencias', exp.id)
-);
+  const { t, language } = useLanguage();
+  const visibles = experiencias.filter(exp =>
+    isVisible(visibilidad, 'experiencias', exp.id)
+  );
 
-const laborales = visibles.filter(exp => exp.tipo === 'laboral');
-const academicas = visibles.filter(exp => exp.tipo === 'academico' || exp.tipo === 'academica');
+  const laborales = visibles.filter(exp => exp.tipo === 'laboral');
+  const academicas = visibles.filter(exp => exp.tipo === 'academico' || exp.tipo === 'academica');
 
   if (!laborales.length && !academicas.length) return null;
 
@@ -75,20 +97,22 @@ const academicas = visibles.filter(exp => exp.tipo === 'academico' || exp.tipo =
     <section className="pf-sec">
       <div className="pf-sec-top">
         <div>
-          <h2 className="pf-sec-title">Experiencia</h2>
-          <div className="pf-sec-subtitle">Trayectoria laboral y académica</div>
+          <h2 className="pf-sec-title">{t('view.experience.title')}</h2>
+          <div className="pf-sec-subtitle">{t('view.experience.subtitle')}</div>
         </div>
       </div>
 
       {!!laborales.length && (
         <>
-          <SubsectionTitle>Laboral</SubsectionTitle>
+          <SubsectionTitle>{t('view.experience.work')}</SubsectionTitle>
 
           <div className="exp-list">
             {laborales.map(experiencia => (
               <ExperienceCard
                 key={experiencia.id}
                 experiencia={experiencia}
+                t={t}
+                language={language}
               />
             ))}
           </div>
@@ -97,13 +121,15 @@ const academicas = visibles.filter(exp => exp.tipo === 'academico' || exp.tipo =
 
       {!!academicas.length && (
         <>
-          <SubsectionTitle>Académica</SubsectionTitle>
+          <SubsectionTitle>{t('view.experience.academic')}</SubsectionTitle>
 
           <div className="exp-list">
             {academicas.map(experiencia => (
               <ExperienceCard
                 key={experiencia.id}
                 experiencia={experiencia}
+                t={t}
+                language={language}
               />
             ))}
           </div>
