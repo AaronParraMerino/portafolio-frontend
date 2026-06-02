@@ -5,6 +5,7 @@ import {
   buildUsersWorkspaceCounts,
   buildUsersMetrics,
   createUsersDirectoryShell,
+  createGlobalAdminNotice,
   fetchUsersDirectory,
   getUsersEmptyState,
   getUsersPageSummary,
@@ -358,22 +359,34 @@ export function useUsersDirectory() {
   };
 
   const handleSendNotice = async (payload) => {
-    const response = await sendAdminNotice(payload);
+    const isGlobalNotice = !payload.directUser && Array.isArray(payload.segmentos) && payload.segmentos.length === 1 && payload.segmentos[0] === 'todos';
+    const response = isGlobalNotice
+      ? await createGlobalAdminNotice({
+        tipo: payload.tipo,
+        titulo: payload.titulo,
+        mensaje: payload.contenido,
+        estado: 'activo',
+        prioridad: payload.prioridad || (payload.urgencia === 'media' ? 'normal' : payload.urgencia),
+        visible_desde: payload.visible_desde || null,
+        visible_hasta: payload.visible_hasta || null,
+      })
+      : await sendAdminNotice(payload);
     const notice = response?.data || {};
+    const createdAt = notice.created_at || new Date().toISOString();
 
     setDirectory((current) => ({
       ...current,
       communications: [
         {
-          id: notice.id_envio,
-          titulo: notice.titulo,
-          cuerpo: notice.contenido,
+          id: notice.id_aviso || notice.id_envio,
+          titulo: notice.titulo || payload.titulo,
+          cuerpo: notice.mensaje || notice.contenido || payload.contenido,
           tipo: notice.tipo,
-          urgencia: notice.urgencia,
-          canales: notice.canales,
-          destinatarios: notice.destinatarios,
-          creado: new Date(notice.created_at).toLocaleString('es-BO'),
-          estado: 'enviado',
+          urgencia: notice.prioridad || notice.urgencia || payload.urgencia,
+          canales: notice.canales || ['inapp'],
+          destinatarios: notice.destinatarios || (isGlobalNotice ? current.items.length : 0),
+          creado: new Date(createdAt).toLocaleString('es-BO'),
+          estado: notice.estado || 'enviado',
           segmentos: notice.segmentos || payload.segmentos || [],
         },
         ...current.communications,

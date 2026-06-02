@@ -13,8 +13,8 @@ import {
   BsThreeDots,
 } from 'react-icons/bs';
 import {
+  USER_ALL_NOTICE_TYPES,
   USER_NOTICE_STATUSES,
-  USER_NOTICE_TYPES,
   getUserNoticeStatusMeta,
   getUserNoticeTypeMeta,
 } from '../services/usersService';
@@ -132,7 +132,7 @@ export default function UsersCommunicationsPanel({
             >
               Todos
             </button>
-            {USER_NOTICE_TYPES.map((type) => (
+            {USER_ALL_NOTICE_TYPES.map((type) => (
               <button
                 key={type.id}
                 type="button"

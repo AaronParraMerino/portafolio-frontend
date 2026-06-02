@@ -6,10 +6,13 @@ import {
   wasCookieAccepted,
   wasCookieDismissed,
 } from '../../features/auth/services/sessionService';
+import BASE_URL from '../../services/http/const';
 
 const ORDER_KEY = 'banner_center_order_v1';
+const DISMISSED_NOTICES_KEY = 'banner_center_dismissed_notices_v1';
 const EXIT_ANIMATION_MS = 550;
 const PROMOTE_ANIMATION_MS = 1000;
+const EMPTY_NOTICES = [];
 
 const sortByStoredOrder = (list) => {
   try {
@@ -42,40 +45,140 @@ const persistOrder = (list) => {
   }
 };
 
-const MOCK_NOTICES = [
-  {
-    id: 'notice-ddddd',
-    title: 'Bienvddenido',
-    description: 'Estas son nuevas funcionalidades que pueden gustarte.',
-    linkLabel: 'Ver recomendaciones',
-    linkHref: '/dashboard/experience',
-    primaryLabel: 'Abrir',
-    secondaryLabel: 'limpiar',
-    autoHideMs: 35000,
-  },
-  {
-    id: 'notice-welcome',
-    title: 'Bienvenido',
-    description: 'Estas son nuevas funcionalidades que pueden gustarte.',
-    linkLabel: 'Ver recomendaciones',
-    linkHref: '/dashboard/experience',
-    primaryLabel: 'Abrir',
+const haveSameBannerItems = (current, next) => (
+  current.length === next.length
+  && current.every((item, index) => {
+    const nextItem = next[index];
+
+    return item.id === nextItem?.id
+      && item.updatedAt === nextItem?.updatedAt
+      && item.title === nextItem?.title
+      && item.description === nextItem?.description;
+  })
+);
+
+const readDismissedNotices = () => {
+  try {
+    const raw = localStorage.getItem(DISMISSED_NOTICES_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+};
+
+const persistDismissedNotice = (item) => {
+  if (item?.source !== 'global_notice') return;
+
+  try {
+    const dismissed = readDismissedNotices();
+    dismissed[item.id] = {
+      dismissedAt: new Date().toISOString(),
+      updatedAt: item.updatedAt || null,
+    };
+
+    localStorage.setItem(DISMISSED_NOTICES_KEY, JSON.stringify(dismissed));
+  } catch (_) {
+    // no-op
+  }
+};
+
+const isNoticeDismissed = (item) => {
+  if (item?.source !== 'global_notice') return false;
+
+  const dismissed = readDismissedNotices();
+  const stored = dismissed[item.id];
+
+  if (!stored) return false;
+
+  return String(stored.updatedAt || '') === String(item.updatedAt || '');
+};
+
+function normalizeGlobalNotice(item = {}) {
+  const id = item.id_aviso ?? item.id ?? item.aviso_id;
+
+  if (!id) return null;
+
+  return {
+    id: `aviso-${id}`,
+    source: 'global_notice',
+    noticeId: id,
+    title: item.titulo || item.title || 'Aviso del sistema',
+    description: item.mensaje || item.description || '',
+    type: item.tipo || 'comunicacion_marketing_global',
+    priority: item.prioridad || 'normal',
+    updatedAt: item.updated_at || item.fecha_actualizacion || null,
+    primaryLabel: 'Entendido',
     secondaryLabel: 'Cerrar',
     autoHideMs: 35000,
-  },
-  {
-    id: 'notice-profile',
-    title: 'Tip de perfil',
-    description: 'Completa tu perfil para mejorar visibilidad en el portafolio.',
-    linkLabel: 'Ir a perfil',
-    linkHref: '/dashboard/profile',
-    primaryLabel: 'Entendido',
-    secondaryLabel: 'Descartar',
-    autoHideMs: 35000,
-  },
-];
+  };
+}
 
-export default function BannerCenter({ notices = MOCK_NOTICES }) {
+function getNoticeToneStyles(item = {}) {
+  const priority = String(item.priority || '').toLowerCase();
+  const type = String(item.type || '').toLowerCase();
+
+  if (priority === 'critica') {
+    return styles.noticeDanger;
+  }
+
+  if (priority === 'alta') {
+    return styles.noticeWarning;
+  }
+
+  if (type === 'legal_cumplimiento') {
+    return styles.noticeDangerSoft;
+  }
+
+  if (type === 'operacional_tecnico') {
+    return styles.noticeWarning;
+  }
+
+  if (type === 'comunicacion_marketing_global') {
+    return styles.noticeSuccess;
+  }
+
+  if (type === 'negocio_logistica_eventos') {
+    return styles.noticePrimary;
+  }
+
+  if (priority === 'baja') {
+    return styles.noticeSuccess;
+  }
+
+  return styles.noticePrimary;
+}
+
+export default function BannerCenter({ notices = EMPTY_NOTICES }) {
+  const [globalNotices, setGlobalNotices] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`${BASE_URL}/avisos`, {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+
+        const data = Array.isArray(payload?.data) ? payload.data : [];
+        setGlobalNotices(data.map(normalizeGlobalNotice).filter(Boolean));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGlobalNotices([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const queue = useMemo(() => {
     const base = [];
 
@@ -92,8 +195,8 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
       });
     }
 
-    return [...base, ...notices];
-  }, [notices]);
+    return [...base, ...globalNotices.filter((item) => !isNoticeDismissed(item)), ...notices];
+  }, [globalNotices, notices]);
 
   const [items, setItems] = useState(queue);
   const [collapsed, setCollapsed] = useState(true);
@@ -123,6 +226,9 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
     setClosing((prev) => ({ ...prev, [id]: true }));
     scheduleAnimationTimeout(() => {
       setItems((prev) => {
+        const selected = prev.find((x) => x.id === id);
+        persistDismissedNotice(selected);
+
         const nextItems = prev.filter((x) => x.id !== id);
         persistOrder(nextItems);
         return nextItems;
@@ -137,7 +243,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
 
   useEffect(() => {
     const ordered = sortByStoredOrder(queue);
-    setItems(ordered);
+    setItems((current) => (haveSameBannerItems(current, ordered) ? current : ordered));
     persistOrder(ordered);
   }, [queue]);
 
@@ -205,6 +311,11 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
   const handleSecondary = (item) => {
     if (item.id === 'cookie-banner') {
       markCookieDismissed();
+      dismissItem(item.id);
+      return;
+    }
+
+    if (item.source === 'global_notice') {
       dismissItem(item.id);
       return;
     }
@@ -294,6 +405,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
                 key={activeItem.id}
                 style={{
                   ...styles.banner,
+                  ...getNoticeToneStyles(activeItem),
                   ...(promotingPhase[activeItem.id] === 'from-title' ? styles.bannerPromotingFromTitle : null),
                   ...(promotingPhase[activeItem.id] === 'to-main' ? styles.bannerPromotingToMain : null),
                   ...(closing[activeItem.id] ? styles.bannerClosing : null),
@@ -339,6 +451,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
                 key={item.id}
                 style={{
                   ...styles.banner,
+                  ...getNoticeToneStyles(item),
                   ...styles.bannerStacked,
                   ...(closing[item.id] ? styles.bannerClosing : null),
                 }}
@@ -421,6 +534,36 @@ const styles = {
     transform: 'translateX(0)',
     opacity: 1,
     transition: `transform ${EXIT_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${EXIT_ANIMATION_MS}ms ease, margin-top ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), padding ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), max-height ${PROMOTE_ANIMATION_MS}ms ease, box-shadow ${PROMOTE_ANIMATION_MS}ms ease`,
+  },
+  noticePrimary: {
+    background: '#0d2f4f',
+    color: '#e7f3ff',
+    borderColor: '#1d6fb8',
+    boxShadow: '0 14px 40px rgba(13, 47, 79, 0.34)',
+  },
+  noticeSuccess: {
+    background: '#0f342d',
+    color: '#e6fff8',
+    borderColor: '#1f8a70',
+    boxShadow: '0 14px 40px rgba(15, 52, 45, 0.34)',
+  },
+  noticeWarning: {
+    background: '#3b2a08',
+    color: '#fff7db',
+    borderColor: '#c48212',
+    boxShadow: '0 14px 40px rgba(59, 42, 8, 0.34)',
+  },
+  noticeDanger: {
+    background: '#4a1018',
+    color: '#ffe8ec',
+    borderColor: '#d53f55',
+    boxShadow: '0 14px 40px rgba(74, 16, 24, 0.38)',
+  },
+  noticeDangerSoft: {
+    background: '#341c2b',
+    color: '#fff0f7',
+    borderColor: '#a54d7a',
+    boxShadow: '0 14px 40px rgba(52, 28, 43, 0.34)',
   },
   bannerStacked: {
     marginTop: '0',

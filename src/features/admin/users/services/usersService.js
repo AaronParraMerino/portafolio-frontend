@@ -185,6 +185,13 @@ export const USER_COMMUNICATION_CHANNELS = [
   { id: 'push', label: 'Push' },
 ];
 
+export const USER_GLOBAL_NOTICE_TYPES = [
+  { id: 'operacional_tecnico', label: 'Operacional y tecnico', tone: 'warning', priority: 'alta' },
+  { id: 'negocio_logistica_eventos', label: 'Negocio, logistica y eventos', tone: 'primary', priority: 'normal' },
+  { id: 'comunicacion_marketing_global', label: 'Comunicacion y marketing global', tone: 'success', priority: 'baja' },
+  { id: 'legal_cumplimiento', label: 'Legal y cumplimiento', tone: 'danger', priority: 'alta' },
+];
+
 export const USER_NOTICE_TYPES = [
   { id: 'bienvenida', label: 'Bienvenida', tone: 'success' },
   { id: 'cuenta', label: 'Cuenta', tone: 'primary' },
@@ -192,6 +199,11 @@ export const USER_NOTICE_TYPES = [
   { id: 'actividad', label: 'Actividad', tone: 'warning' },
   { id: 'sistema', label: 'Sistema', tone: 'muted' },
   { id: 'capacitacion', label: 'Capacitacion', tone: 'info' },
+];
+
+export const USER_ALL_NOTICE_TYPES = [
+  ...USER_GLOBAL_NOTICE_TYPES,
+  ...USER_NOTICE_TYPES,
 ];
 
 export const USER_NOTICE_URGENCY = [
@@ -209,7 +221,7 @@ export const USER_NOTICE_STATUSES = [
 ];
 
 export function getUserNoticeTypeMeta(type) {
-  return USER_NOTICE_TYPES.find((item) => item.id === type) || USER_NOTICE_TYPES[4];
+  return USER_ALL_NOTICE_TYPES.find((item) => item.id === type) || USER_NOTICE_TYPES[4];
 }
 
 export function getUserNoticeStatusMeta(status) {
@@ -406,6 +418,19 @@ export async function sendAdminNotice(payload) {
   });
 
   return parseAdminResponse(response, 'No se pudo enviar el aviso.');
+}
+
+export async function createGlobalAdminNotice(payload) {
+  const response = await fetch(`${BASE_URL}/admin/avisos`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear el aviso global.');
 }
 
 export function normalizeUsersDirectory(payload = {}) {
