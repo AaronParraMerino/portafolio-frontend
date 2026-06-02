@@ -110,8 +110,6 @@ function normalizeGlobalNotice(item = {}) {
     type: item.tipo || 'comunicacion_marketing_global',
     priority: item.prioridad || 'normal',
     updatedAt: item.updated_at || item.fecha_actualizacion || null,
-    primaryLabel: 'Entendido',
-    secondaryLabel: 'Cerrar',
     autoHideMs: 35000,
   };
 }
@@ -152,6 +150,7 @@ function getNoticeToneStyles(item = {}) {
 }
 
 export default function BannerCenter({ notices = EMPTY_NOTICES }) {
+  const { t } = useLanguage();
   const [globalNotices, setGlobalNotices] = useState([]);
 
   useEffect(() => {
@@ -196,8 +195,16 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
       });
     }
 
-    return [...base, ...globalNotices.filter((item) => !isNoticeDismissed(item)), ...notices];
-  }, [globalNotices, notices]);
+    const translatedGlobalNotices = globalNotices
+      .filter((item) => !isNoticeDismissed(item))
+      .map((item) => ({
+        ...item,
+        primaryLabel: t('banner.action.ok'),
+        secondaryLabel: t('banner.action.close'),
+      }));
+
+    return [...base, ...translatedGlobalNotices, ...notices];
+  }, [globalNotices, notices, t]);
 
   const [items, setItems] = useState(queue);
   const [collapsed, setCollapsed] = useState(true);
