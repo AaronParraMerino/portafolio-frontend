@@ -12,6 +12,7 @@ export default function CalendarPanel({ enabled = true }) {
   const { t } = useLanguage();
   const formRef = useRef(null);
   const [eventToDelete, setEventToDelete] = useState(null);
+  const [eventToUnsubscribe, setEventToUnsubscribe] = useState(null);
   const [deleteDayRequest, setDeleteDayRequest] = useState(null);
 
   const {
@@ -21,7 +22,9 @@ export default function CalendarPanel({ enabled = true }) {
     selectedDate,
     today,
     eventDates,
+    eventDateMeta,
     selectedEvents,
+    selectedPersonalEvents,
     formOpen,
     formMode,
     editingEvent,
@@ -35,6 +38,7 @@ export default function CalendarPanel({ enabled = true }) {
     saveEvent,
     deleteEvent,
     deleteEventsByDate,
+    unsubscribeEvent,
   } = useCalendarEvents();
 
   if (!enabled) return null;
@@ -62,7 +66,7 @@ export default function CalendarPanel({ enabled = true }) {
   };
 
   const handleAskDelete = (event) => {
-    if (event.fecha < today) return;
+    if (event.fecha < today || event.origen === 'inscrito') return;
     setEventToDelete(event);
   };
 
@@ -72,9 +76,20 @@ export default function CalendarPanel({ enabled = true }) {
     setEventToDelete(null);
   };
 
+  const handleAskUnsubscribe = (event) => {
+    if (!event || event.origen !== 'inscrito') return;
+    setEventToUnsubscribe(event);
+  };
+
+  const handleConfirmUnsubscribe = () => {
+    if (!eventToUnsubscribe) return;
+    unsubscribeEvent(eventToUnsubscribe);
+    setEventToUnsubscribe(null);
+  };
+
   const handleAskDeleteDay = () => {
-    if (!selectedEvents.length || selectedDateIsPast) return;
-    setDeleteDayRequest({ date: selectedDate, count: selectedEvents.length });
+    if (!selectedPersonalEvents.length || selectedDateIsPast) return;
+    setDeleteDayRequest({ date: selectedDate, count: selectedPersonalEvents.length });
   };
 
   const handleConfirmDeleteDay = () => {
@@ -112,6 +127,7 @@ export default function CalendarPanel({ enabled = true }) {
             selectedDate={selectedDate}
             today={today}
             eventDates={eventDates}
+            eventDateMeta={eventDateMeta}
             onPrevMonth={goPrevMonth}
             onNextMonth={goNextMonth}
             onSelectDate={handleSelectDate}
@@ -151,6 +167,7 @@ export default function CalendarPanel({ enabled = true }) {
             onEdit={handleEdit}
             onDelete={handleAskDelete}
             onDeleteAll={handleAskDeleteDay}
+            onUnsubscribe={handleAskUnsubscribe}
           />
         </div>
       </aside>
@@ -165,6 +182,18 @@ export default function CalendarPanel({ enabled = true }) {
         icon="warning"
         onConfirm={handleConfirmDelete}
         onClose={() => setEventToDelete(null)}
+      />
+
+      <ConfirmModal
+        open={!!eventToUnsubscribe}
+        title={t('calendar.confirm.unsubscribeTitle')}
+        message={eventToUnsubscribe ? t('calendar.confirm.unsubscribeMessage', { title: eventToUnsubscribe.titulo }) : ''}
+        confirmLabel={t('calendar.confirm.unsubscribeConfirm')}
+        cancelLabel={t('calendar.actions.cancel')}
+        variant="red"
+        icon="warning"
+        onConfirm={handleConfirmUnsubscribe}
+        onClose={() => setEventToUnsubscribe(null)}
       />
 
       <ConfirmModal
