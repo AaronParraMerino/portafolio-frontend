@@ -57,14 +57,16 @@ export default function EventsTemplatesPanel({
             <h2 className="evt-sheet-title">Mensajes reutilizables de plataforma</h2>
           </div>
 
-          <button
-            type="button"
-            className="evt-context-btn evt-context-btn--secondary"
-            onClick={() => onCreateTemplate()}
-          >
-            <BsFileEarmarkPlus />
-            Nueva plantilla
-          </button>
+          {onCreateTemplate ? (
+            <button
+              type="button"
+              className="evt-context-btn evt-context-btn--secondary"
+              onClick={() => onCreateTemplate()}
+            >
+              <BsFileEarmarkPlus />
+              Nueva plantilla
+            </button>
+          ) : null}
         </div>
 
         <div className="evt-chip-list">
@@ -151,13 +153,15 @@ export default function EventsTemplatesPanel({
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    className="evt-mini-action evt-mini-action--wide"
-                    onClick={() => onUseTemplate(template)}
-                  >
-                    Usar plantilla
-                  </button>
+                  {onUseTemplate ? (
+                    <button
+                      type="button"
+                      className="evt-mini-action evt-mini-action--wide"
+                      onClick={() => onUseTemplate(template)}
+                    >
+                      Usar plantilla
+                    </button>
+                  ) : null}
                 </article>
               );
             })}

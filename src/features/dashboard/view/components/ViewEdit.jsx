@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import { useLanguage } from '../../../../core/i18n';
 
 const SOCIAL_TYPES = [
   { id: 'linkedin', label: 'LinkedIn' },
@@ -92,6 +93,7 @@ export default function ViewEdit({
   data,
   onDataChange,
 }) {
+  const { t } = useLanguage();
   const [section, setSection] = useState('perfil');
   const [search, setSearch] = useState({
     redes: '',
@@ -182,7 +184,7 @@ export default function ViewEdit({
   const addRed = () => {
     const newRed = {
       id: uid('red'),
-      nombre: 'Nueva red',
+      nombre: t('view.edit.defaultNewSocial'),
       url: 'mi-enlace.com',
       href: 'https://mi-enlace.com',
       tipo: 'web',
@@ -217,10 +219,10 @@ export default function ViewEdit({
   const addSkill = (kind) => {
     const newSkill = {
       id: uid(kind === 'tecnicas' ? 'tec' : 'soft'),
-      nombre: kind === 'tecnicas' ? 'Nueva tecnología' : 'Nueva habilidad',
+      nombre: kind === 'tecnicas' ? t('view.edit.defaultNewTech') : t('view.edit.defaultNewSkill'),
       nivel: 'intermedio',
       porcentaje: 60,
-      descripcion: 'Descripción breve de la habilidad.',
+      descripcion: t('view.edit.defaultSkillDescription'),
     };
 
     onDataChange({
@@ -244,10 +246,10 @@ export default function ViewEdit({
       id: uid('exp'),
       tipo,
       actual: false,
-      cargo: tipo === 'academico' ? 'Nueva formación académica' : 'Nuevo cargo',
-      organizacion: 'Organización',
-      fechas: '2024 → Presente',
-      descripcion: 'Descripción breve de la experiencia.',
+      cargo: tipo === 'academico' ? t('view.edit.defaultAcademicRole') : t('view.edit.defaultWorkRole'),
+      organizacion: t('view.edit.defaultOrganization'),
+      fechas: t('view.edit.defaultDates'),
+      descripcion: t('view.edit.defaultExperienceDescription'),
     };
 
     onDataChange({
@@ -266,10 +268,10 @@ export default function ViewEdit({
   const addProject = () => {
     const newProject = {
       id: uid('proy'),
-      titulo: 'Nuevo proyecto',
-      descripcion: 'Descripción breve del proyecto.',
+      titulo: t('view.edit.defaultProjectTitle'),
+      descripcion: t('view.edit.defaultProjectDescription'),
       estado: 'desarrollo',
-      tipo: 'Proyecto',
+      tipo: t('view.projects.defaultTitle'),
       anio: new Date().getFullYear().toString(),
       icono: 'portfolio',
       tecnologias: ['React', 'PHP'],
@@ -330,7 +332,7 @@ export default function ViewEdit({
           className={`edit-tab ${section === 'perfil' ? 'active' : ''}`}
           onClick={() => setSection('perfil')}
         >
-          Perfil
+          {t('view.edit.tabs.profile')}
         </button>
 
         <button
@@ -338,7 +340,7 @@ export default function ViewEdit({
           className={`edit-tab ${section === 'redes' ? 'active' : ''}`}
           onClick={() => setSection('redes')}
         >
-          Redes
+          {t('view.edit.tabs.social')}
         </button>
 
         <button
@@ -346,7 +348,7 @@ export default function ViewEdit({
           className={`edit-tab ${section === 'stats' ? 'active' : ''}`}
           onClick={() => setSection('stats')}
         >
-          Stats
+          {t('view.edit.tabs.stats')}
         </button>
 
         <button
@@ -354,7 +356,7 @@ export default function ViewEdit({
           className={`edit-tab ${section === 'habilidades' ? 'active' : ''}`}
           onClick={() => setSection('habilidades')}
         >
-          Habilidades
+          {t('view.edit.tabs.skills')}
         </button>
 
         <button
@@ -362,7 +364,7 @@ export default function ViewEdit({
           className={`edit-tab ${section === 'experiencia' ? 'active' : ''}`}
           onClick={() => setSection('experiencia')}
         >
-          Experiencia
+          {t('view.edit.tabs.experience')}
         </button>
 
         <button
@@ -370,60 +372,67 @@ export default function ViewEdit({
           className={`edit-tab ${section === 'proyectos' ? 'active' : ''}`}
           onClick={() => setSection('proyectos')}
         >
-          Proyectos
+          {t('view.edit.tabs.projects')}
         </button>
       </div>
 
       <div className="edit-body">
         {section === 'perfil' && (
           <EditSection
-            title="Editar perfil"
-            subtitle="Datos principales que se muestran en la cabecera del portafolio."
+            title={t('view.edit.profile.title')}
+            subtitle={t('view.edit.profile.subtitle')}
           >
             <div className="edit-grid">
-              <Field label="Nombre">
+              <Field label={t('profile.field.firstName')}>
+              
                 <input
                   value={perfil.nombre || ''}
                   onChange={event => patchPerfil({ nombre: event.target.value })}
                 />
               </Field>
 
-              <Field label="Apellido">
+              <Field label={t('profile.field.lastName')}>
+              
                 <input
                   value={perfil.apellido || ''}
                   onChange={event => patchPerfil({ apellido: event.target.value })}
                 />
               </Field>
 
-              <Field label="Profesión" full>
+              <Field label={t('profile.field.profession')} full>
+              
                 <input
                   value={perfil.profesion || ''}
                   onChange={event => patchPerfil({ profesion: event.target.value })}
                 />
               </Field>
 
-              <Field label="Ciudad">
+              <Field label={t('profile.field.city')}>
+              
                 <input
                   value={perfil.ciudad || ''}
                   onChange={event => patchPerfil({ ciudad: event.target.value })}
                 />
               </Field>
 
-              <Field label="País">
+              <Field label={t('profile.field.country')}>
+              
                 <input
                   value={perfil.pais || ''}
                   onChange={event => patchPerfil({ pais: event.target.value })}
                 />
               </Field>
 
-              <Field label="Teléfono">
+              <Field label={t('profile.field.phone')}>
+              
                 <input
                   value={perfil.telefono || ''}
                   onChange={event => patchPerfil({ telefono: event.target.value })}
                 />
               </Field>
 
-              <Field label="Correo">
+              <Field label={t('profile.field.email')}>
+              
                 <input
                   type="email"
                   value={perfil.correo || ''}
@@ -431,7 +440,8 @@ export default function ViewEdit({
                 />
               </Field>
 
-              <Field label="Biografía" full>
+              <Field label={t('profile.field.biography')} full>
+              
                 <textarea
                   rows={6}
                   value={perfil.biografia || ''}
@@ -444,14 +454,14 @@ export default function ViewEdit({
 
         {section === 'redes' && (
           <EditSection
-            title="Editar redes sociales"
-            subtitle="Gestiona los enlaces públicos que aparecen en tu perfil."
+            title={t('view.edit.social.title')}
+            subtitle={t('view.edit.social.subtitle')}
           >
             <div className="edit-toolbar">
               <input
                 type="search"
                 className="edit-search"
-                placeholder="Buscar red social..."
+                placeholder={t('view.edit.social.search')}
                 value={search.redes}
                 onChange={event => setSearch(prev => ({ ...prev, redes: event.target.value }))}
               />
@@ -461,19 +471,19 @@ export default function ViewEdit({
                 className="edit-btn edit-btn-primary"
                 onClick={addRed}
               >
-                + Agregar red
+                {t('view.edit.social.add')}
               </button>
             </div>
 
             {!filteredRedes.length && (
-              <EmptyState>No hay redes que coincidan con la búsqueda.</EmptyState>
+              <EmptyState>{t('view.edit.social.empty')}</EmptyState>
             )}
 
             <div className="edit-list">
               {filteredRedes.map(red => (
                 <article key={red.id} className="edit-card">
                   <div className="edit-card-head">
-                    <strong>{red.nombre || 'Red social'}</strong>
+                    <strong>{red.nombre || t('view.edit.social.default')}</strong>
 
                     <button
                       type="button"
@@ -484,32 +494,33 @@ export default function ViewEdit({
                         label: red.nombre,
                       })}
                     >
-                      Eliminar
+                      {t('actions.delete')}
                     </button>
                   </div>
 
                   <div className="edit-grid">
-                    <Field label="Nombre">
+                    <Field label={t('view.edit.name')}>
                       <input
                         value={red.nombre || ''}
                         onChange={event => patchRed(red.id, { nombre: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Tipo">
+                    <Field label={t('view.projects.type')}>
+                      
                       <select
                         value={red.tipo || 'web'}
                         onChange={event => patchRed(red.id, { tipo: event.target.value })}
                       >
                         {SOCIAL_TYPES.map(type => (
                           <option key={type.id} value={type.id}>
-                            {type.label}
+                            {t(`view.edit.social.type.${type.id}`, {}, type.label)}
                           </option>
                         ))}
                       </select>
                     </Field>
 
-                    <Field label="Texto visible">
+                    <Field label={t('view.edit.social.visibleText')}>
                       <input
                         value={red.url || ''}
                         onChange={event => patchRed(red.id, {
@@ -519,7 +530,7 @@ export default function ViewEdit({
                       />
                     </Field>
 
-                    <Field label="URL real">
+                    <Field label={t('view.edit.social.realUrl')}>
                       <input
                         value={red.href || ''}
                         onChange={event => patchRed(red.id, { href: event.target.value })}
@@ -534,21 +545,23 @@ export default function ViewEdit({
 
         {section === 'stats' && (
           <EditSection
-            title="Editar estadísticas"
-            subtitle="Modifica los indicadores principales de la vista pública."
+            title={t('view.edit.stats.title')}
+            subtitle={t('view.edit.stats.subtitle')}
           >
             <div className="edit-list">
               {stats.map(stat => (
                 <article key={stat.id} className="edit-card edit-card-compact">
                   <div className="edit-grid">
-                    <Field label="Valor">
+                    <Field label={t('view.edit.stats.value')}>
+                    
                       <input
                         value={stat.valor || ''}
                         onChange={event => patchStat(stat.id, { valor: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Etiqueta">
+                    <Field label={t('view.edit.stats.label')}>
+                    
                       <input
                         value={stat.label || ''}
                         onChange={event => patchStat(stat.id, { label: event.target.value })}
@@ -563,14 +576,14 @@ export default function ViewEdit({
 
         {section === 'habilidades' && (
           <EditSection
-            title="Editar habilidades"
-            subtitle="Agrega, modifica o elimina habilidades técnicas y blandas."
+            title={t('view.edit.skills.title')}
+            subtitle={t('view.edit.skills.subtitle')}
           >
             <div className="edit-toolbar">
               <input
                 type="search"
                 className="edit-search"
-                placeholder="Buscar habilidad..."
+                placeholder={t('view.edit.skills.search')}
                 value={search.habilidades}
                 onChange={event => setSearch(prev => ({ ...prev, habilidades: event.target.value }))}
               />
@@ -580,7 +593,7 @@ export default function ViewEdit({
                 className="edit-btn edit-btn-soft"
                 onClick={() => addSkill('tecnicas')}
               >
-                + Técnica
+                {t('view.edit.skills.addTech')}
               </button>
 
               <button
@@ -588,16 +601,16 @@ export default function ViewEdit({
                 className="edit-btn edit-btn-primary"
                 onClick={() => addSkill('blandas')}
               >
-                + Blanda
+                {t('view.edit.skills.addSoft')}
               </button>
             </div>
 
             <div className="edit-subtitle-row">
-              <span>Técnicas</span>
+              <span>{t('view.skills.technical')}</span>
             </div>
 
             {!filteredTecnicas.length && (
-              <EmptyState>No hay habilidades técnicas visibles.</EmptyState>
+              <EmptyState>{t('view.edit.skills.emptyTech')}</EmptyState>
             )}
 
             <div className="edit-list">
@@ -606,6 +619,7 @@ export default function ViewEdit({
                   key={skill.id}
                   skill={skill}
                   onPatch={patch => patchSkill('tecnicas', skill.id, patch)}
+                  t={t}
                   onDelete={() => requestDelete({
                     type: 'skill',
                     kind: 'tecnicas',
@@ -617,11 +631,11 @@ export default function ViewEdit({
             </div>
 
             <div className="edit-subtitle-row">
-              <span>Blandas</span>
+              <span>{t('view.skills.soft')}</span>
             </div>
 
             {!filteredBlandas.length && (
-              <EmptyState>No hay habilidades blandas visibles.</EmptyState>
+              <EmptyState>{t('view.edit.skills.emptySoft')}</EmptyState>
             )}
 
             <div className="edit-list">
@@ -630,6 +644,7 @@ export default function ViewEdit({
                   key={skill.id}
                   skill={skill}
                   onPatch={patch => patchSkill('blandas', skill.id, patch)}
+                  t={t}
                   onDelete={() => requestDelete({
                     type: 'skill',
                     kind: 'blandas',
@@ -644,14 +659,14 @@ export default function ViewEdit({
 
         {section === 'experiencia' && (
           <EditSection
-            title="Editar experiencia"
-            subtitle="Administra experiencia laboral y formación académica."
+            title={t('view.edit.experience.title')}
+            subtitle={t('view.edit.experience.subtitle')}
           >
             <div className="edit-toolbar">
               <input
                 type="search"
                 className="edit-search"
-                placeholder="Buscar experiencia..."
+                placeholder={t('view.edit.experience.search')}
                 value={search.experiencias}
                 onChange={event => setSearch(prev => ({ ...prev, experiencias: event.target.value }))}
               />
@@ -661,7 +676,7 @@ export default function ViewEdit({
                 className="edit-btn edit-btn-soft"
                 onClick={() => addExperience('laboral')}
               >
-                + Laboral
+                {t('view.edit.experience.addWork')}
               </button>
 
               <button
@@ -669,19 +684,19 @@ export default function ViewEdit({
                 className="edit-btn edit-btn-primary"
                 onClick={() => addExperience('academico')}
               >
-                + Académica
+                {t('view.edit.experience.addAcademic')}
               </button>
             </div>
 
             {!filteredExperiencias.length && (
-              <EmptyState>No hay experiencias que coincidan con la búsqueda.</EmptyState>
+              <EmptyState>{t('view.edit.experience.empty')}</EmptyState>
             )}
 
             <div className="edit-list">
               {filteredExperiencias.map(exp => (
                 <article key={exp.id} className="edit-card">
                   <div className="edit-card-head">
-                    <strong>{exp.cargo || 'Experiencia'}</strong>
+                    <strong>{exp.cargo || t('view.experience.title')}</strong>
 
                     <button
                       type="button"
@@ -692,39 +707,43 @@ export default function ViewEdit({
                         label: exp.cargo,
                       })}
                     >
-                      Eliminar
+                      {t('actions.delete')}
                     </button>
                   </div>
 
                   <div className="edit-grid">
-                    <Field label="Tipo">
+                    <Field label={t('view.projects.type')}>
+                      
                       <select
                         value={exp.tipo || 'laboral'}
                         onChange={event => patchExperience(exp.id, { tipo: event.target.value })}
                       >
                         {EXPERIENCE_TYPES.map(type => (
                           <option key={type.id} value={type.id}>
-                            {type.label}
+                            {t(`view.experience.${type.id === 'academico' ? 'academic' : 'work'}`, {}, type.label)}
                           </option>
                         ))}
                       </select>
                     </Field>
 
-                    <Field label="Fechas">
+                    <Field label={t('view.projects.period')}>
+                      
                       <input
                         value={exp.fechas || ''}
                         onChange={event => patchExperience(exp.id, { fechas: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Cargo / Formación" full>
+                    <Field label={t('view.edit.experience.role')} full>
+                      
                       <input
                         value={exp.cargo || ''}
                         onChange={event => patchExperience(exp.id, { cargo: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Organización" full>
+                    <Field label={t('view.edit.experience.organization')} full>
+                      
                       <input
                         value={exp.organizacion || ''}
                         onChange={event => patchExperience(exp.id, { organizacion: event.target.value })}
@@ -737,10 +756,11 @@ export default function ViewEdit({
                         checked={Boolean(exp.actual)}
                         onChange={event => patchExperience(exp.id, { actual: event.target.checked })}
                       />
-                      <span>Marcar como actual</span>
+                      <span>{t('view.edit.experience.markCurrent')}</span>
                     </label>
 
-                    <Field label="Descripción" full>
+                    <Field label={t('view.edit.description')} full>
+                      
                       <textarea
                         rows={4}
                         value={exp.descripcion || ''}
@@ -756,14 +776,14 @@ export default function ViewEdit({
 
         {section === 'proyectos' && (
           <EditSection
-            title="Editar proyectos"
-            subtitle="Administra proyectos destacados, enlaces y tecnologías."
+            title={t('view.edit.projects.title')}
+            subtitle={t('view.edit.projects.subtitle')}
           >
             <div className="edit-toolbar">
               <input
                 type="search"
                 className="edit-search"
-                placeholder="Buscar proyecto..."
+                placeholder={t('view.edit.projects.search')}
                 value={search.proyectos}
                 onChange={event => setSearch(prev => ({ ...prev, proyectos: event.target.value }))}
               />
@@ -773,19 +793,19 @@ export default function ViewEdit({
                 className="edit-btn edit-btn-primary"
                 onClick={addProject}
               >
-                + Agregar proyecto
+                {t('view.edit.projects.add')}
               </button>
             </div>
 
             {!filteredProyectos.length && (
-              <EmptyState>No hay proyectos que coincidan con la búsqueda.</EmptyState>
+              <EmptyState>{t('view.edit.projects.empty')}</EmptyState>
             )}
 
             <div className="edit-list">
               {filteredProyectos.map(project => (
                 <article key={project.id} className="edit-card">
                   <div className="edit-card-head">
-                    <strong>{project.titulo || 'Proyecto'}</strong>
+                    <strong>{project.titulo || t('view.projects.defaultTitle')}</strong>
 
                     <button
                       type="button"
@@ -796,56 +816,62 @@ export default function ViewEdit({
                         label: project.titulo,
                       })}
                     >
-                      Eliminar
+                      {t('actions.delete')}
                     </button>
                   </div>
 
                   <div className="edit-grid">
-                    <Field label="Título" full>
+                    <Field label={t('projects.field.title')} full>
+                      
                       <input
                         value={project.titulo || ''}
                         onChange={event => patchProject(project.id, { titulo: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Tipo">
+                    <Field label={t('view.projects.type')}>
+                      
                       <input
                         value={project.tipo || ''}
                         onChange={event => patchProject(project.id, { tipo: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Año">
+                    <Field label={t('view.edit.projects.year')}>
+                      
                       <input
                         value={project.anio || ''}
                         onChange={event => patchProject(project.id, { anio: event.target.value })}
                       />
                     </Field>
 
-                    <Field label="Estado">
+                    <Field label={t('view.projects.status')}>
+                      
                       <select
                         value={project.estado || 'desarrollo'}
                         onChange={event => patchProject(project.id, { estado: event.target.value })}
                       >
-                        <option value="publicado">Publicado</option>
-                        <option value="desarrollo">Desarrollo</option>
+                        <option value="publicado">{t('projects.status.publicado')}</option>
+                        <option value="desarrollo">{t('projects.status.en_desarrollo')}</option>
                       </select>
                     </Field>
 
-                    <Field label="Icono">
+                    <Field label={t('view.edit.projects.icon')}>
+                      
                       <select
                         value={project.icono || 'portfolio'}
                         onChange={event => patchProject(project.id, { icono: event.target.value })}
                       >
                         {PROJECT_ICONS.map(icon => (
                           <option key={icon.id} value={icon.id}>
-                            {icon.label}
+                            {t(`view.edit.projectIcon.${icon.id}`, {}, icon.label)}
                           </option>
                         ))}
                       </select>
                     </Field>
 
-                    <Field label="Descripción" full>
+                    <Field label={t('view.edit.description')} full>
+                      
                       <textarea
                         rows={4}
                         value={project.descripcion || ''}
@@ -853,7 +879,8 @@ export default function ViewEdit({
                       />
                     </Field>
 
-                    <Field label="Tecnologías separadas por coma" full>
+                    <Field label={t('view.edit.projects.technologiesComma')} full>
+                      
                       <input
                         value={(project.tecnologias || []).join(', ')}
                         onChange={event => patchProject(project.id, {
@@ -876,7 +903,7 @@ export default function ViewEdit({
                       />
                     </Field>
 
-                    <Field label="Video">
+                    <Field label={t('view.projects.video')}>
                       <input
                         value={project.videoUrl || ''}
                         onChange={event => patchProject(project.id, { videoUrl: event.target.value })}
@@ -894,11 +921,11 @@ export default function ViewEdit({
         open={Boolean(deleteTarget)}
         variant="red"
         icon="warning"
-        title="Eliminar elemento"
-        subtitle="Esta accion solo afecta la vista actual"
-        message={`¿Deseas eliminar "${deleteTarget?.label || 'este elemento'}"?`}
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
+        title={t('view.edit.delete.title')}
+        subtitle={t('view.edit.delete.subtitle')}
+        message={t('view.edit.delete.message', { item: deleteTarget?.label || t('view.edit.delete.thisItem') })}
+        confirmLabel={t('actions.delete')}
+        cancelLabel={t('actions.cancel')}
         onConfirm={confirmDelete}
         onClose={() => setDeleteTarget(null)}
       />
@@ -906,45 +933,46 @@ export default function ViewEdit({
   );
 }
 
-function SkillEditor({ skill, onPatch, onDelete }) {
+function SkillEditor({ skill, onPatch, onDelete, t }) {
   const percentage = Math.max(0, Math.min(Number(skill.porcentaje) || 0, 100));
 
   return (
     <article className="edit-card">
       <div className="edit-card-head">
-        <strong>{skill.nombre || 'Habilidad'}</strong>
+        <strong>{skill.nombre || t('view.edit.skills.default')}</strong>
 
         <button
           type="button"
           className="edit-icon-btn danger"
           onClick={onDelete}
         >
-          Eliminar
+          {t('actions.delete')}
         </button>
       </div>
 
       <div className="edit-grid">
-        <Field label="Nombre">
+        <Field label={t('skills.field.name')}>
           <input
             value={skill.nombre || ''}
             onChange={event => onPatch({ nombre: event.target.value })}
           />
         </Field>
 
-        <Field label="Nivel">
+        <Field label={t('skills.field.level')}>
+          
           <select
             value={skill.nivel || 'intermedio'}
             onChange={event => onPatch({ nivel: event.target.value })}
           >
             {LEVELS.map(level => (
               <option key={level.id} value={level.id}>
-                {level.label}
+                {t(`skills.level.${level.id}`, {}, level.label)}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field label={`Porcentaje: ${percentage}%`} full>
+        <Field label={t('view.edit.skills.percentage', { percentage })} full>
           <div className="edit-range-row">
             <input
               type="range"
@@ -964,7 +992,8 @@ function SkillEditor({ skill, onPatch, onDelete }) {
           </div>
         </Field>
 
-        <Field label="Descripción" full>
+        <Field label={t('view.edit.description')} full>
+                      
           <textarea
             rows={3}
             value={skill.descripcion || ''}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "../../../../core/i18n";
 import SkillForm from "../components/SkillForm";
 import {
   getUserSkills,
@@ -13,8 +14,6 @@ import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import Header from "../../layout/Header";
 import {
   getSkillLevelColor,
-  getSkillLevelLabel,
-  getSkillLevelShortLabel,
   getSkillProgress,
 } from "../model/skillLevel";
 
@@ -36,11 +35,11 @@ const normalizeSkillType = (value = "") =>
 const getSkillName = (skill) =>
   skill?.nombre ?? skill?.nombre_habilidad ?? skill?.habilidad?.nombre ?? "";
 
-const getSkillDescription = (skill) =>
+const getSkillDescription = (skill, t) =>
   skill?.descripcion ??
   skill?.descripcion_habilidad ??
   skill?.habilidad?.descripcion ??
-  "Sin descripción adicional.";
+  t("skills.noDescription");
 
 const getInitialSkills = () => {
   try {
@@ -51,6 +50,7 @@ const getInitialSkills = () => {
 };
 
 export default function SkillsPage() {
+  const { t } = useLanguage();
   const [skills, setSkills] = useState(getInitialSkills);
   const [loading, setLoading] = useState(() => getInitialSkills().length === 0);
   const [modalMode, setModalMode] = useState(null);
@@ -62,8 +62,8 @@ export default function SkillsPage() {
     title: "",
     subtitle: "",
     message: "",
-    confirmLabel: "Confirmar",
-    cancelLabel: "Cancelar",
+    confirmLabel: t("skills.common.save"),
+    cancelLabel: t("skills.common.cancel"),
     variant: "blue",
     icon: "check",
     onConfirm: () => {},
@@ -82,11 +82,11 @@ export default function SkillsPage() {
       const data = await getUserSkills({ force: true });
       setSkills(data);
     } catch (err) {
-      showToast("Error al cargar las habilidades", "error");
+      showToast(t("skills.toast.loadError"), "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadSkills();
@@ -115,7 +115,7 @@ export default function SkillsPage() {
 
         if (duplicateOwned) {
           showToast(
-            `Ya tienes "${formData.nombre_habilidad}" registrada en tu perfil.`,
+            t("skills.toast.duplicateOwned", { name: formData.nombre_habilidad }),
             "error"
           );
           return;
@@ -145,12 +145,12 @@ export default function SkillsPage() {
           });
         });
 
-        showToast("Habilidad actualizada", "ok");
+        showToast(t("skills.toast.updated"), "ok");
       } else {
         const created = await addUserSkill(skillIdFromCatalog, formData.nivel);
 
         setSkills((prev) => [created, ...prev]);
-        showToast("Habilidad añadida", "ok");
+        showToast(t("skills.toast.added"), "ok");
       }
 
       setModalMode(null);
@@ -164,13 +164,13 @@ export default function SkillsPage() {
 
     setConfirmConfig({
       open: true,
-      title: "Eliminar habilidad",
-      subtitle: "Esta acción no se puede deshacer.",
-      message: `Estás por quitar "${
-        getSkillName(skill) || "esta habilidad"
-      }" de tu perfil. ¿Deseas continuar?`,
-      confirmLabel: "Sí, eliminar",
-      cancelLabel: "Cancelar",
+      title: t("skills.delete.title"),
+      subtitle: t("skills.delete.subtitle"),
+      message: t("skills.delete.message", {
+        name: getSkillName(skill) || t("skills.delete.fallback"),
+      }),
+      confirmLabel: t("skills.delete.confirm"),
+      cancelLabel: t("skills.common.cancel"),
       variant: "red",
       icon: "warning",
       onConfirm: async () => {
@@ -181,9 +181,9 @@ export default function SkillsPage() {
             prev.filter((s) => Number(s.id) !== Number(id))
           );
 
-          showToast("Habilidad eliminada", "ok");
+          showToast(t("skills.toast.deleted"), "ok");
         } catch (err) {
-          showToast("Error al eliminar", "error");
+          showToast(t("skills.toast.deleteError"), "error");
         }
 
         setConfirmConfig((prev) => ({ ...prev, open: false }));
@@ -521,8 +521,8 @@ export default function SkillsPage() {
       `}</style>
 
       <Header
-        title="Habilidades"
-        actionLabel="Agregar habilidad"
+        title={t("skills.page.title")}
+        actionLabel={t("skills.page.add")}
         onAction={openAddModal}
       />
 
@@ -532,19 +532,19 @@ export default function SkillsPage() {
             {loading ? (
               <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
                 <span className="dash-loading-spinner" />
-                <span>Cargando habilidades...</span>
+                <span>{t("skills.loading")}</span>
               </div>
             ) : skills.length === 0 ? (
               <SkillEmptyState onAdd={openAddModal} />
             ) : (
               <>
                 <h5 className="skill-section-divider">
-                  Habilidades Técnicas
+                  {t("skills.section.technical")}
                 </h5>
 
                 {tecnicas.length === 0 ? (
                   <div className="skill-empty-category">
-                    No has registrado habilidades técnicas aún.
+                    {t("skills.empty.technical")}
                   </div>
                 ) : (
                   tecnicas.map((s) => (
@@ -561,12 +561,12 @@ export default function SkillsPage() {
                 )}
 
                 <h5 className="skill-section-divider">
-                  Habilidades Blandas
+                  {t("skills.section.soft")}
                 </h5>
 
                 {blandas.length === 0 ? (
                   <div className="skill-empty-category">
-                    No hay registros de habilidades blandas.
+                    {t("skills.empty.soft")}
                   </div>
                 ) : (
                   blandas.map((s) => (
@@ -607,37 +607,40 @@ export default function SkillsPage() {
 }
 
 function SkillEmptyState({ onAdd }) {
+  const { t } = useLanguage();
+
   return (
     <div className="skill-empty-state">
       <div className="skill-empty-icon">✦</div>
 
       <h3 className="skill-empty-title">
-        Aún no tienes habilidades registradas
+        {t("skills.empty.title")}
       </h3>
 
       <p className="skill-empty-text">
-        Agrega habilidades técnicas o blandas para completar tu perfil
-        profesional y mostrar tus fortalezas.
+        {t("skills.empty.text")}
       </p>
 
       <div className="skill-empty-chips" aria-hidden="true">
-        <span className="skill-empty-chip">Técnicas</span>
-        <span className="skill-empty-chip">Blandas</span>
-        <span className="skill-empty-chip">Nivel de dominio</span>
+        <span className="skill-empty-chip">{t("skills.empty.chip.technical")}</span>
+        <span className="skill-empty-chip">{t("skills.empty.chip.soft")}</span>
+        <span className="skill-empty-chip">{t("skills.empty.chip.level")}</span>
       </div>
 
       <button type="button" className="skill-add-btn" onClick={onAdd}>
-        + Agregar Habilidad
+        {t("skills.empty.add")}
       </button>
     </div>
   );
 }
 
 function SkillLongRow({ skill, onEdit, onDelete }) {
+  const { t } = useLanguage();
   const progress = getSkillProgress(skill.nivel);
   const color = getSkillLevelColor(skill.nivel);
-  const label = getSkillLevelLabel(skill.nivel);
-  const shortLabel = getSkillLevelShortLabel(skill.nivel);
+  const levelKey = normalizeSkillType(skill.nivel);
+  const label = t(`skills.level.${levelKey}`);
+  const shortLabel = t(`skills.levelShort.${levelKey}`);
 
   return (
     <div
@@ -649,7 +652,7 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
           className="level-circle-badge"
           style={{ backgroundColor: color }}
           title={label}
-          aria-label={`Nivel ${label}`}
+          aria-label={t("skills.aria.level", { level: label })}
         >
           {shortLabel}
         </div>
@@ -660,7 +663,7 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
           </h6>
 
           <p className="skill-description">
-            {getSkillDescription(skill)}
+            {getSkillDescription(skill, t)}
           </p>
         </div>
       </div>
@@ -668,7 +671,7 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
       <div className="skill-progress-zone">
         <div className="skill-progress-top">
           <span className="skill-progress-label">
-            Dominio
+            {t("skills.progress")}
           </span>
 
           <span
@@ -695,20 +698,20 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
           type="button"
           onClick={() => onEdit(skill)}
           className="btn-action-skill btn-edit"
-          title="Editar"
-          aria-label="Editar habilidad"
+          title={t("skills.edit")}
+          aria-label={t("skills.aria.edit")}
         >
-          Editar
+          {t("skills.edit")}
         </button>
 
         <button
           type="button"
           onClick={() => onDelete(skill.id)}
           className="btn-action-skill btn-delete"
-          title="Eliminar"
-          aria-label="Eliminar habilidad"
+          title={t("skills.delete")}
+          aria-label={t("skills.aria.delete")}
         >
-          Eliminar
+          {t("skills.delete")}
         </button>
       </div>
     </div>

@@ -1,11 +1,26 @@
+// src/shared/components/layout/Navbar.jsx
+
 import { useState, useEffect, useRef, useCallback } from 'react';
-import ConfirmModal from '../../ui/ConfirmModal'
-import { clearAuthStorage, getDashboardHomePath, getStoredUser, isAdminUser } from '../../utils/authStorage';
+import ConfirmModal from '../../ui/ConfirmModal';
+import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
+import LanguageSelector from '../language/LanguageSelector';
+import NotificationCenterModal from '../notifications/NotificationCenterModal';
+import { useLanguage } from '../../../core/i18n';
+import {
+  clearAuthStorage,
+  getDashboardHomePath,
+  getStoredUser,
+  isAdminUser,
+} from '../../utils/authStorage';
 import {
   clearNotificationsCache,
-  fetchNotifications,
-  getCachedNotifications,
+  fetchNotificationGroupMessages,
+  fetchNotificationModuleDetail,
+  fetchNotificationModules,
+  getCachedNotificationModules,
   markAllNotificationsAsRead,
+  markNotificationGroupAsRead,
+  markNotificationModuleAsRead,
   markNotificationAsRead,
 } from '../../services/notificationService';
 
@@ -21,10 +36,42 @@ const ICON_PROPS = {
 
 /* ── Links de navegación pública ── */
 const NAV_LINKS = [
-  { label: 'Inicio', href: '/', icon: (<><path d="M3 10.8 12 3l9 7.8" /><path d="M5 10v10h5v-6h4v6h5V10" /></>) },
-  { label: 'Cómo funciona',   href: '#como-funciona'   },
-  { label: 'Proyectos', href: 'dashboard/projects', icon: (<><path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" /><path d="M3 9h18l-1.3 9.2A2 2 0 0 1 17.7 20H6.3a2 2 0 0 1-2-1.8L3 9Z" /></>) },
-  { label: 'Desarrolladores', href: '/desarrolladores', icon: (<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></>) },
+  {
+    labelKey: 'nav.home',
+    href: '/',
+    icon: (
+      <>
+        <path d="M3 10.8 12 3l9 7.8" />
+        <path d="M5 10v10h5v-6h4v6h5V10" />
+      </>
+    ),
+  },
+  {
+    labelKey: 'nav.howItWorks',
+    href: '#como-funciona',
+  },
+  {
+    labelKey: 'nav.projects',
+    href: '#proyectos',
+    icon: (
+      <>
+        <path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" />
+        <path d="M3 9h18l-1.3 9.2A2 2 0 0 1 17.7 20H6.3a2 2 0 0 1-2-1.8L3 9Z" />
+      </>
+    ),
+  },
+  {
+    labelKey: 'nav.developers',
+    href: '/desarrolladores',
+    icon: (
+      <>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.9" />
+        <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+      </>
+    ),
+  },
 ];
 
 function getNavIcon(href) {
@@ -42,14 +89,24 @@ function getNavIcon(href) {
   return null;
 }
 
-function notificationTime(value) {
+function getLocale(language) {
+  if (language === 'en') return 'en';
+  if (language === 'pt') return 'pt-BR';
+  return 'es';
+}
+
+function notificationTime(value, language = 'es') {
   if (!value) return '';
 
   const created = new Date(value);
   const seconds = Math.round((created.getTime() - Date.now()) / 1000);
+
   if (Number.isNaN(seconds)) return '';
 
-  const formatter = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+  const formatter = new Intl.RelativeTimeFormat(getLocale(language), {
+    numeric: 'auto',
+  });
+
   if (Math.abs(seconds) < 60) return formatter.format(seconds, 'second');
 
   const minutes = Math.round(seconds / 60);
@@ -61,29 +118,67 @@ function notificationTime(value) {
   return formatter.format(Math.round(hours / 24), 'day');
 }
 
+function moduleFallbackTitle(modulo) {
+  return {
+    proyectos: 'Proyectos',
+    eventos: 'Eventos',
+    administracion: 'Administracion',
+  }[modulo] || modulo || 'Notificaciones';
+}
+
+function getNotificationTitle(notification) {
+  return notification?.grupo_titulo
+    || notification?.titulo
+    || moduleFallbackTitle(notification?.modulo);
+}
+
 export default function Navbar() {
+  const { t, language } = useLanguage();
   const BASE_URL = process.env.REACT_APP_API_URL;
-  const [scrolled,      setScrolled]      = useState(false);
-  const [mobileOpen,    setMobileOpen]    = useState(false);
-  const [notifOpen,     setNotifOpen]     = useState(false);
-  const [userMenuOpen,  setUserMenuOpen]  = useState(false);
-  const [user,          setUser]          = useState(null);
-  /* NUEVO: controla el modal de confirmación de logout */
-  const [logoutModal,   setLogoutModal]   = useState(false);
-  const [loggingOut,    setLoggingOut]    = useState(false);
-  const [notifications, setNotifications] = useState([]);
+
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [logoutModal, setLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [notificationModules, setNotificationModules] = useState([]);
+  const [notificationDetail, setNotificationDetail] = useState(null);
+  const [notificationMessages, setNotificationMessages] = useState([]);
+  const [notifLevel, setNotifLevel] = useState('modules');
+  const [selectedNotificationModule, setSelectedNotificationModule] = useState(null);
+  const [selectedNotificationGroup, setSelectedNotificationGroup] = useState(null);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+
   const notifRef = useRef(null);
-  const userRef  = useRef(null);
+  const userRef = useRef(null);
+
   const userId = user?.id_usuario || user?.id || user?.idUsuario;
+  const dashboardHomePath = getDashboardHomePath();
+  const adminUser = isAdminUser(user);
+
+  const applyModulesPayload = useCallback((payload) => {
+    const modules = Array.isArray(payload?.data) ? payload.data : [];
+
+    setNotificationModules(modules);
+    setUnreadNotifications(Number(payload?.total) || modules.reduce(
+      (total, item) => total + Number(item.cantidad || 0),
+      0
+    ));
+  }, []);
 
   const loadNotifications = useCallback(async ({ silent = false } = {}) => {
     if (!userId) {
-      setNotifications([]);
+      setNotificationModules([]);
+      setNotificationDetail(null);
+      setNotificationMessages([]);
       setUnreadNotifications(0);
       setNotificationsError('');
+      setNotifLevel('modules');
       return;
     }
 
@@ -93,44 +188,57 @@ export default function Navbar() {
     }
 
     try {
-      const data = await fetchNotifications();
-      setNotifications(data.notifications);
-      setUnreadNotifications(data.unread);
+      const data = await fetchNotificationModules();
+      applyModulesPayload(data);
       setNotificationsError('');
     } catch (err) {
       if (!silent) {
-        setNotificationsError(err.message || 'No se pudieron cargar las notificaciones.');
+        setNotificationsError(err.message || t('nav.notificationsLoadError'));
       }
     } finally {
       if (!silent) {
         setNotificationsLoading(false);
       }
     }
-  }, [userId]);
+  }, [applyModulesPayload, userId, t]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
+
     window.addEventListener('scroll', onScroll, { passive: true });
+
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
-    const onResize = () => { if (window.innerWidth >= 768) setMobileOpen(false); };
+    const onResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+
     window.addEventListener('resize', onResize);
+
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
   useEffect(() => {
-    const onClick = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
-      if (userRef.current  && !userRef.current.contains(e.target))  setUserMenuOpen(false);
+    const onClick = (event) => {
+      if (!notificationCenterOpen && notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false);
+      }
+
+      if (userRef.current && !userRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
     };
+
     document.addEventListener('mousedown', onClick);
+
     return () => document.removeEventListener('mousedown', onClick);
-  }, []);
+  }, [notificationCenterOpen]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
     setUser(getStoredUser());
   }, []);
 
@@ -140,17 +248,16 @@ export default function Navbar() {
       return;
     }
 
-    const cached = getCachedNotifications();
+    const cached = getCachedNotificationModules();
 
     if (cached) {
-      setNotifications(cached.notifications);
-      setUnreadNotifications(cached.unread);
+      applyModulesPayload(cached);
       setNotificationsLoading(false);
       setNotificationsError('');
     }
 
     loadNotifications({ silent: Boolean(cached) });
-  }, [userId, loadNotifications]);
+  }, [applyModulesPayload, userId, loadNotifications]);
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -161,7 +268,11 @@ export default function Navbar() {
       }
     };
 
-    const intervalId = window.setInterval(refreshWhenVisible, NOTIFICATIONS_REFRESH_MS);
+    const intervalId = window.setInterval(
+      refreshWhenVisible,
+      NOTIFICATIONS_REFRESH_MS
+    );
+
     document.addEventListener('visibilitychange', refreshWhenVisible);
 
     return () => {
@@ -171,23 +282,144 @@ export default function Navbar() {
   }, [userId, loadNotifications]);
 
   const handleNotificationToggle = () => {
-    if (!notifOpen) loadNotifications({ silent: notifications.length > 0 });
+    if (!notifOpen) loadNotifications({ silent: notificationModules.length > 0 });
     setNotifOpen((open) => !open);
   };
 
+  const handleNotificationCenterOpen = () => {
+    setNotificationsError('');
+    setNotifOpen(false);
+    setNotificationCenterOpen(true);
+  };
+
+  const refreshNotificationModules = useCallback(async () => {
+    const data = await fetchNotificationModules({ force: true });
+    applyModulesPayload(data);
+    return data;
+  }, [applyModulesPayload]);
+
+  const handleNotificationBack = () => {
+    setNotificationsError('');
+
+    if (notifLevel === 'messages') {
+      setNotificationMessages([]);
+      setSelectedNotificationGroup(null);
+      setNotifLevel('detail');
+      return;
+    }
+
+    setNotificationDetail(null);
+    setSelectedNotificationModule(null);
+    setNotifLevel('modules');
+  };
+
+  const handleNotificationModuleOpen = async (moduleItem) => {
+    setSelectedNotificationModule(moduleItem);
+    setSelectedNotificationGroup(null);
+    setNotificationMessages([]);
+    setNotificationsError('');
+    setNotificationsLoading(true);
+
+    try {
+      const detail = await fetchNotificationModuleDetail(moduleItem.modulo);
+      setNotificationDetail(detail);
+      setNotifLevel('detail');
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsLoadError'));
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const handleNotificationGroupOpen = async (group) => {
+    if (!selectedNotificationModule) return;
+
+    setSelectedNotificationGroup(group);
+    setNotificationsError('');
+    setNotificationsLoading(true);
+
+    try {
+      const payload = await fetchNotificationGroupMessages(
+        selectedNotificationModule.modulo,
+        group.contexto_referencia
+      );
+
+      setNotificationMessages(Array.isArray(payload.data) ? payload.data : []);
+      setNotifLevel('messages');
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsLoadError'));
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const refreshCurrentNotificationPanel = async () => {
+    await refreshNotificationModules();
+
+    if (!selectedNotificationModule) return;
+
+    const detail = await fetchNotificationModuleDetail(
+      selectedNotificationModule.modulo,
+      { force: true }
+    );
+
+    setNotificationDetail(detail);
+
+    if (notifLevel === 'messages' && selectedNotificationGroup) {
+      const payload = await fetchNotificationGroupMessages(
+        selectedNotificationModule.modulo,
+        selectedNotificationGroup.contexto_referencia,
+        { force: true }
+      );
+
+      setNotificationMessages(Array.isArray(payload.data) ? payload.data : []);
+    }
+  };
+
   const handleNotificationRead = async (notification) => {
-    if (notification.leida_en) return;
+    if (notification.leida_en || notification.leido_en) return;
 
     try {
       const response = await markNotificationAsRead(notification.id_notificacion);
-      setNotifications((current) => current.map((item) => (
-        item.id_notificacion === notification.id_notificacion
-          ? { ...item, leida_en: response.data?.leida_en || new Date().toISOString() }
-          : item
-      )));
       setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
+      await refreshCurrentNotificationPanel();
     } catch (err) {
-      setNotificationsError(err.message || 'No se pudo marcar la notificacion.');
+      setNotificationsError(err.message || t('nav.notificationReadError'));
+    }
+  };
+
+  const handleModuleNotificationsRead = async () => {
+    if (!selectedNotificationModule) return;
+
+    try {
+      const response = await markNotificationModuleAsRead(selectedNotificationModule.modulo);
+      setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
+      await refreshNotificationModules();
+      setNotificationDetail(null);
+      setNotificationMessages([]);
+      setSelectedNotificationModule(null);
+      setSelectedNotificationGroup(null);
+      setNotifLevel('modules');
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsMarkError'));
+    }
+  };
+
+  const handleGroupNotificationsRead = async () => {
+    if (!selectedNotificationModule || !selectedNotificationGroup) return;
+
+    try {
+      const response = await markNotificationGroupAsRead(
+        selectedNotificationModule.modulo,
+        selectedNotificationGroup.contexto_referencia
+      );
+      setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
+      await refreshCurrentNotificationPanel();
+      setNotifLevel('detail');
+      setNotificationMessages([]);
+      setSelectedNotificationGroup(null);
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsMarkError'));
     }
   };
 
@@ -196,55 +428,70 @@ export default function Navbar() {
 
     try {
       await markAllNotificationsAsRead();
-      const readAt = new Date().toISOString();
-      setNotifications((current) => current.map((item) => ({ ...item, leida_en: item.leida_en || readAt })));
+      setNotificationModules((current) => current.map((item) => ({ ...item, cantidad: 0 })));
+      setNotificationDetail(null);
+      setNotificationMessages([]);
+      setSelectedNotificationModule(null);
+      setSelectedNotificationGroup(null);
+      setNotifLevel('modules');
       setUnreadNotifications(0);
     } catch (err) {
-      setNotificationsError(err.message || 'No se pudieron marcar las notificaciones.');
+      setNotificationsError(err.message || t('nav.notificationsMarkError'));
     }
   };
 
-  /* ── Ejecuta el logout real (solo desde el modal) ── */
   const doLogout = async () => {
     setLoggingOut(true);
+
     const token = localStorage.getItem('tokenPORT');
+
     try {
       await fetch(`${BASE_URL}/auth/logout`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
     } catch (err) {
       console.error('Error al intentar cerrar sesión:', err);
     }
+
     clearNotificationsCache();
     clearAuthStorage();
+
     window.location.href = '/';
   };
 
-  /* ── Abre el modal en vez de cerrar sesión directamente ── */
   const handleLogoutClick = () => {
     setUserMenuOpen(false);
     setMobileOpen(false);
     setLogoutModal(true);
   };
 
-  const userName = user ? `${user.nombre || user.name || 'Usuario'} ${user.apellido || ''}`.trim() : '';
+  const userName = user
+    ? `${user.nombre || user.name || t('nav.user')} ${user.apellido || ''}`.trim()
+    : '';
+
   const initials = user
     ? [user.nombre || user.name || 'U', user.apellido || user.lastName || '']
-        .map(name => String(name || ' ').trim().slice(0, 1).toUpperCase())
-        .join('').padEnd(2, 'U')
+        .map((name) => String(name || ' ').trim().slice(0, 1).toUpperCase())
+        .join('')
+        .padEnd(2, 'U')
     : 'U';
-  const isAdmin = isAdminUser(user);
-  const rawUserRole = user?.rol || user?.role || (isAdmin ? 'admin' : 'usuario');
-  const userRole = isAdmin
-    ? 'Administrador'
-    : String(rawUserRole || 'Usuario').replace(/^usuario$/i, 'Usuario');
-  const dashboardPath = getDashboardHomePath(user);
-  const profilePath = isAdmin ? '/admin/profile' : '/dashboard/profile';
-  const settingsPath = isAdmin ? '/admin/settings' : '/dashboard/settings';
-  const accountAreaLabel = isAdmin ? 'Sistema' : 'Portafolio';
-  const managementLabel = isAdmin ? 'Gestion del sistema' : 'Gestionar portafolio';
-  const mobileManagementLabel = isAdmin ? 'Gestion del sistema' : 'Mi portafolio';
+
+  const userRole = user?.rol || user?.role || t('nav.user');
+  const notifLevelIndex = {
+    modules: 0,
+    detail: 1,
+    messages: 2,
+  }[notifLevel] || 0;
+  const detailItems = Array.isArray(notificationDetail?.data) ? notificationDetail.data : [];
+  const detailIsDirectMessages = notificationDetail?.tipo_vista === 'mensajes_directos';
+  const notificationPanelTitle = notifLevel === 'messages'
+    ? (selectedNotificationGroup?.titulo || t('nav.notifications'))
+    : notifLevel === 'detail'
+      ? (selectedNotificationModule?.titulo || moduleFallbackTitle(selectedNotificationModule?.modulo))
+      : t('nav.notifications');
 
   return (
     <>
@@ -305,13 +552,31 @@ export default function Navbar() {
         .spk-bell:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.35); }
         .spk-bell svg { width: 16px; height: 16px; stroke: rgba(255,255,255,.86); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
         .spk-bell-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--rojo-soft, #ef4444); border: 1.5px solid var(--azul, #0077b7); pointer-events: none; }
-        .spk-notif-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 320px; background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.13); overflow: hidden; animation: fadeUp .18s ease both; z-index: 300; }
-        .spk-notif-header { padding: 11px 16px; border-bottom: 1px solid #d1d5db; font-size: 12px; font-weight: 700; color: #111827; display: flex; justify-content: space-between; align-items: center; }
-        .spk-notif-clear { font-size: 10px; color: #0077b7; font-weight: 500; cursor: pointer; background: none; border: none; padding: 0; transition: color .12s; }
+        .spk-notif-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 340px; max-width: calc(100vw - 28px); background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.13); overflow: hidden; animation: fadeUp .18s ease both; z-index: 300; }
+        .spk-notif-header { min-height: 46px; padding: 10px 12px; border-bottom: 1px solid #d1d5db; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .spk-notif-titlebar { display: flex; align-items: center; gap: 7px; min-width: 0; }
+        .spk-notif-heading { font-size: 12px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .spk-notif-back { width: 25px; height: 25px; border-radius: 6px; border: 1px solid #d1d5db; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #374151; }
+        .spk-notif-back:hover { background: #f3f4f6; color: #111827; }
+        .spk-notif-back svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .spk-notif-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .spk-notif-clear { font-size: 10px; color: #0077b7; font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; transition: color .12s; white-space: nowrap; }
         .spk-notif-clear:hover { color: #005f95; }
         .spk-notif-clear:disabled { color: #9ca3af; cursor: default; }
-        .spk-notif-list { max-height: 330px; overflow-y: auto; }
-        .spk-notif-item { width: 100%; padding: 11px 16px; border: none; border-bottom: 1px solid #f0ede8; background: #ffffff; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background .12s; text-align: left; }
+        .spk-notif-frame { overflow: hidden; }
+        .spk-notif-slider { display: flex; width: 300%; transform: translateX(calc(var(--notif-level, 0) * -33.333%)); transition: transform .22s ease; }
+        .spk-notif-panel { width: 33.333%; flex-shrink: 0; display: flex; flex-direction: column; min-height: 210px; max-height: min(390px, calc(100vh - 96px)); }
+        .spk-notif-list { overflow-y: auto; flex: 1; }
+        .spk-notif-row { width: 100%; padding: 11px 13px; border: none; border-bottom: 1px solid #f0ede8; background: #ffffff; display: flex; gap: 10px; align-items: center; cursor: pointer; transition: background .12s; text-align: left; }
+        .spk-notif-row:hover { background: #e8f4fb; }
+        .spk-notif-row:disabled { cursor: default; opacity: .62; }
+        .spk-notif-row:disabled:hover { background: #ffffff; }
+        .spk-notif-row-main { min-width: 0; flex: 1; }
+        .spk-notif-row-title { font-size: 12px; color: #111827; font-weight: 700; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .spk-notif-row-meta { font-size: 10px; color: #6b7280; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .spk-notif-count { min-width: 24px; height: 22px; border-radius: 999px; background: #e8f4fb; color: #005f95; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; padding: 0 7px; }
+        .spk-notif-chevron { width: 14px; height: 14px; stroke: #9ca3af; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        .spk-notif-item { width: 100%; padding: 11px 13px; border: none; border-bottom: 1px solid #f0ede8; background: #ffffff; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background .12s; text-align: left; }
         .spk-notif-item:last-child { border-bottom: none; }
         .spk-notif-item:hover { background: #e8f4fb; }
         .spk-notif-item.unread { background: #f8fcff; }
@@ -321,8 +586,10 @@ export default function Navbar() {
         .spk-notif-title { font-size: 12px; color: #111827; font-weight: 600; line-height: 1.35; margin-bottom: 2px; }
         .spk-notif-text { font-size: 12px; color: #374151; line-height: 1.5; text-align: left; }
         .spk-notif-time { font-size: 10px; color: #6b7280; font-family: var(--mono, monospace); margin-top: 2px; }
-        .spk-notif-empty { padding: 20px 16px; color: #6b7280; font-size: 12px; text-align: center; }
+        .spk-notif-empty { padding: 22px 16px; color: #6b7280; font-size: 12px; text-align: center; }
         .spk-notif-empty.error { color: #c94040; }
+        .spk-notif-footer { padding: 9px 12px; border-top: 1px solid #f0ede8; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fafafa; }
+        .spk-notif-footnote { font-size: 10px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .spk-nav-divider { width: 1px; height: 18px; background: rgba(255,255,255,.15); }
         .spk-btn-login { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.82); background: transparent; border: 1px solid rgba(255,255,255,.22); padding: 7px 16px; border-radius: 6px; cursor: pointer; transition: all .15s; white-space: nowrap; }
         .spk-btn-login:hover { border-color: rgba(255,255,255,.55); color: #ffffff; background: rgba(255,255,255,.08); }
@@ -340,146 +607,433 @@ export default function Navbar() {
         .spk-mobile-link-icon { width: 17px; height: 17px; flex-shrink: 0; stroke-linecap: round; stroke-linejoin: round; }
         .spk-mobile-links a:hover { color: #ffffff; background: rgba(255,255,255,.1); }
         .spk-mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
-        .spk-mobile-actions .spk-btn-login, .spk-mobile-actions .spk-btn-register { flex: 1; justify-content: center; }
+        .spk-mobile-actions .spk-btn-login,
+        .spk-mobile-actions .spk-btn-register {
+          flex: 1;
+          justify-content: center;
+        }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 900px) { .spk-nav { padding: 0 24px; padding-bottom: 3px; } .spk-nav-tagline, .spk-nav-sep { display: none; } }
-        @media (max-width: 768px) { .spk-nav-links, .spk-nav-right { display: none; } .spk-hamburger { display: flex; } }
+        @media (max-width: 900px) {
+          .spk-nav { padding: 0 24px; padding-bottom: 3px; }
+          .spk-nav-tagline,
+          .spk-nav-sep {
+            display: none;
+          }
+        }
+        @media (max-width: 768px) {
+          .spk-nav-links,
+          .spk-nav-right {
+            display: none;
+          }
+
+          .spk-hamburger {
+            display: flex;
+          }
+        }
       `}</style>
 
-      {/* ── NAVBAR ── */}
       <nav className={`spk-nav${scrolled ? ' scrolled' : ''}`}>
-
         <a href="/" className="spk-nav-logo">
           <img src="/img/logo.png" width="130" height="38" alt="CreaFolio" />
         </a>
+
         <div className="spk-nav-sep" />
+
         <span className="spk-nav-tagline">CreaFolio</span>
 
         <ul className="spk-nav-links">
-          {NAV_LINKS.map(({ label, href, icon }) => (
-            <li key={label}>
+          {NAV_LINKS.map(({ labelKey, href, icon }) => (
+            <li key={href}>
               <a href={href}>
                 <svg className="spk-nav-link-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
                   {icon || getNavIcon(href)}
                 </svg>
-                <span>{label}</span>
+                <span>{t(labelKey)}</span>
               </a>
             </li>
           ))}
         </ul>
 
         <div className="spk-nav-right">
-
           {user && (
             <>
               <div className="spk-bell-wrap" ref={notifRef}>
-                <button className="spk-bell" type="button" title="Notificaciones" onClick={handleNotificationToggle}>
+                <button
+                  className="spk-bell"
+                  type="button"
+                  title={t('nav.notifications')}
+                  onClick={handleNotificationToggle}
+                >
                   <svg viewBox="0 0 24 24">
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
                     <path d="M10 20a2.3 2.3 0 0 0 4 0" />
                   </svg>
+
                   {unreadNotifications > 0 && <div className="spk-bell-dot" />}
                 </button>
+
                 {notifOpen && (
                   <div className="spk-notif-dropdown">
                     <div className="spk-notif-header">
-                      Notificaciones
-                      <button
-                        className="spk-notif-clear"
-                        type="button"
-                        disabled={notificationsLoading || unreadNotifications === 0}
-                        onClick={handleAllNotificationsRead}
-                      >
-                        Marcar leidas
-                      </button>
-                    </div>
-                    {notificationsLoading && (
-                      <div className="spk-notif-empty">Cargando notificaciones...</div>
-                    )}
-                    {!notificationsLoading && notificationsError && (
-                      <div className="spk-notif-empty error">{notificationsError}</div>
-                    )}
-                    {!notificationsLoading && !notificationsError && notifications.length === 0 && (
-                      <div className="spk-notif-empty">No tienes notificaciones.</div>
-                    )}
-                    {!notificationsLoading && !notificationsError && notifications.length > 0 && (
-                      <div className="spk-notif-list">
-                        {notifications.map((notification) => (
+                      <div className="spk-notif-titlebar">
+                        {notifLevel !== 'modules' && (
                           <button
-                            className={`spk-notif-item${notification.leida_en ? '' : ' unread'}`}
-                            key={notification.id_notificacion}
+                            className="spk-notif-back"
                             type="button"
-                            onClick={() => handleNotificationRead(notification)}
+                            onClick={handleNotificationBack}
+                            aria-label={t('nav.back')}
                           >
-                            <div className={`spk-notif-ico${notification.leida_en ? ' read' : ''}`} />
-                            <div>
-                              <div className="spk-notif-title">{notification.titulo}</div>
-                              {notification.contenido && (
-                                <div className="spk-notif-text">{notification.contenido}</div>
-                              )}
-                              <div className="spk-notif-time">{notificationTime(notification.created_at)}</div>
-                            </div>
+                            <svg viewBox="0 0 24 24">
+                              <path d="m15 18-6-6 6-6" />
+                            </svg>
                           </button>
-                        ))}
+                        )}
+
+                        <span className="spk-notif-heading">
+                          {notificationPanelTitle}
+                        </span>
+                      </div>
+
+                      <div className="spk-notif-actions">
+                        <button
+                          className="spk-notif-clear"
+                          type="button"
+                          onClick={handleNotificationCenterOpen}
+                        >
+                          {t('nav.viewAll')}
+                        </button>
+
+                        <button
+                          className="spk-notif-clear"
+                          type="button"
+                          disabled={notificationsLoading || unreadNotifications === 0}
+                          onClick={handleAllNotificationsRead}
+                        >
+                          {t('nav.markRead')}
+                        </button>
+                      </div>
+                    </div>
+
+                    {notificationsError && (
+                      <div className="spk-notif-empty error">
+                        {notificationsError}
                       </div>
                     )}
+
+                    <div className="spk-notif-frame">
+                      <div
+                        className="spk-notif-slider"
+                        style={{ '--notif-level': notifLevelIndex }}
+                      >
+                        <div className="spk-notif-panel">
+                          {notificationsLoading && notifLevel === 'modules' && (
+                            <div className="spk-notif-empty">
+                              {t('nav.loadingNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationModules.length === 0 && (
+                            <div className="spk-notif-empty">
+                              {t('nav.noNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationModules.length > 0 && (
+                            <div className="spk-notif-list">
+                              {notificationModules.map((moduleItem) => (
+                                <button
+                                  className="spk-notif-row"
+                                  key={moduleItem.modulo}
+                                  type="button"
+                                  disabled={!Number(moduleItem.cantidad)}
+                                  onClick={() => handleNotificationModuleOpen(moduleItem)}
+                                >
+                                  <div className="spk-notif-row-main">
+                                    <div className="spk-notif-row-title">
+                                      {moduleItem.titulo || moduleFallbackTitle(moduleItem.modulo)}
+                                    </div>
+                                    <div className="spk-notif-row-meta">
+                                      {Number(moduleItem.cantidad || 0)} {t('nav.pendingNotifications')}
+                                    </div>
+                                  </div>
+
+                                  <span className="spk-notif-count">
+                                    {Number(moduleItem.cantidad || 0)}
+                                  </span>
+
+                                  <svg className="spk-notif-chevron" viewBox="0 0 24 24">
+                                    <path d="m9 18 6-6-6-6" />
+                                  </svg>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="spk-notif-panel">
+                          {notificationsLoading && notifLevel === 'detail' && (
+                            <div className="spk-notif-empty">
+                              {t('nav.loadingNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && detailItems.length === 0 && (
+                            <div className="spk-notif-empty">
+                              {t('nav.noNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && detailItems.length > 0 && (
+                            <div className="spk-notif-list">
+                              {detailIsDirectMessages ? detailItems.map((notification) => (
+                                <button
+                                  className="spk-notif-item unread"
+                                  key={notification.id_notificacion}
+                                  type="button"
+                                  onClick={() => handleNotificationRead(notification)}
+                                >
+                                  <div className="spk-notif-ico" />
+
+                                  <div>
+                                    <div className="spk-notif-title">
+                                      {getNotificationTitle(notification)}
+                                    </div>
+
+                                    {notification.contenido && (
+                                      <div className="spk-notif-text">
+                                        {notification.contenido}
+                                      </div>
+                                    )}
+
+                                    <div className="spk-notif-time">
+                                      {notificationTime(notification.created_at, language)}
+                                    </div>
+                                  </div>
+                                </button>
+                              )) : detailItems.map((group) => (
+                                <button
+                                  className="spk-notif-row"
+                                  key={group.contexto_referencia}
+                                  type="button"
+                                  onClick={() => handleNotificationGroupOpen(group)}
+                                >
+                                  <div className="spk-notif-row-main">
+                                    <div className="spk-notif-row-title">
+                                      {group.titulo || t('nav.ungroupedNotifications')}
+                                    </div>
+                                    <div className="spk-notif-row-meta">
+                                      {Number(group.cantidad || 0)} {t('nav.pendingNotifications')}
+                                    </div>
+                                  </div>
+
+                                  <span className="spk-notif-count">
+                                    {Number(group.cantidad || 0)}
+                                  </span>
+
+                                  <svg className="spk-notif-chevron" viewBox="0 0 24 24">
+                                    <path d="m9 18 6-6-6-6" />
+                                  </svg>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {selectedNotificationModule && Number(selectedNotificationModule.cantidad || 0) > 0 && (
+                            <div className="spk-notif-footer">
+                              <span className="spk-notif-footnote">
+                                {selectedNotificationModule.titulo || moduleFallbackTitle(selectedNotificationModule.modulo)}
+                              </span>
+                              <button
+                                className="spk-notif-clear"
+                                type="button"
+                                onClick={handleModuleNotificationsRead}
+                              >
+                                {t('nav.markModuleRead')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="spk-notif-panel">
+                          {notificationsLoading && notifLevel === 'messages' && (
+                            <div className="spk-notif-empty">
+                              {t('nav.loadingNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationMessages.length === 0 && (
+                            <div className="spk-notif-empty">
+                              {t('nav.noNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationMessages.length > 0 && (
+                            <div className="spk-notif-list">
+                              {notificationMessages.map((notification) => (
+                                <button
+                                  className="spk-notif-item unread"
+                                  key={notification.id_notificacion}
+                                  type="button"
+                                  onClick={() => handleNotificationRead(notification)}
+                                >
+                                  <div className="spk-notif-ico" />
+
+                                  <div>
+                                    <div className="spk-notif-title">
+                                      {getNotificationTitle(notification)}
+                                    </div>
+
+                                    {notification.contenido && (
+                                      <div className="spk-notif-text">
+                                        {notification.contenido}
+                                      </div>
+                                    )}
+
+                                    <div className="spk-notif-time">
+                                      {notificationTime(notification.created_at, language)}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {selectedNotificationGroup && (
+                            <div className="spk-notif-footer">
+                              <span className="spk-notif-footnote">
+                                {selectedNotificationGroup.titulo || t('nav.ungroupedNotifications')}
+                              </span>
+                              <button
+                                className="spk-notif-clear"
+                                type="button"
+                                onClick={handleGroupNotificationsRead}
+                              >
+                                {t('nav.markGroupRead')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-
-              <div className="spk-nav-divider" />
             </>
           )}
 
+          <LanguageSelector />
+
+          <div className="spk-nav-divider" />
+
           {user ? (
             <div className={`spk-nav-user${userMenuOpen ? ' open' : ''}`} ref={userRef}>
-              <button className="spk-user-toggle" type="button" onClick={() => setUserMenuOpen(v => !v)}>
+              <button
+                className="spk-user-toggle"
+                type="button"
+                onClick={() => setUserMenuOpen((open) => !open)}
+              >
                 <div className="spk-user-avatar">{initials}</div>
+
                 <div className="spk-user-info">
                   <div className="spk-user-name">{userName}</div>
                   <div className="spk-user-role">{userRole}</div>
                 </div>
+
                 <svg className="spk-user-chevron" viewBox="0 0 14 14">
                   <path d="m3 5 4 4 4-4" />
                 </svg>
               </button>
 
               {userMenuOpen && (
-                <div className="spk-user-dropdown" onClick={(e) => e.stopPropagation()}>
+                <div className="spk-user-dropdown" onClick={(event) => event.stopPropagation()}>
                   <div className="spk-dd-header">
                     <div className="spk-dd-avatar">{initials}</div>
+
                     <div>
-                      <div className="spk-dd-name">{userName || 'Usuario'}</div>
-                      <div className="spk-dd-email">{user?.correo || user?.email || '---'}</div>
+                      <div className="spk-dd-name">
+                        {userName || t('nav.user')}
+                      </div>
+
+                      <div className="spk-dd-email">
+                        {user?.correo || user?.email || '---'}
+                      </div>
+
                       <div className="spk-dd-status">
-                        <span className="spk-dd-status-dot" />Perfil activo
+                        <span className="spk-dd-status-dot" />
+                        {t('nav.activeProfile')}
                       </div>
                     </div>
                   </div>
+
                   <div className="spk-dd-section">
-                    <div className="spk-dd-label">Mi cuenta</div>
-                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = profilePath; }}>
-                      <svg viewBox="0 0 24 24"><path d="M19 21a7 7 0 0 0-14 0" /><circle cx="12" cy="8" r="4" /></svg>
-                      Ver mi perfil
+                    <div className="spk-dd-label">{t('nav.account')}</div>
+
+                    <button
+                      className="spk-dd-item"
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        window.location.href = adminUser ? '/admin/users' : '/dashboard/profile';
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path d="M19 21a7 7 0 0 0-14 0" />
+                        <circle cx="12" cy="8" r="4" />
+                      </svg>
+                      {t('nav.viewProfile')}
                     </button>
-                    <button className="spk-dd-item" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = settingsPath; }}>
-                      <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" /></svg>
-                      Configuración
+
+                    <button
+                      className="spk-dd-item"
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        window.location.href = adminUser ? '/admin' : '/dashboard/settings';
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
+                      </svg>
+                      {t('nav.settings')}
                     </button>
                   </div>
+
                   <div className="spk-dd-section">
-                    <div className="spk-dd-label">{accountAreaLabel}</div>
-                    <button className="spk-dd-item highlight" type="button" onClick={() => { setUserMenuOpen(false); window.location.href = dashboardPath; }}>
-                      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 18v3" /><path d="M8 11s1.4-3 4-3 4 3 4 3-1.4 3-4 3-4-3-4-3Z" /><circle cx="12" cy="11" r="1" /></svg>
-                      {managementLabel}
+                    <div className="spk-dd-label">{t('nav.portfolio')}</div>
+
+                    <button
+                      className="spk-dd-item highlight"
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        window.location.href = dashboardHomePath || '/dashboard';
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <rect x="3" y="4" width="18" height="14" rx="2" />
+                        <path d="M8 21h8" />
+                        <path d="M12 18v3" />
+                        <path d="M8 11s1.4-3 4-3 4 3 4 3-1.4 3-4 3-4-3-4-3Z" />
+                        <circle cx="12" cy="11" r="1" />
+                      </svg>
+                      {adminUser ? t('nav.adminPanel') : t('nav.managePortfolio')}
                     </button>
                   </div>
+
                   <div className="spk-dd-section">
-                    {/* CAMBIO: abre modal en vez de cerrar sesión directo */}
-                    <button className="spk-dd-item danger" type="button" onClick={handleLogoutClick}>
-                      <svg viewBox="0 0 24 24"><path d="M10 17 15 12 10 7" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-5" /></svg>
-                      Cerrar sesión
+                    <button
+                      className="spk-dd-item danger"
+                      type="button"
+                      onClick={handleLogoutClick}
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path d="M10 17 15 12 10 7" />
+                        <path d="M15 12H3" />
+                        <path d="M21 19V5a2 2 0 0 0-2-2h-5" />
+                      </svg>
+                      {t('nav.logout')}
                     </button>
                   </div>
                 </div>
@@ -487,54 +1041,127 @@ export default function Navbar() {
             </div>
           ) : (
             <>
-              <button className="spk-btn-login" onClick={() => window.location.href = "/auth/login"}>Iniciar sesión</button>
-              <button className="spk-btn-register" onClick={() => window.location.href = "/auth/register"}>Registrarse</button>
+              <button
+                className="spk-btn-login"
+                type="button"
+                onClick={() => {
+                  window.location.href = '/auth/login';
+                }}
+              >
+                {t('nav.login')}
+              </button>
+
+              <button
+                className="spk-btn-register"
+                type="button"
+                onClick={() => {
+                  window.location.href = '/auth/register';
+                }}
+              >
+                {t('nav.register')}
+              </button>
             </>
           )}
         </div>
 
-        <button className={`spk-hamburger${mobileOpen ? ' open' : ''}`} onClick={() => setMobileOpen(v => !v)} aria-label="Abrir menú">
-          <span /><span /><span />
+        <button
+          className={`spk-hamburger${mobileOpen ? ' open' : ''}`}
+          type="button"
+          onClick={() => setMobileOpen((open) => !open)}
+          aria-label={t('nav.openMenu')}
+        >
+          <span />
+          <span />
+          <span />
         </button>
       </nav>
 
-      {/* ── MENÚ MÓVIL ── */}
       {mobileOpen && (
         <div className="spk-mobile-menu">
           <div className="spk-mobile-links">
-            {NAV_LINKS.map(({ label, href, icon }) => (
-              <a key={label} href={href} onClick={() => setMobileOpen(false)}>
+            {NAV_LINKS.map(({ labelKey, href, icon }) => (
+              <a
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+              >
                 <svg className="spk-mobile-link-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
                   {icon || getNavIcon(href)}
                 </svg>
-                <span>{label}</span>
+                <span>{t(labelKey)}</span>
               </a>
             ))}
           </div>
+
+          <div style={{ marginBottom: '12px' }}>
+            <LanguageSelector mobile />
+          </div>
+
           <div className="spk-mobile-actions">
             {user ? (
               <>
-                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = dashboardPath; }}>{mobileManagementLabel}</button>
-                {/* CAMBIO: también abre modal desde móvil */}
-                <button className="spk-btn-register" onClick={handleLogoutClick}>Cerrar sesión</button>
+                <button
+                  className="spk-btn-login"
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.location.href = dashboardHomePath || '/dashboard';
+                  }}
+                >
+                  {adminUser ? t('nav.adminPanel') : t('nav.myPortfolio')}
+                </button>
+
+                <button
+                  className="spk-btn-register"
+                  type="button"
+                  onClick={handleLogoutClick}
+                >
+                  {t('nav.logout')}
+                </button>
               </>
             ) : (
               <>
-                <button className="spk-btn-login" onClick={() => { setMobileOpen(false); window.location.href = "/auth/login"; }}>Iniciar sesión</button>
-                <button className="spk-btn-register" onClick={() => { setMobileOpen(false); window.location.href = "/auth/register"; }}>Registrarse</button>
+                <button
+                  className="spk-btn-login"
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.location.href = '/auth/login';
+                  }}
+                >
+                  {t('nav.login')}
+                </button>
+
+                <button
+                  className="spk-btn-register"
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.location.href = '/auth/register';
+                  }}
+                >
+                  {t('nav.register')}
+                </button>
               </>
             )}
           </div>
         </div>
       )}
 
-      {/* ── Modal de confirmación de cierre de sesión ── */}
+      <CalendarPanel enabled={!!user} />
+
+      <NotificationCenterModal
+        open={notificationCenterOpen}
+        onClose={() => setNotificationCenterOpen(false)}
+        onChanged={() => loadNotifications({ silent: true })}
+      />
+
       <ConfirmModal
         open={logoutModal}
-        title="¿Cerrar sesión?"
-        message="Tu sesión se cerrará y tendrás que volver a iniciar sesión para acceder a tu portafolio."
-        confirmLabel="Sí, cerrar sesión"
-        cancelLabel="Cancelar"
+        title={t('nav.logoutTitle')}
+        message={t('nav.logoutMessage')}
+        confirmLabel={t('nav.logoutConfirm')}
+        cancelLabel={t('nav.cancel')}
         variant="red"
         icon="logout"
         loading={loggingOut}

@@ -1,23 +1,34 @@
-const FOOTER_LINKS = {
-  Plataforma: [
-    { label: 'Explorar desarrolladores', href: '#' },
-    { label: 'Proyectos trending',        href: '#' },
-    { label: 'Cómo funciona',             href: '#' },
-    { label: 'Empresas',                  href: '#' },
-  ],
-  Desarrolladores: [
-    { label: 'Crear portafolio', href: '#' },
-    { label: 'Mi perfil',        href: '#' },
-    { label: 'Mis proyectos',    href: '#' },
-    { label: 'Vista pública',    href: '#' },
-  ],
-  Legal: [
-    { label: 'Sobre nosotros',  href: '#' },
-    { label: 'Términos de uso', href: '#' },
-    { label: 'Privacidad',      href: '#' },
-    { label: 'Contacto',        href: '#' },
-  ],
-};
+import { useLanguage } from '../../../core/i18n';
+
+const FOOTER_LINKS = [
+  {
+    titleKey: 'footer.platform.title',
+    links: [
+      { labelKey: 'footer.platform.exploreDevelopers', href: '#' },
+      { labelKey: 'footer.platform.trendingProjects', href: '#' },
+      { labelKey: 'footer.platform.howItWorks', href: '#' },
+      { labelKey: 'footer.platform.companies', href: '#' },
+    ],
+  },
+  {
+    titleKey: 'footer.developers.title',
+    links: [
+      { labelKey: 'footer.developers.createPortfolio', href: '#' },
+      { labelKey: 'footer.developers.myProfile', href: '#' },
+      { labelKey: 'footer.developers.myProjects', href: '#' },
+      { labelKey: 'footer.developers.publicView', href: '#' },
+    ],
+  },
+  {
+    titleKey: 'footer.legal.title',
+    links: [
+      { labelKey: 'footer.legal.about', href: '#' },
+      { labelKey: 'footer.legal.terms', href: '#' },
+      { labelKey: 'footer.legal.privacy', href: '#' },
+      { labelKey: 'footer.legal.contact', href: '#' },
+    ],
+  },
+];
 
 const SOCIALS = [
   {
@@ -51,10 +62,15 @@ const SOCIALS = [
 ];
 
 export default function Footer({ isBackendAvailable = true }) {
+  const { t } = useLanguage();
+
   const platformStatusClass = isBackendAvailable
     ? 'spk-footer-active spk-footer-active-online'
     : 'spk-footer-active spk-footer-active-offline';
-  const platformStatusText = 'Estado del sitio';
+
+  const platformStatusText = isBackendAvailable
+    ? t('footer.status.online')
+    : t('footer.status.offline');
 
   return (
     <>
@@ -462,6 +478,7 @@ export default function Footer({ isBackendAvailable = true }) {
         }
       `}</style>
 
+
       <footer className="spk-footer">
         {/* Fondos decorativos */}
         <div className="spk-footer-grid" />
@@ -471,9 +488,9 @@ export default function Footer({ isBackendAvailable = true }) {
         {/* ── CTA BAND ── */}
         <div className="spk-footer-cta">
           <div className="spk-footer-cta-text">
-            <div className="spk-footer-cta-label">Únete ahora</div>
+            <div className="spk-footer-cta-label">{t('footer.cta.label')}</div>
             <div className="spk-footer-cta-title">
-              Tu próxima oportunidad<br />empieza con un <span>buen portafolio</span>
+              {t('footer.cta.titleLine1')}<br />{t('footer.cta.titleLine2')} <span>{t('footer.cta.titleHighlight')}</span>
             </div>
           </div>
         </div>
@@ -503,7 +520,7 @@ export default function Footer({ isBackendAvailable = true }) {
             </div>
 
             <p className="spk-footer-desc">
-              La vitrina digital para desarrolladores de software bolivianos. Portafolios reales, proyectos reales, conexiones reales.
+              {t('footer.description')}
             </p>
 
             <div className="spk-footer-socials">
@@ -522,12 +539,12 @@ export default function Footer({ isBackendAvailable = true }) {
           </div>
 
           {/* LINK COLUMNS */}
-          {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-            <div key={title}>
-              <div className="spk-footer-col-title">{title}</div>
+          {FOOTER_LINKS.map(({ titleKey, links }) => (
+            <div key={titleKey}>
+              <div className="spk-footer-col-title">{t(titleKey)}</div>
               <div className="spk-footer-col-links">
-                {links.map(({ label, href }) => (
-                  <a key={label} href={href}>{label}</a>
+                {links.map(({ labelKey, href }) => (
+                  <a key={labelKey} href={href}>{t(labelKey)}</a>
                 ))}
               </div>
             </div>
@@ -550,7 +567,7 @@ export default function Footer({ isBackendAvailable = true }) {
           <div className="spk-footer-copy">
             <div className="spk-footer-copy-bar" />
             <strong>© 2026 CreaFolio</strong>
-            <span>· Todos los derechos reservados</span>
+            <span>· {t('footer.rights')}</span>
           </div>
         </div>
       </footer>

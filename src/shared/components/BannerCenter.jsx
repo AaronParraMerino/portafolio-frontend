@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '../../core/i18n';
 import PoliticaCookies from '../../features/auth/components/PoliticasC';
 import {
   aceptarCookiesYGuardarHardware,
@@ -6,10 +7,14 @@ import {
   wasCookieAccepted,
   wasCookieDismissed,
 } from '../../features/auth/services/sessionService';
+import BASE_URL from '../../services/http/const';
 
 const ORDER_KEY = 'banner_center_order_v1';
+const DISMISSED_NOTICES_KEY = 'banner_center_dismissed_notices_v1';
 const EXIT_ANIMATION_MS = 550;
 const PROMOTE_ANIMATION_MS = 1000;
+const EMPTY_NOTICES = [];
+const MAX_VISIBLE_ITEMS = 4;
 
 const sortByStoredOrder = (list) => {
   try {
@@ -42,58 +47,175 @@ const persistOrder = (list) => {
   }
 };
 
-const MOCK_NOTICES = [
-  {
-    id: 'notice-ddddd',
-    title: 'Bienvddenido',
-    description: 'Estas son nuevas funcionalidades que pueden gustarte.',
-    linkLabel: 'Ver recomendaciones',
-    linkHref: '/dashboard/experience',
-    primaryLabel: 'Abrir',
-    secondaryLabel: 'limpiar',
-    autoHideMs: 35000,
-  },
-  {
-    id: 'notice-welcome',
-    title: 'Bienvenido',
-    description: 'Estas son nuevas funcionalidades que pueden gustarte.',
-    linkLabel: 'Ver recomendaciones',
-    linkHref: '/dashboard/experience',
-    primaryLabel: 'Abrir',
-    secondaryLabel: 'Cerrar',
-    autoHideMs: 35000,
-  },
-  {
-    id: 'notice-profile',
-    title: 'Tip de perfil',
-    description: 'Completa tu perfil para mejorar visibilidad en el portafolio.',
-    linkLabel: 'Ir a perfil',
-    linkHref: '/dashboard/profile',
-    primaryLabel: 'Entendido',
-    secondaryLabel: 'Descartar',
-    autoHideMs: 35000,
-  },
-];
+const haveSameBannerItems = (current, next) => (
+  current.length === next.length
+  && current.every((item, index) => {
+    const nextItem = next[index];
 
-export default function BannerCenter({ notices = MOCK_NOTICES }) {
+    return item.id === nextItem?.id
+      && item.updatedAt === nextItem?.updatedAt
+      && item.title === nextItem?.title
+      && item.description === nextItem?.description;
+  })
+);
+
+const readDismissedNotices = () => {
+  try {
+    const raw = localStorage.getItem(DISMISSED_NOTICES_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+};
+
+const persistDismissedNotice = (item) => {
+  if (item?.source !== 'global_notice') return;
+
+  try {
+    const dismissed = readDismissedNotices();
+    dismissed[item.id] = {
+      dismissedAt: new Date().toISOString(),
+      updatedAt: item.updatedAt || null,
+    };
+
+    localStorage.setItem(DISMISSED_NOTICES_KEY, JSON.stringify(dismissed));
+  } catch (_) {
+    // no-op
+  }
+};
+
+const isNoticeDismissed = (item) => {
+  if (item?.source !== 'global_notice') return false;
+
+  const dismissed = readDismissedNotices();
+  const stored = dismissed[item.id];
+
+  if (!stored) return false;
+
+  return String(stored.updatedAt || '') === String(item.updatedAt || '');
+};
+
+function normalizeGlobalNotice(item = {}) {
+  const id = item.id_aviso ?? item.id ?? item.aviso_id;
+
+  if (!id) return null;
+
+  return {
+    id: `aviso-${id}`,
+    source: 'global_notice',
+    noticeId: id,
+    title: item.titulo || item.title || 'Aviso del sistema',
+    description: item.mensaje || item.description || '',
+    type: item.tipo || 'comunicacion_marketing_global',
+    priority: item.prioridad || 'normal',
+    updatedAt: item.updated_at || item.fecha_actualizacion || null,
+    autoHideMs: 35000,
+  };
+}
+
+function getNoticeToneStyles(item = {}) {
+  const priority = String(item.priority || '').toLowerCase();
+  const type = String(item.type || '').toLowerCase();
+  const isCritical = priority === 'critica';
+  const isHigh = priority === 'alta';
+
+  if (isCritical) {
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeLegal,
+      ...styles.noticeCritical,
+    };
+  }
+
+  if (type === 'legal_cumplimiento') {
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeLegal,
+      ...(isHigh ? styles.noticeHigh : null),
+    };
+  }
+
+  if (type === 'operacional_tecnico') {
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeOperational,
+      ...(isHigh ? styles.noticeHigh : null),
+    };
+  }
+
+  if (type === 'comunicacion_marketing_global') {
+    return {
+      ...styles.noticeShell,
+      ...styles.noticeMarketing,
+      ...(isHigh ? styles.noticeHigh : null),
+    };
+  }
+
+  return {
+    ...styles.noticeShell,
+    ...styles.noticeBusiness,
+    ...(isHigh ? styles.noticeHigh : null),
+  };
+}
+
+export default function BannerCenter({ notices = EMPTY_NOTICES }) {
+  const { t } = useLanguage();
+  const [globalNotices, setGlobalNotices] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`${BASE_URL}/avisos`, {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+
+        const data = Array.isArray(payload?.data) ? payload.data : [];
+        setGlobalNotices(data.map(normalizeGlobalNotice).filter(Boolean));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGlobalNotices([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const queue = useMemo(() => {
     const base = [];
 
     if (!wasCookieAccepted() && !wasCookieDismissed()) {
       base.push({
         id: 'cookie-banner',
-        title: 'Cookies del sitio',
-        description: 'Usamos cookies para mejorar tu experiencia. Si aceptas, guardamos consentimiento y huella tecnica.',
-        linkLabel: 'Ver politica de cookies',
+        title: t('cookie.title'),
+        description: t('cookie.description'),
+        linkLabel: t('cookie.policyLink'),
         linkAction: 'open-policy',
-        primaryLabel: 'Aceptar',
-        secondaryLabel: 'Cerrar',
+        primaryLabel: t('cookie.acceptShort'),
+        secondaryLabel: t('cookie.close'),
         autoHideMs: 35000,
       });
     }
 
-    return [...base, ...notices];
-  }, [notices]);
+    const translatedGlobalNotices = globalNotices
+      .filter((item) => !isNoticeDismissed(item))
+      .map((item) => ({
+        ...item,
+        primaryLabel: t('banner.action.ok'),
+        secondaryLabel: t('banner.action.close'),
+      }));
+
+    return [...base, ...translatedGlobalNotices, ...notices];
+  }, [globalNotices, notices, t]);
 
   const [items, setItems] = useState(queue);
   const [collapsed, setCollapsed] = useState(true);
@@ -123,6 +245,9 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
     setClosing((prev) => ({ ...prev, [id]: true }));
     scheduleAnimationTimeout(() => {
       setItems((prev) => {
+        const selected = prev.find((x) => x.id === id);
+        persistDismissedNotice(selected);
+
         const nextItems = prev.filter((x) => x.id !== id);
         persistOrder(nextItems);
         return nextItems;
@@ -137,7 +262,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
 
   useEffect(() => {
     const ordered = sortByStoredOrder(queue);
-    setItems(ordered);
+    setItems((current) => (haveSameBannerItems(current, ordered) ? current : ordered));
     persistOrder(ordered);
   }, [queue]);
 
@@ -209,6 +334,11 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
       return;
     }
 
+    if (item.source === 'global_notice') {
+      dismissItem(item.id);
+      return;
+    }
+
     moveToBack(item.id);
   };
 
@@ -227,12 +357,12 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
   const hasItems = items.length > 0;
   const pendingCount = items.length;
   const activeItem = items[0] ?? null;
-  const titleItems = items.slice(1);
+  const titleItems = items.slice(1, MAX_VISIBLE_ITEMS);
 
   // El primer banner se muestra expandido directamente, sin animación de entrada.
 
   useEffect(() => {
-    const currentVisibleIds = items.slice(0, 3).map((item) => item.id);
+    const currentVisibleIds = items.slice(0, MAX_VISIBLE_ITEMS).map((item) => item.id);
     const previousVisibleIds = previousVisibleIdsRef.current;
 
     if (previousVisibleIds.length > 0) {
@@ -294,6 +424,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
                 key={activeItem.id}
                 style={{
                   ...styles.banner,
+                  ...getNoticeToneStyles(activeItem),
                   ...(promotingPhase[activeItem.id] === 'from-title' ? styles.bannerPromotingFromTitle : null),
                   ...(promotingPhase[activeItem.id] === 'to-main' ? styles.bannerPromotingToMain : null),
                   ...(closing[activeItem.id] ? styles.bannerClosing : null),
@@ -339,6 +470,7 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
                 key={item.id}
                 style={{
                   ...styles.banner,
+                  ...getNoticeToneStyles(item),
                   ...styles.bannerStacked,
                   ...(closing[item.id] ? styles.bannerClosing : null),
                 }}
@@ -357,10 +489,10 @@ export default function BannerCenter({ notices = MOCK_NOTICES }) {
           type="button"
           style={styles.tab}
           onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Abrir banners' : 'Cerrar banners'}
-          title={collapsed ? 'Mostrar banners' : 'Colapsar banners'}
+          aria-label={collapsed ? t('banner.openAria') : t('banner.closeAria')}
+          title={collapsed ? t('banner.showTitle') : t('banner.collapseTitle')}
         >
-          <span style={styles.tabLabel}>Avisos</span>
+          <span style={styles.tabLabel}>{t('banner.tab')}</span>
           <span style={styles.tabBadge}>{pendingCount}</span>
         </button>
       )}
@@ -410,17 +542,56 @@ const styles = {
   },
   banner: {
     width: '100%',
-    background: '#0d1b2a',
-    color: '#e0e7ff',
-    border: '1px solid #1b263b',
+    background: 'var(--azul-deep)',
+    color: 'var(--blanco)',
+    border: '1px solid rgba(184, 221, 240, 0.38)',
     borderRadius: '12px',
-    boxShadow: '0 14px 40px rgba(0,0,0,0.35)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34)',
     padding: '12px',
     maxHeight: '240px',
     overflow: 'hidden',
     transform: 'translateX(0)',
     opacity: 1,
     transition: `transform ${EXIT_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${EXIT_ANIMATION_MS}ms ease, margin-top ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), padding ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), max-height ${PROMOTE_ANIMATION_MS}ms ease, box-shadow ${PROMOTE_ANIMATION_MS}ms ease`,
+  },
+  noticeShell: {
+    backgroundColor: 'var(--azul-deep)',
+    backgroundImage: `
+      linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02)),
+      linear-gradient(rgba(184, 221, 240, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(184, 221, 240, 0.12) 1px, transparent 1px)
+    `,
+    backgroundSize: 'auto, 38px 38px, 38px 38px',
+    borderLeft: '5px solid var(--azul)',
+    color: 'var(--blanco)',
+  },
+  noticeBusiness: {
+    borderColor: 'rgba(184, 221, 240, 0.48)',
+    borderLeftColor: 'var(--azul)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(255,255,255,0.12)',
+  },
+  noticeOperational: {
+    borderColor: 'var(--amarillo-borde)',
+    borderLeftColor: 'var(--amarillo)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(251, 191, 36, 0.18)',
+  },
+  noticeMarketing: {
+    borderColor: 'var(--verde-borde)',
+    borderLeftColor: 'var(--verde)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(52, 211, 153, 0.18)',
+  },
+  noticeLegal: {
+    borderColor: 'var(--rojo-borde)',
+    borderLeftColor: 'var(--rojo-soft)',
+    boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34), inset 0 1px 0 rgba(232, 85, 85, 0.20)',
+  },
+  noticeHigh: {
+    borderWidth: '1px 1px 1px 6px',
+    boxShadow: '0 16px 46px rgba(0, 79, 124, 0.42), inset 0 1px 0 rgba(255,255,255,0.16)',
+  },
+  noticeCritical: {
+    borderWidth: '1px 1px 1px 7px',
+    boxShadow: '0 18px 52px rgba(201, 64, 64, 0.30), inset 0 1px 0 rgba(232, 85, 85, 0.24)',
   },
   bannerStacked: {
     marginTop: '0',
@@ -456,7 +627,7 @@ const styles = {
     margin: 0,
     fontSize: '12px',
     lineHeight: 1.45,
-    color: '#c8d5f4',
+    color: 'rgba(255, 255, 255, 0.86)',
   },
   mainContent: {
     opacity: 1,
@@ -496,17 +667,17 @@ const styles = {
   },
   primaryBtn: {
     border: 'none',
-    background: '#1d4ed8',
-    color: '#fff',
+    background: 'var(--blanco)',
+    color: 'var(--azul-deep)',
     borderRadius: '8px',
     padding: '7px 10px',
     fontSize: '12px',
     cursor: 'pointer',
   },
   secondaryBtn: {
-    border: '1px solid #334155',
-    background: '#111827',
-    color: '#cbd5e1',
+    border: '1px solid rgba(255,255,255,0.28)',
+    background: 'rgba(255,255,255,0.08)',
+    color: 'var(--blanco)',
     borderRadius: '8px',
     padding: '7px 10px',
     fontSize: '12px',

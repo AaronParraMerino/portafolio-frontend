@@ -23,6 +23,9 @@ export default function EventsGrid({
   onGoToPage,
   onEditEvent,
   onCommunicate,
+  showCommunicationAction = true,
+  primaryActionLabel = 'Editar',
+  emptyHint = 'Las estadisticas no navegan; usa los botones del panel para crear o comunicar eventos.',
 }) {
   return (
     <>
@@ -35,6 +38,11 @@ export default function EventsGrid({
             return (
               <article key={event.id || event.title} className="evt-card">
                 <div className={`evt-card-accent evt-card-accent--${statusMeta.tone}`} />
+                {event.imageUrl || event.imagePreview ? (
+                  <div className="evt-card-cover">
+                    <img src={event.imageUrl || event.imagePreview} alt={event.title} />
+                  </div>
+                ) : null}
                 <div className="evt-card-body">
                   <div className="evt-card-top">
                     <div className="evt-card-badges">
@@ -80,21 +88,23 @@ export default function EventsGrid({
                 </div>
 
                 <div className="evt-card-actions">
-                  <button
-                    type="button"
-                    className="evt-btn evt-btn--ghost"
-                    onClick={() => onCommunicate(event)}
-                  >
-                    <BsMegaphone />
-                    Comunicar
-                  </button>
+                  {showCommunicationAction ? (
+                    <button
+                      type="button"
+                      className="evt-btn evt-btn--ghost"
+                      onClick={() => onCommunicate(event)}
+                    >
+                      <BsMegaphone />
+                      Comunicar
+                    </button>
+                  ) : <span className="evt-card-action-spacer" />}
                   <button
                     type="button"
                     className="evt-btn evt-btn--primary"
                     onClick={() => onEditEvent(event)}
                   >
                     <BsPencil />
-                    Editar
+                    {primaryActionLabel}
                   </button>
                 </div>
               </article>
@@ -106,7 +116,7 @@ export default function EventsGrid({
           icon={BsCalendarEvent}
           title={emptyState.title}
           description={emptyState.description}
-          hint="Las estadisticas no navegan; usa los botones del panel para crear o comunicar eventos."
+          hint={emptyHint}
         />
       )}
 

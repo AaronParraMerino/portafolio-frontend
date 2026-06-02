@@ -1,4 +1,8 @@
+import { useLanguage } from '../../../../core/i18n';
+
 const ActiveFilters = ({ chips = [], onClear }) => {
+  const { t } = useLanguage();
+
   if (!chips.length) return null;
 
   return (
@@ -7,14 +11,20 @@ const ActiveFilters = ({ chips = [], onClear }) => {
         {chips.map((chip) => (
           <span className={`ps-active-chip ${chip.className || ''}`} key={chip.id}>
             {chip.label}
-            <button type="button" onClick={chip.onRemove} aria-label={`Quitar filtro ${chip.label}`}>×</button>
+            <button
+              type="button"
+              onClick={chip.onRemove}
+              aria-label={t('portfolioSearch.filters.remove', { label: chip.label })}
+            >
+              ×
+            </button>
           </span>
         ))}
       </div>
 
       {onClear && (
         <button type="button" className="ps-clear-inline" onClick={onClear}>
-          Quitar todos
+          {t('portfolioSearch.filters.clearAll')}
         </button>
       )}
     </div>

@@ -11,9 +11,11 @@ import {
 import {
   USER_COMMUNICATION_CHANNELS,
   USER_COMMUNICATION_SEGMENTS,
+  USER_GLOBAL_NOTICE_TYPES,
   USER_NOTICE_TYPES,
   USER_NOTICE_URGENCY,
   estimateUsersAudience,
+  getUserRoleValue,
 } from '../services/usersService';
 
 const CHANNEL_ICONS = {
@@ -50,9 +52,16 @@ function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
     bloqueados: 'bloqueado',
     inactivos: 'inactivo',
   };
+  const roles = {
+    publicantes: 'publicante',
+  };
 
   return users
-    .filter((user) => segments.includes('todos') || segments.some((segment) => statuses[segment] === user.estado))
+    .filter((user) => (
+      segments.includes('todos')
+      || segments.some((segment) => statuses[segment] === user.estado)
+      || segments.some((segment) => roles[segment] === getUserRoleValue(user))
+    ))
     .map((user) => Number(user.id))
     .filter(Boolean);
 }
@@ -68,7 +77,7 @@ export default function UsersNoticeModal({
 }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [type, setType] = useState('cuenta');
+  const [type, setType] = useState(USER_NOTICE_TYPES[0]?.id || '');
   const [urgency, setUrgency] = useState('baja');
   const [segments, setSegments] = useState(['todos']);
   const [channels, setChannels] = useState(['inapp']);
@@ -83,7 +92,7 @@ export default function UsersNoticeModal({
 
     setTitle(initialNotice.title || initialNotice.titulo || (modal.directUser ? `Aviso para ${modal.directUser.nombre || 'usuario'}` : ''));
     setBody(initialNotice.body || initialNotice.preview || initialNotice.cuerpo || '');
-    setType(initialNotice.type || initialNotice.tipo || (modal.mode === 'template' ? 'sistema' : 'cuenta'));
+    setType(initialNotice.type || initialNotice.tipo || USER_NOTICE_TYPES[0]?.id || '');
     setUrgency(initialNotice.urgency || initialNotice.urgencia || 'baja');
     setSegments(initialNotice.segments || initialNotice.segmentos || (modal.directUser ? ['seleccionados'] : modal.initialSegments || ['todos']));
     setChannels(['inapp']);
@@ -102,18 +111,27 @@ export default function UsersNoticeModal({
     });
   }, [modal, selectedIds, segments, users]);
 
-  if (!modal) return null;
-
-  const isTemplate = modal.mode === 'template';
+  const isTemplate = modal?.mode === 'template';
+  const isGlobalNotice = !modal?.directUser && segments.length === 1 && segments[0] === 'todos';
+  const availableTypes = isGlobalNotice ? USER_GLOBAL_NOTICE_TYPES : USER_NOTICE_TYPES;
   const modalTitle = isTemplate
-    ? 'Nueva plantilla de usuarios'
-    : modal.initialNotice
-      ? 'Editar aviso a usuarios'
-      : 'Nuevo aviso a usuarios';
+    ? 'Nueva plantilla de aviso'
+    : modal?.initialNotice
+      ? 'Editar aviso general'
+      : 'Nuevo aviso general del sistema';
   const modalSubtitle = isTemplate
-    ? 'Guarda una estructura reutilizable para avisos frecuentes.'
-    : 'Segmenta por estado, seleccion o usuario puntual.';
-  const selectedType = USER_NOTICE_TYPES.find((item) => item.id === type);
+    ? 'Guarda una estructura reutilizable para comunicados frecuentes.'
+    : 'Segmenta por estado, rol publicante, seleccion o usuario puntual.';
+  const selectedType = availableTypes.find((item) => item.id === type);
+
+  useEffect(() => {
+    if (!modal) return;
+    if (availableTypes.some((item) => item.id === type)) return;
+
+    setType(availableTypes[0]?.id || '');
+  }, [availableTypes, modal, type]);
+
+  if (!modal) return null;
 
   const handleSubmit = async (intent) => {
     if (!title.trim() || !body.trim()) {
@@ -163,11 +181,13 @@ export default function UsersNoticeModal({
         contenido: body.trim(),
         tipo: type,
         urgencia: urgency,
+        prioridad: selectedType?.priority || (urgency === 'media' ? 'normal' : urgency),
         canales: ['inapp'],
         segmentos: segments,
+        directUser: modal.directUser || null,
       });
 
-      setMessage(response?.message || `Aviso enviado a ${destinatarios.length} usuario(s).`);
+      setMessage(response?.message || (isGlobalNotice ? 'Aviso global creado correctamente.' : `Aviso enviado a ${destinatarios.length} usuario(s).`));
     } catch (error) {
       setMessage(error.message || 'No se pudo enviar el aviso.');
     } finally {
@@ -233,7 +253,7 @@ export default function UsersNoticeModal({
                 rows="5"
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="Contenido que recibiran los usuarios."
+                placeholder="Contenido claro del aviso: motivo, impacto, fecha y accion esperada si corresponde."
               />
             </label>
 
@@ -244,7 +264,7 @@ export default function UsersNoticeModal({
                 value={type}
                 onChange={(event) => setType(event.target.value)}
               >
-                {USER_NOTICE_TYPES.map((item) => (
+                {availableTypes.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.label}
                   </option>
@@ -291,7 +311,9 @@ export default function UsersNoticeModal({
                 const selected = segments.includes(segment.id);
                 const count = segment.id === 'seleccionados'
                   ? selectedIds.length
-                  : segment.status
+                  : segment.role
+                    ? metrics?.publicantes ?? 0
+                    : segment.status
                     ? metrics?.[segment.status] ?? 0
                     : metrics?.total ?? 0;
 
@@ -373,7 +395,7 @@ export default function UsersNoticeModal({
               ? 'Plantilla reutilizable para futuros avisos.'
               : schedule
                 ? 'El aviso quedara programado con la fecha elegida.'
-                : 'Sin fecha: preparado para envio inmediato.'}
+                : 'Aviso general preparado para envio inmediato.'}
           </span>
 
           <div className="usr-notice-foot-actions">

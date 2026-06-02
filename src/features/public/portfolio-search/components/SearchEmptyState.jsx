@@ -1,15 +1,18 @@
+import { useLanguage } from '../../../../core/i18n';
+
 const SearchEmptyState = ({ hasSearched = false, authRequired = false, onClear }) => {
-  let title = 'Busca portafolios profesionales';
-  let description = 'Usa el buscador o aplica filtros por ubicación, habilidades, experiencia y proyectos.';
+  const { t } = useLanguage();
+  let title = t('portfolioSearch.empty.default.title');
+  let description = t('portfolioSearch.empty.default.description');
   let code = 'BF';
 
   if (authRequired) {
-    title = 'Inicia sesión para buscar portafolios';
-    description = 'La búsqueda está disponible fuera del dashboard, pero el backend requiere una sesión activa para devolver resultados.';
+    title = t('portfolioSearch.empty.auth.title');
+    description = t('portfolioSearch.empty.auth.description');
     code = 'AU';
   } else if (hasSearched) {
-    title = 'No se encontraron portafolios relacionados';
-    description = 'Intenta ajustar los filtros, cambiar el término de búsqueda o limpiar la búsqueda.';
+    title = t('portfolioSearch.empty.noResults.title');
+    description = t('portfolioSearch.empty.noResults.description');
     code = 'SR';
   }
 
@@ -20,7 +23,7 @@ const SearchEmptyState = ({ hasSearched = false, authRequired = false, onClear }
       <p>{description}</p>
       {hasSearched && onClear && !authRequired && (
         <button type="button" className="ps-btn-secondary danger-hover" onClick={onClear}>
-          Limpiar filtros
+          {t('portfolioSearch.empty.clear')}
         </button>
       )}
     </div>

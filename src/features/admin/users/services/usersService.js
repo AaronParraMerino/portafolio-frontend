@@ -40,6 +40,34 @@ export const USER_STATUS_META = {
   },
 };
 
+export const USER_ROLE_META = {
+  administrador: {
+    label: 'Administrador',
+    tone: 'primary',
+    helper: 'Gestion completa del sistema.',
+  },
+  admin: {
+    label: 'Administrador',
+    tone: 'primary',
+    helper: 'Gestion completa del sistema.',
+  },
+  usuario: {
+    label: 'Usuario',
+    tone: 'muted',
+    helper: 'Acceso regular al portafolio.',
+  },
+  publicante: {
+    label: 'Publicante',
+    tone: 'info',
+    helper: 'Puede crear eventos con limite mensual.',
+  },
+  publicador: {
+    label: 'Publicante',
+    tone: 'info',
+    helper: 'Puede crear eventos con limite mensual.',
+  },
+};
+
 export const USER_STATS = [
   {
     id: 'total',
@@ -66,6 +94,12 @@ export const USER_STATS = [
     tone: 'danger',
   },
   {
+    id: 'publicantes',
+    label: 'Publicantes',
+    helper: 'Pueden publicar eventos',
+    tone: 'info',
+  },
+  {
     id: 'inactivo',
     label: 'Inactivos',
     helper: 'Cuentas desactivadas',
@@ -76,11 +110,29 @@ export const USER_STATS = [
 export const USER_TABLE_COLUMNS = [
   { id: 'selection', label: '' },
   { id: 'user', label: 'Usuario' },
+  { id: 'role', label: 'Rol' },
   { id: 'status', label: 'Estado' },
   { id: 'sessions', label: 'Sesiones' },
   { id: 'lastAccess', label: 'Ultimo acceso' },
   { id: 'registeredAt', label: 'Registro' },
   { id: 'actions', label: '' },
+];
+
+export const USER_ROLE_ACTIONS = [
+  {
+    id: 'asignar_publicante',
+    label: 'Asignar rol publicante',
+    description: 'Habilita la creacion de eventos con limite de 3 publicaciones mensuales.',
+    tone: 'success',
+    targetRole: 'publicante',
+  },
+  {
+    id: 'quitar_publicante',
+    label: 'Quitar rol publicante',
+    description: 'Retira el permiso para crear eventos y registra un motivo administrativo.',
+    tone: 'danger',
+    targetRole: 'usuario',
+  },
 ];
 
 export const USER_BULK_ACTIONS = [
@@ -123,6 +175,7 @@ export const USER_COMMUNICATION_SEGMENTS = [
   { id: 'pausados', label: 'Pausados', status: 'pausado' },
   { id: 'bloqueados', label: 'Bloqueados', status: 'bloqueado' },
   { id: 'inactivos', label: 'Inactivos', status: 'inactivo' },
+  { id: 'publicantes', label: 'Publicantes', role: 'publicante' },
   { id: 'seleccionados', label: 'Seleccionados', status: null },
 ];
 
@@ -132,6 +185,13 @@ export const USER_COMMUNICATION_CHANNELS = [
   { id: 'push', label: 'Push' },
 ];
 
+export const USER_GLOBAL_NOTICE_TYPES = [
+  { id: 'operacional_tecnico', label: 'Operacional y tecnico', tone: 'warning', priority: 'alta' },
+  { id: 'negocio_logistica_eventos', label: 'Negocio, logistica y eventos', tone: 'primary', priority: 'normal' },
+  { id: 'comunicacion_marketing_global', label: 'Comunicacion y marketing global', tone: 'success', priority: 'baja' },
+  { id: 'legal_cumplimiento', label: 'Legal y cumplimiento', tone: 'danger', priority: 'alta' },
+];
+
 export const USER_NOTICE_TYPES = [
   { id: 'bienvenida', label: 'Bienvenida', tone: 'success' },
   { id: 'cuenta', label: 'Cuenta', tone: 'primary' },
@@ -139,6 +199,11 @@ export const USER_NOTICE_TYPES = [
   { id: 'actividad', label: 'Actividad', tone: 'warning' },
   { id: 'sistema', label: 'Sistema', tone: 'muted' },
   { id: 'capacitacion', label: 'Capacitacion', tone: 'info' },
+];
+
+export const USER_ALL_NOTICE_TYPES = [
+  ...USER_GLOBAL_NOTICE_TYPES,
+  ...USER_NOTICE_TYPES,
 ];
 
 export const USER_NOTICE_URGENCY = [
@@ -156,7 +221,7 @@ export const USER_NOTICE_STATUSES = [
 ];
 
 export function getUserNoticeTypeMeta(type) {
-  return USER_NOTICE_TYPES.find((item) => item.id === type) || USER_NOTICE_TYPES[4];
+  return USER_ALL_NOTICE_TYPES.find((item) => item.id === type) || USER_NOTICE_TYPES[4];
 }
 
 export function getUserNoticeStatusMeta(status) {
@@ -175,10 +240,16 @@ export function estimateUsersAudience({
   const selectedStatuses = USER_COMMUNICATION_SEGMENTS
     .filter((segment) => segment.status && segments.includes(segment.id))
     .map((segment) => segment.status);
+  const selectedRoles = USER_COMMUNICATION_SEGMENTS
+    .filter((segment) => segment.role && segments.includes(segment.id))
+    .map((segment) => segment.role);
 
-  if (!selectedStatuses.length) return 0;
+  if (!selectedStatuses.length && !selectedRoles.length) return 0;
 
-  return users.filter((user) => selectedStatuses.includes(user.estado)).length;
+  return users.filter((user) => (
+    selectedStatuses.includes(user.estado)
+    || selectedRoles.includes(getUserRoleValue(user))
+  )).length;
 }
 
 export function createUsersDirectoryShell() {
@@ -194,6 +265,7 @@ export function createUsersDirectoryShell() {
     supportsPausing: false,
     supportsBlocking: false,
     supportsCommunications: false,
+    supportsRoleManagement: false,
     pageSize: USER_PAGE_SIZE,
   };
 }
@@ -322,6 +394,19 @@ export async function pauseUserAccount(userId, payload = {}) {
   return parseAdminResponse(response, 'No se pudo pausar la cuenta.');
 }
 
+export async function updateUserRole(userId, payload = {}) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/${userId}/rol`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar el rol del usuario.');
+}
+
 export async function sendAdminNotice(payload) {
   const response = await fetch(`${BASE_URL}/administrador/notificaciones`, {
     method: 'POST',
@@ -333,6 +418,19 @@ export async function sendAdminNotice(payload) {
   });
 
   return parseAdminResponse(response, 'No se pudo enviar el aviso.');
+}
+
+export async function createGlobalAdminNotice(payload) {
+  const response = await fetch(`${BASE_URL}/admin/avisos`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo crear el aviso global.');
 }
 
 export function normalizeUsersDirectory(payload = {}) {
@@ -373,6 +471,7 @@ export function buildUsersMetrics(users = []) {
     activo: users.filter((user) => user.estado === 'activo').length,
     pausado: users.filter((user) => user.estado === 'pausado').length,
     bloqueado: users.filter((user) => user.estado === 'bloqueado').length,
+    publicantes: users.filter((user) => getUserRoleValue(user) === 'publicante').length,
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   };
 }
@@ -403,6 +502,21 @@ export function buildUsersWorkspaceCounts({
 
 export function getUserStatusMeta(status) {
   return USER_STATUS_META[status] || USER_STATUS_META.inactivo;
+}
+
+export function getUserRoleValue(user = {}) {
+  const rawRole = String(user.rol || user.role || user.tipo || 'usuario').trim().toLowerCase();
+
+  if (rawRole === 'publicador' || rawRole === 'publisher') return 'publicante';
+  if (rawRole === 'admin') return 'administrador';
+
+  return rawRole || 'usuario';
+}
+
+export function getUserRoleMeta(user = {}) {
+  const role = getUserRoleValue(user);
+
+  return USER_ROLE_META[role] || USER_ROLE_META.usuario;
 }
 
 export function getUserInitials(name = '') {

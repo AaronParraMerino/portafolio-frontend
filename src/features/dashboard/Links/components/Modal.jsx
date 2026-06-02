@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import FallbackIcon from './FallbackIcon';
+import { useLanguage } from '../../../../core/i18n';
 
 /* ── Plataformas ─────────────────────────────── */
 const PLATS = [
@@ -66,6 +67,7 @@ const normalizeUrl = url => {
 };
 
 function Modal({ onClose, onAdd }) {
+  const { t } = useLanguage();
   const [titulo, setTitulo] = useState("");
   const [link,   setLink]   = useState("");
   const [desc,   setDesc]   = useState("");
@@ -101,10 +103,10 @@ function Modal({ onClose, onAdd }) {
   // ── Validación ───────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!titulo.trim()) e.titulo = "Título obligatorio";
-    if (!link.trim())   e.link   = "Enlace obligatorio";
-    else if (status === "error") e.link = "URL no válida";
-    if (!desc.trim())   e.desc   = "Descripción obligatoria";
+    if (!titulo.trim()) e.titulo = t('links.validation.titleRequired');
+    if (!link.trim())   e.link   = t('links.validation.urlRequired');
+    else if (status === "error") e.link = t('links.urlInvalid');
+    if (!desc.trim())   e.desc   = t('links.validation.descriptionRequired');
     setErr(e);
     return !Object.keys(e).length;
   };
@@ -161,7 +163,7 @@ function Modal({ onClose, onAdd }) {
 
         {/* Header */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
-          <p style={{ margin:0, fontWeight:700, fontSize:16, color:"#0f172a" }}>Agregar red social</p>
+          <p style={{ margin:0, fontWeight:700, fontSize:16, color:"#0f172a" }}>{t('links.modal.addTitle')}</p>
           <button
             onClick={onClose}
             style={{ background:"none", border:"none", cursor:"pointer", padding:4, borderRadius:6, display:"flex", color:"#9ca3af" }}
@@ -177,18 +179,18 @@ function Modal({ onClose, onAdd }) {
           {/* ── Enlace / URL ── */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
-              Enlace / URL *
+              {t('links.field.url')}
             </label>
             <input
               value={link}
               onChange={e => setLink(e.target.value)}
-              placeholder="ej: instagram.com/usuario"
+              placeholder={t('links.field.urlPlaceholder')}
               style={inp("link")}
               onFocus={e => e.target.style.border = "1.5px solid #0077b7"}
               onBlur={e  => e.target.style.border = `1.5px solid ${err.link ? "#e85555" : "#d1d5db"}`}
             />
             {status === "validando" && (
-              <p style={{ margin:"5px 0 0", fontSize:12, color:"#9ca3af" }}>Detectando plataforma…</p>
+              <p style={{ margin:"5px 0 0", fontSize:12, color:"#9ca3af" }}>{t('links.detecting')}</p>
             )}
             {status === "ok" && (
               <div style={{
@@ -199,16 +201,16 @@ function Modal({ onClose, onAdd }) {
                 <div style={{ flexShrink:0 }}>{plat ? plat.icon : <FallbackIcon url={link}/>}</div>
                 <div>
                   <p style={{ margin:0, fontSize:13, fontWeight:700, color:"#0077b7" }}>
-                    {plat ? plat.name : titulo || "Red personalizada"}
+                    {plat ? plat.name : titulo || t('links.customNetwork')}
                   </p>
                   <p style={{ margin:0, fontSize:11, fontWeight:600, color:"#16a34a" }}>
-                    ● Conectado — enlace válido
+                    {t('links.validConnected')}
                   </p>
                 </div>
               </div>
             )}
             {status === "error" && (
-              <p style={{ margin:"4px 0 0", fontSize:12, color:"#e85555" }}>URL no válida</p>
+              <p style={{ margin:"4px 0 0", fontSize:12, color:"#e85555" }}>{t('links.urlInvalid')}</p>
             )}
             {err.link && (
               <p style={{ margin:"4px 0 0", fontSize:12, color:"#e85555" }}>{err.link}</p>
@@ -218,7 +220,7 @@ function Modal({ onClose, onAdd }) {
           {/* ── Título ── */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
-              Título *
+              {t('links.field.title')}
               {tituloLocked && (
                 <span style={{
                   marginLeft:8, fontSize:11, fontWeight:500,
@@ -226,7 +228,7 @@ function Modal({ onClose, onAdd }) {
                   border:"1px solid #e5e7eb", borderRadius:4,
                   padding:"1px 6px",
                 }}>
-                  bloqueado — plataforma reconocida
+                  {t('links.lockedKnownPlatform')}
                 </span>
               )}
             </label>
@@ -234,14 +236,14 @@ function Modal({ onClose, onAdd }) {
               value={titulo}
               onChange={e => !tituloLocked && setTitulo(e.target.value)}
               readOnly={tituloLocked}
-              placeholder="ej: LinkedIn, GitHub…"
+              placeholder={t('links.field.titlePlaceholder')}
               style={inp("titulo", tituloLocked)}
               onFocus={e => { if (!tituloLocked) e.target.style.border = "1.5px solid #0077b7"; }}
               onBlur={e  => { if (!tituloLocked) e.target.style.border = `1.5px solid ${err.titulo ? "#e85555" : "#d1d5db"}`; }}
             />
             {tituloLocked && (
               <p style={{ margin:"4px 0 0", fontSize:11, color:"#9ca3af" }}>
-                El título de plataformas reconocidas no se puede modificar.
+                {t('links.lockedTitleHelp')}
               </p>
             )}
             {err.titulo && (
@@ -252,13 +254,13 @@ function Modal({ onClose, onAdd }) {
           {/* ── Descripción ── */}
           <div>
             <label style={{ fontSize:12, fontWeight:600, color:"#374151", display:"block", marginBottom:5 }}>
-              Descripción *
+              {t('links.field.description')}
             </label>
             <textarea
               value={desc}
               onChange={e => setDesc(e.target.value)}
               rows={3}
-              placeholder="Para qué usas esta red…"
+              placeholder={t('links.field.descriptionPlaceholder')}
               style={{ ...inp("desc"), resize:"vertical", lineHeight:1.5 }}
               onFocus={e => e.target.style.border = "1.5px solid #0077b7"}
               onBlur={e  => e.target.style.border = `1.5px solid ${err.desc ? "#e85555" : "#d1d5db"}`}
@@ -281,7 +283,7 @@ function Modal({ onClose, onAdd }) {
               cursor:"pointer", fontFamily:"inherit",
             }}
           >
-            Cancelar
+            {t('links.action.cancel')}
           </button>
           <button
             onClick={submit}
@@ -292,7 +294,7 @@ function Modal({ onClose, onAdd }) {
               cursor:"pointer", fontFamily:"inherit",
             }}
           >
-            Agregar red
+            {t('links.action.addNetwork')}
           </button>
         </div>
       </div>

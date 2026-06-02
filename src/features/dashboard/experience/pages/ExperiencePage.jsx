@@ -3,6 +3,7 @@ import ExperienceForm from "../components/ExperienceForm";
 import ExperienceToast from "../components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import Header from "../../layout/Header";
+import { useLanguage } from "../../../../core/i18n";
 import {
   getExperiencias,
   getCachedExperiencias,
@@ -11,8 +12,8 @@ import {
   deleteExperiencia,
 } from "../services/experienceService";
 
-const formatearFechaCompleta = (fechaStr) => {
-  if (!fechaStr) return "Sin fecha";
+const formatearFechaCompleta = (fechaStr, t) => {
+  if (!fechaStr) return t("experience.date.empty");
 
   const [year, month, day] = String(fechaStr).slice(0, 10).split("-");
   if (!year || !month || !day) return fechaStr;
@@ -29,6 +30,7 @@ const getInitialExperiencias = () => {
 };
 
 export default function ExperiencePage() {
+  const { t } = useLanguage();
   const [experiencias, setExperiencias] = useState(getInitialExperiencias);
   const [modalMode, setModalMode] = useState(null);
   const [selectedExp, setSelectedExp] = useState(null);
@@ -40,7 +42,7 @@ export default function ExperiencePage() {
     title: "",
     subtitle: "",
     message: "",
-    confirmLabel: "Confirmar",
+    confirmLabel: t("experience.actions.confirm"),
     onConfirm: null,
     variant: "blue",
     icon: "check",
@@ -51,10 +53,10 @@ export default function ExperiencePage() {
     setModalMode("add");
   };
 
-  const showToast = (msg, tipo = "ok") => {
+  const showToast = useCallback((msg, tipo = "ok") => {
     setToast({ msg, tipo });
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
   const closeConfirm = () =>
     setConfirmData((prev) => ({ ...prev, isOpen: false }));
@@ -67,11 +69,11 @@ export default function ExperiencePage() {
       const data = await getExperiencias({ force: true });
       setExperiencias(data);
     } catch (error) {
-      showToast(error.message || "Error al conectar con el servidor", "error");
+      showToast(error.message || t("experience.error.connection"), "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast, t]);
 
   useEffect(() => {
     loadExperiencias();
@@ -86,11 +88,11 @@ export default function ExperiencePage() {
             exp.id === selectedExp.id ? { ...exp, ...updated } : exp
           )
         );
-        showToast("Experiencia actualizada correctamente");
+        showToast(t("experience.toast.updated"));
       } else {
         const created = await createExperiencia(data);
         setExperiencias((prev) => [created, ...prev]);
-        showToast("Experiencia guardada con éxito");
+        showToast(t("experience.toast.created"));
       }
 
       setModalMode(null);
@@ -99,7 +101,7 @@ export default function ExperiencePage() {
       const errorMsg =
         error.response?.data?.message ||
         error.message ||
-        "Error en la operación";
+        t("experience.error.operation");
 
       showToast(errorMsg, "error");
     }
@@ -109,9 +111,9 @@ export default function ExperiencePage() {
     try {
       await deleteExperiencia(id);
       setExperiencias((prev) => prev.filter((e) => e.id !== id));
-      showToast("Registro eliminado", "ok");
+      showToast(t("experience.toast.deleted"), "ok");
     } catch (error) {
-      showToast(error.message || "No se pudo eliminar", "error");
+      showToast(error.message || t("experience.error.delete"), "error");
     }
   };
 
@@ -122,14 +124,14 @@ export default function ExperiencePage() {
       isOpen: true,
       variant: isEdit ? "blue" : "green",
       icon: "check",
-      title: isEdit ? "Actualizar experiencia" : "Guardar experiencia",
+      title: isEdit ? t("experience.confirm.updateTitle") : t("experience.confirm.saveTitle"),
       subtitle: isEdit
-        ? "Se sobreescribirán los datos actuales."
-        : "Se añadirá al listado de experiencias.",
+        ? t("experience.confirm.updateSubtitle")
+        : t("experience.confirm.saveSubtitle"),
       message: isEdit
-        ? `¿Confirmas los cambios en "${data.puesto}"?`
-        : `¿Deseas guardar "${data.puesto}"?`,
-      confirmLabel: isEdit ? "Sí, actualizar" : "Sí, guardar",
+        ? t("experience.confirm.updateMessage", { position: data.puesto })
+        : t("experience.confirm.saveMessage", { position: data.puesto }),
+      confirmLabel: isEdit ? t("experience.confirm.updateConfirm") : t("experience.confirm.saveConfirm"),
       onConfirm: () => {
         executeSave(data);
         closeConfirm();
@@ -144,10 +146,10 @@ export default function ExperiencePage() {
       isOpen: true,
       variant: "red",
       icon: "warning",
-      title: "Eliminar experiencia",
-      subtitle: "Esta acción no se puede deshacer.",
-      message: `Estás por eliminar "${exp?.puesto}". ¿Deseas continuar?`,
-      confirmLabel: "Sí, eliminar",
+      title: t("experience.confirm.deleteTitle"),
+      subtitle: t("experience.confirm.deleteSubtitle"),
+      message: t("experience.confirm.deleteMessage", { position: exp?.puesto || t("experience.empty.record") }),
+      confirmLabel: t("experience.confirm.deleteConfirm"),
       onConfirm: () => {
         executeDelete(id);
         closeConfirm();
@@ -542,8 +544,8 @@ export default function ExperiencePage() {
       `}</style>
 
       <Header
-        title="Experiencia"
-        actionLabel="Agregar nueva"
+        title={t("experience.page.title")}
+        actionLabel={t("experience.page.addNew")}
         onAction={openAddModal}
       />
 
@@ -553,17 +555,17 @@ export default function ExperiencePage() {
             {loading ? (
               <div className="dash-loading dash-loading--inline" role="status" aria-live="polite">
                 <span className="dash-loading-spinner" />
-                <span>Cargando experiencia...</span>
+                <span>{t("experience.loading")}</span>
               </div>
             ) : experiencias.length === 0 ? (
               <ExperienceEmptyState onAdd={openAddModal} />
             ) : (
               <>
-                <SubsectionTitle>Experiencia Laboral</SubsectionTitle>
+                <SubsectionTitle>{t("experience.section.work")}</SubsectionTitle>
 
                 {laborales.length === 0 ? (
                   <div className="exp-category-empty">
-                    No hay experiencia laboral registrada.
+                    {t("experience.empty.work")}
                   </div>
                 ) : (
                   <div className="exp-edit-list">
@@ -581,11 +583,11 @@ export default function ExperiencePage() {
                   </div>
                 )}
 
-                <SubsectionTitle>Experiencia Académica</SubsectionTitle>
+                <SubsectionTitle>{t("experience.section.academic")}</SubsectionTitle>
 
                 {academicas.length === 0 ? (
                   <div className="exp-category-empty">
-                    No hay experiencia académica registrada.
+                    {t("experience.empty.academic")}
                   </div>
                 ) : (
                   <div className="exp-edit-list">
@@ -614,7 +616,7 @@ export default function ExperiencePage() {
         subtitle={confirmData.subtitle}
         message={confirmData.message}
         confirmLabel={confirmData.confirmLabel}
-        cancelLabel="Cancelar"
+        cancelLabel={t("experience.actions.cancel")}
         variant={confirmData.variant}
         icon={confirmData.icon}
         onConfirm={confirmData.onConfirm}
@@ -644,37 +646,39 @@ function SubsectionTitle({ children }) {
 }
 
 function ExperienceEmptyState({ onAdd }) {
+  const { t } = useLanguage();
+
   return (
     <div className="exp-empty-state">
       <div className="exp-empty-icon">✦</div>
 
-      <h3 className="exp-empty-title">Aún no tienes experiencias registradas</h3>
+      <h3 className="exp-empty-title">{t("experience.empty.title")}</h3>
 
       <p className="exp-empty-text">
-        Agrega experiencias laborales o académicas para mostrar tu trayectoria y
-        fortalecer tu perfil profesional.
+        {t("experience.empty.text")}
       </p>
 
       <div className="exp-empty-chips" aria-hidden="true">
-        <span className="exp-empty-chip">Laboral</span>
-        <span className="exp-empty-chip">Académica</span>
-        <span className="exp-empty-chip">Fechas y descripción</span>
+        <span className="exp-empty-chip">{t("experience.type.work")}</span>
+        <span className="exp-empty-chip">{t("experience.type.academic")}</span>
+        <span className="exp-empty-chip">{t("experience.empty.chipDates")}</span>
       </div>
 
       <button type="button" className="exp-add-btn" onClick={onAdd}>
-        + Agregar Experiencia
+        {t("experience.empty.add")}
       </button>
     </div>
   );
 }
 
 function ExperienceCard({ exp, onEdit, onDelete }) {
+  const { t } = useLanguage();
   const isAcademica = exp.tipo_experiencia === "Académica";
 
-  const fechaInicio = formatearFechaCompleta(exp.fecha_inicio);
+  const fechaInicio = formatearFechaCompleta(exp.fecha_inicio, t);
   const fechaFin = exp.actual
-    ? "Actualidad"
-    : formatearFechaCompleta(exp.fecha_fin);
+    ? t("experience.date.current")
+    : formatearFechaCompleta(exp.fecha_fin, t);
 
   return (
     <article
@@ -691,12 +695,12 @@ function ExperienceCard({ exp, onEdit, onDelete }) {
                   isAcademica ? "is-academica" : "is-laboral"
                 }`}
               >
-                {isAcademica ? "Académico" : "Laboral"}
+                {isAcademica ? t("experience.type.academicShort") : t("experience.type.work")}
               </span>
 
               {exp.actual && (
                 <span className="exp-edit-current">
-                  Actual
+                  {t("experience.status.current")}
                 </span>
               )}
             </div>
@@ -725,20 +729,20 @@ function ExperienceCard({ exp, onEdit, onDelete }) {
               type="button"
               onClick={onEdit}
               className="exp-edit-action-btn is-edit"
-              title="Editar"
-              aria-label="Editar experiencia"
+              title={t("experience.actions.edit")}
+              aria-label={t("experience.aria.edit")}
             >
-              Editar
+              {t("experience.actions.edit")}
             </button>
 
             <button
               type="button"
               onClick={onDelete}
               className="exp-edit-action-btn is-delete"
-              title="Eliminar"
-              aria-label="Eliminar experiencia"
+              title={t("experience.actions.delete")}
+              aria-label={t("experience.aria.delete")}
             >
-              Eliminar
+              {t("experience.actions.delete")}
             </button>
           </div>
         </div>

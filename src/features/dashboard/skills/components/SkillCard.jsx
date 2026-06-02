@@ -1,6 +1,8 @@
 import React from "react";
+import { useLanguage } from "../../../../core/i18n";
 
 export default function SkillCard({ skill, onEdit, onDelete }) {
+  const { t } = useLanguage();
   const getProgress = (nivel = "") => {
     const levels = { basico: 25, intermedio: 50, avanzado: 75, experto: 100 };
     return levels[String(nivel).toLowerCase()] || 0;
@@ -17,13 +19,8 @@ export default function SkillCard({ skill, onEdit, onDelete }) {
   };
 
   const getLevelLabel = (nivel = "") => {
-    const labels = {
-      basico: "Básico",
-      intermedio: "Intermedio",
-      avanzado: "Avanzado",
-      experto: "Experto",
-    };
-    return labels[String(nivel).toLowerCase()] || nivel || "Sin nivel";
+    const key = String(nivel || "").toLowerCase();
+    return t(`skills.level.${key}`) || nivel || t("skills.level.none");
   };
 
   const progress = getProgress(skill.nivel);
@@ -96,18 +93,18 @@ export default function SkillCard({ skill, onEdit, onDelete }) {
             <button
               className="skill-card-action skill-card-edit"
               onClick={() => onEdit(skill)}
-              title="Editar"
-              aria-label="Editar habilidad"
+              title={t("skills.edit")}
+              aria-label={t("skills.aria.edit")}
             >
-              Editar
+              {t("skills.edit")}
             </button>
             <button
               className="skill-card-action skill-card-delete"
               onClick={() => onDelete(skill.id)}
-              title="Eliminar"
-              aria-label="Eliminar habilidad"
+              title={t("skills.delete")}
+              aria-label={t("skills.aria.delete")}
             >
-              Eliminar
+              {t("skills.delete")}
             </button>
           </div>
         </div>

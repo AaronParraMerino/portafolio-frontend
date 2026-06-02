@@ -5,55 +5,55 @@
 
 // ── Estados disponibles ──
 export const ESTADOS_PROYECTO = [
-  { value: 'borrador', label: 'Borrador' },
-  { value: 'publicado', label: 'Publicado' },
-  { value: 'archivado', label: 'Archivado' },
-  { value: 'en_desarrollo', label: 'En desarrollo' },
-  { value: 'pausado', label: 'Pausado' },
-  { value: 'terminado', label: 'Terminado' },
-  { value: 'mantenimiento', label: 'Mantenimiento' },
-  { value: 'versionado', label: 'Versionado' },
-  { value: 'cancelado', label: 'Cancelado' },
+  { value: 'borrador', label: 'Borrador', labelKey: 'projects.status.borrador' },
+  { value: 'publicado', label: 'Publicado', labelKey: 'projects.status.publicado' },
+  { value: 'archivado', label: 'Archivado', labelKey: 'projects.status.archivado' },
+  { value: 'en_desarrollo', label: 'En desarrollo', labelKey: 'projects.status.en_desarrollo' },
+  { value: 'pausado', label: 'Pausado', labelKey: 'projects.status.pausado' },
+  { value: 'terminado', label: 'Terminado', labelKey: 'projects.status.terminado' },
+  { value: 'mantenimiento', label: 'Mantenimiento', labelKey: 'projects.status.mantenimiento' },
+  { value: 'versionado', label: 'Versionado', labelKey: 'projects.status.versionado' },
+  { value: 'cancelado', label: 'Cancelado', labelKey: 'projects.status.cancelado' },
 ];
 
 // ── Tipos de proyecto ──
 // IMPORTANTE:
 // El value debe coincidir con proyectos.categoria_proyecto.
 export const TIPOS_PROYECTO = [
-  { value: 'sin_especificar', label: 'Sin especificar' },
-  { value: 'portafolio', label: 'Portafolio' },
-  { value: 'educativo', label: 'Proyecto educativo' },
-  { value: 'financiero', label: 'Financiero' },
-  { value: 'ecommerce', label: 'E-commerce' },
-  { value: 'marketplace', label: 'Marketplace' },
-  { value: 'videojuego', label: 'Videojuego' },
-  { value: 'salud', label: 'Salud' },
-  { value: 'administrativo', label: 'Administrativo' },
-  { value: 'red_social', label: 'Red social' },
-  { value: 'dashboard_bi', label: 'Dashboard / BI' },
-  { value: 'gestion_empresarial', label: 'Gestión empresarial' },
-  { value: 'productividad', label: 'Productividad' },
-  { value: 'seguridad', label: 'Seguridad' },
-  { value: 'entretenimiento', label: 'Entretenimiento' },
-  { value: 'herramienta_desarrollo', label: 'Herramienta de desarrollo' },
-  { value: 'otro', label: 'Otros' },
+  { value: 'sin_especificar', label: 'Sin especificar', labelKey: 'projects.type.sin_especificar' },
+  { value: 'portafolio', label: 'Portafolio', labelKey: 'projects.type.portafolio' },
+  { value: 'educativo', label: 'Proyecto educativo', labelKey: 'projects.type.educativo' },
+  { value: 'financiero', label: 'Financiero', labelKey: 'projects.type.financiero' },
+  { value: 'ecommerce', label: 'E-commerce', labelKey: 'projects.type.ecommerce' },
+  { value: 'marketplace', label: 'Marketplace', labelKey: 'projects.type.marketplace' },
+  { value: 'videojuego', label: 'Videojuego', labelKey: 'projects.type.videojuego' },
+  { value: 'salud', label: 'Salud', labelKey: 'projects.type.salud' },
+  { value: 'administrativo', label: 'Administrativo', labelKey: 'projects.type.administrativo' },
+  { value: 'red_social', label: 'Red social', labelKey: 'projects.type.red_social' },
+  { value: 'dashboard_bi', label: 'Dashboard / BI', labelKey: 'projects.type.dashboard_bi' },
+  { value: 'gestion_empresarial', label: 'Gestión empresarial', labelKey: 'projects.type.gestion_empresarial' },
+  { value: 'productividad', label: 'Productividad', labelKey: 'projects.type.productividad' },
+  { value: 'seguridad', label: 'Seguridad', labelKey: 'projects.type.seguridad' },
+  { value: 'entretenimiento', label: 'Entretenimiento', labelKey: 'projects.type.entretenimiento' },
+  { value: 'herramienta_desarrollo', label: 'Herramienta de desarrollo', labelKey: 'projects.type.herramienta_desarrollo' },
+  { value: 'otro', label: 'Otros', labelKey: 'projects.type.otro' },
 ];
 
 // ── Plataforma objetivo ──
 // IMPORTANTE:
 // El value debe coincidir con proyectos.plataforma_objetivo.
 export const DESARROLLADO_PARA = [
-  { value: 'sin_especificar', label: 'Sin especificar' },
-  { value: 'web', label: 'Web' },
-  { value: 'movil', label: 'Móvil' },
-  { value: 'web_movil', label: 'Web + Móvil' },
-  { value: 'escritorio', label: 'Escritorio' },
-  { value: 'multiplataforma', label: 'Multiplataforma' },
-  { value: 'api_backend', label: 'API / Backend' },
-  { value: 'datos_ml', label: 'Datos / Machine Learning' },
-  { value: 'iot', label: 'IoT' },
-  { value: 'cli', label: 'CLI / Terminal' },
-  { value: 'otro', label: 'Otros' },
+  { value: 'sin_especificar', label: 'Sin especificar', labelKey: 'projects.platform.sin_especificar' },
+  { value: 'web', label: 'Web', labelKey: 'projects.platform.web' },
+  { value: 'movil', label: 'Móvil', labelKey: 'projects.platform.movil' },
+  { value: 'web_movil', label: 'Web + Móvil', labelKey: 'projects.platform.web_movil' },
+  { value: 'escritorio', label: 'Escritorio', labelKey: 'projects.platform.escritorio' },
+  { value: 'multiplataforma', label: 'Multiplataforma', labelKey: 'projects.platform.multiplataforma' },
+  { value: 'api_backend', label: 'API / Backend', labelKey: 'projects.platform.api_backend' },
+  { value: 'datos_ml', label: 'Datos / Machine Learning', labelKey: 'projects.platform.datos_ml' },
+  { value: 'iot', label: 'IoT', labelKey: 'projects.platform.iot' },
+  { value: 'cli', label: 'CLI / Terminal', labelKey: 'projects.platform.cli' },
+  { value: 'otro', label: 'Otros', labelKey: 'projects.type.otro' },
 ];
 
 // ── Catálogo de tecnologías agrupadas por categoría ──
@@ -148,4 +148,32 @@ export function normalizarId(nombre) {
     .toLowerCase()
     .replace(/[ .\-+#/]/g, '')
     .replace(/[^a-z0-9]/g, '');
+}
+
+// ─────────────────────────────────────────────────────
+// Helpers de traducción para catálogos.
+// Los componentes pueden usar getProjectOptionLabel(option, t)
+// sin romper los labels actuales.
+// ─────────────────────────────────────────────────────
+export function getProjectOptionLabel(option = {}, t = null) {
+  if (!option) return '';
+  if (typeof t === 'function' && option.labelKey) {
+    return t(option.labelKey);
+  }
+  return option.label || option.nombre || option.value || '';
+}
+
+export function getProjectStatusLabel(value, t = null) {
+  const option = ESTADOS_PROYECTO.find(item => item.value === value);
+  return option ? getProjectOptionLabel(option, t) : (value || '');
+}
+
+export function getProjectTypeLabel(value, t = null) {
+  const option = TIPOS_PROYECTO.find(item => item.value === value);
+  return option ? getProjectOptionLabel(option, t) : (value || '');
+}
+
+export function getProjectPlatformLabel(value, t = null) {
+  const option = DESARROLLADO_PARA.find(item => item.value === value);
+  return option ? getProjectOptionLabel(option, t) : (value || '');
 }

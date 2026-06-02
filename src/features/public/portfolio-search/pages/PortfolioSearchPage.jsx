@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../../../../core/i18n';
 import ActiveFilters from '../components/ActiveFilters';
 import ExperienceTagInput from '../components/ExperienceTagInput';
 import FilterSection from '../components/FilterSection';
@@ -42,31 +43,10 @@ const BASE_FILTERS = {
   per_page: 12,
 };
 
-const PROJECT_STATES = [
-  { value: 'publicado', label: 'Publicado' },
-  { value: 'en_desarrollo', label: 'En desarrollo' },
-  { value: 'borrador', label: 'Borrador' },
-  { value: 'archivado', label: 'Archivado' },
-];
-
-const PRIORITIES = [
-  { value: '', label: 'Sin prioridad' },
-  { value: 'proyectos', label: 'Proyectos' },
-  { value: 'experiencia', label: 'Experiencia' },
-  { value: 'habilidades', label: 'Habilidades' },
-];
-
-const LEVEL_LABELS = {
-  basico: 'Básico',
-  intermedio: 'Intermedio',
-  avanzado: 'Avanzado',
-  experto: 'Experto',
-};
-
-const TYPE_LABELS = {
-  laboral: 'Laboral',
-  academica: 'Académica',
-};
+const PROJECT_STATES = ['publicado', 'en_desarrollo', 'borrador', 'archivado'];
+const PRIORITY_VALUES = ['', 'proyectos', 'experiencia', 'habilidades'];
+/*const LEVEL_VALUES = ['basico', 'intermedio', 'avanzado', 'experto'];
+const TYPE_VALUES = ['laboral', 'academica'];*/
 
 const cloneFilters = (filters) => JSON.parse(JSON.stringify(filters));
 
@@ -80,6 +60,7 @@ const emptyCatalogs = () => ({
 });
 
 const PortfolioSearchPage = () => {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryFromUrl = searchParams.get('q') || '';
   const cachedCatalogs = getCachedSearchCatalogs();
@@ -96,6 +77,19 @@ const PortfolioSearchPage = () => {
   const [error, setError] = useState('');
   const [authRequired, setAuthRequired] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const levelLabel = (value) => t(`portfolioSearch.level.${value}`);
+  const typeLabel = (value) => t(`portfolioSearch.experience.${value}`);
+  const projectStateLabel = (value) => t(`portfolioSearch.projectState.${value}`);
+  const priorityLabel = (value) => (
+    value ? t(`portfolioSearch.priority.${value}`) : t('portfolioSearch.priority.none')
+  );
+
+  const translateSearchError = (message) => {
+    if (message === SEARCH_AUTH_REQUIRED_MESSAGE) return t('portfolioSearch.error.authRequired');
+    if (!message) return t('portfolioSearch.error.search');
+    return message;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -118,7 +112,7 @@ const PortfolioSearchPage = () => {
         if (!mounted) return;
         if (err.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
           setAuthRequired(true);
-          setError(err.message);
+          setError(t('portfolioSearch.error.authRequired'));
           setCatalogs(emptyCatalogs());
           return;
         }
@@ -133,7 +127,7 @@ const PortfolioSearchPage = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!queryFromUrl.trim()) return;
@@ -213,14 +207,15 @@ const PortfolioSearchPage = () => {
         setSearchParams({});
       }
     } catch (err) {
-      const message = err.message || 'No se pudo realizar la búsqueda.';
-      if (!cached || message === SEARCH_AUTH_REQUIRED_MESSAGE) {
+      const rawMessage = err.message || '';
+      const message = translateSearchError(rawMessage);
+      if (!cached || rawMessage === SEARCH_AUTH_REQUIRED_MESSAGE) {
         setResults([]);
         setMeta({ current_page: page, last_page: 1, total: 0, per_page: 12 });
       }
       setError(message);
       setHasSearched(true);
-      if (message === SEARCH_AUTH_REQUIRED_MESSAGE) {
+      if (rawMessage === SEARCH_AUTH_REQUIRED_MESSAGE) {
         setAuthRequired(true);
       }
     } finally {
@@ -272,26 +267,26 @@ const PortfolioSearchPage = () => {
       if (label) chips.push({ id, label, onRemove: clear });
     };
 
-    const pushArray = (section, key, prefix = '') => {
+    const pushArray = (section, key, labelKey = '') => {
       filters[section][key].forEach((value) => {
         chips.push({
           id: `${section}-${key}-${value}`,
-          label: `${prefix}${value}`,
+          label: t(labelKey, { value }),
           onRemove: () => removeArrayChip(section, key, value),
         });
       });
     };
 
     pushText('query', filters.query, () => setRoot('query', ''));
-    pushText('nombre', filters.usuario.nombre && `Nombre: ${filters.usuario.nombre}`, () => setSectionValue('usuario', 'nombre', ''));
-    pushArray('usuario', 'ciudad', 'Ciudad: ');
-    pushArray('usuario', 'pais', 'País: ');
-    pushArray('usuario', 'profesion', 'Profesión: ');
+    pushText('nombre', filters.usuario.nombre && t('portfolioSearch.chip.name', { value: filters.usuario.nombre }), () => setSectionValue('usuario', 'nombre', ''));
+    pushArray('usuario', 'ciudad', 'portfolioSearch.chip.city');
+    pushArray('usuario', 'pais', 'portfolioSearch.chip.country');
+    pushArray('usuario', 'profesion', 'portfolioSearch.chip.profession');
 
     filters.habilidades.tecnicas.forEach((skill) => {
       chips.push({
         id: `tec-${skill.item}-${skill.nivel}`,
-        label: `Tec: ${skill.item} / ${LEVEL_LABELS[skill.nivel] || skill.nivel}`,
+        label: t('portfolioSearch.chip.technical', { skill: skill.item, level: levelLabel(skill.nivel) || skill.nivel }),
         className: `level-${skill.nivel}`,
         onRemove: () => removeSkillChip('tecnicas', skill.item),
       });
@@ -300,7 +295,7 @@ const PortfolioSearchPage = () => {
     filters.habilidades.blandas.forEach((skill) => {
       chips.push({
         id: `bla-${skill.item}-${skill.nivel}`,
-        label: `Blanda: ${skill.item} / ${LEVEL_LABELS[skill.nivel] || skill.nivel}`,
+        label: t('portfolioSearch.chip.soft', { skill: skill.item, level: levelLabel(skill.nivel) || skill.nivel }),
         className: `level-${skill.nivel}`,
         onRemove: () => removeSkillChip('blandas', skill.item),
       });
@@ -309,36 +304,35 @@ const PortfolioSearchPage = () => {
     filters.experiencia.forEach((experience) => {
       chips.push({
         id: `exp-${experience.cargo}-${experience.tipos.join('-')}`,
-        label: `${experience.cargo} / ${experience.tipos.map((type) => TYPE_LABELS[type] || type).join(' + ')}`,
+        label: `${experience.cargo} / ${experience.tipos.map((type) => typeLabel(type) || type).join(' + ')}`,
         className: 'exp-chip',
         onRemove: () => removeExperienceChip(experience.cargo),
       });
     });
 
-    pushArray('proyectos', 'tecnologias', 'Tecnología: ');
-    pushArray('proyectos', 'tipo', 'Tipo proyecto: ');
-    pushArray('proyectos', 'estado', 'Estado: ');
+    pushArray('proyectos', 'tecnologias', 'portfolioSearch.chip.technology');
+    pushArray('proyectos', 'tipo', 'portfolioSearch.chip.projectType');
+    pushArray('proyectos', 'estado', 'portfolioSearch.chip.status');
 
     if (filters.orden.fecha_desde) {
       chips.push({
         id: 'fecha-desde',
-        label: `Desde: ${filters.orden.fecha_desde}`,
+        label: t('portfolioSearch.chip.from', { date: filters.orden.fecha_desde }),
         onRemove: () => setOrderValue('fecha_desde', ''),
       });
     }
 
     if (filters.orden.prioridad) {
-      const priority = PRIORITIES.find((item) => item.value === filters.orden.prioridad)?.label || filters.orden.prioridad;
       chips.push({
         id: 'prioridad',
-        label: `Prioridad: ${priority}`,
+        label: t('portfolioSearch.chip.priority', { value: priorityLabel(filters.orden.prioridad) }),
         onRemove: () => setOrderValue('prioridad', ''),
       });
     }
 
     return chips;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, t]);
 
   const currentPage = Number(meta?.current_page || 1);
   const lastPage = Number(meta?.last_page || 1);
@@ -359,120 +353,120 @@ const PortfolioSearchPage = () => {
             className="ps-search-input"
             value={filters.query}
             onChange={(event) => setRoot('query', event.target.value)}
-            placeholder="Buscar por habilidad, profesión, tecnología, nombre o palabra clave..."
+            placeholder={t('portfolioSearch.search.placeholder')}
           />
           <button type="submit" className="ps-btn-primary" disabled={loading || catalogLoading}>
-            {loading ? 'Buscando...' : 'Buscar portafolios'}
+            {loading ? t('portfolioSearch.search.loading') : t('portfolioSearch.search.submit')}
           </button>
           <button type="button" className="ps-btn-secondary danger-hover" onClick={resetFilters} disabled={loading}>
-            Limpiar
+            {t('portfolioSearch.search.clear')}
           </button>
         </form>
 
         <ActiveFilters chips={activeChips} onClear={resetFilters} />
 
         <div className="ps-layout">
-          <aside className="ps-filters" aria-label="Filtros de búsqueda">
-            <FilterSection title="Características del usuario" icon="US" defaultOpen>
+          <aside className="ps-filters" aria-label={t('portfolioSearch.filters.aria')}>
+            <FilterSection title={t('portfolioSearch.sections.user')} icon="US" defaultOpen>
               <div className="ps-field">
-                <label className="ps-label">Nombre</label>
+                <label className="ps-label">{t('portfolioSearch.user.name')}</label>
                 <input
                   type="text"
                   className="ps-input"
                   value={filters.usuario.nombre}
                   onChange={(event) => setSectionValue('usuario', 'nombre', event.target.value)}
-                  placeholder="ej. Juan Pérez"
+                  placeholder={t('portfolioSearch.user.namePlaceholder')}
                 />
               </div>
 
               <TagInput
-                label="Ciudad"
-                placeholder="ej. Cochabamba, La Paz..."
+                label={t('portfolioSearch.user.city')}
+                placeholder={t('portfolioSearch.user.cityPlaceholder')}
                 values={filters.usuario.ciudad}
                 onChange={(values) => setSectionValue('usuario', 'ciudad', values)}
               />
 
               <TagInput
-                label="País"
-                placeholder="ej. Bolivia, Argentina..."
+                label={t('portfolioSearch.user.country')}
+                placeholder={t('portfolioSearch.user.countryPlaceholder')}
                 values={filters.usuario.pais}
                 onChange={(values) => setSectionValue('usuario', 'pais', values)}
               />
 
               <TagInput
-                label="Profesión o rol"
-                placeholder="ej. Backend Developer..."
+                label={t('portfolioSearch.user.profession')}
+                placeholder={t('portfolioSearch.user.professionPlaceholder')}
                 values={filters.usuario.profesion}
                 suggestions={catalogs.profesiones}
                 onChange={(values) => setSectionValue('usuario', 'profesion', values)}
               />
             </FilterSection>
 
-            <FilterSection title="Habilidades" icon="HB" defaultOpen>
+            <FilterSection title={t('portfolioSearch.sections.skills')} icon="HB" defaultOpen>
               <SkillLevelTagInput
-                label="Habilidades técnicas"
-                placeholder="ej. React, Laravel, Docker..."
+                label={t('portfolioSearch.skills.technical')}
+                placeholder={t('portfolioSearch.skills.technicalPlaceholder')}
                 values={filters.habilidades.tecnicas}
                 suggestions={catalogs.habilidadesTecnicas}
                 onChange={(values) => setSectionValue('habilidades', 'tecnicas', values)}
               />
 
               <SkillLevelTagInput
-                label="Habilidades blandas"
-                placeholder="ej. Liderazgo, Comunicación..."
+                label={t('portfolioSearch.skills.soft')}
+                placeholder={t('portfolioSearch.skills.softPlaceholder')}
                 values={filters.habilidades.blandas}
                 suggestions={catalogs.habilidadesBlandas}
                 onChange={(values) => setSectionValue('habilidades', 'blandas', values)}
               />
             </FilterSection>
 
-            <FilterSection title="Experiencia" icon="EX">
+            <FilterSection title={t('portfolioSearch.sections.experience')} icon="EX">
               <ExperienceTagInput
-                label="Cargo o puesto"
-                placeholder="ej. Backend Developer, Analista..."
+                label={t('portfolioSearch.experience.position')}
+                placeholder={t('portfolioSearch.experience.positionPlaceholder')}
                 values={filters.experiencia}
                 suggestions={catalogs.cargos}
                 onChange={(values) => setRoot('experiencia', values)}
               />
             </FilterSection>
 
-            <FilterSection title="Proyectos" icon="PR">
+            <FilterSection title={t('portfolioSearch.sections.projects')} icon="PR">
               <TagInput
-                label="Tecnologías usadas"
-                placeholder="ej. PHP, PostgreSQL, Vue..."
+                label={t('portfolioSearch.projects.technologies')}
+                placeholder={t('portfolioSearch.projects.technologiesPlaceholder')}
                 values={filters.proyectos.tecnologias}
                 suggestions={catalogs.tecnologias}
                 onChange={(values) => setSectionValue('proyectos', 'tecnologias', values)}
               />
 
               <TagInput
-                label="Tipo de proyecto"
-                placeholder="ej. Web, API, móvil..."
+                label={t('portfolioSearch.projects.type')}
+                placeholder={t('portfolioSearch.projects.typePlaceholder')}
                 values={filters.proyectos.tipo}
                 suggestions={catalogs.tiposProyecto}
                 onChange={(values) => setSectionValue('proyectos', 'tipo', values)}
               />
 
               <div className="ps-field">
-                <span className="ps-label">Estado del proyecto</span>
+                <span className="ps-label">{t('portfolioSearch.projects.status')}</span>
                 <div className="ps-chip-group two-cols">
                   {PROJECT_STATES.map((state) => (
                     <button
                       type="button"
-                      key={state.value}
-                      className={`ps-select-chip ${filters.proyectos.estado.includes(state.value) ? 'active' : ''}`}
-                      onClick={() => toggleProjectState(state.value)}
+                      key={state}
+                      className={`ps-select-chip ${filters.proyectos.estado.includes(state) ? 'active' : ''}`}
+                      onClick={() => toggleProjectState(state)}
                     >
-                      {state.label}
+                      {projectStateLabel(state)}
                     </button>
                   ))}
                 </div>
               </div>
             </FilterSection>
 
-            <FilterSection title="Ordenamiento y relevancia" icon="OR">
+            <FilterSection title={t('portfolioSearch.sections.order')} icon="OR">
               <div className="ps-field">
-                <span className="ps-label">Dirección</span>
+                <span className="ps-label">{t('portfolioSearch.order.direction')}</span>
                 <div className="ps-chip-group two-cols">
                   <button
                     type="button"
@@ -492,7 +486,7 @@ const PortfolioSearchPage = () => {
               </div>
 
               <div className="ps-field">
-                <label className="ps-label">Fecha desde</label>
+                <label className="ps-label">{t('portfolioSearch.order.dateFrom')}</label>
                 <input
                   type="date"
                   className="ps-input"
@@ -502,18 +496,18 @@ const PortfolioSearchPage = () => {
               </div>
 
               <div className="ps-field">
-                <span className="ps-label">Priorizar por</span>
+                <span className="ps-label">{t('portfolioSearch.order.priority')}</span>
                 <div className="ps-priority-list">
-                  {PRIORITIES.map((priority) => (
-                    <label className={`ps-radio-row ${filters.orden.prioridad === priority.value ? 'active' : ''}`} key={priority.value}>
+                  {PRIORITY_VALUES.map((priority) => (
+                    <label className={`ps-radio-row ${filters.orden.prioridad === priority ? 'active' : ''}`} key={priority || 'none'}>
                       <input
                         type="radio"
                         name="portfolio-priority"
-                        value={priority.value}
-                        checked={filters.orden.prioridad === priority.value}
-                        onChange={() => setOrderValue('prioridad', priority.value)}
+                        value={priority}
+                        checked={filters.orden.prioridad === priority}
+                        onChange={() => setOrderValue('prioridad', priority)}
                       />
-                      <span>{priority.label}</span>
+                      <span>{priorityLabel(priority)}</span>
                     </label>
                   ))}
                 </div>
@@ -526,15 +520,15 @@ const PortfolioSearchPage = () => {
               <div>
                 <span className="ps-results-count">
                   {loading
-                    ? 'Buscando portafolios...'
+                    ? t('portfolioSearch.results.loading')
                     : hasSearched
-                      ? `Mostrando ${results.length} de ${total} portafolios`
-                      : 'Configura filtros y ejecuta una búsqueda'}
+                      ? t('portfolioSearch.results.count', { shown: results.length, total })
+                      : t('portfolioSearch.results.ready')}
                 </span>
                 <small>
                   {hasSearched
-                    ? `Dirección ${filters.orden.direccion.toUpperCase()}`
-                    : 'La búsqueda avanzada no se ejecuta hasta presionar Buscar portafolios'}
+                    ? t('portfolioSearch.results.direction', { direction: filters.orden.direccion.toUpperCase() })
+                    : t('portfolioSearch.results.helper')}
                 </small>
               </div>
             </div>
@@ -564,16 +558,16 @@ const PortfolioSearchPage = () => {
                       disabled={currentPage <= 1 || loading}
                       onClick={() => executeSearch(currentPage - 1)}
                     >
-                      Anterior
+                      {t('portfolioSearch.pagination.previous')}
                     </button>
-                    <span>Página {currentPage} de {lastPage}</span>
+                    <span>{t('portfolioSearch.pagination.page', { current: currentPage, last: lastPage })}</span>
                     <button
                       type="button"
                       className="ps-btn-secondary"
                       disabled={currentPage >= lastPage || loading}
                       onClick={() => executeSearch(currentPage + 1)}
                     >
-                      Siguiente
+                      {t('portfolioSearch.pagination.next')}
                     </button>
                   </div>
                 )}

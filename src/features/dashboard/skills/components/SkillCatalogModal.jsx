@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../../../../core/i18n";
 import DashboardEdit, {
   DashboardEditBody,
   DashboardEditFieldError,
@@ -18,21 +19,24 @@ const getSkillName = (skill) =>
 const getSkillType = (skill) =>
   String(skill?.tipo ?? skill?.habilidad?.tipo ?? "").toLowerCase();
 
-const typeLabel = (tipo) => (tipo === "tecnica" ? "técnica" : "blanda");
+const typeLabel = (tipo, t) => t(`skills.type.${tipo}`);
 
-const duplicateMessage = (duplicate, requestedTipo, typedName) => {
+const duplicateMessage = (duplicate, requestedTipo, typedName, t) => {
   const duplicateTipo = getSkillType(duplicate);
   const duplicateName = getSkillName(duplicate) || typedName;
 
   if (duplicateTipo === requestedTipo) {
-    return `La habilidad "${duplicateName}" ya existe como habilidad ${typeLabel(
-      duplicateTipo
-    )}. Selecciónala desde el catálogo en lugar de crearla nuevamente.`;
+    return t("skills.form.duplicateSame", {
+      name: duplicateName,
+      type: typeLabel(duplicateTipo, t),
+    });
   }
 
-  return `La habilidad "${duplicateName}" ya está registrada como habilidad ${typeLabel(
-    duplicateTipo
-  )}. No puedes crearla como habilidad ${typeLabel(requestedTipo)}.`;
+  return t("skills.form.duplicateOther", {
+    name: duplicateName,
+    existingType: typeLabel(duplicateTipo, t),
+    requestedType: typeLabel(requestedTipo, t),
+  });
 };
 
 export default function SkillCatalogModal({
@@ -42,6 +46,7 @@ export default function SkillCatalogModal({
   onSave,
   onCancel,
 }) {
+  const { t } = useLanguage();
   const [nombre, setNombre] = useState(
     initialName ? formatSkillDisplayName(initialName.trim().replace(/\s+/g, " ")) : ""
   );
@@ -67,7 +72,7 @@ export default function SkillCatalogModal({
       return {
         ok: false,
         cleanName,
-        message: "Escribe el nombre de la habilidad.",
+        message: t("skills.catalog.error.nameRequired"),
       };
     }
 
@@ -75,7 +80,7 @@ export default function SkillCatalogModal({
       return {
         ok: false,
         cleanName,
-        message: "La habilidad debe tener al menos 2 caracteres.",
+        message: t("skills.form.error.minLength"),
       };
     }
 
@@ -83,7 +88,7 @@ export default function SkillCatalogModal({
       return {
         ok: false,
         cleanName,
-        message: "La habilidad no puede superar los 40 caracteres.",
+        message: t("skills.form.error.maxLength"),
       };
     }
 
@@ -93,7 +98,7 @@ export default function SkillCatalogModal({
       return {
         ok: false,
         cleanName,
-        message: duplicateMessage(duplicate, tipo, cleanName),
+        message: duplicateMessage(duplicate, tipo, cleanName, t),
       };
     }
 
@@ -150,10 +155,10 @@ export default function SkillCatalogModal({
         message.toLowerCase().includes("unique")
       ) {
         setError(
-          `No se pudo crear "${validation.cleanName}" porque ya existe en el catálogo. Selecciónala desde la búsqueda.`
+          t("skills.catalog.error.exists", { name: validation.cleanName })
         );
       } else {
-        setError(message || "Error al crear habilidad en catálogo");
+        setError(message || t("skills.catalog.error.create"));
       }
 
       setConfirmar(false);
@@ -164,22 +169,22 @@ export default function SkillCatalogModal({
 
   return (
     <DashboardEdit
-      title={`Nueva habilidad ${tipo === "tecnica" ? "técnica" : "blanda"}`}
-      subtitle="Se agregará al catálogo general para poder seleccionarla."
+      title={t("skills.catalog.title", { type: typeLabel(tipo, t) })}
+      subtitle={t("skills.catalog.subtitle")}
       onClose={onCancel}
       closeDisabled={loading}
       closeOnOverlay={!loading}
       size="sm"
       className="dash-edit-modal--stacked"
-      ariaLabel="Nueva habilidad"
+      ariaLabel={t("skills.catalog.aria")}
     >
       {!confirmar ? (
         <form onSubmit={handleSubmit} style={{ display: "contents" }}>
           <DashboardEditBody>
-            <DashboardEditSection label="Datos del catálogo">
+            <DashboardEditSection label={t("skills.catalog.section")}>
               <div className="dash-edit-field mb-3">
                 <label className="dash-edit-label">
-                  Nombre de la habilidad{" "}
+                  {t("skills.catalog.name")}{" "}
                   <span className="dash-edit-required">*</span>
                 </label>
                 <input
@@ -187,7 +192,7 @@ export default function SkillCatalogModal({
                   className={`form-control dash-edit-input ${
                     error ? "dash-edit-input-error" : ""
                   }`}
-                  placeholder="Ej: Inglés, AWS, Scrum..."
+                  placeholder={t("skills.catalog.placeholder.name")}
                   value={nombre}
                   onChange={(e) => {
                     const nextValue = e.target.value;
@@ -222,7 +227,7 @@ export default function SkillCatalogModal({
 
               <div className="dash-edit-field">
                 <label className="dash-edit-label">
-                  Pequeña descripción
+                  {t("skills.catalog.description")}
                   <span
                     className="dash-edit-char-count"
                     style={{ color: "var(--gris-texto)" }}
@@ -236,7 +241,7 @@ export default function SkillCatalogModal({
                   maxLength="30"
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="Ej: Servicios cloud"
+                  placeholder={t("skills.catalog.placeholder.description")}
                   disabled={loading}
                 />
               </div>
@@ -252,14 +257,14 @@ export default function SkillCatalogModal({
               onClick={onCancel}
               disabled={loading}
             >
-              Cancelar
+              {t("skills.common.cancel")}
             </button>
             <button
               type="submit"
               className="dash-edit-btn dash-edit-btn--primary"
               disabled={loading}
             >
-              Crear en catálogo
+              {t("skills.catalog.create")}
             </button>
           </DashboardEditFooter>
         </form>
@@ -268,7 +273,7 @@ export default function SkillCatalogModal({
           <DashboardEditBody>
             <div className="dash-edit-confirm">
               <p>
-                Estás por crear <strong>{nombre}</strong> en el catálogo general.
+                {t("skills.catalog.confirmMessage", { name: nombre })}
               </p>
               <DashboardEditFieldError msg={error} />
             </div>
@@ -281,7 +286,7 @@ export default function SkillCatalogModal({
               onClick={() => setConfirmar(false)}
               disabled={loading}
             >
-              Atrás
+              {t("skills.common.back")}
             </button>
             <button
               type="button"
@@ -292,10 +297,10 @@ export default function SkillCatalogModal({
               {loading ? (
                 <>
                   <DashboardEditSpinner />
-                  Creando...
+                  {t("skills.catalog.creating")}
                 </>
               ) : (
-                "Sí, crear"
+                t("skills.catalog.confirm")
               )}
             </button>
           </DashboardEditFooter>

@@ -13,8 +13,8 @@ import {
   BsThreeDots,
 } from 'react-icons/bs';
 import {
+  USER_ALL_NOTICE_TYPES,
   USER_NOTICE_STATUSES,
-  USER_NOTICE_TYPES,
   getUserNoticeStatusMeta,
   getUserNoticeTypeMeta,
 } from '../services/usersService';
@@ -88,7 +88,10 @@ export default function UsersCommunicationsPanel({
         <div className="usr-view-toolbar">
           <div className="usr-view-toolbar-copy">
             <span className="usr-sheet-kicker">Avisos</span>
-            <h2 className="usr-sheet-title">Avisos a usuarios</h2>
+            <h2 className="usr-sheet-title">Avisos generales del sistema</h2>
+            <p className="usr-sheet-copy">
+              Gestiona comunicados generales, seguridad, mantenimiento y mensajes dirigidos por estado o rol.
+            </p>
           </div>
 
           <div className="usr-view-toolbar-actions">
@@ -129,7 +132,7 @@ export default function UsersCommunicationsPanel({
             >
               Todos
             </button>
-            {USER_NOTICE_TYPES.map((type) => (
+            {USER_ALL_NOTICE_TYPES.map((type) => (
               <button
                 key={type.id}
                 type="button"
@@ -237,8 +240,8 @@ export default function UsersCommunicationsPanel({
             title={sourceReady ? 'Sin avisos encontrados' : 'Sin avisos registrados'}
             description={sourceReady
               ? 'No hay avisos que coincidan con la busqueda o los filtros actuales.'
-              : 'Aqui apareceran los avisos enviados, programados o guardados como borrador cuando exista informacion real.'}
-            hint="El boton Nuevo aviso abre el modal de redaccion y segmentacion."
+              : 'Aqui apareceran avisos generales, comunicados de seguridad, mantenimiento o mensajes por rol cuando exista informacion real.'}
+            hint="El boton Nuevo aviso abre el modal de redaccion, urgencia y segmentacion."
           />
         )}
       </section>

@@ -22,8 +22,10 @@ import ViewPreviewNotice from '../components/ViewPreviewNotice';
 import ViewConfigModal from '../modal/ViewConfigModal';
 import ViewDownloadModal from '../modal/ViewDownloadModal';
 import { exportPortfolio } from '../services/portfolioExportService';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function ViewPage() {
+  const { t } = useLanguage();
   const {
     perfil,
     redes,
@@ -49,7 +51,7 @@ export default function ViewPage() {
   const [exportError, setExportError] = useState('');
   const portfolioRef = useRef(null);
 
-  const title = `${getFullName(perfil)} - Portafolio`;
+  const title = `${getFullName(perfil)} - ${t('view.portfolio.titleSuffix')}`;
   const visibilidad = config?.visibilidad || {};
   const isPublished = Boolean(config?.publicado);
 
@@ -68,8 +70,8 @@ export default function ViewPage() {
         title: getFullName(perfil),
       });
       setDownloadOpen(false);
-    } catch (err) {
-      setExportError(err.message || 'No se pudo descargar el portafolio.');
+    } catch {
+      setExportError(t('view.export.error.download'));
     } finally {
       setExporting('');
     }
@@ -98,12 +100,12 @@ export default function ViewPage() {
   if (loading && !hasPortfolioContent) {
     return (
       <div className="vw-page">
-        <Header title="Vista Portafolio" />
+        <Header title={t('view.header.title')} />
 
         <main className="page">
           <div className="dash-loading dash-loading--page" role="status" aria-live="polite">
             <span className="dash-loading-spinner" />
-            <span>Cargando vista portafolio...</span>
+            <span>{t('view.loading')}</span>
           </div>
         </main>
       </div>
@@ -113,7 +115,7 @@ export default function ViewPage() {
   if (!loading && error && !hasPortfolioContent) {
     return (
       <div className="vw-page">
-        <Header title="Vista Portafolio" />
+        <Header title={t('view.header.title')} />
 
         <main className="page">
           <ViewPreviewNotice
@@ -123,7 +125,7 @@ export default function ViewPage() {
           />
 
           <div className="dash-error-state dash-error-state--page">
-            No se pudo cargar la vista del portafolio.
+            {t('view.error.load')}
           </div>
         </main>
       </div>
@@ -148,11 +150,11 @@ export default function ViewPage() {
       }}
     >
       <Header
-        title="Vista Portafolio"
+        title={t('view.header.title')}
         actions={[
           {
-            label: 'Descargar',
-            title: 'Descargar portafolio',
+            label: t('view.action.download'),
+            title: t('view.action.downloadTitle'),
             icon: <FiDownload />,
             variant: 'secondary',
             disabled: !hasPortfolioContent,
@@ -162,16 +164,16 @@ export default function ViewPage() {
             },
           },
           {
-            label: 'Personalizar',
-            title: 'Personalizar vista',
+            label: t('view.action.customize'),
+            title: t('view.action.customizeTitle'),
             icon: <FiSettings />,
             variant: 'secondary',
             onClick: () => setConfigOpen(true),
           },
           {
-            label: isPublished ? 'Ocultar' : 'Publicar',
-            loadingLabel: isPublished ? 'Ocultando...' : 'Publicando...',
-            title: isPublished ? 'Ocultar portafolio' : 'Publicar portafolio',
+            label: isPublished ? t('view.action.hide') : t('view.action.publish'),
+            loadingLabel: isPublished ? t('view.action.hiding') : t('view.action.publishing'),
+            title: isPublished ? t('view.action.hideTitle') : t('view.action.publishTitle'),
             icon: isPublished ? <FiEyeOff /> : <FiCheck />,
             loading: guardando,
             variant: isPublished ? 'secondary' : undefined,
@@ -243,15 +245,15 @@ export default function ViewPage() {
         open={publishTarget !== null}
         variant={publishTarget === false ? 'yellow' : 'green'}
         icon={publishTarget === false ? 'warning' : 'check'}
-        title={publishTarget === false ? 'Ocultar portafolio' : 'Publicar portafolio'}
-        subtitle={publishTarget === false ? 'Confirmacion de privacidad' : 'Confirmacion de publicacion'}
+        title={publishTarget === false ? t('view.publish.hideTitle') : t('view.publish.publishTitle')}
+        subtitle={publishTarget === false ? t('view.publish.privacyConfirmation') : t('view.publish.publishConfirmation')}
         message={
           publishTarget === false
-            ? 'El portafolio dejara de estar disponible en la vista publica y en los listados.'
-            : 'Deseas publicar esta vista del portafolio con la visibilidad configurada?'
+            ? t('view.publish.hideMessage')
+            : t('view.publish.publishMessage')
         }
-        confirmLabel={publishTarget === false ? 'Si, ocultar' : 'Si, publicar'}
-        cancelLabel="Cancelar"
+        confirmLabel={publishTarget === false ? t('view.publish.confirmHide') : t('view.publish.confirmPublish')}
+        cancelLabel={t('actions.cancel')}
         loading={guardando}
         onConfirm={handlePublish}
         onClose={() => setPublishTarget(null)}

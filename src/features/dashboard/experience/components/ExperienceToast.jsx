@@ -1,6 +1,9 @@
 import React from "react";
+import { useLanguage } from "../../../../core/i18n";
 
 export default function ExperienceToast({ toast }) {
+  const { t } = useLanguage();
+
   if (!toast) return null;
 
   const isError = toast.tipo === "error";
@@ -14,10 +17,10 @@ export default function ExperienceToast({ toast }) {
 
   const icon = isError ? "!" : isWarning ? "!" : "✓";
   const title = isError
-    ? "Ocurrió un problema"
+    ? t("experience.toast.errorTitle")
     : isWarning
-      ? "Atención"
-      : "Operación exitosa";
+      ? t("experience.toast.warningTitle")
+      : t("experience.toast.successTitle");
 
   return (
     <>
@@ -206,7 +209,7 @@ export default function ExperienceToast({ toast }) {
             </p>
 
             <div className="experience-toast-meta">
-              Experiencia
+              {t("experience.page.title")}
             </div>
           </div>
         </div>

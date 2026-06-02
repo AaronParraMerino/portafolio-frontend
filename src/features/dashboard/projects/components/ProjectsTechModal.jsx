@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import { normalizarId } from '../model/projectsModel';
 import '../styles/projects.css';
 
@@ -66,6 +67,7 @@ export default function ProjectsTechModal({
   onConfirmar,
   onCerrar,
 }) {
+  const { t } = useLanguage();
   const [nombre, setNombre] = useState('');
   const [categoria, setCategoria] = useState('Personalizado');
   const [touched, setTouched] = useState(false);
@@ -101,16 +103,12 @@ export default function ProjectsTechModal({
 
   const getError = (force = false) => {
     if (!force && !touched) return null;
-    if (!nombreTrim) return 'El nombre es obligatorio.';
-    if (nombreTrim.length < 2) return 'Mínimo 2 caracteres.';
-    if (nombreTrim.length > 60) return 'Máximo 60 caracteres.';
+    if (!nombreTrim) return t('projects.validation.techNameRequired');
+    if (nombreTrim.length < 2) return t('projects.validation.techNameMin');
+    if (nombreTrim.length > 60) return t('projects.validation.techNameMax');
 
     if (duplicado) {
-      const cat = duplicado.categoria !== 'Personalizado'
-        ? ` (categoría: ${duplicado.categoria})`
-        : '';
-
-      return `"${duplicado.nombre}" ya existe en el catálogo${cat}. No es necesario crearla.`;
+      return t('projects.validation.techDuplicate');
     }
 
     return null;
@@ -158,13 +156,13 @@ export default function ProjectsTechModal({
         style={{ maxWidth: 420 }}
         role="dialog"
         aria-modal="true"
-        aria-label="Nueva tecnología"
+        aria-label={t('projects.tech.newTechnology')}
       >
         <div className="dash-edit-head prj-modal-head">
           <div>
-            <div className="dash-edit-title prj-modal-title">Nueva tecnología</div>
+            <div className="dash-edit-title prj-modal-title">{t('projects.tech.newTitle')}</div>
             <div className="dash-edit-subtitle prj-modal-sub">
-              Agrega una herramienta que no está en el catálogo
+              {t('projects.tech.addCustomHint')}
             </div>
           </div>
 
@@ -172,7 +170,7 @@ export default function ProjectsTechModal({
             type="button"
             className="dash-edit-close prj-modal-close"
             onClick={cerrar}
-            title="Cerrar"
+            title={t('projects.tech.close')}
           >
             <svg viewBox="0 0 12 12">
               <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2" />
@@ -184,7 +182,7 @@ export default function ProjectsTechModal({
           <div className="row g-3">
             <div className="col-12">
               <label className="prj-label">
-                Nombre de la tecnología
+                {t('projects.tech.nameLabel')}
                 <span className="prj-required-star"> *</span>
               </label>
 
@@ -198,14 +196,14 @@ export default function ProjectsTechModal({
                 }}
                 onBlur={() => setTouched(true)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ej: Tauri, Bun, Drizzle ORM..."
+                placeholder={t('projects.tech.namePlaceholder')}
                 maxLength={61}
                 autoComplete="off"
               />
 
               {nombreTrim.length >= 2 && !duplicado && (
                 <div className="prj-tech-modal-preview">
-                  <span>Se guardará como:</span>
+                  <span>{t('projects.tech.preview')}:</span>
                   <span className="prj-tag-chip" style={{ pointerEvents: 'none', fontSize: 11 }}>
                     {nombreFinal}
                   </span>
@@ -227,13 +225,13 @@ export default function ProjectsTechModal({
 
               {!touched && (
                 <div className="prj-field-hint">
-                  El nombre se formateará automáticamente al estilo del catálogo.
+                  {t('projects.tech.preview')}
                 </div>
               )}
             </div>
 
             <div className="col-12">
-              <label className="prj-label">Categoría</label>
+              <label className="prj-label">{t('projects.tech.categoryLabel')}</label>
 
               <select
                 className="dash-edit-select prj-select"
@@ -242,14 +240,13 @@ export default function ProjectsTechModal({
               >
                 {CATEGORIAS_DISPONIBLES.map(c => (
                   <option key={c} value={c}>
-                    {c}
+                    {t(`projects.category.${c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace('movil', 'mobile').replace('lenguaje', 'language').replace('herramienta', 'tool').replace('personalizado', 'custom').replace('bd', 'database')}`)}
                   </option>
                 ))}
               </select>
 
               <div className="prj-field-hint">
-                Elegí la categoría que mejor describe esta tecnología.
-                Si no estás seguro, dejá &ldquo;Personalizado&rdquo;.
+                {t('projects.tech.categoryLabel')}
               </div>
             </div>
           </div>
@@ -257,7 +254,7 @@ export default function ProjectsTechModal({
 
         <div className="dash-edit-footer prj-modal-foot">
           <button type="button" className="dash-edit-btn dash-edit-btn--secondary prj-btn-cancel" onClick={cerrar}>
-            Cancelar
+            {t('projects.form.cancel')}
           </button>
 
           <button
@@ -269,7 +266,7 @@ export default function ProjectsTechModal({
             <svg viewBox="0 0 14 14">
               <path d="M6 1v10M1 6h10" stroke="currentColor" fill="none" strokeWidth="2.2" />
             </svg>
-            Agregar al catálogo
+            {t('projects.tech.create')}
           </button>
         </div>
       </div>

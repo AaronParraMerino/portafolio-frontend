@@ -1,10 +1,12 @@
 // src/features/dashboard/view/components/ViewPreviewNotice.jsx
+import { useLanguage } from '../../../../core/i18n';
 
 export default function ViewPreviewNotice({
   loading = false,
   dataSource = 'backend',
   error = null,
 }) {
+  const { t } = useLanguage();
   const isPartial = dataSource === 'partial';
   const isCache = dataSource === 'cache';
   const isError = dataSource === 'error';
@@ -14,13 +16,13 @@ export default function ViewPreviewNotice({
 
   const message = loading
     ? isCache
-      ? 'Mostrando datos en cache mientras se actualiza el perfil.'
-      : 'Cargando datos reales del portafolio...'
+      ? t('view.preview.cacheUpdating')
+      : t('view.preview.loading')
     : isCache
-      ? 'No se pudo actualizar desde backend. Se mantiene la informacion en cache.'
+      ? t('view.preview.cache')
       : isError
-        ? 'No se pudo cargar la vista del portafolio desde backend.'
-        : 'Algunas secciones no respondieron y se muestran solo los datos disponibles.';
+        ? t('view.preview.error')
+        : t('view.preview.partial');
 
   return (
     <div
@@ -46,7 +48,7 @@ export default function ViewPreviewNotice({
 
       <span className="preview-notice-text">
         <strong>
-          {loading ? 'Sincronizando:' : isError ? 'Error:' : 'Vista previa:'}
+          {loading ? t('view.preview.syncing') : isError ? t('view.preview.errorLabel') : t('view.preview.previewLabel')}
         </strong>{' '}
         {message}
 

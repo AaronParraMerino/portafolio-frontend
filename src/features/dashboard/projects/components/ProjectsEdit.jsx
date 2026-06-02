@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import '../styles/projects.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import ProjectsTechPicker from './ProjectsTechPicker';
 import RepositoryProviderIcon from './RepositoryProviderIcon';
-import { ESTADOS_PROYECTO, TIPOS_PROYECTO, DESARROLLADO_PARA } from '../model/projectsModel';
+import { ESTADOS_PROYECTO, TIPOS_PROYECTO, DESARROLLADO_PARA, getProjectOptionLabel } from '../model/projectsModel';
 import {
   attachDetectedReposToProject,
   ensureTecnologia,
@@ -40,70 +41,70 @@ function normalizarEstadoFormulario(value) {
 /* ════════════════════════════════════════
    Validaciones
 ════════════════════════════════════════ */
-function validate(form) {
+function validate(form, t) {
   const e = {};
 
   if (!form.titulo.trim()) {
-    e.titulo = 'El título es obligatorio.';
+    e.titulo = t('projects.validation.titleRequired');
   } else if (form.titulo.trim().length < 3) {
-    e.titulo = 'Mínimo 3 caracteres.';
+    e.titulo = t('projects.validation.titleMin');
   } else if (form.titulo.length > 100) {
-    e.titulo = 'Máximo 100 caracteres.';
+    e.titulo = t('projects.validation.titleMax');
   }
 
   if (!form.descripcion.trim()) {
-    e.descripcion = 'La descripción es obligatoria.';
+    e.descripcion = t('projects.validation.descriptionRequired');
   } else if (form.descripcion.length > 600) {
-    e.descripcion = `Máximo 600 caracteres (${form.descripcion.length}/600).`;
+    e.descripcion = t('projects.validation.descriptionMax', { count: form.descripcion.length });
   }
 
   if (!normalizarEstadoFormulario(form.estado)) {
-    e.estado = 'El estado del proyecto es obligatorio.';
+    e.estado = t('projects.validation.statusRequired');
   }
 
   if (!Array.isArray(form.etiquetas) || form.etiquetas.filter(Boolean).length === 0) {
-    e.etiquetas = 'Selecciona al menos una tecnología.';
+    e.etiquetas = t('projects.validation.techRequired');
   }
 
   const repositoriosGithub = normalizarRepositoriosGithub(form.url_repositorios);
 
   if (repositoriosGithub.length > MAX_REPOSITORIOS_GITHUB) {
-    e.url_repositorios = `Máximo ${MAX_REPOSITORIOS_GITHUB} repositorios de GitHub.`;
+    e.url_repositorios = t('projects.validation.maxRepos', { count: MAX_REPOSITORIOS_GITHUB });
   }
 
   const repoInvalido = repositoriosGithub.find(url => !isGithubUrl(url) && !isGitlabUrl(url));
   if (repoInvalido) {
-    e.url_repositorios = 'Solo se aceptan enlaces de repositorios GitHub o GitLab.';
+    e.url_repositorios = t('projects.validation.onlyGitRepos');
   }
 
   if (form.url_demo && !/^https?:\/\/.+/.test(form.url_demo)) {
-    e.url_demo = 'Debe ser una URL válida del sitio web (https://...)';
+    e.url_demo = t('projects.validation.websiteUrl');
   }
 
   const videosYoutube = normalizarVideosYoutube(form.url_videos);
 
   if (videosYoutube.length > MAX_VIDEOS_YOUTUBE) {
-    e.url_videos = `Máximo ${MAX_VIDEOS_YOUTUBE} videos de YouTube.`;
+    e.url_videos = t('projects.validation.maxYoutube', { count: MAX_VIDEOS_YOUTUBE });
   }
 
   const videoInvalido = videosYoutube.find(url => !isYoutubeUrl(url));
   if (videoInvalido) {
-    e.url_videos = 'Solo se aceptan enlaces de YouTube: youtube.com/watch?v=... o youtu.be/...';
+    e.url_videos = t('projects.validation.onlyYoutube');
   }
 
   if (!form.fecha_inicio) {
-    e.fecha_inicio = 'La fecha de inicio es obligatoria.';
+    e.fecha_inicio = t('projects.validation.startRequired');
   } else if (form.fecha_inicio > HOY) {
-    e.fecha_inicio = 'La fecha de inicio no puede ser posterior a hoy.';
+    e.fecha_inicio = t('projects.validation.startFuture');
   }
 
   if (!form.en_curso && !form.fecha_fin) {
-    e.fecha_fin = 'La fecha de fin es obligatoria si el proyecto no está en curso.';
+    e.fecha_fin = t('projects.validation.endRequired');
   } else if (!form.en_curso && form.fecha_fin) {
     const minFechaFin = getMinFechaFin(form.fecha_inicio);
 
     if (minFechaFin && form.fecha_fin < minFechaFin) {
-      e.fecha_fin = `La fecha de fin debe ser al menos una semana posterior a la fecha de inicio (${minFechaFin}).`;
+      e.fecha_fin = t('projects.validation.endMin', { date: minFechaFin });
     }
   }
 
@@ -279,6 +280,7 @@ function MultiImageUpload({
   onQuitarNueva,
   cargando,
 }) {
+  const { t } = useLanguage();
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState('');
@@ -296,7 +298,7 @@ function MultiImageUpload({
     ));
 
     if (pesados.length > 0) {
-      setError('No se puede subir archivos mayores a 2 MB.');
+      setError(t('projects.validation.imageTooLarge', { size: MAX_IMAGEN_MB }));
     }
 
     if (!validos.length) return;
@@ -304,11 +306,11 @@ function MultiImageUpload({
     const cuantos = Math.min(validos.length, disponibles);
 
     if (validos.length > cuantos) {
-      setError(`Solo se pueden agregar ${disponibles} imagen${disponibles !== 1 ? 'es' : ''} más.`);
+      setError(t('projects.validation.imageLimit', { count: disponibles, plural: disponibles !== 1 ? 'es' : '' }));
     }
 
     onAgregar(validos.slice(0, cuantos));
-  }, [disponibles, onAgregar]);
+  }, [disponibles, onAgregar, t]);
 
   return (
     <div className="prj-multi-upload">
@@ -316,7 +318,7 @@ function MultiImageUpload({
         <div className="prj-img-grid">
           {imagenesExistentes.map((url, i) => (
             <div key={`ex-${i}`} className="prj-img-thumb">
-              {i === 0 && <span className="prj-img-portada-badge">Portada</span>}
+              {i === 0 && <span className="prj-img-portada-badge">{t('projects.upload.cover')}</span>}
               <img src={url} alt={`Imagen ${i + 1}`} />
 
               <button
@@ -324,7 +326,7 @@ function MultiImageUpload({
                 className="prj-img-remove"
                 onClick={() => onQuitarExistente(i)}
                 disabled={cargando}
-                title="Quitar imagen"
+                title={t('projects.upload.removeImage')}
               >
                 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M1 1l8 8M9 1L1 9" />
@@ -336,18 +338,18 @@ function MultiImageUpload({
           {nuevasImagenes.map((item, i) => (
             <div key={`nv-${i}`} className="prj-img-thumb prj-img-thumb-new">
               {imagenesExistentes.length === 0 && i === 0 && (
-                <span className="prj-img-portada-badge">Portada</span>
+                <span className="prj-img-portada-badge">{t('projects.upload.cover')}</span>
               )}
 
               <img src={item.preview} alt={`Nueva imagen ${i + 1}`} />
-              <span className="prj-img-new-badge">Nueva</span>
+              <span className="prj-img-new-badge">{t('projects.upload.new')}</span>
 
               <button
                 type="button"
                 className="prj-img-remove"
                 onClick={() => onQuitarNueva(i)}
                 disabled={cargando}
-                title="Quitar imagen"
+                title={t('projects.upload.removeImage')}
               >
                 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M1 1l8 8M9 1L1 9" />
@@ -362,7 +364,7 @@ function MultiImageUpload({
               className="prj-img-add-slot"
               onClick={() => inputRef.current?.click()}
               disabled={cargando}
-              title={`Agregar imagen (${total}/${MAX_IMAGENES})`}
+              title={t('projects.upload.addImage', { current: total, max: MAX_IMAGENES })}
             >
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M10 4v12M4 10h12" strokeLinecap="round" />
@@ -400,9 +402,9 @@ function MultiImageUpload({
               </svg>
             </div>
 
-            <div className="prj-upload-text">Arrastrá las imágenes aquí</div>
+            <div className="prj-upload-text">{t('projects.upload.dragImages')}</div>
             <div className="prj-upload-subtext">
-              o hacé clic para seleccionar · JPG, PNG, WebP · máx. {MAX_IMAGENES} imágenes · {MAX_IMAGEN_MB} MB c/u
+              {t('projects.upload.clickImages', { max: MAX_IMAGENES, size: MAX_IMAGEN_MB })}
             </div>
           </div>
         </div>
@@ -418,7 +420,7 @@ function MultiImageUpload({
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M7 2v10M2 7h10" />
           </svg>
-          Agregar más imágenes ({total}/{MAX_IMAGENES})
+          {t('projects.upload.addMoreImages', { current: total, max: MAX_IMAGENES })}
         </button>
       )}
 
@@ -428,7 +430,7 @@ function MultiImageUpload({
             <circle cx="7" cy="7" r="6" />
             <path d="M7 4v4M7 9.5v.5" />
           </svg>
-          Límite de {MAX_IMAGENES} imágenes alcanzado.
+          {t('projects.upload.imageLimitReached', { max: MAX_IMAGENES })}
         </div>
       )}
 
@@ -461,6 +463,7 @@ function MultiDocumentUpload({
   onQuitarNuevo,
   cargando,
 }) {
+  const { t } = useLanguage();
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState('');
@@ -478,13 +481,13 @@ function MultiDocumentUpload({
     const permitidos = lista.filter(file => isDocumentoPermitido(file) && file.size <= MAX_DOCUMENTO_MB * 1024 * 1024);
 
     if (pesados.length > 0) {
-      setError('No se puede subir archivos mayores a 2 MB.');
+      setError(t('projects.validation.documentTooLarge', { size: MAX_DOCUMENTO_MB }));
     }
 
     if (!permitidos.length) {
       setError(pesados.length > 0
-        ? 'No se puede subir archivos mayores a 2 MB.'
-        : 'Solo se aceptan PDF, DOC, DOCX, TXT, RTF, MD u ODT.'
+        ? t('projects.validation.documentTooLarge', { size: MAX_DOCUMENTO_MB })
+        : t('projects.validation.documentType')
       );
       return;
     }
@@ -492,11 +495,11 @@ function MultiDocumentUpload({
     const cuantos = Math.min(permitidos.length, disponibles);
 
     if (permitidos.length > cuantos || lista.length > permitidos.length) {
-      setError(`Se agregaron solo documentos válidos. Máximo ${MAX_DOCUMENTOS} documentos.`);
+      setError(t('projects.validation.documentsPartial', { count: MAX_DOCUMENTOS }));
     }
 
     onAgregar(permitidos.slice(0, cuantos));
-  }, [disponibles, onAgregar]);
+  }, [disponibles, onAgregar, t]);
 
   return (
     <div className="prj-doc-upload">
@@ -521,7 +524,7 @@ function MultiDocumentUpload({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Ver documento
+                    {t('projects.upload.viewDocument')}
                   </a>
                 )}
               </div>
@@ -531,7 +534,7 @@ function MultiDocumentUpload({
                 className="prj-doc-remove"
                 onClick={() => onQuitarExistente(i)}
                 disabled={cargando}
-                title="Quitar documento"
+                title={t('projects.upload.removeDocument')}
               >
                 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M1 1l8 8M9 1L1 9" />
@@ -551,7 +554,7 @@ function MultiDocumentUpload({
 
               <div className="prj-doc-info">
                 <span className="prj-doc-title">{item.file.name}</span>
-                <span className="prj-doc-url">Nuevo · pendiente de guardar</span>
+                <span className="prj-doc-url">{t('projects.upload.newPending')}</span>
               </div>
 
               <button
@@ -559,7 +562,7 @@ function MultiDocumentUpload({
                 className="prj-doc-remove"
                 onClick={() => onQuitarNuevo(i)}
                 disabled={cargando}
-                title="Quitar documento"
+                title={t('projects.upload.removeDocument')}
               >
                 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M1 1l8 8M9 1L1 9" />
@@ -594,8 +597,8 @@ function MultiDocumentUpload({
             <path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4" />
           </svg>
 
-          <span>Agregar documentos ({total}/{MAX_DOCUMENTOS})</span>
-          <small>PDF, DOC, DOCX, TXT, RTF, MD, ODT · máx. {MAX_DOCUMENTO_MB} MB c/u</small>
+          <span>{t('projects.upload.addDocuments', { current: total, max: MAX_DOCUMENTOS })}</span>
+          <small>{t('projects.upload.documentHelp', { size: MAX_DOCUMENTO_MB })}</small>
         </div>
       )}
 
@@ -605,7 +608,7 @@ function MultiDocumentUpload({
             <circle cx="7" cy="7" r="6" />
             <path d="M7 4v4M7 9.5v.5" />
           </svg>
-          Límite de {MAX_DOCUMENTOS} documentos alcanzado. Quitá uno para agregar otro.
+          {t('projects.upload.documentLimitReached', { max: MAX_DOCUMENTOS })}
         </div>
       )}
 
@@ -631,6 +634,7 @@ function MultiDocumentUpload({
    MultiYoutubeLinks
 ════════════════════════════════════════ */
 function MultiYoutubeLinks({ videos, onChange, error, cargando }) {
+  const { t } = useLanguage();
   const [nuevoUrl, setNuevoUrl] = useState('');
   const [localError, setLocalError] = useState('');
 
@@ -644,12 +648,12 @@ function MultiYoutubeLinks({ videos, onChange, error, cargando }) {
     if (!url) return;
 
     if (total >= MAX_VIDEOS_YOUTUBE) {
-      setLocalError(`Solo puedes agregar hasta ${MAX_VIDEOS_YOUTUBE} videos de YouTube.`);
+      setLocalError(t('projects.validation.youtubeLimit', { count: MAX_VIDEOS_YOUTUBE }));
       return;
     }
 
     if (!isYoutubeUrl(url)) {
-      setLocalError('Ingresa un enlace válido de YouTube.');
+      setLocalError(t('projects.validation.onlyYoutube'));
       return;
     }
 
@@ -690,7 +694,7 @@ function MultiYoutubeLinks({ videos, onChange, error, cargando }) {
                 className="prj-video-remove"
                 onClick={() => quitarVideo(i)}
                 disabled={cargando}
-                title="Quitar video"
+                title={t('projects.form.removeVideo')}
               >
                 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M1 1l8 8M9 1L1 9" />
@@ -726,18 +730,18 @@ function MultiYoutubeLinks({ videos, onChange, error, cargando }) {
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M7 2v10M2 7h10" />
             </svg>
-            Agregar
+            {t('projects.form.add')}
           </button>
         </div>
       )}
 
       <div className="prj-field-hint">
-        Puedes agregar hasta {MAX_VIDEOS_YOUTUBE} videos.
+        {t('projects.form.videoLimitHelp', { count: MAX_VIDEOS_YOUTUBE })}
       </div>
 
       {disponibles === 0 && (
         <div className="prj-upload-limit-msg">
-          Límite de {MAX_VIDEOS_YOUTUBE} videos alcanzado.
+          {t('projects.validation.youtubeLimit', { count: MAX_VIDEOS_YOUTUBE })}
         </div>
       )}
 
@@ -763,6 +767,7 @@ async function fetchGithubLangsForUrl(repoUrl) {
    MultiGithubLinks
 ════════════════════════════════════════ */
 function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDetected }) {
+  const { t } = useLanguage();
   const [nuevoUrl, setNuevoUrl] = useState('');
   const [localError, setLocalError] = useState('');
   const [detecting, setDetecting] = useState(false);
@@ -777,17 +782,17 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
     if (!url) return;
 
     if (total >= MAX_REPOSITORIOS_GITHUB) {
-      setLocalError(`Solo puedes agregar hasta ${MAX_REPOSITORIOS_GITHUB} repositorios.`);
+      setLocalError(t('projects.validation.repoLimit', { count: MAX_REPOSITORIOS_GITHUB }));
       return;
     }
 
     if (!isGithubUrl(url) && !isGitlabUrl(url)) {
-      setLocalError('Ingresa un enlace válido de repositorio GitHub o GitLab.');
+      setLocalError(t('projects.validation.invalidRepoUrl'));
       return;
     }
 
     if (repositorios.includes(url)) {
-      setLocalError('Este repositorio ya fue agregado.');
+      setLocalError(t('projects.validation.repoDuplicated'));
       return;
     }
 
@@ -800,7 +805,7 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
           if (techs.length > 0) await onTechsDetected(techs);
         })
         .catch((err) => {
-          setLocalError(err.message || 'No se pudieron detectar las tecnologias del repositorio.');
+          setLocalError(err.message || t('projects.github.detectTechError'));
         })
         .finally(() => setDetecting(false));
     }
@@ -823,7 +828,7 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
 
               <div className="prj-link-info">
                 <span className="prj-link-title">
-                  Repositorio {getRepoProviderFromUrl(url) === 'gitlab' ? 'GitLab' : 'GitHub'} {i + 1}
+                  {t('projects.form.repoTitle', { provider: getRepoProviderFromUrl(url) === 'gitlab' ? 'GitLab' : 'GitHub', count: i + 1 })}
                 </span>
                 <span className="prj-link-url">{url}</span>
               </div>
@@ -833,7 +838,7 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
                 className="prj-link-remove"
                 onClick={() => quitarRepositorio(i)}
                 disabled={cargando}
-                title="Quitar repositorio"
+                title={t('projects.form.removeRepository')}
               >
                 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M1 1l8 8M9 1L1 9" />
@@ -869,24 +874,24 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M7 2v10M2 7h10" />
             </svg>
-            Agregar
+            {t('projects.form.add')}
           </button>
         </div>
       )}
 
       <div className="prj-field-hint">
-        Puedes agregar hasta {MAX_REPOSITORIOS_GITHUB} repositorios GitHub o GitLab.
+        {t('projects.form.repoLimitHelp', { count: MAX_REPOSITORIOS_GITHUB })}
       </div>
 
       {disponibles === 0 && (
         <div className="prj-upload-limit-msg">
-          Límite de {MAX_REPOSITORIOS_GITHUB} repositorios alcanzado.
+          {t('projects.validation.repoLimit', { count: MAX_REPOSITORIOS_GITHUB })}
         </div>
       )}
 
       {detecting && (
         <div className="prj-detected-muted prj-link-detecting">
-          Detectando tecnologías del repositorio...
+          {t('projects.github.detectingTech')}
         </div>
       )}
 
@@ -896,6 +901,7 @@ function MultiGithubLinks({ repositorios, onChange, error, cargando, onTechsDete
 }
 
 function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', initialDescripcion = '', proyectoInfo = null }) {
+  const { t } = useLanguage();
   const [rol, setRol] = useState(initialRol);
   const [descripcion, setDescripcion] = useState(initialDescripcion);
 
@@ -904,8 +910,8 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
       <div className="dash-edit-modal dash-edit-modal--sm prj-modal prj-modal-sm" role="dialog" aria-modal="true">
         <div className="dash-edit-head prj-modal-head">
           <div>
-            <div className="dash-edit-title prj-modal-title">Tu participación en el proyecto</div>
-            <div className="dash-edit-subtitle prj-modal-sub">Indica tu rol y aporte (opcional)</div>
+            <div className="dash-edit-title prj-modal-title">{t('projects.participation.title')}</div>
+            <div className="dash-edit-subtitle prj-modal-sub">{t('projects.participation.subtitle')}</div>
           </div>
         </div>
 
@@ -913,13 +919,13 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
           {proyectoInfo && (
             <div className="prj-detected-item" style={{ marginBottom: 14 }}>
               <div className="prj-detected-main">
-                <div className="prj-detected-title">{proyectoInfo.titulo || 'Proyecto existente'}</div>
+                <div className="prj-detected-title">{proyectoInfo.titulo || t('projects.form.existingProject')}</div>
                 {proyectoInfo.descripcion && (
                   <div className="prj-detected-url">{proyectoInfo.descripcion}</div>
                 )}
               </div>
               <div className="prj-detected-side">
-                <span className="prj-detected-pill warn">en uso</span>
+                <span className="prj-detected-pill warn">{t('projects.github.inUse')}</span>
               </div>
             </div>
           )}
@@ -927,22 +933,22 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
           <div className="prj-form-section" style={{ paddingTop: 0 }}>
             <div className="row g-3">
               <div className="col-12">
-                <label className="prj-label">Rol</label>
+                <label className="prj-label">{t('projects.participation.roleLabel')}</label>
                 <input
                   className="dash-edit-input prj-input"
                   value={rol}
                   onChange={(e) => setRol(e.target.value)}
-                  placeholder="Ej: Desarrollador backend, Líder técnico, Diseñador UI..."
+                  placeholder={t('projects.participation.rolePlaceholder')}
                   maxLength={100}
                   disabled={loading}
                   autoFocus
                 />
-                <div className="prj-field-hint">¿Cuál fue tu función principal en este proyecto?</div>
+                <div className="prj-field-hint">{t('projects.participation.roleHint')}</div>
               </div>
 
               <div className="col-12">
                 <label className="prj-label">
-                  Descripción del aporte
+                  {t('projects.form.contributionDescription')}
                   <span
                     className="prj-char-count"
                     style={{ color: descripcion.length > 550 ? 'var(--rojo-soft)' : 'var(--gris-texto)' }}
@@ -955,7 +961,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   rows={3}
-                  placeholder="Describe brevemente tus contribuciones, responsabilidades y logros..."
+                  placeholder={t('projects.participation.descriptionPlaceholder')}
                   maxLength={601}
                   disabled={loading}
                 />
@@ -966,7 +972,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
 
         <div className="dash-edit-footer prj-modal-foot">
           <button type="button" className="dash-edit-btn dash-edit-btn--secondary prj-btn-cancel" onClick={onSaltar} disabled={loading}>
-            Omitir
+            {t('projects.participation.skip')}
           </button>
           <button
             type="button"
@@ -977,7 +983,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
             <svg viewBox="0 0 14 14">
               <path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2" />
             </svg>
-            Continuar
+            {t('projects.participation.continue')}
           </button>
         </div>
       </div>
@@ -989,6 +995,7 @@ function ParticipacionModal({ onContinuar, onSaltar, loading, initialRol = '', i
    COMPONENTE PRINCIPAL — ProjectsEdit
 ════════════════════════════════════════ */
 export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardando, initialGithubRepos = null }) {
+  const { t } = useLanguage();
   const esNuevo = !proyecto;
   const reposInicialesGithub = normalizarReposInicialesGithub(initialGithubRepos);
   const tecnologiasInicialesGithub = normalizarTecnologiasInicialesGithub(initialGithubRepos);
@@ -1085,7 +1092,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   const [joiningRepo, setJoiningRepo] = useState(false);
   const initialReposTechDetectionKeyRef = useRef('');
 
-  const errors = validate(form);
+  const errors = validate(form, t);
   const hasErrors = Object.keys(errors).length > 0;
 
   useEffect(() => {
@@ -1209,7 +1216,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
         await aplicarTecnologiasDetectadas(groups.flat());
       } catch (e) {
         if (active) {
-          setDetectedReposError(e.message || 'No se pudieron detectar las tecnologias del repositorio.');
+          setDetectedReposError(e.message || t('projects.github.detectTechError'));
         }
       } finally {
         if (active) {
@@ -1223,7 +1230,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     return () => {
       active = false;
     };
-  }, [aplicarTecnologiasDetectadas, esNuevo, initialGithubRepos, tecnologiasInicialesGithub.length]);
+  }, [aplicarTecnologiasDetectadas, esNuevo, initialGithubRepos, tecnologiasInicialesGithub.length, t]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -1436,12 +1443,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
       setDetectedRepos(normalizedRepos);
       return normalizedRepos;
     } catch (e) {
-      setDetectedReposError(e.message || 'No se pudieron cargar los repositorios detectados.');
+      setDetectedReposError(e.message || t('projects.github.loadError'));
       return [];
     } finally {
       setLoadingDetectedRepos(false);
     }
-  }, [githubLinked, gitlabLinked]);
+  }, [githubLinked, gitlabLinked, t]);
 
   useEffect(() => {
     let mounted = true;
@@ -1513,11 +1520,11 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
         }
       }
     } catch (e) {
-      setDetectedReposError(e.message || `No se pudo sincronizar con ${provider === 'gitlab' ? 'GitLab' : 'GitHub'}.`);
+      setDetectedReposError(e.message || t('projects.github.syncError', { provider: provider === 'gitlab' ? 'GitLab' : 'GitHub' }));
     } finally {
       setSyncingDetectedRepos(false);
     }
-  }, [form, loadDetectedRepos]);
+  }, [form, loadDetectedRepos, t]);
 
   const addDetectedRepoToForm = useCallback(async (url) => {
     const cleanUrl = String(url || '').trim();
@@ -1542,11 +1549,11 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
       const techs = await fetchGithubLangsForUrl(cleanUrl);
       await aplicarTecnologiasDetectadas(techs);
     } catch (e) {
-      setDetectedReposError(e.message || 'No se pudieron detectar las tecnologias del repositorio.');
+      setDetectedReposError(e.message || t('projects.github.detectTechError'));
     } finally {
       setDetectingRepoUrl('');
     }
-  }, [aplicarTecnologiasDetectadas, form.url_repositorios]);
+  }, [aplicarTecnologiasDetectadas, form.url_repositorios, t]);
 
   const handleJoinRepoProject = useCallback((repo) => {
     if (!repo?.puede_unirse || !repo?.id_proyecto) return;
@@ -1570,11 +1577,11 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
       setJoinRepoPending(null);
       await loadDetectedRepos(false);
     } catch (e) {
-      setDetectedReposError(e.message || 'No se pudo vincular tu participacion al proyecto.');
+      setDetectedReposError(e.message || t('projects.github.joinError'));
     } finally {
       setJoiningRepo(false);
     }
-  }, [joinRepoPending, loadDetectedRepos]);
+  }, [joinRepoPending, loadDetectedRepos, t]);
 
   const handleJoinRepoSaltar = useCallback(() => {
     setJoinRepoPending(null);
@@ -1620,12 +1627,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
           <div className="dash-edit-head prj-modal-head">
             <div>
               <div className="dash-edit-title prj-modal-title">
-                {esNuevo ? 'Nuevo proyecto' : 'Editar proyecto'}
+                {esNuevo ? t('projects.modal.newTitle') : t('projects.modal.editTitle')}
               </div>
               <div className="dash-edit-subtitle prj-modal-sub">
                 {esNuevo
-                  ? 'Completa los datos para agregar un nuevo proyecto'
-                  : 'Edita la información del proyecto'}
+                  ? t('projects.modal.newSubtitle')
+                  : t('projects.modal.editSubtitle')}
               </div>
             </div>
 
@@ -1634,7 +1641,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               className="dash-edit-close prj-modal-close"
               onClick={onCancelar}
               disabled={guardando}
-              title="Cerrar"
+              title={t('projects.modal.close')}
             >
               <svg viewBox="0 0 12 12">
                 <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2" />
@@ -1656,7 +1663,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
             <div className="dash-edit-body prj-modal-body">
               <div className="prj-form-section">
                 <span className="prj-section-label">
-                  Imágenes del proyecto
+                  {t('projects.modal.images')}
                   <span className="prj-section-badge">
                     {imagenesExistentes.length + nuevasImagenes.length}/{MAX_IMAGENES}
                   </span>
@@ -1673,12 +1680,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               </div>
 
               <div className="prj-form-section">
-                <span className="prj-section-label">Información básica</span>
+                <span className="prj-section-label">{t('projects.modal.basicInfo')}</span>
 
                 <div className="row g-3">
                   <div className="col-12">
                     <label className="prj-label">
-                      Título del proyecto <span className="prj-required-star">*</span>
+                      {t('projects.form.title')} <span className="prj-required-star">*</span>
                       <span
                         className="prj-char-count"
                         style={{ color: form.titulo.length > 90 ? 'var(--rojo-soft)' : 'var(--gris-texto)' }}
@@ -1693,7 +1700,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                       value={form.titulo}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      placeholder="Ej: Sistema de Gestión Académica — UMSS"
+                      placeholder={t('projects.form.titlePlaceholder')}
                       maxLength={101}
                     />
 
@@ -1702,7 +1709,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                   <div className="col-12">
                     <label className="prj-label">
-                      Descripción
+                      {t('projects.form.description')}
                       <span className="prj-required-star">*</span>
                       <span
                         className="prj-char-count"
@@ -1719,7 +1726,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                       onChange={handleChange}
                       onBlur={handleBlur}
                       rows={3}
-                      placeholder="Describe el proyecto, sus funcionalidades y objetivos..."
+                      placeholder={t('projects.form.descriptionPlaceholder')}
                       maxLength={601}
                       required
                     />
@@ -1728,7 +1735,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                   </div>
 
                   <div className="col-md-6">
-                    <label className="prj-label">Estado <span className="prj-required-star">*</span></label>
+                    <label className="prj-label">{t('projects.form.state')} <span className="prj-required-star">*</span></label>
                     <select
                       className={`prj-select${showErr('estado') ? ' prj-input-error' : ''}`}
                       name="estado"
@@ -1738,11 +1745,11 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                       required
                     >
                       <option value="" disabled>
-                        Selecciona un estado
+                        {t('projects.statusModal.select')}
                       </option>
                       {ESTADOS_PROYECTO.map(e => (
                         <option key={e.value} value={e.value}>
-                          {e.label}
+                          {getProjectOptionLabel(e, t)}
                         </option>
                       ))}
                     </select>
@@ -1750,18 +1757,18 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                   </div>
 
                   <div className="col-md-6">
-                    <label className="prj-label">Tipo de proyecto</label>
+                    <label className="prj-label">{t('projects.form.projectType')}</label>
                     <select className="prj-select" name="tipo" value={form.tipo} onChange={handleChange}>
-                      {TIPOS_PROYECTO.map(t => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
+                      {TIPOS_PROYECTO.map(tipo => (
+                        <option key={tipo.value} value={tipo.value}>
+                          {getProjectOptionLabel(tipo, t)}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="col-12">
-                    <label className="prj-label">Desarrollado para</label>
+                    <label className="prj-label">{t('projects.form.platform')}</label>
                     <select
                       className="prj-select"
                       name="desarrollado_para"
@@ -1770,22 +1777,22 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     >
                       {DESARROLLADO_PARA.map(op => (
                         <option key={op.value} value={op.value}>
-                          {op.label}
+                          {getProjectOptionLabel(op, t)}
                         </option>
                       ))}
                     </select>
 
                     <div className="prj-field-hint">
-                      Indica la plataforma principal para la que fue desarrollado el proyecto.
+                      {t('projects.form.platformHint')}
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="prj-form-section">
-                <span className="prj-section-label">Tecnologías / Stack</span>
+                <span className="prj-section-label">{t('projects.form.techStack')}</span>
                 <label className="prj-label">
-                  Seleccionar tecnologías <span className="prj-required-star">*</span>
+                  {t('projects.tech.select')} <span className="prj-required-star">*</span>
                 </label>
 
                 <div className={showErr('etiquetas') ? 'prj-tech-picker-error' : ''}>
@@ -1808,12 +1815,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               </div>
 
               <div className="prj-form-section">
-                <span className="prj-section-label">Enlaces y documentos</span>
+                <span className="prj-section-label">{t('projects.modal.linksEvidence')}</span>
 
                 <div className="row g-3">
                   <div className="col-12">
                     <label className="prj-label">
-                      Repositorios del proyecto
+                      {t('projects.form.repositories')}
                       <span className="prj-section-badge">
                         {form.url_repositorios.length}/{MAX_REPOSITORIOS_GITHUB}
                       </span>
@@ -1825,16 +1832,16 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                           <div>
                             <span>
                               {checkingGithubLinked
-                                ? 'Sincronizacion de repositorios'
-                                : 'Repositorios detectados de tus cuentas vinculadas'}
+                                ? t('projects.github.syncTitle')
+                                : t('projects.github.detectedTitle')}
                             </span>
 
                             <div className="prj-field-hint" style={{ marginTop: 4 }}>
                               {checkingGithubLinked
-                                ? 'Verificando cuentas vinculadas...'
+                                ? t('projects.github.checking')
                                 : loadingDetectedRepos
-                                ? 'Cargando repositorios...'
-                                : `${detectedRepos.length} repositorio${detectedRepos.length !== 1 ? 's' : ''} detectado${detectedRepos.length !== 1 ? 's' : ''}`}
+                                ? t('projects.github.loading')
+                                : t('projects.github.detectedCount', { count: detectedRepos.length, plural: detectedRepos.length !== 1 ? 's' : '' })}
                             </div>
                           </div>
 
@@ -1845,7 +1852,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                               disabled={checkingGithubLinked || guardando || syncingDetectedRepos || loadingDetectedRepos || !githubLinked}
                               onClick={() => handleSyncDetectedRepos('github')}
                             >
-                              {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar GitHub'}
+                              {syncingDetectedRepos ? t('projects.github.syncing') : t('projects.github.syncGithub')}
                             </button>
 
                             <button
@@ -1854,7 +1861,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                               disabled={checkingGithubLinked || guardando || syncingDetectedRepos || loadingDetectedRepos || !gitlabLinked}
                               onClick={() => handleSyncDetectedRepos('gitlab')}
                             >
-                              {syncingDetectedRepos ? 'Sincronizando...' : 'Sincronizar GitLab'}
+                              {syncingDetectedRepos ? t('projects.github.syncing') : t('projects.github.syncGitlab')}
                             </button>
 
                             <button
@@ -1863,7 +1870,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                               onClick={() => setMostrarDetectedRepos(prev => !prev)}
                               disabled={checkingGithubLinked || guardando}
                             >
-                              {mostrarDetectedRepos ? 'Ocultar' : 'Mostrar'}
+                              {mostrarDetectedRepos ? t('projects.github.hide') : t('projects.github.show')}
                             </button>
                           </div>
                         </div>
@@ -1873,7 +1880,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                         )}
 
                         {checkingGithubLinked && (
-                          <div className="prj-detected-muted">Preparando la sincronizacion de repositorios...</div>
+                          <div className="prj-detected-muted">{t('projects.github.preparing')}</div>
                         )}
 
                         {!checkingGithubLinked && mostrarDetectedRepos && (
@@ -1885,7 +1892,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                   className="prj-input prj-detected-search-input"
                                   value={busquedaDetectedRepos}
                                   onChange={(e) => setBusquedaDetectedRepos(e.target.value)}
-                                  placeholder="Buscar repositorio por nombre, URL, proyecto o estado..."
+                                  placeholder={t('projects.github.searchPlaceholder')}
                                   disabled={guardando || loadingDetectedRepos}
                                 />
 
@@ -1895,7 +1902,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                     className="prj-detected-search-clear"
                                     onClick={() => setBusquedaDetectedRepos('')}
                                     disabled={guardando || loadingDetectedRepos}
-                                    title="Limpiar búsqueda"
+                                    title={t('projects.github.clearSearch')}
                                   >
                                     ×
                                   </button>
@@ -1904,12 +1911,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                             )}
 
                             {loadingDetectedRepos ? (
-                              <div className="prj-detected-muted">Cargando repositorios detectados...</div>
+                              <div className="prj-detected-muted">{t('projects.github.loadingDetected')}</div>
                             ) : detectedRepos.length === 0 ? (
-                              <div className="prj-detected-muted">No hay repositorios detectados sin proyecto.</div>
+                              <div className="prj-detected-muted">{t('projects.github.empty')}</div>
                             ) : repositoriosDetectadosFiltrados.length === 0 ? (
                               <div className="prj-detected-muted">
-                                No se encontraron repositorios con “{busquedaDetectedRepos}”.
+                                {t('projects.github.noResults', { query: busquedaDetectedRepos })}
                               </div>
                             ) : (
                               <div className="prj-detected-list">
@@ -1922,14 +1929,14 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                     <div key={repo.id_proyecto_repositorio || url} className="prj-detected-item">
                                       <div className="prj-detected-main">
                                         <div className="prj-detected-title">
-                                          {repo.nombre || repo.repo_github?.repo_name || 'Repositorio'}
+                                          {repo.nombre || repo.repo_github?.repo_name || t('projects.github.repository')}
                                         </div>
 
                                         <div className="prj-detected-url">{url}</div>
 
                                         {enUso && repo?.proyecto?.titulo && (
                                           <div className="prj-detected-url">
-                                            Proyecto: {repo.proyecto.titulo}
+                                            {t('projects.github.project')}: {repo.proyecto.titulo}
                                           </div>
                                         )}
                                       </div>
@@ -1942,10 +1949,10 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                                         <span className={`prj-detected-pill ${enUso ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
                                           {enUso
-                                            ? 'en uso'
+                                            ? t('projects.github.inUse')
                                             : repo?.validacion?.validado
-                                              ? (repo?.validacion?.relacion_github || 'validado')
-                                              : 'sin validar'}
+                                              ? (repo?.validacion?.relacion_github || t('projects.github.validated'))
+                                              : t('projects.github.unvalidated')}
                                         </span>
 
                                         {enUso ? (
@@ -1955,7 +1962,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                             onClick={() => handleJoinRepoProject(repo)}
                                             disabled={!repo?.puede_unirse || guardando || joiningRepo}
                                           >
-                                            Ser parte
+                                            {t('projects.github.bePart')}
                                           </button>
                                         ) : (
                                           <button
@@ -1964,7 +1971,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                             onClick={() => addDetectedRepoToForm(url)}
                                             disabled={yaAgregado || form.url_repositorios.length >= MAX_REPOSITORIOS_GITHUB || guardando || detectingRepoUrl === url}
                                           >
-                                            {detectingRepoUrl === url ? 'Detectando...' : yaAgregado ? 'Agregado' : 'Usar en proyecto'}
+                                            {detectingRepoUrl === url ? t('projects.github.detecting') : yaAgregado ? t('projects.github.added') : t('projects.github.useInProject')}
                                           </button>
                                         )}
                                       </div>
@@ -1990,7 +1997,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                   </div>
 
                   <div className="col-12">
-                    <label className="prj-label">URL del sitio web</label>
+                    <label className="prj-label">{t('projects.form.websiteUrl')}</label>
                     <input
                       className={`prj-input${showErr('url_demo') ? ' prj-input-error' : ''}`}
                       name="url_demo"
@@ -2001,7 +2008,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     />
 
                     {!showErr('url_demo') && (
-                      <div className="prj-field-hint">Enlace principal del sitio web del proyecto.</div>
+                      <div className="prj-field-hint">{t('projects.form.websiteHint')}</div>
                     )}
 
                     <FieldError msg={showErr('url_demo')} />
@@ -2009,7 +2016,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                   <div className="col-12">
                     <label className="prj-label">
-                      Videos demo de YouTube
+                      {t('projects.form.youtubeVideos')}
                       <span className="prj-section-badge">
                         {form.url_videos.length}/{MAX_VIDEOS_YOUTUBE}
                       </span>
@@ -2025,7 +2032,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                   <div className="col-12">
                     <label className="prj-label">
-                      Documentos del proyecto
+                      {t('projects.form.documents')}
                       <span className="prj-section-badge">
                         {documentosExistentes.length + nuevosDocumentos.length}/{MAX_DOCUMENTOS}
                       </span>
@@ -2044,11 +2051,11 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
               </div>
 
               <div className="prj-form-section">
-                <span className="prj-section-label">Período</span>
+                <span className="prj-section-label">{t('projects.modal.period')}</span>
 
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="prj-label">Fecha de inicio <span className="prj-required-star">*</span></label>
+                    <label className="prj-label">{t('projects.form.startDate')} <span className="prj-required-star">*</span></label>
                     <input
                       type="date"
                       className={`prj-input${showErr('fecha_inicio') ? ' prj-input-error' : ''}`}
@@ -2061,7 +2068,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                     />
 
                     {!showErr('fecha_inicio') && (
-                      <div className="prj-field-hint">No puede ser posterior a hoy.</div>
+                      <div className="prj-field-hint">{t('projects.form.startDateHint')}</div>
                     )}
 
                     <FieldError msg={showErr('fecha_inicio')} />
@@ -2069,7 +2076,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                   <div className="col-md-6">
                     <label className="prj-label">
-                      Fecha de fin {!form.en_curso && <span className="prj-required-star">*</span>}
+                      {t('projects.form.endDate')} {!form.en_curso && <span className="prj-required-star">*</span>}
                     </label>
                     <input
                       type="date"
@@ -2085,7 +2092,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                     {!showErr('fecha_fin') && form.fecha_inicio && !form.en_curso && (
                       <div className="prj-field-hint">
-                        Debe ser igual o posterior al {minFechaFin}.
+                        {t('projects.form.endDateHint', { date: minFechaFin })}
                       </div>
                     )}
 
@@ -2100,7 +2107,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                         checked={form.en_curso}
                         onChange={handleChange}
                       />
-                      Proyecto en curso, sin fecha de fin
+                      {t('projects.form.currentProject')}
                     </label>
                   </div>
                 </div>
@@ -2109,17 +2116,17 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
             <div className="dash-edit-footer prj-modal-foot">
               <button type="button" className="dash-edit-btn dash-edit-btn--secondary prj-btn-cancel" onClick={onCancelar} disabled={guardando}>
-                Cancelar
+                {t('projects.form.cancel')}
               </button>
 
               <button type="submit" className="dash-edit-btn dash-edit-btn--primary prj-btn-save" disabled={guardando}>
                 {guardando
-                  ? <><span className="dash-edit-spinner prj-spinner" /> Guardando...</>
+                  ? <><span className="dash-edit-spinner prj-spinner" /> {t('projects.form.saving')}</>
                   : <>
                     <svg viewBox="0 0 14 14">
                       <path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2" />
                     </svg>
-                    {esNuevo ? 'Agregar proyecto' : 'Guardar cambios'}
+                    {esNuevo ? t('projects.form.addProject') : t('projects.form.saveChanges')}
                   </>
                 }
               </button>
@@ -2141,9 +2148,9 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
       {repoEnUsoConfirmPending !== null && (
         <ConfirmModal
           open
-          title="Repositorio en uso"
-          message={`Este repositorio ya esta vinculado al proyecto "${repoEnUsoConfirmPending.proyecto?.titulo || 'Proyecto existente'}". ¿Quieres ser parte de este proyecto?`}
-          confirmLabel="Si, ser parte"
+          title={t('projects.confirm.repoInUseTitle')}
+          message={t('projects.confirm.repoInUseMessage', { title: repoEnUsoConfirmPending.proyecto?.titulo || t('projects.card.defaultTitle') })}
+          confirmLabel={t('projects.confirm.bePart')}
           variant="blue"
           icon="check"
           loading={joiningRepo}
@@ -2166,12 +2173,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
       {confirmPending && (
         <ConfirmModal
           open
-          title={esNuevo ? '¿Agregar proyecto?' : '¿Guardar cambios?'}
+          title={esNuevo ? t('projects.confirm.addTitle') : t('projects.confirm.saveTitle')}
           message={esNuevo
-            ? 'El proyecto se añadirá a tu portafolio. Podrás editarlo en cualquier momento.'
-            : 'Los cambios se reflejarán en tu portafolio público de inmediato.'
+            ? t('projects.confirm.addMessage')
+            : t('projects.confirm.saveMessage')
           }
-          confirmLabel={esNuevo ? 'Sí, agregar' : 'Sí, guardar'}
+          confirmLabel={esNuevo ? t('projects.confirm.add') : t('projects.confirm.save')}
           variant="blue"
           icon="check"
           loading={guardando}
