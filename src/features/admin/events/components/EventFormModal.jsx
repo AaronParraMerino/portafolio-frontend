@@ -26,19 +26,25 @@ import {
 const DEFAULT_FORM = {
   title: '',
   type: 'taller',
-  status: 'borrador',
+  status: 'activo',
   imageFile: null,
   imagePreview: '',
   imageUrl: '',
   startsAt: '',
   endsAt: '',
   sendAt: '',
+  sendMode: 'now',
   location: '',
   capacity: '',
   description: '',
   targetMode: 'all_users',
   channels: ['inapp'],
-  targetSearch: '',
+  targetSearches: {
+    technicalSkills: '',
+    softSkills: '',
+    academicExperience: '',
+    workExperience: '',
+  },
   targetSelections: {
     technicalSkills: [],
     softSkills: [],
@@ -75,6 +81,25 @@ function toggleValue(values, value) {
 
 function toArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getDateTimeLocalNow() {
+  const now = new Date();
+  now.setSeconds(0, 0);
+  return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+}
+
+function isSameOrBefore(value, reference) {
+  const date = toDate(value);
+  const referenceDate = toDate(reference);
+
+  return !!date && !!referenceDate && date <= referenceDate;
 }
 
 function SingleEventImageUpload({
@@ -173,6 +198,8 @@ function SingleEventImageUpload({
 
 export default function EventFormModal({
   modal,
+  profileTargets,
+  profileTargetsLoading = false,
   onClose,
   onSave,
 }) {
@@ -198,19 +225,25 @@ export default function EventFormModal({
     setForm({
       title: event.title || '',
       type: event.type || 'taller',
-      status: event.status || 'borrador',
+      status: event.status || 'activo',
       imageFile: null,
       imagePreview: event.imagePreview || '',
       imageUrl: event.imageUrl || event.image_url || event.imagen_url || event.banner_url || '',
       startsAt: event.startsAt || event.fecha_inicio || '',
       endsAt: event.endsAt || event.fecha_fin || '',
       sendAt: event.sendAt || event.fecha_envio || '',
+      sendMode: event.sendAt || event.fecha_envio || event.status === 'programado' ? 'scheduled' : 'now',
       location: event.location || '',
       capacity: event.capacity || '',
       description: event.description || '',
       targetMode: event.targetMode || event.target_mode || 'all_users',
       channels: Array.isArray(event.channels) && event.channels.length ? event.channels : ['inapp'],
-      targetSearch: '',
+      targetSearches: {
+        technicalSkills: '',
+        softSkills: '',
+        academicExperience: '',
+        workExperience: '',
+      },
       targetSelections: {
         technicalSkills: toArray(event.targetSelections?.technicalSkills || event.habilidades_tecnicas),
         softSkills: toArray(event.targetSelections?.softSkills || event.habilidades_blandas),
@@ -229,17 +262,26 @@ export default function EventFormModal({
 
   const selectedTargetsCount = Object.values(form.targetSelections)
     .reduce((total, items) => total + items.length, 0);
+  const minDateTime = getDateTimeLocalNow();
+  const targetGroups = useMemo(() => EVENT_PROFILE_TARGET_GROUPS.map((group) => ({
+    ...group,
+    options: Array.isArray(profileTargets?.[group.id])
+      ? profileTargets[group.id]
+      : group.options,
+  })), [profileTargets]);
 
   const filteredTargetGroups = useMemo(() => {
-    const normalizedQuery = form.targetSearch.trim().toLowerCase();
+    return targetGroups.map((group) => {
+      const normalizedQuery = String(form.targetSearches[group.id] || '').trim().toLowerCase();
 
-    return EVENT_PROFILE_TARGET_GROUPS.map((group) => ({
-      ...group,
-      visibleOptions: normalizedQuery
-        ? group.options.filter((option) => option.toLowerCase().includes(normalizedQuery))
-        : group.options,
-    }));
-  }, [form.targetSearch]);
+      return ({
+        ...group,
+        visibleOptions: normalizedQuery
+          ? group.options.filter((option) => option.toLowerCase().includes(normalizedQuery))
+          : group.options,
+      });
+    });
+  }, [form.targetSearches, targetGroups]);
 
   const handleImageChange = useCallback((file) => {
     if (objectUrlRef.current) {
@@ -280,6 +322,36 @@ export default function EventFormModal({
     setMessage('');
   };
 
+  const handleStartsAtChange = (value) => {
+    setForm((current) => ({
+      ...current,
+      startsAt: value,
+      endsAt: isSameOrBefore(current.endsAt, value) ? '' : current.endsAt,
+      sendAt: current.sendAt && toDate(current.sendAt) > toDate(value) ? '' : current.sendAt,
+    }));
+    setMessage('');
+  };
+
+  const handleEndsAtChange = (value) => {
+    if (value && form.startsAt && isSameOrBefore(value, form.startsAt)) {
+      setMessage('La fecha y hora de fin debe ser posterior al inicio.');
+      return;
+    }
+
+    handleChange('endsAt', value);
+  };
+
+  const handleTargetSearchChange = (groupId, value) => {
+    setForm((current) => ({
+      ...current,
+      targetSearches: {
+        ...current.targetSearches,
+        [groupId]: value,
+      },
+    }));
+    setMessage('');
+  };
+
   const handleToggleTarget = (groupId, option) => {
     setForm((current) => ({
       ...current,
@@ -299,14 +371,62 @@ export default function EventFormModal({
       return;
     }
 
+    const startsAt = toDate(form.startsAt);
+    const endsAt = toDate(form.endsAt);
+    const sendAt = toDate(form.sendAt);
+    const now = new Date();
+    now.setSeconds(0, 0);
+
+    if (!startsAt) {
+      setMessage('Selecciona la fecha y hora de inicio del evento.');
+      return;
+    }
+
+    if (!isEditing && startsAt < now) {
+      setMessage('La fecha de inicio no puede ser anterior a la fecha actual.');
+      return;
+    }
+
+    if (!endsAt) {
+      setMessage('Selecciona la fecha y hora de fin del evento.');
+      return;
+    }
+
+    if (endsAt <= startsAt) {
+      setMessage('La fecha de fin debe ser posterior a la fecha de inicio.');
+      return;
+    }
+
+    if (form.sendMode === 'scheduled') {
+      if (!sendAt) {
+        setMessage('Selecciona la fecha y hora para programar la publicacion.');
+        return;
+      }
+
+      if (!isEditing && sendAt < now) {
+        setMessage('La programacion no puede ser anterior a la fecha actual.');
+        return;
+      }
+
+      if (sendAt > startsAt) {
+        setMessage('La publicacion programada debe ocurrir antes o al inicio del evento.');
+        return;
+      }
+    }
+
+    if (form.targetMode === 'segmented' && selectedTargetsCount === 0) {
+      setMessage('Selecciona al menos un criterio para segmentar la audiencia.');
+      return;
+    }
+
     try {
       await onSave?.({
         title: form.title,
         type: form.type,
-        status: form.status,
+        status: form.sendMode === 'scheduled' ? 'programado' : (form.status === 'programado' ? 'activo' : form.status),
         startsAt: form.startsAt || null,
         endsAt: form.endsAt || null,
-        sendAt: form.sendAt || null,
+        sendAt: form.sendMode === 'scheduled' ? form.sendAt : null,
         location: form.location,
         imageFile: form.imageFile,
         imagePreview: form.imagePreview,
@@ -396,7 +516,8 @@ export default function EventFormModal({
                 type="datetime-local"
                 className="evt-field-input"
                 value={form.startsAt}
-                onChange={(event) => handleChange('startsAt', event.target.value)}
+                min={minDateTime}
+                onChange={(event) => handleStartsAtChange(event.target.value)}
               />
             </label>
 
@@ -406,17 +527,8 @@ export default function EventFormModal({
                 type="datetime-local"
                 className="evt-field-input"
                 value={form.endsAt}
-                onChange={(event) => handleChange('endsAt', event.target.value)}
-              />
-            </label>
-
-            <label className="evt-field">
-              <span>Programar envio</span>
-              <input
-                type="datetime-local"
-                className="evt-field-input"
-                value={form.sendAt}
-                onChange={(event) => handleChange('sendAt', event.target.value)}
+                min={form.startsAt || minDateTime}
+                onChange={(event) => handleEndsAtChange(event.target.value)}
               />
             </label>
 
@@ -452,6 +564,58 @@ export default function EventFormModal({
                 placeholder="Describe el objetivo, requisitos, beneficios y detalles importantes para los usuarios."
               />
             </label>
+          </div>
+
+          <div className="evt-modal-section">
+            <span className="evt-modal-section-label">Publicacion</span>
+            <div className="evt-target-mode-grid">
+              <button
+                type="button"
+                className={`evt-target-mode-card${form.sendMode === 'now' ? ' active' : ''}`}
+                onClick={() => setForm((current) => ({ ...current, sendMode: 'now', sendAt: '' }))}
+              >
+                <span className="evt-segment-icon">
+                  <BsBell />
+                </span>
+                <span>
+                  <strong>Publicar directamente</strong>
+                  <small>El evento quedara visible al guardar.</small>
+                </span>
+                <span className="evt-segment-check">
+                  <BsCheck2 />
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`evt-target-mode-card${form.sendMode === 'scheduled' ? ' active' : ''}`}
+                onClick={() => handleChange('sendMode', 'scheduled')}
+              >
+                <span className="evt-segment-icon">
+                  <BsCalendar2Plus />
+                </span>
+                <span>
+                  <strong>Programar publicacion</strong>
+                  <small>Define cuando se habilitara el evento.</small>
+                </span>
+                <span className="evt-segment-check">
+                  <BsCheck2 />
+                </span>
+              </button>
+            </div>
+
+            {form.sendMode === 'scheduled' ? (
+              <label className="evt-field evt-field--compact">
+                <span>Fecha y hora de publicacion</span>
+                <input
+                  type="datetime-local"
+                  className="evt-field-input"
+                  value={form.sendAt}
+                  min={minDateTime}
+                  max={form.startsAt || undefined}
+                  onChange={(event) => handleChange('sendAt', event.target.value)}
+                />
+              </label>
+            ) : null}
           </div>
 
           <div className="evt-modal-section">
@@ -511,20 +675,6 @@ export default function EventFormModal({
                 <strong>{selectedTargetsCount} seleccionados</strong>
               </div>
 
-              <div className="evt-target-search">
-                <span className="evt-search-icon">
-                  <BsSearch />
-                </span>
-                <input
-                  type="text"
-                  className="evt-search-input"
-                  value={form.targetSearch}
-                  onChange={(event) => handleChange('targetSearch', event.target.value)}
-                  placeholder="Buscar habilidad, carrera, rol o experiencia..."
-                  aria-label="Buscar criterios de audiencia"
-                />
-              </div>
-
               <div className="evt-profile-checklist-grid">
                 {filteredTargetGroups.map((group) => {
                   const Icon = PROFILE_TARGET_ICONS[group.id] || BsPeople;
@@ -541,6 +691,20 @@ export default function EventFormModal({
                         </span>
                       </div>
 
+                      <div className="evt-target-search evt-target-search--inside">
+                        <span className="evt-search-icon">
+                          <BsSearch />
+                        </span>
+                        <input
+                          type="text"
+                          className="evt-search-input"
+                          value={form.targetSearches[group.id] || ''}
+                          onChange={(event) => handleTargetSearchChange(group.id, event.target.value)}
+                          placeholder={group.searchPlaceholder}
+                          aria-label={`Buscar ${group.label}`}
+                        />
+                      </div>
+
                       <div className="evt-checkbox-list">
                         {group.visibleOptions.map((option) => (
                           <label key={option} className="evt-checkbox-row">
@@ -554,7 +718,9 @@ export default function EventFormModal({
                         ))}
                         {!group.visibleOptions.length ? (
                           <span className="evt-checkbox-empty">
-                            {form.targetSearch ? 'Sin coincidencias' : 'Sin opciones cargadas'}
+                            {profileTargetsLoading
+                              ? 'Cargando opciones...'
+                              : (form.targetSearches[group.id] ? 'Sin coincidencias' : 'Sin opciones cargadas')}
                           </span>
                         ) : null}
                       </div>

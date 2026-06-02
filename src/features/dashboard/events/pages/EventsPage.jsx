@@ -20,6 +20,7 @@ import {
   buildEventMetrics,
   createPublisherEvent,
   createPublisherRequest,
+  fetchEventProfileTargets,
   fetchPublisherEvents,
   getEventsEmptyState,
   getEventsPageSummary,
@@ -59,6 +60,8 @@ export default function DashboardEventsPage() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [profileTargets, setProfileTargets] = useState(null);
+  const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
 
   const loadEvents = useCallback(async () => {
     if (!canPublish) return;
@@ -75,6 +78,28 @@ export default function DashboardEventsPage() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  useEffect(() => {
+    if (!canPublish) return undefined;
+
+    let active = true;
+    setProfileTargetsLoading(true);
+
+    fetchEventProfileTargets()
+      .then((targets) => {
+        if (active) setProfileTargets(targets);
+      })
+      .catch(() => {
+        if (active) setProfileTargets(null);
+      })
+      .finally(() => {
+        if (active) setProfileTargetsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canPublish]);
 
   const normalizedEvents = useMemo(
     () => events.map(normalizeEvent),
@@ -364,6 +389,8 @@ export default function DashboardEventsPage() {
 
       <EventFormModal
         modal={eventModal}
+        profileTargets={profileTargets}
+        profileTargetsLoading={profileTargetsLoading}
         onClose={() => setEventModal(null)}
         onSave={handleSaveEvent}
       />

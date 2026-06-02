@@ -1,6 +1,7 @@
 import BASE_URL from '../../../../services/http/const';
 
 export const EVENT_PAGE_SIZE = 9;
+const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 
 export const EVENT_WORKSPACE_VIEWS = [
   { id: 'requests', label: 'Solicitudes' },
@@ -239,6 +240,20 @@ function buildEventFormData(payload = {}, method = null) {
   return formData;
 }
 
+function formatEventImageUrl(path) {
+  if (!path) return '';
+
+  const value = String(path).trim();
+
+  if (!value) return '';
+  if (value.startsWith('http://')) return value;
+  if (value.startsWith('https://')) return value;
+  if (value.startsWith('blob:')) return value;
+  if (value.startsWith('data:')) return value;
+
+  return `${STORAGE_URL}/${value.replace(/^\/+/, '')}`;
+}
+
 export async function fetchEventsWorkspace() {
   const response = await fetch(`${BASE_URL}/administrador/eventos/workspace`, {
     headers: getAdminRequestHeaders(),
@@ -390,6 +405,40 @@ export async function fetchPublisherEvents() {
   return Array.isArray(payload?.data) ? payload.data : [];
 }
 
+async function fetchEventCatalog(path) {
+  const response = await fetch(`${BASE_URL}/buscar/catalogos/${path}`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudo cargar la segmentacion.');
+  const list = Array.isArray(payload) ? payload : (payload?.data || payload?.items || []);
+
+  return [...new Set(list
+    .map((item) => (typeof item === 'string'
+      ? item
+      : (item?.nombre || item?.name || item?.titulo || item?.valor || item?.cargo || '')))
+    .map((item) => String(item || '').trim())
+    .filter(Boolean))];
+}
+
+export async function fetchEventProfileTargets() {
+  const [
+    technicalSkills,
+    softSkills,
+    experiencePositions,
+  ] = await Promise.all([
+    fetchEventCatalog('habilidades-tecnicas'),
+    fetchEventCatalog('habilidades-blandas'),
+    fetchEventCatalog('cargos-experiencia'),
+  ]);
+
+  return {
+    technicalSkills,
+    softSkills,
+    academicExperience: experiencePositions,
+    workExperience: experiencePositions,
+  };
+}
+
 export async function createPublisherEvent(payload) {
   const response = await fetch(`${BASE_URL}/publicante/eventos`, {
     method: 'POST',
@@ -413,6 +462,15 @@ export async function updatePublisherEvent(eventId, payload) {
 export function normalizeEvent(item = {}) {
   const segments = item.segments || item.segmentos || item.segs || [];
   const channels = item.channels || item.canales || [];
+  const imageUrl = formatEventImageUrl(
+    item.imageUrl
+    || item.image_url
+    || item.imagen_url
+    || item.imagen_portada_url
+    || item.imagen_portada_path
+    || item.banner_url
+    || item.imagen
+  );
 
   return {
     id: item.id || item.id_evento || item.eventId,
@@ -425,7 +483,7 @@ export function normalizeEvent(item = {}) {
     date: item.date || item.fecha || item.fecha_inicio || item.fechaEvento || '--',
     time: item.time || item.hora || item.hora_inicio || '',
     location: item.location || item.lugar || item.ubicacion || 'Sin lugar',
-    imageUrl: item.imageUrl || item.image_url || item.imagen_url || item.banner_url || item.imagen || '',
+    imageUrl,
     imagePreview: item.imagePreview || item.preview || '',
     imageFile: item.imageFile || null,
     publisherId: item.publisherId || item.publicante_id || item.usuario_creador_id || item.usuario_id,
@@ -465,12 +523,34 @@ export function normalizeEventCommunication(item = {}) {
 }
 
 export function normalizePublisherRequest(item = {}) {
+  const sourceUser = item.user || item.usuario || {};
+  const name = item.name || item.nombre || item.legalName || item.nombre_legal || sourceUser.nombre || 'Usuario sin nombre';
+  const email = item.email || item.correo || sourceUser.email || sourceUser.correo || item.backupEmail || item.correo_respaldo || 'Sin correo';
+  const avatarUrl = item.fotoPerfilThumbUrl
+    || item.foto_perfil_thumb_url
+    || item.avatarUrl
+    || item.avatar_url
+    || sourceUser.fotoPerfilThumbUrl
+    || sourceUser.foto_perfil_thumb_url
+    || sourceUser.avatarUrl
+    || sourceUser.avatar_url
+    || '';
+
   return {
     id: item.id || item.id_solicitud || item.requestId,
-    userId: item.userId || item.usuario_id || item.id_usuario,
-    name: item.name || item.nombre || item.legalName || item.nombre_legal || 'Usuario sin nombre',
-    email: item.email || item.correo || item.backupEmail || item.correo_respaldo || 'Sin correo',
+    userId: item.userId || item.usuario_id || item.id_usuario || sourceUser.id || sourceUser.id_usuario,
+    name,
+    email,
     phone: item.phone || item.telefono || 'Sin telefono',
+    fotoPerfilThumbUrl: avatarUrl,
+    avatarUrl,
+    user: {
+      id: item.userId || item.usuario_id || item.id_usuario || sourceUser.id || sourceUser.id_usuario,
+      nombre: name,
+      email,
+      correo: email,
+      fotoPerfilThumbUrl: avatarUrl,
+    },
     documentId: item.documentId || item.documento || item.ci || 'Sin documento',
     organization: item.organization || item.organizacion || 'Independiente',
     role: item.role || item.cargo || 'No especificado',
