@@ -7,6 +7,7 @@ import {
   BsPlayFill,
   BsThreeDotsVertical,
   BsFileEarmarkText,
+  BsXCircle,
 } from 'react-icons/bs';
 import {
   getEventStatusMeta,
@@ -28,6 +29,7 @@ export default function EventsGrid({
   onStatusAction,
   getStatusActions,
   showCommunicationAction = true,
+  showCommunicationsMeta = true,
   showPrimaryAction = true,
   primaryActionLabel = 'Editar',
   emptyHint = 'Las estadisticas no navegan; usa los botones del panel para crear o comunicar eventos.',
@@ -69,7 +71,9 @@ export default function EventsGrid({
                               ? BsPencil
                               : action.icon === 'draft'
                                 ? BsFileEarmarkText
-                                : BsPlayFill;
+                                : action.icon === 'cancel'
+                                  ? BsXCircle
+                                  : BsPlayFill;
 
                             return (
                               <button
@@ -107,10 +111,12 @@ export default function EventsGrid({
                       <BsPeople />
                       {event.registered}/{event.capacity || '--'} inscritos
                     </span>
-                    <span>
-                      <BsMegaphone />
-                      {event.communicationsCount} comunicaciones
-                    </span>
+                    {showCommunicationsMeta ? (
+                      <span>
+                        <BsMegaphone />
+                        {event.communicationsCount} comunicaciones
+                      </span>
+                    ) : null}
                   </div>
 
                   <div className="evt-card-chips">

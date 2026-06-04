@@ -74,12 +74,14 @@ function getPublisherStatusActions(event) {
     return [
       ...actions,
       { id: 'activar', label: 'Activar', status: 'activo', icon: 'play', variant: 'primary' },
+      { id: 'cancelar', label: 'Cancelar evento', status: 'cancelado', icon: 'cancel', variant: 'danger' },
     ];
   }
 
   return [
     ...actions,
     { id: 'borrador', label: 'Pasar a borrador', status: 'borrador', icon: 'draft', variant: 'ghost' },
+    { id: 'cancelar', label: 'Cancelar evento', status: 'cancelado', icon: 'cancel', variant: 'danger' },
   ];
 }
 
@@ -421,7 +423,7 @@ export default function DashboardEventsPage() {
                 <>
                   <div className="dbe-admin-state-note">
                     <BsExclamationTriangle />
-                    <span>Pausar, suspender o cancelar eventos solo puede hacerlo el administrador del sistema.</span>
+                    <span>Pausar o suspender eventos solo puede hacerlo el administrador. Puedes cancelar tus eventos desde el menu de cada tarjeta.</span>
                   </div>
 
                   <EventsFilters
@@ -449,6 +451,7 @@ export default function DashboardEventsPage() {
                     onStatusAction={handlePublisherStatusAction}
                     getStatusActions={getPublisherStatusActions}
                     showCommunicationAction={false}
+                    showCommunicationsMeta={false}
                     showPrimaryAction={false}
                     emptyHint="Crea tu primer evento cuando tengas una convocatoria lista para publicar."
                   />
