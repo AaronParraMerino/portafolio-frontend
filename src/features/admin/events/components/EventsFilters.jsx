@@ -10,6 +10,7 @@ export default function EventsFilters({
   typeFilter,
   statusCounts,
   sourceReady,
+  showSyncStatus = true,
   onQueryChange,
   onStatusFilterChange,
   onTypeFilterChange,
@@ -68,11 +69,13 @@ export default function EventsFilters({
         ))}
       </div>
 
-      <div className="evt-toolbar-side">
-        <span className={`evt-sync-pill ${sourceReady ? 'ready' : 'pending'}`}>
-          {sourceReady ? 'Datos actualizados' : 'Sin registros'}
-        </span>
-      </div>
+      {showSyncStatus ? (
+        <div className="evt-toolbar-side">
+          <span className={`evt-sync-pill ${sourceReady ? 'ready' : 'pending'}`}>
+            {sourceReady ? 'Datos actualizados' : 'Sin registros'}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }

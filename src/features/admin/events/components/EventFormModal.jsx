@@ -3,11 +3,9 @@ import {
   BsCalendar2Plus,
   BsCheck2,
   BsCodeSlash,
-  BsEnvelope,
   BsGlobe2,
   BsMortarboard,
   BsPeople,
-  BsPhone,
   BsPersonWorkspace,
   BsBriefcase,
   BsImage,
@@ -16,7 +14,6 @@ import {
   BsX,
 } from 'react-icons/bs';
 import {
-  EVENT_COMMUNICATION_CHANNELS,
   EVENT_PROFILE_TARGET_GROUPS,
   EVENT_STATUS_FILTERS,
   EVENT_TARGET_MODES,
@@ -38,7 +35,6 @@ const DEFAULT_FORM = {
   capacity: '',
   description: '',
   targetMode: 'all_users',
-  channels: ['inapp'],
   targetSearches: {
     technicalSkills: '',
     softSkills: '',
@@ -65,12 +61,6 @@ const PROFILE_TARGET_ICONS = {
   softSkills: BsPersonWorkspace,
   academicExperience: BsMortarboard,
   workExperience: BsBriefcase,
-};
-
-const CHANNEL_ICONS = {
-  inapp: BsBell,
-  email: BsEnvelope,
-  push: BsPhone,
 };
 
 function toggleValue(values, value) {
@@ -237,7 +227,6 @@ export default function EventFormModal({
       capacity: event.capacity || '',
       description: event.description || '',
       targetMode: event.targetMode || event.target_mode || 'all_users',
-      channels: Array.isArray(event.channels) && event.channels.length ? event.channels : ['inapp'],
       targetSearches: {
         technicalSkills: '',
         softSkills: '',
@@ -262,6 +251,17 @@ export default function EventFormModal({
 
   const selectedTargetsCount = Object.values(form.targetSelections)
     .reduce((total, items) => total + items.length, 0);
+  const selectedTargetTags = Object.entries(form.targetSelections)
+    .flatMap(([groupId, items]) => items.map((value) => {
+      const group = EVENT_PROFILE_TARGET_GROUPS.find((item) => item.id === groupId);
+
+      return {
+        groupId,
+        value,
+        label: value,
+        groupLabel: group?.label || 'Segmento',
+      };
+    }));
   const minDateTime = getDateTimeLocalNow();
   const targetGroups = useMemo(() => EVENT_PROFILE_TARGET_GROUPS.map((group) => ({
     ...group,
@@ -434,7 +434,6 @@ export default function EventFormModal({
         capacity: form.capacity === '' ? 0 : Number(form.capacity),
         description: form.description,
         targetMode: form.targetMode,
-        channels: form.channels,
         segments: form.targetMode === 'segmented'
           ? Object.values(form.targetSelections).flat()
           : ['all_users'],
@@ -504,7 +503,7 @@ export default function EventFormModal({
                 value={form.status}
                 onChange={(event) => handleChange('status', event.target.value)}
               >
-                {EVENT_STATUS_FILTERS.filter((status) => status.id !== 'todos').map((status) => (
+                {EVENT_STATUS_FILTERS.filter((status) => ['activo', 'borrador'].includes(status.id)).map((status) => (
                   <option key={status.id} value={status.id}>{status.label}</option>
                 ))}
               </select>
@@ -619,27 +618,6 @@ export default function EventFormModal({
           </div>
 
           <div className="evt-modal-section">
-            <span className="evt-modal-section-label">Metodo de envio</span>
-            <div className="evt-option-row">
-              {EVENT_COMMUNICATION_CHANNELS.map((channel) => {
-                const Icon = CHANNEL_ICONS[channel.id] || BsBell;
-
-                return (
-                  <button
-                    key={channel.id}
-                    type="button"
-                    className={`evt-option-btn${form.channels.includes(channel.id) ? ' active' : ''}`}
-                    onClick={() => handleChange('channels', toggleValue(form.channels, channel.id))}
-                  >
-                    <Icon />
-                    {channel.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="evt-modal-section">
             <span className="evt-modal-section-label">A quien va dirigido</span>
             <div className="evt-target-mode-grid">
               {EVENT_TARGET_MODES.map((mode) => {
@@ -674,6 +652,28 @@ export default function EventFormModal({
                 <span className="evt-modal-section-label">Segmentacion por portafolio</span>
                 <strong>{selectedTargetsCount} seleccionados</strong>
               </div>
+
+              {selectedTargetTags.length > 0 ? (
+                <div className="evt-selected-tags" aria-label="Segmentos seleccionados">
+                  {selectedTargetTags.map((tag) => (
+                    <button
+                      key={`${tag.groupId}-${tag.value}`}
+                      type="button"
+                      className="evt-selected-tag"
+                      onClick={() => handleToggleTarget(tag.groupId, tag.value)}
+                      title={`Quitar ${tag.label}`}
+                    >
+                      <small>{tag.groupLabel}</small>
+                      <span>{tag.label}</span>
+                      <BsX />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="evt-section-note">
+                  Selecciona una habilidad o experiencia y aparecera aqui como etiqueta para quitarla rapido.
+                </p>
+              )}
 
               <div className="evt-profile-checklist-grid">
                 {filteredTargetGroups.map((group) => {
@@ -744,7 +744,7 @@ export default function EventFormModal({
         </div>
 
         <div className="evt-modal-foot">
-          <span>Revisa audiencia, fechas y metodo de envio antes de guardar.</span>
+          <span>Revisa audiencia y fechas antes de guardar.</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
               Cancelar

@@ -4,17 +4,16 @@ import {
   BsCalendar3,
   BsCheck2Circle,
   BsExclamationTriangle,
-  BsFileEarmarkText,
   BsLock,
   BsShieldCheck,
 } from 'react-icons/bs';
 import Header from '../../layout/Header';
 import { getStoredUser, isPublisherUser } from '../../../../shared/utils/authStorage';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import EventFormModal from '../../../admin/events/components/EventFormModal';
 import EventsCalendar from '../../../admin/events/components/EventsCalendar';
 import EventsFilters from '../../../admin/events/components/EventsFilters';
 import EventsGrid from '../../../admin/events/components/EventsGrid';
-import EventsTemplatesPanel from '../../../admin/events/components/EventsTemplatesPanel';
 import {
   EVENT_PAGE_SIZE,
   buildEventMetrics,
@@ -36,7 +35,6 @@ const MONTHLY_LIMIT = 3;
 const PUBLISHER_TABS = [
   { id: 'events', label: 'Mis eventos', icon: BsCalendar2Plus },
   { id: 'calendar', label: 'Calendario', icon: BsCalendar3 },
-  { id: 'templates', label: 'Plantillas', icon: BsFileEarmarkText },
 ];
 
 function isSameMonth(dateValue, date = new Date()) {
@@ -44,6 +42,45 @@ function isSameMonth(dateValue, date = new Date()) {
   const parsed = new Date(dateValue);
   if (Number.isNaN(parsed.getTime())) return false;
   return parsed.getFullYear() === date.getFullYear() && parsed.getMonth() === date.getMonth();
+}
+
+function buildPublisherStatusPayload(event, status) {
+  return {
+    title: event.title,
+    type: event.type,
+    status,
+    startsAt: event.startsAt || event.raw?.fecha_inicio || null,
+    endsAt: event.endsAt || event.raw?.fecha_fin || null,
+    sendAt: status === 'programado' ? (event.sendAt || event.raw?.programado_para || null) : null,
+    location: event.location,
+    imageUrl: event.imageUrl || '',
+    capacity: Number(event.capacity || 0),
+    description: event.description || '',
+    targetMode: event.targetMode || event.raw?.targetMode || event.raw?.target_mode || 'all_users',
+    targetSelections: event.targetSelections || event.raw?.targetSelections || event.raw?.target_selections || {},
+  };
+}
+
+function getPublisherStatusActions(event) {
+  const actions = [
+    { id: 'editar', label: 'Editar', icon: 'edit', variant: 'primary' },
+  ];
+
+  if (['pausado', 'suspendido', 'cancelado'].includes(event.status)) {
+    return actions;
+  }
+
+  if (event.status === 'borrador') {
+    return [
+      ...actions,
+      { id: 'activar', label: 'Activar', status: 'activo', icon: 'play', variant: 'primary' },
+    ];
+  }
+
+  return [
+    ...actions,
+    { id: 'borrador', label: 'Pasar a borrador', status: 'borrador', icon: 'draft', variant: 'ghost' },
+  ];
 }
 
 export default function DashboardEventsPage() {
@@ -55,13 +92,14 @@ export default function DashboardEventsPage() {
   const [activeView, setActiveView] = useState('events');
   const [eventModal, setEventModal] = useState(null);
   const [events, setEvents] = useState([]);
-  const [templates] = useState([]);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [profileTargets, setProfileTargets] = useState(null);
   const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
+  const [eventSaving, setEventSaving] = useState(false);
+  const [pendingEventSave, setPendingEventSave] = useState(null);
 
   const loadEvents = useCallback(async () => {
     if (!canPublish) return;
@@ -195,19 +233,66 @@ export default function DashboardEventsPage() {
     },
   ];
 
-  const handleSaveEvent = async (payload) => {
+  const handleRequestSaveEvent = (payload) => {
     if (remainingThisMonth <= 0 && eventModal?.mode !== 'edit') {
       throw new Error('Ya alcanzaste el limite de 3 eventos este mes.');
     }
 
-    if (eventModal?.mode === 'edit' && eventModal.event?.id) {
-      await updatePublisherEvent(eventModal.event.id, payload);
-    } else {
-      await createPublisherEvent(payload);
+    setPendingEventSave({
+      payload,
+      mode: eventModal?.mode || 'create',
+      eventId: eventModal?.event?.id || null,
+    });
+  };
+
+  const handleCancelConfirmSave = () => {
+    setPendingEventSave(null);
+  };
+
+  const handleConfirmSaveEvent = async () => {
+    if (!pendingEventSave) return;
+
+    const saveContext = pendingEventSave;
+
+    setPendingEventSave(null);
+    setEventModal(null);
+    setEventSaving(true);
+
+    try {
+      if (saveContext.mode === 'edit' && saveContext.eventId) {
+        await updatePublisherEvent(saveContext.eventId, saveContext.payload);
+      } else {
+        await createPublisherEvent(saveContext.payload);
+      }
+
+      await loadEvents();
+      setNotice(saveContext.mode === 'edit' ? 'Evento actualizado correctamente.' : 'Evento guardado correctamente.');
+    } catch (error) {
+      setNotice(error.message || 'No se pudo guardar el evento.');
+    } finally {
+      setEventSaving(false);
+    }
+  };
+
+  const handlePublisherStatusAction = async (event, action) => {
+    if (action?.id === 'editar') {
+      setEventModal({ mode: 'edit', event });
+      return;
     }
 
-    await loadEvents();
-    setEventModal(null);
+    if (!event?.id || !action?.status) return;
+
+    setEventSaving(true);
+
+    try {
+      await updatePublisherEvent(event.id, buildPublisherStatusPayload(event, action.status));
+      await loadEvents();
+      setNotice(`Evento ${action.label.toLowerCase()} correctamente.`);
+    } catch (error) {
+      setNotice(error.message || 'No se pudo actualizar el estado del evento.');
+    } finally {
+      setEventSaving(false);
+    }
   };
 
   const handleSubmitPermission = async (payload) => {
@@ -260,7 +345,7 @@ export default function DashboardEventsPage() {
                 <p>Usa datos personales claros, correo de respaldo y canales de contacto reales.</p>
               </article>
               <article>
-                <BsFileEarmarkText />
+                <BsCalendar2Plus />
                 <strong>Motivo de publicacion</strong>
                 <p>Explica que tipo de cursos, trabajos, ferias o convocatorias deseas publicar.</p>
               </article>
@@ -273,7 +358,7 @@ export default function DashboardEventsPage() {
 
             <div className="dbe-note-panel">
               <strong>Cuando seas publicador</strong>
-              <p>Podras crear hasta 3 eventos por mes, revisar tus eventos, consultar el calendario y preparar convocatorias con plantillas.</p>
+              <p>Podras crear hasta 3 eventos por mes, revisar tus eventos y consultar el calendario de publicaciones.</p>
               <button type="button" className="evt-context-btn evt-context-btn--primary" onClick={() => setPermissionModalOpen(true)}>
                 <BsShieldCheck />
                 Solicitar permisos
@@ -334,12 +419,18 @@ export default function DashboardEventsPage() {
 
               {activeView === 'events' ? (
                 <>
+                  <div className="dbe-admin-state-note">
+                    <BsExclamationTriangle />
+                    <span>Pausar, suspender o cancelar eventos solo puede hacerlo el administrador del sistema.</span>
+                  </div>
+
                   <EventsFilters
                     query={query}
                     statusFilter={statusFilter}
                     typeFilter={typeFilter}
                     statusCounts={statusCounts}
                     sourceReady
+                    showSyncStatus={false}
                     onQueryChange={handleQueryChange}
                     onStatusFilterChange={handleStatusFilterChange}
                     onTypeFilterChange={handleTypeFilterChange}
@@ -355,8 +446,10 @@ export default function DashboardEventsPage() {
                     paginationItems={paginationItems}
                     onGoToPage={handleGoToPage}
                     onEditEvent={(event) => setEventModal({ mode: 'edit', event })}
+                    onStatusAction={handlePublisherStatusAction}
+                    getStatusActions={getPublisherStatusActions}
                     showCommunicationAction={false}
-                    primaryActionLabel="Editar"
+                    showPrimaryAction={false}
                     emptyHint="Crea tu primer evento cuando tengas una convocatoria lista para publicar."
                   />
                 </>
@@ -369,12 +462,6 @@ export default function DashboardEventsPage() {
                 />
               ) : null}
 
-              {activeView === 'templates' ? (
-                <EventsTemplatesPanel
-                  sourceReady
-                  templates={templates}
-                />
-              ) : null}
             </section>
           </>
         )}
@@ -392,8 +479,30 @@ export default function DashboardEventsPage() {
         profileTargets={profileTargets}
         profileTargetsLoading={profileTargetsLoading}
         onClose={() => setEventModal(null)}
-        onSave={handleSaveEvent}
+        onSave={handleRequestSaveEvent}
       />
+
+      <ConfirmModal
+        open={!!pendingEventSave}
+        variant="blue"
+        icon="check"
+        title={pendingEventSave?.mode === 'edit' ? 'Guardar cambios' : 'Guardar evento'}
+        subtitle="Confirma antes de continuar."
+        message={pendingEventSave?.mode === 'edit'
+          ? 'Se cerrara el formulario y el evento se actualizara en segundo plano.'
+          : 'Se cerrara el formulario y el evento se guardara en segundo plano.'}
+        confirmLabel="Guardar"
+        cancelLabel="Cancelar"
+        onConfirm={handleConfirmSaveEvent}
+        onClose={handleCancelConfirmSave}
+      />
+
+      {eventSaving ? (
+        <div className="dbe-save-toast" role="status" aria-live="polite">
+          <span className="dbe-save-spinner" />
+          <strong>Guardando evento...</strong>
+        </div>
+      ) : null}
     </div>
   );
 }

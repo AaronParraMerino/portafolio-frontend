@@ -462,6 +462,10 @@ export async function updatePublisherEvent(eventId, payload) {
 export function normalizeEvent(item = {}) {
   const segments = item.segments || item.segmentos || item.segs || [];
   const channels = item.channels || item.canales || [];
+  const targetSelections = item.targetSelections || item.target_selections || {};
+  const segmentChips = Array.isArray(segments)
+    ? segments
+    : Object.values(targetSelections).flat().filter(Boolean);
   const imageUrl = formatEventImageUrl(
     item.imageUrl
     || item.image_url
@@ -489,12 +493,14 @@ export function normalizeEvent(item = {}) {
     publisherId: item.publisherId || item.publicante_id || item.usuario_creador_id || item.usuario_id,
     publisherName: item.publisherName || item.publicante || item.nombre_publicante || item.creador?.nombre || item.usuario?.nombre || 'Publicante sin nombre',
     publisherEmail: item.publisherEmail || item.correo_publicante || item.creador?.correo || item.usuario?.correo || 'Sin correo',
+    targetMode: item.targetMode || item.target_mode || 'all_users',
+    targetSelections,
     capacity: Number(item.capacity ?? item.cupo ?? item.cupos ?? 0),
     registered: Number(item.registered ?? item.inscritos ?? item.asistentes ?? 0),
     interested: Number(item.interested ?? item.interesados ?? 0),
     waitlist: Number(item.waitlist ?? item.espera ?? 0),
     communicationsCount: Number(item.communicationsCount ?? item.comunicaciones ?? item.avisos ?? 0),
-    segments: Array.isArray(segments) ? segments : [],
+    segments: segmentChips,
     channels: Array.isArray(channels) ? channels : [],
     raw: item,
   };

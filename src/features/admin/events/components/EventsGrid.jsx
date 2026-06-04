@@ -4,7 +4,9 @@ import {
   BsMegaphone,
   BsPeople,
   BsPencil,
-  BsThreeDots,
+  BsPlayFill,
+  BsThreeDotsVertical,
+  BsFileEarmarkText,
 } from 'react-icons/bs';
 import {
   getEventStatusMeta,
@@ -23,7 +25,10 @@ export default function EventsGrid({
   onGoToPage,
   onEditEvent,
   onCommunicate,
+  onStatusAction,
+  getStatusActions,
   showCommunicationAction = true,
+  showPrimaryAction = true,
   primaryActionLabel = 'Editar',
   emptyHint = 'Las estadisticas no navegan; usa los botones del panel para crear o comunicar eventos.',
 }) {
@@ -34,6 +39,7 @@ export default function EventsGrid({
           {events.map((event) => {
             const statusMeta = getEventStatusMeta(event.status);
             const typeMeta = getEventTypeMeta(event.type);
+            const statusActions = typeof getStatusActions === 'function' ? getStatusActions(event) : [];
 
             return (
               <article key={event.id || event.title} className="evt-card">
@@ -52,9 +58,37 @@ export default function EventsGrid({
                         {statusMeta.label}
                       </span>
                     </div>
-                    <button type="button" className="evt-icon-btn evt-icon-btn--sm" title="Mas opciones" aria-label="Mas opciones">
-                      <BsThreeDots />
-                    </button>
+                    {statusActions.length > 0 ? (
+                      <details className="evt-card-menu">
+                        <summary className="evt-icon-btn evt-icon-btn--sm" title="Cambiar estado" aria-label="Cambiar estado">
+                          <BsThreeDotsVertical />
+                        </summary>
+                        <div className="evt-card-menu-list">
+                          {statusActions.map((action) => {
+                            const Icon = action.icon === 'edit'
+                              ? BsPencil
+                              : action.icon === 'draft'
+                                ? BsFileEarmarkText
+                                : BsPlayFill;
+
+                            return (
+                              <button
+                                key={action.id}
+                                type="button"
+                                className={`evt-card-menu-item evt-card-menu-item--${action.variant || 'ghost'}`}
+                                onClick={(clickEvent) => {
+                                  clickEvent.currentTarget.closest('details')?.removeAttribute('open');
+                                  onStatusAction?.(event, action);
+                                }}
+                              >
+                                <Icon />
+                                {action.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    ) : null}
                   </div>
 
                   <h3 className="evt-card-title">{event.title}</h3>
@@ -88,7 +122,8 @@ export default function EventsGrid({
                 </div>
 
                 <div className="evt-card-actions">
-                  {showCommunicationAction ? (
+                  <div className="evt-card-action-group evt-card-action-group--right">
+                    {showCommunicationAction ? (
                     <button
                       type="button"
                       className="evt-btn evt-btn--ghost"
@@ -97,15 +132,18 @@ export default function EventsGrid({
                       <BsMegaphone />
                       Comunicar
                     </button>
-                  ) : <span className="evt-card-action-spacer" />}
-                  <button
-                    type="button"
-                    className="evt-btn evt-btn--primary"
-                    onClick={() => onEditEvent(event)}
-                  >
-                    <BsPencil />
-                    {primaryActionLabel}
-                  </button>
+                    ) : null}
+                    {showPrimaryAction ? (
+                      <button
+                        type="button"
+                        className="evt-btn evt-btn--primary"
+                        onClick={() => onEditEvent(event)}
+                      >
+                        <BsPencil />
+                        {primaryActionLabel}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             );
