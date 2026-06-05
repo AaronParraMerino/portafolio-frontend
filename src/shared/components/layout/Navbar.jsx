@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import ConfirmModal from '../../ui/ConfirmModal';
 import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
 import LanguageSelector from '../language/LanguageSelector';
+import NotificationCenterModal from '../notifications/NotificationCenterModal';
 import { useLanguage } from '../../../core/i18n';
 import {
   clearAuthStorage,
@@ -13,9 +14,13 @@ import {
 } from '../../utils/authStorage';
 import {
   clearNotificationsCache,
-  fetchNotifications,
-  getCachedNotifications,
+  fetchNotificationGroupMessages,
+  fetchNotificationModuleDetail,
+  fetchNotificationModules,
+  getCachedNotificationModules,
   markAllNotificationsAsRead,
+  markNotificationGroupAsRead,
+  markNotificationModuleAsRead,
   markNotificationAsRead,
 } from '../../services/notificationService';
 
@@ -113,6 +118,20 @@ function notificationTime(value, language = 'es') {
   return formatter.format(Math.round(hours / 24), 'day');
 }
 
+function moduleFallbackTitle(modulo) {
+  return {
+    proyectos: 'Proyectos',
+    eventos: 'Eventos',
+    administracion: 'Administracion',
+  }[modulo] || modulo || 'Notificaciones';
+}
+
+function getNotificationTitle(notification) {
+  return notification?.grupo_titulo
+    || notification?.titulo
+    || moduleFallbackTitle(notification?.modulo);
+}
+
 export default function Navbar() {
   const { t, language } = useLanguage();
   const BASE_URL = process.env.REACT_APP_API_URL;
@@ -120,11 +139,17 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notificationModules, setNotificationModules] = useState([]);
+  const [notificationDetail, setNotificationDetail] = useState(null);
+  const [notificationMessages, setNotificationMessages] = useState([]);
+  const [notifLevel, setNotifLevel] = useState('modules');
+  const [selectedNotificationModule, setSelectedNotificationModule] = useState(null);
+  const [selectedNotificationGroup, setSelectedNotificationGroup] = useState(null);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -136,11 +161,24 @@ export default function Navbar() {
   const dashboardHomePath = getDashboardHomePath();
   const adminUser = isAdminUser(user);
 
+  const applyModulesPayload = useCallback((payload) => {
+    const modules = Array.isArray(payload?.data) ? payload.data : [];
+
+    setNotificationModules(modules);
+    setUnreadNotifications(Number(payload?.total) || modules.reduce(
+      (total, item) => total + Number(item.cantidad || 0),
+      0
+    ));
+  }, []);
+
   const loadNotifications = useCallback(async ({ silent = false } = {}) => {
     if (!userId) {
-      setNotifications([]);
+      setNotificationModules([]);
+      setNotificationDetail(null);
+      setNotificationMessages([]);
       setUnreadNotifications(0);
       setNotificationsError('');
+      setNotifLevel('modules');
       return;
     }
 
@@ -150,9 +188,8 @@ export default function Navbar() {
     }
 
     try {
-      const data = await fetchNotifications();
-      setNotifications(data.notifications);
-      setUnreadNotifications(data.unread);
+      const data = await fetchNotificationModules();
+      applyModulesPayload(data);
       setNotificationsError('');
     } catch (err) {
       if (!silent) {
@@ -163,7 +200,7 @@ export default function Navbar() {
         setNotificationsLoading(false);
       }
     }
-  }, [userId, t]);
+  }, [applyModulesPayload, userId, t]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -185,7 +222,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const onClick = (event) => {
-      if (notifRef.current && !notifRef.current.contains(event.target)) {
+      if (!notificationCenterOpen && notifRef.current && !notifRef.current.contains(event.target)) {
         setNotifOpen(false);
       }
 
@@ -197,7 +234,7 @@ export default function Navbar() {
     document.addEventListener('mousedown', onClick);
 
     return () => document.removeEventListener('mousedown', onClick);
-  }, []);
+  }, [notificationCenterOpen]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -211,17 +248,16 @@ export default function Navbar() {
       return;
     }
 
-    const cached = getCachedNotifications();
+    const cached = getCachedNotificationModules();
 
     if (cached) {
-      setNotifications(cached.notifications);
-      setUnreadNotifications(cached.unread);
+      applyModulesPayload(cached);
       setNotificationsLoading(false);
       setNotificationsError('');
     }
 
     loadNotifications({ silent: Boolean(cached) });
-  }, [userId, loadNotifications]);
+  }, [applyModulesPayload, userId, loadNotifications]);
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -246,30 +282,144 @@ export default function Navbar() {
   }, [userId, loadNotifications]);
 
   const handleNotificationToggle = () => {
-    if (!notifOpen) loadNotifications({ silent: notifications.length > 0 });
+    if (!notifOpen) loadNotifications({ silent: notificationModules.length > 0 });
     setNotifOpen((open) => !open);
   };
 
-  const handleNotificationRead = async (notification) => {
-    if (notification.leida_en) return;
+  const handleNotificationCenterOpen = () => {
+    setNotificationsError('');
+    setNotifOpen(false);
+    setNotificationCenterOpen(true);
+  };
+
+  const refreshNotificationModules = useCallback(async () => {
+    const data = await fetchNotificationModules({ force: true });
+    applyModulesPayload(data);
+    return data;
+  }, [applyModulesPayload]);
+
+  const handleNotificationBack = () => {
+    setNotificationsError('');
+
+    if (notifLevel === 'messages') {
+      setNotificationMessages([]);
+      setSelectedNotificationGroup(null);
+      setNotifLevel('detail');
+      return;
+    }
+
+    setNotificationDetail(null);
+    setSelectedNotificationModule(null);
+    setNotifLevel('modules');
+  };
+
+  const handleNotificationModuleOpen = async (moduleItem) => {
+    setSelectedNotificationModule(moduleItem);
+    setSelectedNotificationGroup(null);
+    setNotificationMessages([]);
+    setNotificationsError('');
+    setNotificationsLoading(true);
 
     try {
-      const response = await markNotificationAsRead(
-        notification.id_notificacion
+      const detail = await fetchNotificationModuleDetail(moduleItem.modulo);
+      setNotificationDetail(detail);
+      setNotifLevel('detail');
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsLoadError'));
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const handleNotificationGroupOpen = async (group) => {
+    if (!selectedNotificationModule) return;
+
+    setSelectedNotificationGroup(group);
+    setNotificationsError('');
+    setNotificationsLoading(true);
+
+    try {
+      const payload = await fetchNotificationGroupMessages(
+        selectedNotificationModule.modulo,
+        group.contexto_referencia
       );
 
-      setNotifications((current) => current.map((item) => (
-        item.id_notificacion === notification.id_notificacion
-          ? {
-              ...item,
-              leida_en: response.data?.leida_en || new Date().toISOString(),
-            }
-          : item
-      )));
+      setNotificationMessages(Array.isArray(payload.data) ? payload.data : []);
+      setNotifLevel('messages');
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsLoadError'));
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
 
+  const refreshCurrentNotificationPanel = async () => {
+    await refreshNotificationModules();
+
+    if (!selectedNotificationModule) return;
+
+    const detail = await fetchNotificationModuleDetail(
+      selectedNotificationModule.modulo,
+      { force: true }
+    );
+
+    setNotificationDetail(detail);
+
+    if (notifLevel === 'messages' && selectedNotificationGroup) {
+      const payload = await fetchNotificationGroupMessages(
+        selectedNotificationModule.modulo,
+        selectedNotificationGroup.contexto_referencia,
+        { force: true }
+      );
+
+      setNotificationMessages(Array.isArray(payload.data) ? payload.data : []);
+    }
+  };
+
+  const handleNotificationRead = async (notification) => {
+    if (notification.leida_en || notification.leido_en) return;
+
+    try {
+      const response = await markNotificationAsRead(notification.id_notificacion);
       setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
+      await refreshCurrentNotificationPanel();
     } catch (err) {
       setNotificationsError(err.message || t('nav.notificationReadError'));
+    }
+  };
+
+  const handleModuleNotificationsRead = async () => {
+    if (!selectedNotificationModule) return;
+
+    try {
+      const response = await markNotificationModuleAsRead(selectedNotificationModule.modulo);
+      setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
+      await refreshNotificationModules();
+      setNotificationDetail(null);
+      setNotificationMessages([]);
+      setSelectedNotificationModule(null);
+      setSelectedNotificationGroup(null);
+      setNotifLevel('modules');
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsMarkError'));
+    }
+  };
+
+  const handleGroupNotificationsRead = async () => {
+    if (!selectedNotificationModule || !selectedNotificationGroup) return;
+
+    try {
+      const response = await markNotificationGroupAsRead(
+        selectedNotificationModule.modulo,
+        selectedNotificationGroup.contexto_referencia
+      );
+      setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
+      await refreshCurrentNotificationPanel();
+      setNotifLevel('detail');
+      setNotificationMessages([]);
+      setSelectedNotificationGroup(null);
+    } catch (err) {
+      setNotificationsError(err.message || t('nav.notificationsMarkError'));
     }
   };
 
@@ -278,14 +428,12 @@ export default function Navbar() {
 
     try {
       await markAllNotificationsAsRead();
-
-      const readAt = new Date().toISOString();
-
-      setNotifications((current) => current.map((item) => ({
-        ...item,
-        leida_en: item.leida_en || readAt,
-      })));
-
+      setNotificationModules((current) => current.map((item) => ({ ...item, cantidad: 0 })));
+      setNotificationDetail(null);
+      setNotificationMessages([]);
+      setSelectedNotificationModule(null);
+      setSelectedNotificationGroup(null);
+      setNotifLevel('modules');
       setUnreadNotifications(0);
     } catch (err) {
       setNotificationsError(err.message || t('nav.notificationsMarkError'));
@@ -332,6 +480,18 @@ export default function Navbar() {
     : 'U';
 
   const userRole = user?.rol || user?.role || t('nav.user');
+  const notifLevelIndex = {
+    modules: 0,
+    detail: 1,
+    messages: 2,
+  }[notifLevel] || 0;
+  const detailItems = Array.isArray(notificationDetail?.data) ? notificationDetail.data : [];
+  const detailIsDirectMessages = notificationDetail?.tipo_vista === 'mensajes_directos';
+  const notificationPanelTitle = notifLevel === 'messages'
+    ? (selectedNotificationGroup?.titulo || t('nav.notifications'))
+    : notifLevel === 'detail'
+      ? (selectedNotificationModule?.titulo || moduleFallbackTitle(selectedNotificationModule?.modulo))
+      : t('nav.notifications');
 
   return (
     <>
@@ -392,13 +552,31 @@ export default function Navbar() {
         .spk-bell:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.35); }
         .spk-bell svg { width: 16px; height: 16px; stroke: rgba(255,255,255,.86); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
         .spk-bell-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--rojo-soft, #ef4444); border: 1.5px solid var(--azul, #0077b7); pointer-events: none; }
-        .spk-notif-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 320px; background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.13); overflow: hidden; animation: fadeUp .18s ease both; z-index: 300; }
-        .spk-notif-header { padding: 11px 16px; border-bottom: 1px solid #d1d5db; font-size: 12px; font-weight: 700; color: #111827; display: flex; justify-content: space-between; align-items: center; }
-        .spk-notif-clear { font-size: 10px; color: #0077b7; font-weight: 500; cursor: pointer; background: none; border: none; padding: 0; transition: color .12s; }
+        .spk-notif-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 340px; max-width: calc(100vw - 28px); background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.13); overflow: hidden; animation: fadeUp .18s ease both; z-index: 300; }
+        .spk-notif-header { min-height: 46px; padding: 10px 12px; border-bottom: 1px solid #d1d5db; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .spk-notif-titlebar { display: flex; align-items: center; gap: 7px; min-width: 0; }
+        .spk-notif-heading { font-size: 12px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .spk-notif-back { width: 25px; height: 25px; border-radius: 6px; border: 1px solid #d1d5db; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #374151; }
+        .spk-notif-back:hover { background: #f3f4f6; color: #111827; }
+        .spk-notif-back svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .spk-notif-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .spk-notif-clear { font-size: 10px; color: #0077b7; font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; transition: color .12s; white-space: nowrap; }
         .spk-notif-clear:hover { color: #005f95; }
         .spk-notif-clear:disabled { color: #9ca3af; cursor: default; }
-        .spk-notif-list { max-height: 330px; overflow-y: auto; }
-        .spk-notif-item { width: 100%; padding: 11px 16px; border: none; border-bottom: 1px solid #f0ede8; background: #ffffff; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background .12s; text-align: left; }
+        .spk-notif-frame { overflow: hidden; }
+        .spk-notif-slider { display: flex; width: 300%; transform: translateX(calc(var(--notif-level, 0) * -33.333%)); transition: transform .22s ease; }
+        .spk-notif-panel { width: 33.333%; flex-shrink: 0; display: flex; flex-direction: column; min-height: 210px; max-height: min(390px, calc(100vh - 96px)); }
+        .spk-notif-list { overflow-y: auto; flex: 1; }
+        .spk-notif-row { width: 100%; padding: 11px 13px; border: none; border-bottom: 1px solid #f0ede8; background: #ffffff; display: flex; gap: 10px; align-items: center; cursor: pointer; transition: background .12s; text-align: left; }
+        .spk-notif-row:hover { background: #e8f4fb; }
+        .spk-notif-row:disabled { cursor: default; opacity: .62; }
+        .spk-notif-row:disabled:hover { background: #ffffff; }
+        .spk-notif-row-main { min-width: 0; flex: 1; }
+        .spk-notif-row-title { font-size: 12px; color: #111827; font-weight: 700; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .spk-notif-row-meta { font-size: 10px; color: #6b7280; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .spk-notif-count { min-width: 24px; height: 22px; border-radius: 999px; background: #e8f4fb; color: #005f95; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; padding: 0 7px; }
+        .spk-notif-chevron { width: 14px; height: 14px; stroke: #9ca3af; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        .spk-notif-item { width: 100%; padding: 11px 13px; border: none; border-bottom: 1px solid #f0ede8; background: #ffffff; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: background .12s; text-align: left; }
         .spk-notif-item:last-child { border-bottom: none; }
         .spk-notif-item:hover { background: #e8f4fb; }
         .spk-notif-item.unread { background: #f8fcff; }
@@ -408,8 +586,10 @@ export default function Navbar() {
         .spk-notif-title { font-size: 12px; color: #111827; font-weight: 600; line-height: 1.35; margin-bottom: 2px; }
         .spk-notif-text { font-size: 12px; color: #374151; line-height: 1.5; text-align: left; }
         .spk-notif-time { font-size: 10px; color: #6b7280; font-family: var(--mono, monospace); margin-top: 2px; }
-        .spk-notif-empty { padding: 20px 16px; color: #6b7280; font-size: 12px; text-align: center; }
+        .spk-notif-empty { padding: 22px 16px; color: #6b7280; font-size: 12px; text-align: center; }
         .spk-notif-empty.error { color: #c94040; }
+        .spk-notif-footer { padding: 9px 12px; border-top: 1px solid #f0ede8; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fafafa; }
+        .spk-notif-footnote { font-size: 10px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .spk-nav-divider { width: 1px; height: 18px; background: rgba(255,255,255,.15); }
         .spk-btn-login { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.82); background: transparent; border: 1px solid rgba(255,255,255,.22); padding: 7px 16px; border-radius: 6px; cursor: pointer; transition: all .15s; white-space: nowrap; }
         .spk-btn-login:hover { border-color: rgba(255,255,255,.55); color: #ffffff; background: rgba(255,255,255,.08); }
@@ -496,65 +676,246 @@ export default function Navbar() {
                 {notifOpen && (
                   <div className="spk-notif-dropdown">
                     <div className="spk-notif-header">
-                      {t('nav.notifications')}
-                      <button
-                        className="spk-notif-clear"
-                        type="button"
-                        disabled={notificationsLoading || unreadNotifications === 0}
-                        onClick={handleAllNotificationsRead}
-                      >
-                        {t('nav.markRead')}
-                      </button>
+                      <div className="spk-notif-titlebar">
+                        {notifLevel !== 'modules' && (
+                          <button
+                            className="spk-notif-back"
+                            type="button"
+                            onClick={handleNotificationBack}
+                            aria-label={t('nav.back')}
+                          >
+                            <svg viewBox="0 0 24 24">
+                              <path d="m15 18-6-6 6-6" />
+                            </svg>
+                          </button>
+                        )}
+
+                        <span className="spk-notif-heading">
+                          {notificationPanelTitle}
+                        </span>
+                      </div>
+
+                      <div className="spk-notif-actions">
+                        <button
+                          className="spk-notif-clear"
+                          type="button"
+                          onClick={handleNotificationCenterOpen}
+                        >
+                          {t('nav.viewAll')}
+                        </button>
+
+                        <button
+                          className="spk-notif-clear"
+                          type="button"
+                          disabled={notificationsLoading || unreadNotifications === 0}
+                          onClick={handleAllNotificationsRead}
+                        >
+                          {t('nav.markRead')}
+                        </button>
+                      </div>
                     </div>
 
-                    {notificationsLoading && (
-                      <div className="spk-notif-empty">
-                        {t('nav.loadingNotifications')}
-                      </div>
-                    )}
-
-                    {!notificationsLoading && notificationsError && (
+                    {notificationsError && (
                       <div className="spk-notif-empty error">
                         {notificationsError}
                       </div>
                     )}
 
-                    {!notificationsLoading && !notificationsError && notifications.length === 0 && (
-                      <div className="spk-notif-empty">
-                        {t('nav.noNotifications')}
-                      </div>
-                    )}
-
-                    {!notificationsLoading && !notificationsError && notifications.length > 0 && (
-                      <div className="spk-notif-list">
-                        {notifications.map((notification) => (
-                          <button
-                            className={`spk-notif-item${notification.leida_en ? '' : ' unread'}`}
-                            key={notification.id_notificacion}
-                            type="button"
-                            onClick={() => handleNotificationRead(notification)}
-                          >
-                            <div className={`spk-notif-ico${notification.leida_en ? ' read' : ''}`} />
-
-                            <div>
-                              <div className="spk-notif-title">
-                                {notification.titulo}
-                              </div>
-
-                              {notification.contenido && (
-                                <div className="spk-notif-text">
-                                  {notification.contenido}
-                                </div>
-                              )}
-
-                              <div className="spk-notif-time">
-                                {notificationTime(notification.created_at, language)}
-                              </div>
+                    <div className="spk-notif-frame">
+                      <div
+                        className="spk-notif-slider"
+                        style={{ '--notif-level': notifLevelIndex }}
+                      >
+                        <div className="spk-notif-panel">
+                          {notificationsLoading && notifLevel === 'modules' && (
+                            <div className="spk-notif-empty">
+                              {t('nav.loadingNotifications')}
                             </div>
-                          </button>
-                        ))}
+                          )}
+
+                          {!notificationsLoading && notificationModules.length === 0 && (
+                            <div className="spk-notif-empty">
+                              {t('nav.noNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationModules.length > 0 && (
+                            <div className="spk-notif-list">
+                              {notificationModules.map((moduleItem) => (
+                                <button
+                                  className="spk-notif-row"
+                                  key={moduleItem.modulo}
+                                  type="button"
+                                  disabled={!Number(moduleItem.cantidad)}
+                                  onClick={() => handleNotificationModuleOpen(moduleItem)}
+                                >
+                                  <div className="spk-notif-row-main">
+                                    <div className="spk-notif-row-title">
+                                      {moduleItem.titulo || moduleFallbackTitle(moduleItem.modulo)}
+                                    </div>
+                                    <div className="spk-notif-row-meta">
+                                      {Number(moduleItem.cantidad || 0)} {t('nav.pendingNotifications')}
+                                    </div>
+                                  </div>
+
+                                  <span className="spk-notif-count">
+                                    {Number(moduleItem.cantidad || 0)}
+                                  </span>
+
+                                  <svg className="spk-notif-chevron" viewBox="0 0 24 24">
+                                    <path d="m9 18 6-6-6-6" />
+                                  </svg>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="spk-notif-panel">
+                          {notificationsLoading && notifLevel === 'detail' && (
+                            <div className="spk-notif-empty">
+                              {t('nav.loadingNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && detailItems.length === 0 && (
+                            <div className="spk-notif-empty">
+                              {t('nav.noNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && detailItems.length > 0 && (
+                            <div className="spk-notif-list">
+                              {detailIsDirectMessages ? detailItems.map((notification) => (
+                                <button
+                                  className="spk-notif-item unread"
+                                  key={notification.id_notificacion}
+                                  type="button"
+                                  onClick={() => handleNotificationRead(notification)}
+                                >
+                                  <div className="spk-notif-ico" />
+
+                                  <div>
+                                    <div className="spk-notif-title">
+                                      {getNotificationTitle(notification)}
+                                    </div>
+
+                                    {notification.contenido && (
+                                      <div className="spk-notif-text">
+                                        {notification.contenido}
+                                      </div>
+                                    )}
+
+                                    <div className="spk-notif-time">
+                                      {notificationTime(notification.created_at, language)}
+                                    </div>
+                                  </div>
+                                </button>
+                              )) : detailItems.map((group) => (
+                                <button
+                                  className="spk-notif-row"
+                                  key={group.contexto_referencia}
+                                  type="button"
+                                  onClick={() => handleNotificationGroupOpen(group)}
+                                >
+                                  <div className="spk-notif-row-main">
+                                    <div className="spk-notif-row-title">
+                                      {group.titulo || t('nav.ungroupedNotifications')}
+                                    </div>
+                                    <div className="spk-notif-row-meta">
+                                      {Number(group.cantidad || 0)} {t('nav.pendingNotifications')}
+                                    </div>
+                                  </div>
+
+                                  <span className="spk-notif-count">
+                                    {Number(group.cantidad || 0)}
+                                  </span>
+
+                                  <svg className="spk-notif-chevron" viewBox="0 0 24 24">
+                                    <path d="m9 18 6-6-6-6" />
+                                  </svg>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {selectedNotificationModule && Number(selectedNotificationModule.cantidad || 0) > 0 && (
+                            <div className="spk-notif-footer">
+                              <span className="spk-notif-footnote">
+                                {selectedNotificationModule.titulo || moduleFallbackTitle(selectedNotificationModule.modulo)}
+                              </span>
+                              <button
+                                className="spk-notif-clear"
+                                type="button"
+                                onClick={handleModuleNotificationsRead}
+                              >
+                                {t('nav.markModuleRead')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="spk-notif-panel">
+                          {notificationsLoading && notifLevel === 'messages' && (
+                            <div className="spk-notif-empty">
+                              {t('nav.loadingNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationMessages.length === 0 && (
+                            <div className="spk-notif-empty">
+                              {t('nav.noNotifications')}
+                            </div>
+                          )}
+
+                          {!notificationsLoading && notificationMessages.length > 0 && (
+                            <div className="spk-notif-list">
+                              {notificationMessages.map((notification) => (
+                                <button
+                                  className="spk-notif-item unread"
+                                  key={notification.id_notificacion}
+                                  type="button"
+                                  onClick={() => handleNotificationRead(notification)}
+                                >
+                                  <div className="spk-notif-ico" />
+
+                                  <div>
+                                    <div className="spk-notif-title">
+                                      {getNotificationTitle(notification)}
+                                    </div>
+
+                                    {notification.contenido && (
+                                      <div className="spk-notif-text">
+                                        {notification.contenido}
+                                      </div>
+                                    )}
+
+                                    <div className="spk-notif-time">
+                                      {notificationTime(notification.created_at, language)}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {selectedNotificationGroup && (
+                            <div className="spk-notif-footer">
+                              <span className="spk-notif-footnote">
+                                {selectedNotificationGroup.titulo || t('nav.ungroupedNotifications')}
+                              </span>
+                              <button
+                                className="spk-notif-clear"
+                                type="button"
+                                onClick={handleGroupNotificationsRead}
+                              >
+                                {t('nav.markGroupRead')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -788,6 +1149,12 @@ export default function Navbar() {
       )}
 
       <CalendarPanel enabled={!!user} />
+
+      <NotificationCenterModal
+        open={notificationCenterOpen}
+        onClose={() => setNotificationCenterOpen(false)}
+        onChanged={() => loadNotifications({ silent: true })}
+      />
 
       <ConfirmModal
         open={logoutModal}

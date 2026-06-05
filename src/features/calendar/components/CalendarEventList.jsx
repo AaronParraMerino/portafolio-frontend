@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useLanguage } from '../../../core/i18n';
 import CalendarEventCard from './CalendarEventCard';
 
@@ -15,11 +16,21 @@ export default function CalendarEventList({
   onEdit,
   onDelete,
   onDeleteAll,
+  onUnsubscribe,
 }) {
   const { t, language } = useLanguage();
   const title = formatSelectedDate(selectedDate, language);
   const isPastDate = selectedDate < today;
   const canManage = !isPastDate;
+
+  const personalEvents = useMemo(() => (
+    events.filter((event) => event.origen !== 'inscrito')
+  ), [events]);
+
+  const subscribedEvents = useMemo(() => (
+    events.filter((event) => event.origen === 'inscrito')
+  ), [events]);
+
   const hasEvents = events.length > 0;
   const countLabel = events.length === 1
     ? t('calendar.events.countSingular')
@@ -37,7 +48,7 @@ export default function CalendarEventList({
         </span>
       </div>
 
-      {hasEvents && events.length >= 2 && canManage && (
+      {personalEvents.length >= 2 && canManage && (
         <button type="button" className="cal-delete-day-btn" onClick={onDeleteAll}>
           {t('calendar.actions.deleteAll')}
         </button>
@@ -45,15 +56,27 @@ export default function CalendarEventList({
 
       {hasEvents ? (
         <div className="cal-event-list">
-          {events.map((event) => (
-            <CalendarEventCard
-              key={event.id}
-              event={event}
-              canManage={canManage}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
+          <EventGroup
+            title={t('calendar.personal.title')}
+            emptyText={t('calendar.personal.empty')}
+            events={personalEvents}
+            titleClass="personal-title"
+            canManage={canManage}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onUnsubscribe={onUnsubscribe}
+          />
+
+          <EventGroup
+            title={t('calendar.subscribed.title')}
+            emptyText={t('calendar.subscribed.empty')}
+            events={subscribedEvents}
+            titleClass="subscribed-title"
+            canManage={canManage}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onUnsubscribe={onUnsubscribe}
+          />
         </div>
       ) : (
         <div className="cal-empty-state">
@@ -71,6 +94,42 @@ export default function CalendarEventList({
         </div>
       )}
     </section>
+  );
+}
+
+function EventGroup({
+  title,
+  emptyText,
+  events,
+  titleClass,
+  canManage,
+  onEdit,
+  onDelete,
+  onUnsubscribe,
+}) {
+  return (
+    <div className="cal-event-group">
+      <div className={`cal-event-group-title ${titleClass || ''}`}>
+        {title}
+      </div>
+
+      {events.length ? (
+        events.map((event) => (
+          <CalendarEventCard
+            key={event.id}
+            event={event}
+            canManage={canManage}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onUnsubscribe={onUnsubscribe}
+          />
+        ))
+      ) : (
+        <div className={`cal-empty-mini ${titleClass === 'subscribed-title' ? 'subscribed' : ''}`}>
+          {emptyText}
+        </div>
+      )}
+    </div>
   );
 }
 
