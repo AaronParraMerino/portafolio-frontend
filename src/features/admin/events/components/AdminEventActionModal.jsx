@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BsCheck2,
   BsShieldExclamation,
@@ -22,6 +22,11 @@ export default function AdminEventActionModal({
 }) {
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    setReason('');
+    setMessage('');
+  }, [action, target?.id]);
 
   if (!action || !target) return null;
 

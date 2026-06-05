@@ -50,6 +50,27 @@ export const EVENT_COMMUNICATION_STATUS = [
   { id: 'archivado', label: 'Archivado', tone: 'muted' },
 ];
 
+export const EVENT_HISTORY_TYPES = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'solicitud', label: 'Solicitudes', tone: 'primary' },
+  { id: 'evento', label: 'Eventos', tone: 'success' },
+  { id: 'plataforma', label: 'Plataforma', tone: 'primary' },
+];
+
+export const EVENT_HISTORY_STATUS = [
+  { id: 'todos', label: 'Todos', tone: 'primary' },
+  { id: 'pendiente', label: 'Pendiente', tone: 'warning' },
+  { id: 'aprobada', label: 'Aprobada', tone: 'success' },
+  { id: 'rechazada', label: 'Rechazada', tone: 'danger' },
+  { id: 'activo', label: 'Activo', tone: 'success' },
+  { id: 'programado', label: 'Programado', tone: 'warning' },
+  { id: 'borrador', label: 'Borrador', tone: 'muted' },
+  { id: 'pausado', label: 'Pausado', tone: 'warning' },
+  { id: 'suspendido', label: 'Suspendido', tone: 'danger' },
+  { id: 'cancelado', label: 'Cancelado', tone: 'danger' },
+  { id: 'eliminado', label: 'Eliminado', tone: 'danger' },
+];
+
 export const EVENT_AUDIENCE_SEGMENTS = [
   { id: 'inscritos', label: 'Inscritos' },
   { id: 'interesados', label: 'Interesados' },
@@ -564,6 +585,7 @@ export function normalizePublisherRequest(item = {}) {
     experience: item.experience || item.experiencia || '',
     links: item.links || item.enlaces || '',
     status: item.status || item.estado || 'pendiente',
+    revisionReason: item.revisionReason || item.motivo_revision || '',
     date: item.date || item.fecha || item.createdAt || item.creado || '--',
     raw: item,
   };
@@ -585,13 +607,24 @@ export function normalizeEventTemplate(item = {}) {
 
 export function normalizeEventHistoryItem(item = {}) {
   const channels = item.channels || item.canales || [];
+  const metadata = item.metadata || item.meta || {};
+  const entityType = item.entityType || item.entidad_tipo || metadata.entidad_tipo || '';
+  const status = item.status
+    || item.estado
+    || metadata.estado_nuevo
+    || metadata.estado
+    || 'activo';
+  const type = item.type
+    || item.tipo
+    || entityType
+    || (String(item.action || item.accion || '').includes('solicitud') ? 'solicitud' : 'evento');
 
   return {
     id: item.id || item.id_historial,
     title: item.title || item.titulo || item.action || 'Registro sin titulo',
     description: item.description || item.descripcion || item.body || '',
-    type: item.type || item.tipo || 'plataforma',
-    status: item.status || item.estado || 'enviado',
+    type,
+    status,
     target: item.target || item.destino || item.eventTitle || item.evento || 'Sin destino',
     date: item.date || item.fecha || item.createdAt || item.creado || '--',
     actor: item.actor || item.usuario || item.admin || item.adminName || item.nombre_admin || 'Sistema',
@@ -600,7 +633,10 @@ export function normalizeEventHistoryItem(item = {}) {
     reason: item.reason || item.motivo || item.observacion || '',
     entity: item.entity || item.entidad || item.eventTitle || item.evento || item.target || item.destino || 'Registro',
     ip: item.ip || item.ip_address || '',
+    previousStatus: item.previousStatus || item.estado_anterior || metadata.estado_anterior || '',
+    nextStatus: item.nextStatus || item.estado_nuevo || metadata.estado_nuevo || '',
     channels: Array.isArray(channels) ? channels : [],
+    metadata,
     raw: item,
   };
 }
@@ -621,12 +657,20 @@ export function getEventCommunicationStatusMeta(status) {
   return EVENT_COMMUNICATION_STATUS.find((item) => item.id === status) || EVENT_COMMUNICATION_STATUS[1];
 }
 
+export function getEventHistoryTypeMeta(type) {
+  return EVENT_HISTORY_TYPES.find((item) => item.id === type) || EVENT_HISTORY_TYPES[2];
+}
+
+export function getEventHistoryStatusMeta(status) {
+  return EVENT_HISTORY_STATUS.find((item) => item.id === status) || EVENT_HISTORY_STATUS[4];
+}
+
 export function buildEventMetrics(events = [], communications = [], requests = []) {
   const normalizedEvents = events.map(normalizeEvent);
 
   return {
     total: normalizedEvents.length,
-    requests: requests.length,
+    requests: requests.filter((request) => (request.status || request.estado || 'pendiente') === 'pendiente').length,
     activo: normalizedEvents.filter((event) => event.status === 'activo').length,
     programado: normalizedEvents.filter((event) => event.status === 'programado').length,
     pausado: normalizedEvents.filter((event) => event.status === 'pausado').length,
@@ -653,7 +697,7 @@ export function buildEventWorkspaceCounts({
   }
 
   return {
-    requests: requests.length,
+    requests: requests.filter((request) => (request.status || request.estado || 'pendiente') === 'pendiente').length,
     events: events.length,
     history: history.length,
     templates: templates.length,

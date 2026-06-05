@@ -14,6 +14,7 @@ export default function EventsPage() {
   const headerConfig = getAdminSectionConfig('events');
   const [actionModal, setActionModal] = useState(null);
   const [actionNotice, setActionNotice] = useState('');
+  const [actionSaving, setActionSaving] = useState(false);
   const {
     sourceReady,
     events,
@@ -34,12 +35,16 @@ export default function EventsPage() {
 
   const handleConfirmAction = async ({ action, target, reason }) => {
     const targetName = target.title || target.name || 'registro';
+    setActionModal(null);
+    setActionSaving(true);
+
     try {
       await onAdminAction({ action, target, reason });
       setActionNotice(`Accion "${action}" aplicada para ${targetName}.`);
-      setActionModal(null);
     } catch (error) {
       setActionNotice(error.message || `No se pudo aplicar la accion "${action}".`);
+    } finally {
+      setActionSaving(false);
     }
   };
 
@@ -99,6 +104,13 @@ export default function EventsPage() {
         onClose={() => setActionModal(null)}
         onConfirm={handleConfirmAction}
       />
+
+      {actionSaving ? (
+        <div className="evt-admin-save-toast" role="status" aria-live="polite">
+          <span className="evt-admin-save-spinner" />
+          Aplicando accion...
+        </div>
+      ) : null}
     </div>
   );
 }

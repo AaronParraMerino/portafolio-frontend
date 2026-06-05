@@ -19,6 +19,22 @@ const ACTIONS = [
   { id: 'eliminar', label: 'Eliminar', icon: BsTrash, variant: 'danger' },
 ];
 
+function getAvailableAdminActions(status) {
+  if (status === 'eliminado') return [];
+
+  const blockedByStatus = {
+    activo: ['activar'],
+    pausado: ['pausar'],
+    suspendido: ['suspender', 'pausar'],
+    cancelado: ['pausar', 'suspender'],
+    programado: [],
+    borrador: ['pausar'],
+  };
+  const blocked = blockedByStatus[status] || [];
+
+  return ACTIONS.filter((action) => !blocked.includes(action.id));
+}
+
 export default function AdminEventsManagementPanel({
   sourceReady,
   events,
@@ -39,6 +55,7 @@ export default function AdminEventsManagementPanel({
             {events.map((event) => {
               const statusMeta = getEventStatusMeta(event.status);
               const typeMeta = getEventTypeMeta(event.type);
+              const availableActions = getAvailableAdminActions(event.status);
 
               return (
                 <article key={event.id || event.title} className="evt-admin-event-row">
@@ -66,7 +83,7 @@ export default function AdminEventsManagementPanel({
                     </div>
                   </div>
                   <div className="evt-admin-event-actions">
-                    {ACTIONS.map((action) => {
+                    {availableActions.map((action) => {
                       const Icon = action.icon;
 
                       return (
@@ -81,6 +98,9 @@ export default function AdminEventsManagementPanel({
                         </button>
                       );
                     })}
+                    {!availableActions.length ? (
+                      <span className="evt-admin-event-lock">Sin acciones disponibles</span>
+                    ) : null}
                   </div>
                 </article>
               );

@@ -6,10 +6,10 @@ import {
   BsShieldCheck,
 } from 'react-icons/bs';
 import {
-  EVENT_COMMUNICATION_STATUS,
-  EVENT_COMMUNICATION_TYPES,
-  getEventCommunicationStatusMeta,
-  getEventCommunicationTypeMeta,
+  EVENT_HISTORY_STATUS,
+  EVENT_HISTORY_TYPES,
+  getEventHistoryStatusMeta,
+  getEventHistoryTypeMeta,
 } from '../services/eventsService';
 import EventsEmptyState from './EventsEmptyState';
 
@@ -75,7 +75,7 @@ export default function EventsHistoryPanel({
           </div>
 
           <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar historial por tipo">
-            {EVENT_COMMUNICATION_TYPES.map((type) => (
+            {EVENT_HISTORY_TYPES.map((type) => (
               <button
                 key={type.id}
                 type="button"
@@ -88,7 +88,7 @@ export default function EventsHistoryPanel({
           </div>
 
           <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar historial por estado">
-            {EVENT_COMMUNICATION_STATUS.map((status) => (
+            {EVENT_HISTORY_STATUS.map((status) => (
               <button
                 key={status.id}
                 type="button"
@@ -116,8 +116,8 @@ export default function EventsHistoryPanel({
               </thead>
               <tbody>
                 {visibleHistory.map((item) => {
-                  const typeMeta = getEventCommunicationTypeMeta(item.type);
-                  const statusMeta = getEventCommunicationStatusMeta(item.status);
+                  const typeMeta = getEventHistoryTypeMeta(item.type);
+                  const statusMeta = getEventHistoryStatusMeta(item.status);
 
                   return (
                     <tr key={item.id || `${item.title}-${item.date}`}>
@@ -148,6 +148,11 @@ export default function EventsHistoryPanel({
                         <div className="evt-history-detail">
                           <span>{item.description || item.reason || 'Sin detalle adicional.'}</span>
                           {item.reason ? <small>Motivo: {item.reason}</small> : null}
+                          {item.previousStatus || item.nextStatus ? (
+                            <small>
+                              Estado: {item.previousStatus || 'sin estado'} - {item.nextStatus || item.status}
+                            </small>
+                          ) : null}
                           {item.ip ? <small>IP: {item.ip}</small> : null}
                         </div>
                       </td>
