@@ -7,6 +7,7 @@ import {
   BsShieldCheck,
   BsX,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 
 const COUNTRIES = [
   { code: 'BO', name: 'Bolivia', dial: '+591', telRegex: /^\d{8}$/, telHint: '8 digitos (ej: 70000000)' },
@@ -81,13 +82,13 @@ function buildPhone(countryCode, value) {
   return number ? `${country.dial}${number}` : '';
 }
 
-function validatePhone(value, countryCode, label) {
+function validatePhone(value, countryCode, label, t) {
   const onlyDigits = digitsOnly(value);
   const country = countryByCode(countryCode);
 
-  if (!onlyDigits) return `${label} es obligatorio.`;
-  if (!/^\d+$/.test(onlyDigits)) return 'Solo se permiten digitos, sin guiones ni parentesis.';
-  if (!country.telRegex.test(onlyDigits)) return `Numero invalido para ${country.name}. ${country.telHint}.`;
+  if (!onlyDigits) return t('adminEvents.permission.error.required', { label });
+  if (!/^\d+$/.test(onlyDigits)) return t('adminEvents.permission.error.onlyDigits');
+  if (!country.telRegex.test(onlyDigits)) return t('adminEvents.permission.error.invalidPhone', { country: country.name, hint: country.telHint });
 
   return '';
 }
@@ -110,6 +111,7 @@ function PhoneField({
   phoneField,
   error,
   onChange,
+  t,
 }) {
   const country = countryByCode(countryValue);
 
@@ -121,7 +123,7 @@ function PhoneField({
           className="dbe-phone-country"
           value={countryValue}
           onChange={(event) => onChange(countryField, event.target.value)}
-          aria-label={`${label} pais`}
+          aria-label={t('adminEvents.permission.phoneCountryAria', { label })}
         >
           {COUNTRIES.map((item) => (
             <option key={item.code} value={item.code}>
@@ -139,7 +141,7 @@ function PhoneField({
           required
         />
       </div>
-      {!error ? <small className="dbe-field-hint">{country.telHint}. El codigo {country.dial || 'internacional'} se agrega automaticamente.</small> : null}
+      {!error ? <small className="dbe-field-hint">{t('adminEvents.permission.phoneHint', { hint: country.telHint, dial: country.dial || t('adminEvents.permission.internationalCode') })}</small> : null}
       <FieldError msg={error} />
     </label>
   );
@@ -151,6 +153,7 @@ export default function PublisherPermissionModal({
   onClose,
   onSubmit,
 }) {
+  const { t } = useLanguage();
   const detectedPhone = getUserPhone(user);
   const detectedCountry = detectPhoneCountry(detectedPhone);
   const [form, setForm] = useState(() => ({
@@ -165,7 +168,7 @@ export default function PublisherPermissionModal({
   if (!open) return null;
 
   const currentEmail = getUserEmail(user);
-  const displayName = getUserName(user);
+  const displayName = getUserName(user) || t('adminEvents.permission.defaultUser');
   const currentPhoneValue = detectedPhone || buildPhone(form.currentPhoneCountry, form.currentPhone);
   const currentPhoneDigits = digitsOnly(currentPhoneValue);
   const referencePhoneValue = buildPhone(form.referencePhoneCountry, form.referencePhone);
@@ -175,57 +178,57 @@ export default function PublisherPermissionModal({
 
     switch (field) {
       case 'documentId':
-        if (!value) return 'El documento de identidad es obligatorio.';
-        if (value.length < 5) return 'Minimo 5 caracteres.';
-        if (value.length > 30) return 'Maximo 30 caracteres.';
-        if (INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
+        if (!value) return t('adminEvents.permission.error.documentRequired');
+        if (value.length < 5) return t('adminEvents.permission.error.min5');
+        if (value.length > 30) return t('adminEvents.permission.error.max30');
+        if (INVALID_CHARS_TEXT.test(value)) return t('adminEvents.permission.error.invalidChars');
         return '';
       case 'currentPhone':
         if (detectedPhone) return '';
-        return validatePhone(form.currentPhone, form.currentPhoneCountry, 'El telefono actual');
+        return validatePhone(form.currentPhone, form.currentPhoneCountry, t('adminEvents.permission.currentPhone'), t);
       case 'referencePhone': {
-        const phoneError = validatePhone(form.referencePhone, form.referencePhoneCountry, 'El numero de referencia');
+        const phoneError = validatePhone(form.referencePhone, form.referencePhoneCountry, t('adminEvents.permission.referencePhone'), t);
         if (phoneError) return phoneError;
-        if (digitsOnly(referencePhoneValue) === currentPhoneDigits) return 'Este numero es igual al telefono actual de tu perfil.';
+        if (digitsOnly(referencePhoneValue) === currentPhoneDigits) return t('adminEvents.permission.error.referenceSame');
         return '';
       }
       case 'backupEmail':
-        if (!value) return 'El correo de respaldo es obligatorio.';
-        if (!EMAIL_REGEX.test(value)) return 'Ingresa un correo valido.';
-        if (currentEmail && value.toLowerCase() === currentEmail.toLowerCase()) return 'Este correo es igual al correo actual de tu cuenta.';
-        if (value.length > 120) return 'Maximo 120 caracteres.';
+        if (!value) return t('adminEvents.permission.error.backupEmailRequired');
+        if (!EMAIL_REGEX.test(value)) return t('adminEvents.permission.error.invalidEmail');
+        if (currentEmail && value.toLowerCase() === currentEmail.toLowerCase()) return t('adminEvents.permission.error.sameEmail');
+        if (value.length > 120) return t('adminEvents.permission.error.max120');
         return '';
       case 'organization':
-        if (!value) return 'La organizacion o institucion es obligatoria.';
-        if (value.length < 3) return 'Minimo 3 caracteres.';
-        if (value.length > 100) return 'Maximo 100 caracteres.';
-        if (INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
+        if (!value) return t('adminEvents.permission.error.organizationRequired');
+        if (value.length < 3) return t('adminEvents.permission.error.min3');
+        if (value.length > 100) return t('adminEvents.permission.error.max100');
+        if (INVALID_CHARS_TEXT.test(value)) return t('adminEvents.permission.error.invalidChars');
         return '';
       case 'role':
-        if (!value) return 'El cargo o relacion es obligatorio.';
-        if (value.length < 3) return 'Minimo 3 caracteres.';
-        if (value.length > 80) return 'Maximo 80 caracteres.';
-        if (INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
+        if (!value) return t('adminEvents.permission.error.roleRequired');
+        if (value.length < 3) return t('adminEvents.permission.error.min3');
+        if (value.length > 80) return t('adminEvents.permission.error.max80');
+        if (INVALID_CHARS_TEXT.test(value)) return t('adminEvents.permission.error.invalidChars');
         return '';
       case 'reason':
-        if (!value) return 'El motivo de publicacion es obligatorio.';
-        if (value.length < 30) return `Minimo 30 caracteres (${value.length}/30).`;
-        if (value.length > 500) return `Maximo 500 caracteres (${value.length}/500).`;
-        if (INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
+        if (!value) return t('adminEvents.permission.error.reasonRequired');
+        if (value.length < 30) return t('adminEvents.permission.error.min30', { count: value.length });
+        if (value.length > 500) return t('adminEvents.permission.error.max500', { count: value.length });
+        if (INVALID_CHARS_TEXT.test(value)) return t('adminEvents.permission.error.invalidChars');
         return '';
       case 'experience':
-        if (!value) return 'La experiencia o referencia es obligatoria.';
-        if (value.length < 30) return `Minimo 30 caracteres (${value.length}/30).`;
-        if (value.length > 500) return `Maximo 500 caracteres (${value.length}/500).`;
-        if (INVALID_CHARS_TEXT.test(value)) return 'Caracteres no permitidos: < > { } [ ]';
+        if (!value) return t('adminEvents.permission.error.experienceRequired');
+        if (value.length < 30) return t('adminEvents.permission.error.min30', { count: value.length });
+        if (value.length > 500) return t('adminEvents.permission.error.max500', { count: value.length });
+        if (INVALID_CHARS_TEXT.test(value)) return t('adminEvents.permission.error.invalidChars');
         return '';
       case 'links':
-        if (!value) return 'Agrega al menos un enlace de respaldo.';
-        if (!URL_REGEX.test(value)) return 'Agrega un enlace verificable que empiece con http:// o https://.';
-        if (value.length > 300) return 'Maximo 300 caracteres.';
+        if (!value) return t('adminEvents.permission.error.linksRequired');
+        if (!URL_REGEX.test(value)) return t('adminEvents.permission.error.linkInvalid');
+        if (value.length > 300) return t('adminEvents.permission.error.max300');
         return '';
       case 'accepts':
-        if (!form.accepts) return 'Debes confirmar la responsabilidad de la solicitud.';
+        if (!form.accepts) return t('adminEvents.permission.error.acceptsRequired');
         return '';
       default:
         return '';
@@ -293,22 +296,22 @@ export default function PublisherPermissionModal({
       setSubmitAttempted(false);
       setSubmitError('');
     } catch (error) {
-      setSubmitError(error.message || 'No se pudo enviar la solicitud.');
+      setSubmitError(error.message || t('adminEvents.permission.error.submit'));
     }
   };
 
   return (
     <div className="evt-modal-backdrop" role="presentation">
-      <form className="evt-modal dbe-permission-modal" onSubmit={handleSubmit} aria-label="Solicitar permisos de publicador" noValidate>
+      <form className="evt-modal dbe-permission-modal" onSubmit={handleSubmit} aria-label={t('adminEvents.permission.aria')} noValidate>
         <div className="evt-modal-head">
           <span className="evt-modal-icon">
             <BsShieldCheck />
           </span>
           <div className="evt-modal-copy">
-            <strong>Solicitud para publicar eventos</strong>
-            <span>Completa la informacion para que administracion revise tu perfil.</span>
+            <strong>{t('adminEvents.permission.title')}</strong>
+            <span>{t('adminEvents.permission.subtitle')}</span>
           </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label="Cerrar modal">
+          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
             <BsX />
           </button>
         </div>
@@ -317,7 +320,7 @@ export default function PublisherPermissionModal({
           {submitAttempted && hasErrors ? (
             <div className="dbe-form-error-banner" role="alert">
               <BsExclamationTriangle />
-              Revisa los campos marcados antes de enviar la solicitud.
+              {t('adminEvents.permission.reviewFields')}
             </div>
           ) : null}
           {submitError ? (
@@ -329,32 +332,32 @@ export default function PublisherPermissionModal({
 
           <div className="dbe-review-warning">
             <BsInfoCircle />
-            <span>Esta solicitud habilita publicaciones visibles para otros usuarios. Por eso se revisan identidad, contacto y respaldo antes de aprobar el rol publicador.</span>
+            <span>{t('adminEvents.permission.warning')}</span>
           </div>
 
-          <div className="dbe-identity-panel" aria-label="Datos detectados de la cuenta">
+          <div className="dbe-identity-panel" aria-label={t('adminEvents.permission.detectedData')}>
             <article className="dbe-identity-card">
-              <span>Cuenta detectada</span>
+              <span>{t('adminEvents.permission.detectedAccount')}</span>
               <strong>{displayName}</strong>
-              <small>{currentEmail || 'Correo principal no disponible'}</small>
+              <small>{currentEmail || t('adminEvents.permission.mainEmailUnavailable')}</small>
             </article>
             <article className="dbe-identity-card">
               <BsPhone />
-              <span>Telefono actual</span>
-              <strong>{detectedPhone || 'No registrado'}</strong>
-              <small>{detectedPhone ? 'Tomado de tu perfil' : 'Completa este dato para continuar'}</small>
+              <span>{t('adminEvents.permission.currentPhone')}</span>
+              <strong>{detectedPhone || t('adminEvents.permission.notRegistered')}</strong>
+              <small>{detectedPhone ? t('adminEvents.permission.fromProfile') : t('adminEvents.permission.completeToContinue')}</small>
             </article>
           </div>
 
           <div className="evt-form-grid">
             <label className="evt-field">
-              <span>Documento de identidad *</span>
+              <span>{t('adminEvents.permission.document')}</span>
               <input
                 className={`evt-field-input${showError('documentId') ? ' dbe-input-error' : ''}`}
                 value={form.documentId}
                 onChange={(event) => handleChange('documentId', event.target.value)}
                 onBlur={() => handleBlur('documentId')}
-                placeholder="CI, pasaporte u otro documento verificable"
+                placeholder={t('adminEvents.permission.documentPlaceholder')}
                 maxLength={31}
                 required
               />
@@ -363,28 +366,30 @@ export default function PublisherPermissionModal({
 
             {!detectedPhone ? (
               <PhoneField
-                label="Telefono actual *"
+                label={t('adminEvents.permission.currentPhoneLabel')}
                 countryValue={form.currentPhoneCountry}
                 phoneValue={form.currentPhone}
                 countryField="currentPhoneCountry"
                 phoneField="currentPhone"
                 error={showError('currentPhone')}
                 onChange={handleChange}
+                t={t}
               />
             ) : null}
 
             <PhoneField
-              label="Numero de referencia *"
+              label={t('adminEvents.permission.referencePhone')}
               countryValue={form.referencePhoneCountry}
               phoneValue={form.referencePhone}
               countryField="referencePhoneCountry"
               phoneField="referencePhone"
               error={showError('referencePhone')}
               onChange={handleChange}
+              t={t}
             />
 
             <label className="evt-field">
-              <span>Correo de respaldo *</span>
+              <span>{t('adminEvents.permission.backupEmail')}</span>
               <input
                 type="email"
                 className={`evt-field-input${showError('backupEmail') ? ' dbe-input-error' : ''}`}
@@ -399,13 +404,13 @@ export default function PublisherPermissionModal({
             </label>
 
             <label className="evt-field">
-              <span>Organizacion o institucion *</span>
+              <span>{t('adminEvents.permission.organization')}</span>
               <input
                 className={`evt-field-input${showError('organization') ? ' dbe-input-error' : ''}`}
                 value={form.organization}
                 onChange={(event) => handleChange('organization', event.target.value)}
                 onBlur={() => handleBlur('organization')}
-                placeholder="Empresa, universidad, comunidad o independiente"
+                placeholder={t('adminEvents.permission.organizationPlaceholder')}
                 maxLength={101}
                 required
               />
@@ -413,13 +418,13 @@ export default function PublisherPermissionModal({
             </label>
 
             <label className="evt-field">
-              <span>Cargo o relacion *</span>
+              <span>{t('adminEvents.permission.role')}</span>
               <input
                 className={`evt-field-input${showError('role') ? ' dbe-input-error' : ''}`}
                 value={form.role}
                 onChange={(event) => handleChange('role', event.target.value)}
                 onBlur={() => handleBlur('role')}
-                placeholder="Organizador, reclutador, responsable academico..."
+                placeholder={t('adminEvents.permission.rolePlaceholder')}
                 maxLength={81}
                 required
               />
@@ -427,13 +432,13 @@ export default function PublisherPermissionModal({
             </label>
 
             <label className="evt-field evt-field--full">
-              <span>Motivo para publicar eventos *</span>
+              <span>{t('adminEvents.permission.reason')}</span>
               <textarea
                 className={`evt-field-input evt-field-input--textarea${showError('reason') ? ' dbe-input-error' : ''}`}
                 value={form.reason}
                 onChange={(event) => handleChange('reason', event.target.value)}
                 onBlur={() => handleBlur('reason')}
-                placeholder="Describe que tipo de cursos, trabajos, ferias o convocatorias publicaras, para que audiencia y con que frecuencia."
+                placeholder={t('adminEvents.permission.reasonPlaceholder')}
                 maxLength={501}
                 required
               />
@@ -442,13 +447,13 @@ export default function PublisherPermissionModal({
             </label>
 
             <label className="evt-field evt-field--full">
-              <span>Experiencia previa o referencias *</span>
+              <span>{t('adminEvents.permission.experience')}</span>
               <textarea
                 className={`evt-field-input evt-field-input--textarea${showError('experience') ? ' dbe-input-error' : ''}`}
                 value={form.experience}
                 onChange={(event) => handleChange('experience', event.target.value)}
                 onBlur={() => handleBlur('experience')}
-                placeholder="Menciona experiencia organizando eventos, gestionando comunidades, reclutamiento, docencia o referencias verificables."
+                placeholder={t('adminEvents.permission.experiencePlaceholder')}
                 maxLength={501}
                 required
               />
@@ -457,7 +462,7 @@ export default function PublisherPermissionModal({
             </label>
 
             <label className="evt-field evt-field--full">
-              <span>Enlaces de respaldo *</span>
+              <span>{t('adminEvents.permission.links')}</span>
               <input
                 className={`evt-field-input${showError('links') ? ' dbe-input-error' : ''}`}
                 value={form.links}
@@ -477,20 +482,20 @@ export default function PublisherPermissionModal({
               checked={form.accepts}
               onChange={(event) => handleChange('accepts', event.target.checked)}
             />
-            <span>Confirmo que la informacion es real y acepto que mis publicaciones sean revisadas.</span>
+            <span>{t('adminEvents.permission.accepts')}</span>
           </label>
           <FieldError msg={showError('accepts')} />
         </div>
 
         <div className="evt-modal-foot">
-          <span>La solicitud quedara lista para revision administrativa.</span>
+          <span>{t('adminEvents.permission.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
-              Cancelar
+              {t('adminEvents.common.cancel')}
             </button>
             <button type="submit" className="evt-reason-btn evt-reason-btn--primary">
               <BsCheck2 />
-              Enviar solicitud
+              {t('adminEvents.permission.submit')}
             </button>
           </div>
         </div>

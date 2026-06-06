@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
 import AdminEventActionModal from '../components/AdminEventActionModal';
@@ -11,6 +12,7 @@ import { useEventsWorkspace } from '../hooks/useEvents';
 import '../styles/events.css';
 
 export default function EventsPage() {
+  const { t } = useLanguage();
   const headerConfig = getAdminSectionConfig('events');
   const [actionModal, setActionModal] = useState(null);
   const [actionNotice, setActionNotice] = useState('');
@@ -34,15 +36,15 @@ export default function EventsPage() {
   };
 
   const handleConfirmAction = async ({ action, target, reason }) => {
-    const targetName = target.title || target.name || 'registro';
+    const targetName = target.title || target.name || t('adminEvents.common.record');
     setActionModal(null);
     setActionSaving(true);
 
     try {
       await onAdminAction({ action, target, reason });
-      setActionNotice(`Accion "${action}" aplicada para ${targetName}.`);
+      setActionNotice(t('adminEvents.eventsPage.actionApplied', { action, target: targetName }));
     } catch (error) {
-      setActionNotice(error.message || `No se pudo aplicar la accion "${action}".`);
+      setActionNotice(error.message || t('adminEvents.eventsPage.actionError', { action }));
     } finally {
       setActionSaving(false);
     }
@@ -51,8 +53,8 @@ export default function EventsPage() {
   return (
     <div className="evt-page">
       <AdminHeader
-        eyebrow={headerConfig.eyebrow}
-        title={headerConfig.title}
+        eyebrow={t(headerConfig.eyebrowKey || headerConfig.eyebrow)}
+        title={t(headerConfig.titleKey || headerConfig.title)}
       />
 
       <div className="evt-content">
@@ -108,7 +110,7 @@ export default function EventsPage() {
       {actionSaving ? (
         <div className="evt-admin-save-toast" role="status" aria-live="polite">
           <span className="evt-admin-save-spinner" />
-          Aplicando accion...
+          {t('adminEvents.eventsPage.applyingAction')}
         </div>
       ) : null}
     </div>

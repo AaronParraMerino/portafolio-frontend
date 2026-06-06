@@ -5,6 +5,7 @@ import {
   BsTelephone,
   BsX,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import CachedUserAvatar from '../../users/components/CachedUserAvatar';
 import EventsEmptyState from './EventsEmptyState';
 
@@ -21,13 +22,15 @@ export default function AdminPublisherRequestsPanel({
   requests,
   onReviewRequest,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="evt-view-body">
       <section className="evt-sheet">
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Solicitudes</span>
-            <h2 className="evt-sheet-title">Usuarios que quieren publicar eventos</h2>
+            <span className="evt-sheet-kicker">{t('adminEvents.adminRequests.kicker')}</span>
+            <h2 className="evt-sheet-title">{t('adminEvents.adminRequests.title')}</h2>
           </div>
         </div>
 
@@ -45,8 +48,8 @@ export default function AdminPublisherRequestsPanel({
                       <strong>{request.name}</strong>
                       <span>{request.organization} - {request.role}</span>
                     </div>
-                    <span className={`evt-admin-request-status evt-admin-request-status--${request.status}`}>
-                      {request.status}
+                    <span className={`evt-admin-request-status evt-admin-request-status--${t(`adminEvents.status.${request.status}`)}`}>
+                      {t(`adminEvents.status.${request.status}`)}
                     </span>
                   </div>
 
@@ -68,8 +71,8 @@ export default function AdminPublisherRequestsPanel({
 
                   {!isPending ? (
                     <div className="evt-admin-request-review">
-                      <strong>{request.status === 'aprobada' ? 'Solicitud aprobada' : 'Solicitud rechazada'}</strong>
-                      <span>{reviewReason || 'Revision administrativa completada.'}</span>
+                      <strong>{request.status === 'aprobada' ? t('adminEvents.adminRequests.approved') : t('adminEvents.adminRequests.rejected')}</strong>
+                      <span>{reviewReason || t('adminEvents.adminRequests.reviewCompleted')}</span>
                     </div>
                   ) : null}
 
@@ -81,7 +84,7 @@ export default function AdminPublisherRequestsPanel({
                         onClick={() => onReviewRequest(request, 'rechazar')}
                       >
                         <BsX />
-                        Rechazar
+                        {t('adminEvents.action.rechazar')}
                       </button>
                       <button
                         type="button"
@@ -89,7 +92,7 @@ export default function AdminPublisherRequestsPanel({
                         onClick={() => onReviewRequest(request, 'aceptar')}
                       >
                         <BsCheck2 />
-                        Aceptar publicador
+                        {t('adminEvents.adminRequests.acceptPublisher')}
                       </button>
                     </div>
                   ) : null}
@@ -100,9 +103,9 @@ export default function AdminPublisherRequestsPanel({
         ) : (
           <EventsEmptyState
             icon={BsPersonCheck}
-            title="Sin solicitudes pendientes"
-            description="Aqui se revisaran los usuarios que pidan permiso para publicar eventos."
-            hint="Aceptar una solicitud habilita el rol publicador; rechazarla deja registrado el motivo administrativo."
+            title={t('adminEvents.adminRequests.emptyTitle')}
+            description={t('adminEvents.adminRequests.emptyDescription')}
+            hint={t('adminEvents.adminRequests.emptyHint')}
           />
         )}
       </section>

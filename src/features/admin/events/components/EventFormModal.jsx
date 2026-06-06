@@ -13,6 +13,7 @@ import {
   BsBell,
   BsX,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EVENT_PROFILE_TARGET_GROUPS,
   EVENT_STATUS_FILTERS,
@@ -97,6 +98,7 @@ function SingleEventImageUpload({
   imageUrl,
   onChange,
   onRemove,
+  t,
 }) {
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
@@ -108,11 +110,11 @@ function SingleEventImageUpload({
 
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setError('Solo se aceptan imagenes JPG, PNG o WebP.');
+      setError(t('adminEvents.form.validation.imageType'));
       return;
     }
     if (file.size > MAX_EVENT_IMAGE_MB * 1024 * 1024) {
-      setError(`La imagen no puede superar ${MAX_EVENT_IMAGE_MB} MB.`);
+      setError(t('adminEvents.form.validation.imageSize', { max: MAX_EVENT_IMAGE_MB }));
       return;
     }
 
@@ -123,14 +125,14 @@ function SingleEventImageUpload({
     <div className="evt-image-upload">
       {previewSrc ? (
         <div className="evt-image-preview">
-          <img src={previewSrc} alt="Vista previa del evento" />
-          <span className="evt-image-badge">Portada</span>
+          <img src={previewSrc} alt={t('adminEvents.form.previewAlt')} />
+          <span className="evt-image-badge">{t('adminEvents.form.cover')}</span>
           <button
             type="button"
             className="evt-image-remove"
             onClick={onRemove}
-            title="Quitar imagen"
-            aria-label="Quitar imagen"
+            title={t('adminEvents.form.removeImage')}
+            aria-label={t('adminEvents.form.removeImage')}
           >
             <BsX />
           </button>
@@ -157,8 +159,8 @@ function SingleEventImageUpload({
             <span className="evt-image-icon">
               <BsImage />
             </span>
-            <strong>Arrastra una imagen aqui</strong>
-            <small>o haz clic para seleccionar. JPG, PNG o WebP, max. {MAX_EVENT_IMAGE_MB} MB.</small>
+            <strong>{t('adminEvents.form.dragImage')}</strong>
+            <small>{t('adminEvents.form.clickImage', { max: MAX_EVENT_IMAGE_MB })}</small>
           </div>
         </div>
       )}
@@ -166,7 +168,7 @@ function SingleEventImageUpload({
       {previewSrc ? (
         <button type="button" className="evt-image-change" onClick={() => inputRef.current?.click()}>
           <BsImage />
-          Cambiar imagen
+          {t('adminEvents.form.changeImage')}
         </button>
       ) : null}
 
@@ -193,6 +195,7 @@ export default function EventFormModal({
   onClose,
   onSave,
 }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(DEFAULT_FORM);
   const [message, setMessage] = useState('');
   const objectUrlRef = useRef('');
@@ -259,7 +262,7 @@ export default function EventFormModal({
         groupId,
         value,
         label: value,
-        groupLabel: group?.label || 'Segmento',
+        groupLabel: group ? t(`adminEvents.profileTarget.${group.id}.label`) : t('adminEvents.form.segmentFallback'),
       };
     }));
   const minDateTime = getDateTimeLocalNow();
@@ -334,7 +337,7 @@ export default function EventFormModal({
 
   const handleEndsAtChange = (value) => {
     if (value && form.startsAt && isSameOrBefore(value, form.startsAt)) {
-      setMessage('La fecha y hora de fin debe ser posterior al inicio.');
+      setMessage(t('adminEvents.form.validation.endAfterStartInline'));
       return;
     }
 
@@ -367,7 +370,7 @@ export default function EventFormModal({
     event.preventDefault();
 
     if (!form.title.trim() || !form.location.trim()) {
-      setMessage('Completa al menos el titulo y la ubicacion del evento.');
+      setMessage(t('adminEvents.form.validation.requiredBasic'));
       return;
     }
 
@@ -378,44 +381,44 @@ export default function EventFormModal({
     now.setSeconds(0, 0);
 
     if (!startsAt) {
-      setMessage('Selecciona la fecha y hora de inicio del evento.');
+      setMessage(t('adminEvents.form.validation.startRequired'));
       return;
     }
 
     if (!isEditing && startsAt < now) {
-      setMessage('La fecha de inicio no puede ser anterior a la fecha actual.');
+      setMessage(t('adminEvents.form.validation.startPast'));
       return;
     }
 
     if (!endsAt) {
-      setMessage('Selecciona la fecha y hora de fin del evento.');
+      setMessage(t('adminEvents.form.validation.endRequired'));
       return;
     }
 
     if (endsAt <= startsAt) {
-      setMessage('La fecha de fin debe ser posterior a la fecha de inicio.');
+      setMessage(t('adminEvents.form.validation.endAfterStart'));
       return;
     }
 
     if (form.sendMode === 'scheduled') {
       if (!sendAt) {
-        setMessage('Selecciona la fecha y hora para programar la publicacion.');
+        setMessage(t('adminEvents.form.validation.sendAtRequired'));
         return;
       }
 
       if (!isEditing && sendAt < now) {
-        setMessage('La programacion no puede ser anterior a la fecha actual.');
+        setMessage(t('adminEvents.form.validation.sendAtPast'));
         return;
       }
 
       if (sendAt > startsAt) {
-        setMessage('La publicacion programada debe ocurrir antes o al inicio del evento.');
+        setMessage(t('adminEvents.form.validation.sendBeforeStart'));
         return;
       }
     }
 
     if (form.targetMode === 'segmented' && selectedTargetsCount === 0) {
-      setMessage('Selecciona al menos un criterio para segmentar la audiencia.');
+      setMessage(t('adminEvents.form.validation.segmentRequired'));
       return;
     }
 
@@ -440,22 +443,22 @@ export default function EventFormModal({
         targetSelections: form.targetSelections,
       });
     } catch (error) {
-      setMessage(error.message || 'No se pudo guardar el evento.');
+      setMessage(error.message || t('adminEvents.form.validation.saveError'));
     }
   };
 
   return (
     <div className="evt-modal-backdrop" role="presentation">
-      <form className="evt-modal" onSubmit={handleSubmit} aria-label={isEditing ? 'Editar evento' : 'Crear evento'}>
+      <form className="evt-modal" onSubmit={handleSubmit} aria-label={isEditing ? t('adminEvents.form.editTitle') : t('adminEvents.form.createTitle')}>
         <div className="evt-modal-head">
           <span className="evt-modal-icon">
             <BsCalendar2Plus />
           </span>
           <div className="evt-modal-copy">
-            <strong>{isEditing ? 'Editar evento' : 'Crear evento'}</strong>
-            <span>{isEditing ? 'Ajusta la informacion del evento.' : 'Configura la convocatoria, su audiencia y envio.'}</span>
+            <strong>{isEditing ? t('adminEvents.form.editTitle') : t('adminEvents.form.createTitle')}</strong>
+            <span>{isEditing ? t('adminEvents.form.editSubtitle') : t('adminEvents.form.createSubtitle')}</span>
           </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label="Cerrar modal">
+          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
             <BsX />
           </button>
         </div>
@@ -463,54 +466,55 @@ export default function EventFormModal({
         <div className="evt-modal-body">
           <div className="evt-form-grid">
             <label className="evt-field evt-field--full">
-              <span>Titulo del evento</span>
+              <span>{t('adminEvents.form.title')}</span>
               <input
                 type="text"
                 className="evt-field-input"
                 value={form.title}
                 onChange={(event) => handleChange('title', event.target.value)}
-                placeholder="Ej. Curso de React para portafolios profesionales"
+                placeholder={t('adminEvents.form.titlePlaceholder')}
               />
             </label>
 
             <div className="evt-field evt-field--full">
-              <span>Imagen del evento</span>
+              <span>{t('adminEvents.form.image')}</span>
               <SingleEventImageUpload
                 imagePreview={form.imagePreview}
                 imageUrl={form.imageUrl}
                 onChange={handleImageChange}
                 onRemove={handleImageRemove}
+                t={t}
               />
             </div>
 
             <label className="evt-field">
-              <span>Tipo</span>
+              <span>{t('adminEvents.form.type')}</span>
               <select
                 className="evt-field-input"
                 value={form.type}
                 onChange={(event) => handleChange('type', event.target.value)}
               >
                 {EVENT_TYPES.filter((type) => type.id !== 'todos').map((type) => (
-                  <option key={type.id} value={type.id}>{type.label}</option>
+                  <option key={type.id} value={type.id}>{t(`adminEvents.type.${type.id}`)}</option>
                 ))}
               </select>
             </label>
 
             <label className="evt-field">
-              <span>Estado</span>
+              <span>{t('adminEvents.form.status')}</span>
               <select
                 className="evt-field-input"
                 value={form.status}
                 onChange={(event) => handleChange('status', event.target.value)}
               >
                 {EVENT_STATUS_FILTERS.filter((status) => ['activo', 'borrador'].includes(status.id)).map((status) => (
-                  <option key={status.id} value={status.id}>{status.label}</option>
+                  <option key={status.id} value={status.id}>{t(`adminEvents.status.${status.id}`)}</option>
                 ))}
               </select>
             </label>
 
             <label className="evt-field">
-              <span>Fecha y hora de inicio</span>
+              <span>{t('adminEvents.form.start')}</span>
               <input
                 type="datetime-local"
                 className="evt-field-input"
@@ -521,7 +525,7 @@ export default function EventFormModal({
             </label>
 
             <label className="evt-field">
-              <span>Fecha y hora de fin</span>
+              <span>{t('adminEvents.form.end')}</span>
               <input
                 type="datetime-local"
                 className="evt-field-input"
@@ -532,41 +536,41 @@ export default function EventFormModal({
             </label>
 
             <label className="evt-field">
-              <span>Ubicacion</span>
+              <span>{t('adminEvents.form.location')}</span>
               <input
                 type="text"
                 className="evt-field-input"
                 value={form.location}
                 onChange={(event) => handleChange('location', event.target.value)}
-                placeholder="Ej. Auditorio principal, Google Meet o Laboratorio 3"
+                placeholder={t('adminEvents.form.locationPlaceholder')}
               />
             </label>
 
             <label className="evt-field">
-              <span>Cupos</span>
+              <span>{t('adminEvents.form.capacity')}</span>
               <input
                 type="number"
                 min="0"
                 className="evt-field-input"
                 value={form.capacity}
                 onChange={(event) => handleChange('capacity', event.target.value)}
-                placeholder="Ej. 80"
+                placeholder={t('adminEvents.form.capacityPlaceholder')}
               />
             </label>
 
             <label className="evt-field evt-field--full">
-              <span>Descripcion</span>
+              <span>{t('adminEvents.form.description')}</span>
               <textarea
                 className="evt-field-input evt-field-input--textarea"
                 value={form.description}
                 onChange={(event) => handleChange('description', event.target.value)}
-                placeholder="Describe el objetivo, requisitos, beneficios y detalles importantes para los usuarios."
+                placeholder={t('adminEvents.form.descriptionPlaceholder')}
               />
             </label>
           </div>
 
           <div className="evt-modal-section">
-            <span className="evt-modal-section-label">Publicacion</span>
+            <span className="evt-modal-section-label">{t('adminEvents.form.publishSection')}</span>
             <div className="evt-target-mode-grid">
               <button
                 type="button"
@@ -577,7 +581,7 @@ export default function EventFormModal({
                   <BsBell />
                 </span>
                 <span>
-                  <strong>Publicar directamente</strong>
+                  <strong>{t('adminEvents.form.publishNow')}</strong>
                   <small>El evento quedara visible al guardar.</small>
                 </span>
                 <span className="evt-segment-check">
@@ -593,8 +597,8 @@ export default function EventFormModal({
                   <BsCalendar2Plus />
                 </span>
                 <span>
-                  <strong>Programar publicacion</strong>
-                  <small>Define cuando se habilitara el evento.</small>
+                  <strong>{t('adminEvents.form.schedulePublish')}</strong>
+                  <small>{t('adminEvents.form.schedulePublishHelper')}</small>
                 </span>
                 <span className="evt-segment-check">
                   <BsCheck2 />
@@ -604,7 +608,7 @@ export default function EventFormModal({
 
             {form.sendMode === 'scheduled' ? (
               <label className="evt-field evt-field--compact">
-                <span>Fecha y hora de publicacion</span>
+                <span>{t('adminEvents.form.publishDate')}</span>
                 <input
                   type="datetime-local"
                   className="evt-field-input"
@@ -618,7 +622,7 @@ export default function EventFormModal({
           </div>
 
           <div className="evt-modal-section">
-            <span className="evt-modal-section-label">A quien va dirigido</span>
+            <span className="evt-modal-section-label">{t('adminEvents.form.targetSection')}</span>
             <div className="evt-target-mode-grid">
               {EVENT_TARGET_MODES.map((mode) => {
                 const Icon = TARGET_ICONS[mode.id] || BsPeople;
@@ -634,8 +638,8 @@ export default function EventFormModal({
                       <Icon />
                     </span>
                     <span>
-                      <strong>{mode.label}</strong>
-                      <small>{mode.helper}</small>
+                      <strong>{t(`adminEvents.targetMode.${mode.id}.label`)}</strong>
+                      <small>{t(`adminEvents.targetMode.${mode.id}.helper`)}</small>
                     </span>
                     <span className="evt-segment-check">
                       <BsCheck2 />
@@ -649,19 +653,19 @@ export default function EventFormModal({
           {form.targetMode === 'segmented' ? (
             <div className="evt-modal-section">
               <div className="evt-section-headline">
-                <span className="evt-modal-section-label">Segmentacion por portafolio</span>
-                <strong>{selectedTargetsCount} seleccionados</strong>
+                <span className="evt-modal-section-label">{t('adminEvents.form.portfolioSegmentation')}</span>
+                <strong>{t('adminEvents.common.selected', { count: selectedTargetsCount })}</strong>
               </div>
 
               {selectedTargetTags.length > 0 ? (
-                <div className="evt-selected-tags" aria-label="Segmentos seleccionados">
+                <div className="evt-selected-tags" aria-label={t('adminEvents.form.selectedSegmentsAria')}>
                   {selectedTargetTags.map((tag) => (
                     <button
                       key={`${tag.groupId}-${tag.value}`}
                       type="button"
                       className="evt-selected-tag"
                       onClick={() => handleToggleTarget(tag.groupId, tag.value)}
-                      title={`Quitar ${tag.label}`}
+                      title={t('adminEvents.form.removeTag', { label: tag.label })}
                     >
                       <small>{tag.groupLabel}</small>
                       <span>{tag.label}</span>
@@ -671,7 +675,7 @@ export default function EventFormModal({
                 </div>
               ) : (
                 <p className="evt-section-note">
-                  Selecciona una habilidad o experiencia y aparecera aqui como etiqueta para quitarla rapido.
+                  {t('adminEvents.form.segmentHelp')}
                 </p>
               )}
 
@@ -686,8 +690,8 @@ export default function EventFormModal({
                           <Icon />
                         </span>
                         <span>
-                          <strong>{group.label}</strong>
-                          <small>{group.helper}</small>
+                          <strong>{t(`adminEvents.profileTarget.${group.id}.label`)}</strong>
+                          <small>{t(`adminEvents.profileTarget.${group.id}.helper`)}</small>
                         </span>
                       </div>
 
@@ -700,8 +704,8 @@ export default function EventFormModal({
                           className="evt-search-input"
                           value={form.targetSearches[group.id] || ''}
                           onChange={(event) => handleTargetSearchChange(group.id, event.target.value)}
-                          placeholder={group.searchPlaceholder}
-                          aria-label={`Buscar ${group.label}`}
+                          placeholder={t(`adminEvents.profileTarget.${group.id}.placeholder`)}
+                          aria-label={t(`adminEvents.profileTarget.${group.id}.placeholder`)}
                         />
                       </div>
 
@@ -719,8 +723,8 @@ export default function EventFormModal({
                         {!group.visibleOptions.length ? (
                           <span className="evt-checkbox-empty">
                             {profileTargetsLoading
-                              ? 'Cargando opciones...'
-                              : (form.targetSearches[group.id] ? 'Sin coincidencias' : 'Sin opciones cargadas')}
+                              ? t('adminEvents.form.loadingOptions')
+                              : (form.targetSearches[group.id] ? t('adminEvents.form.noMatches') : t('adminEvents.form.noOptions'))}
                           </span>
                         ) : null}
                       </div>
@@ -729,13 +733,13 @@ export default function EventFormModal({
                 })}
               </div>
               <p className="evt-section-note">
-                Puedes combinar habilidades tecnicas, blandas y experiencia para dirigir cursos, trabajos o convocatorias.
+                {t('adminEvents.form.audienceHelp')}
               </p>
             </div>
           ) : (
             <div className="evt-audience-preview">
-              <strong>Todos</strong>
-              <span>usuarios de la plataforma</span>
+              <strong>{t('adminEvents.form.allAudience')}</strong>
+              <span>{t('adminEvents.form.platformUsers')}</span>
               <small>El evento quedara disponible como convocatoria abierta.</small>
             </div>
           )}
@@ -744,14 +748,14 @@ export default function EventFormModal({
         </div>
 
         <div className="evt-modal-foot">
-          <span>Revisa audiencia y fechas antes de guardar.</span>
+          <span>{t('adminEvents.form.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
-              Cancelar
+              {t('adminEvents.common.cancel')}
             </button>
             <button type="submit" className="evt-reason-btn evt-reason-btn--primary">
               <BsCheck2 />
-              Guardar evento
+              {t('adminEvents.form.saveEvent')}
             </button>
           </div>
         </div>

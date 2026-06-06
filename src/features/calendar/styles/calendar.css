@@ -623,3 +623,38 @@
   color: #ffffff;
   border-color: #059669;
 }
+
+/* HU13: ayuda visual para hora/minutos y borrador temporal */
+.cal-draft-notice {
+  margin: 2px 0 12px;
+  padding: 9px 10px;
+  border: 1px solid var(--cal-blue-mid);
+  border-radius: 9px;
+  background: var(--cal-blue-light);
+  color: var(--cal-blue-deep);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.cal-time-help {
+  margin-bottom: 4px;
+}
+
+.cal-time-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  color: var(--cal-muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.cal-time-labels span {
+  border: 1px dashed var(--cal-border);
+  border-radius: 7px;
+  background: #fbfdff;
+  padding: 4px 6px;
+  text-align: center;
+}

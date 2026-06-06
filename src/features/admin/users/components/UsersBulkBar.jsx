@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../../core/i18n';
 import { USER_BULK_ACTIONS } from '../services/usersService';
 
 export default function UsersBulkBar({
@@ -6,12 +7,14 @@ export default function UsersBulkBar({
   onClearSelection,
   onNotifySelection,
 }) {
+  const { t } = useLanguage();
+
   if (!selectedCount) return null;
 
   return (
     <div className="usr-bulk-bar" role="status" aria-live="polite">
       <span className="usr-bulk-count">
-        {selectedCount} seleccionado{selectedCount !== 1 ? 's' : ''}
+        {t('admin.users.bulk.selected', { count: selectedCount })}
       </span>
 
       <div className="usr-bulk-separator" />
@@ -22,9 +25,9 @@ export default function UsersBulkBar({
           type="button"
           className={`usr-bulk-action usr-bulk-action--${action.tone}`}
           disabled={!supportsMutations}
-          title={supportsMutations ? action.label : 'Disponible al integrar backend'}
+          title={supportsMutations ? t(`admin.users.bulk.action.${action.id}`) : t('admin.users.bulk.integrationPending')}
         >
-          {action.label}
+          {t(`admin.users.bulk.action.${action.id}`)}
         </button>
       ))}
 
@@ -35,7 +38,7 @@ export default function UsersBulkBar({
         className="usr-bulk-action usr-bulk-action--notice"
         onClick={onNotifySelection}
       >
-        Enviar aviso
+        {t('admin.users.bulk.sendNotice')}
       </button>
 
       <div className="usr-bulk-separator" />
@@ -45,7 +48,7 @@ export default function UsersBulkBar({
         className="usr-bulk-action"
         onClick={onClearSelection}
       >
-        Limpiar seleccion
+        {t('admin.users.bulk.clearSelection')}
       </button>
     </div>
   );

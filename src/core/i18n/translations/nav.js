@@ -67,6 +67,10 @@ export const navTranslations = {
     "nav.viewAll": "Ver todo",
     "nav.back": "Volver",
     "nav.close": "Cerrar",
+    "nav.module.projects": "Proyectos",
+    "nav.module.events": "Eventos",
+    "nav.module.administration": "Administración",
+    "nav.module.default": "Notificaciones",
   },
   en: {
     "nav.home": "Home",
@@ -136,6 +140,10 @@ export const navTranslations = {
     "nav.viewAll": "View all",
     "nav.back": "Back",
     "nav.close": "Close",
+    "nav.module.projects": "Projects",
+    "nav.module.events": "Events",
+    "nav.module.administration": "Administration",
+    "nav.module.default": "Notifications",
   },
   pt: {
     "nav.home": "Inicio",
@@ -205,5 +213,9 @@ export const navTranslations = {
     "nav.viewAll": "Ver tudo",
     "nav.back": "Voltar",
     "nav.close": "Fechar",
+    "nav.module.projects": "Projetos",
+    "nav.module.events": "Eventos",
+    "nav.module.administration": "Administração",
+    "nav.module.default": "Notificações",
   },
 };

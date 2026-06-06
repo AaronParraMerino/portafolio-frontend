@@ -7,6 +7,7 @@ import {
   BsShieldExclamation,
 } from 'react-icons/bs';
 import { USER_STATS } from '../services/usersService';
+import { useLanguage } from '../../../../core/i18n';
 
 const STAT_ICONS = {
   primary: BsPeople,
@@ -24,8 +25,10 @@ function UsersStatIcon({ tone }) {
 }
 
 export default function UsersStats({ metrics, sourceReady }) {
+  const { t } = useLanguage();
+
   return (
-    <section className="usr-stats-grid" aria-label="Resumen de usuarios">
+    <section className="usr-stats-grid" aria-label={t('admin.users.stats.aria')}>
       {USER_STATS.map((stat) => (
         <article key={stat.id} className={`usr-stat-card usr-stat-card--${stat.tone}`}>
           <div className="usr-stat-card-top">
@@ -37,8 +40,8 @@ export default function UsersStats({ metrics, sourceReady }) {
           <div className="usr-stat-value">
             {sourceReady ? metrics?.[stat.id] ?? 0 : '--'}
           </div>
-          <div className="usr-stat-label">{stat.label}</div>
-          <div className="usr-stat-helper">{stat.helper}</div>
+          <div className="usr-stat-label">{t(`admin.users.stats.${stat.id}.label`)}</div>
+          <div className="usr-stat-helper">{t(`admin.users.stats.${stat.id}.helper`)}</div>
         </article>
       ))}
     </section>

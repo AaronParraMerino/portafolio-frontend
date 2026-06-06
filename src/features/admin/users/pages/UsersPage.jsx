@@ -13,8 +13,10 @@ import UsersStats from '../components/UsersStats';
 import UsersTable from '../components/UsersTable';
 import UsersTemplatesPanel from '../components/UsersTemplatesPanel';
 import '../styles/users.css';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function UsersPage() {
+  const { t } = useLanguage();
   const headerConfig = getAdminSectionConfig('users');
   const {
     sourceReady,
@@ -81,9 +83,9 @@ export default function UsersPage() {
   const headerActions = [
     {
       key: 'communication',
-      label: 'Aviso general',
-      title: 'Crear aviso general del sistema',
-      ariaLabel: 'Crear aviso general del sistema',
+      label: t('admin.users.header.action.notice'),
+      title: t('admin.users.header.action.noticeTitle'),
+      ariaLabel: t('admin.users.header.action.noticeTitle'),
       icon: <BsMegaphone />,
       variant: 'primary',
       onClick: () => onOpenNoticeModal(),
@@ -93,8 +95,8 @@ export default function UsersPage() {
   return (
     <div className="usr-page">
       <AdminHeader
-        eyebrow={headerConfig.eyebrow}
-        title={headerConfig.title}
+        eyebrow={t(headerConfig.eyebrowKey || 'admin.layout.eyebrow.management')}
+        title={t(headerConfig.titleKey || 'admin.layout.section.users.title')}
         actions={headerActions}
       />
 

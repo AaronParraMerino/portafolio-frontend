@@ -6,6 +6,7 @@ import {
   BsSlashCircle,
   BsTrash,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getEventStatusMeta,
   getEventTypeMeta,
@@ -13,10 +14,10 @@ import {
 import EventsEmptyState from './EventsEmptyState';
 
 const ACTIONS = [
-  { id: 'activar', label: 'Activar', icon: BsPlay, variant: 'primary' },
-  { id: 'pausar', label: 'Pausar', icon: BsPause, variant: 'ghost' },
-  { id: 'suspender', label: 'Suspender', icon: BsSlashCircle, variant: 'ghost' },
-  { id: 'eliminar', label: 'Eliminar', icon: BsTrash, variant: 'danger' },
+  { id: 'activar', labelKey: 'adminEvents.action.activar', icon: BsPlay, variant: 'primary' },
+  { id: 'pausar', labelKey: 'adminEvents.action.pausar', icon: BsPause, variant: 'ghost' },
+  { id: 'suspender', labelKey: 'adminEvents.action.suspender', icon: BsSlashCircle, variant: 'ghost' },
+  { id: 'eliminar', labelKey: 'adminEvents.action.eliminar', icon: BsTrash, variant: 'danger' },
 ];
 
 function getAvailableAdminActions(status) {
@@ -40,13 +41,15 @@ export default function AdminEventsManagementPanel({
   events,
   onReviewEvent,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="evt-view-body">
       <section className="evt-sheet">
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Gestion</span>
-            <h2 className="evt-sheet-title">Eventos publicados por publicadores</h2>
+            <span className="evt-sheet-kicker">{t('adminEvents.management.kicker')}</span>
+            <h2 className="evt-sheet-title">{t('adminEvents.workspace.events')}</h2>
           </div>
         </div>
 
@@ -62,10 +65,10 @@ export default function AdminEventsManagementPanel({
                   <div className={`evt-card-accent evt-card-accent--${statusMeta.tone}`} />
                   <div className="evt-admin-event-main">
                     <div className="evt-card-badges">
-                      <span className="evt-type-badge">{typeMeta.label}</span>
+                      <span className="evt-type-badge">{t(`adminEvents.type.${event.type}`) || typeMeta.label}</span>
                       <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
                         <span />
-                        {statusMeta.label}
+                        {t(`adminEvents.status.${event.status}`) || statusMeta.label}
                       </span>
                     </div>
                     <strong>{event.title}</strong>
@@ -94,12 +97,12 @@ export default function AdminEventsManagementPanel({
                           onClick={() => onReviewEvent(event, action.id)}
                         >
                           <Icon />
-                          {action.label}
+                          {t(action.labelKey)}
                         </button>
                       );
                     })}
                     {!availableActions.length ? (
-                      <span className="evt-admin-event-lock">Sin acciones disponibles</span>
+                      <span className="evt-admin-event-lock">{t('adminEvents.filters.noRecords')}</span>
                     ) : null}
                   </div>
                 </article>
@@ -109,9 +112,9 @@ export default function AdminEventsManagementPanel({
         ) : (
           <EventsEmptyState
             icon={BsPlay}
-            title="Sin eventos para gestionar"
-            description="Aqui apareceran los eventos publicados para activar, pausar, suspender o eliminar."
-            hint="Cada accion administrativa debe registrar un motivo para notificar al publicador."
+            title={t('adminEvents.management.emptyTitle')}
+            description={t('adminEvents.management.emptyDescription')}
+            hint={t('adminEvents.management.emptyHint')}
           />
         )}
       </section>

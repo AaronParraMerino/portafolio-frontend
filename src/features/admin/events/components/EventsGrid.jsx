@@ -9,6 +9,7 @@ import {
   BsFileEarmarkText,
   BsXCircle,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getEventStatusMeta,
   getEventTypeMeta,
@@ -31,9 +32,13 @@ export default function EventsGrid({
   showCommunicationAction = true,
   showCommunicationsMeta = true,
   showPrimaryAction = true,
-  primaryActionLabel = 'Editar',
-  emptyHint = 'Las estadisticas no navegan; usa los botones del panel para crear o comunicar eventos.',
+  primaryActionLabel,
+  emptyHint,
 }) {
+  const { t } = useLanguage();
+  const finalPrimaryActionLabel = primaryActionLabel || t('adminEvents.common.edit');
+  const finalEmptyHint = emptyHint || t('adminEvents.grid.defaultHint');
+
   return (
     <>
       {events.length > 0 ? (
@@ -54,15 +59,15 @@ export default function EventsGrid({
                 <div className="evt-card-body">
                   <div className="evt-card-top">
                     <div className="evt-card-badges">
-                      <span className="evt-type-badge">{typeMeta.label}</span>
+                      <span className="evt-type-badge">{t(`adminEvents.type.${event.type}`) || typeMeta.label}</span>
                       <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
                         <span />
-                        {statusMeta.label}
+                        {t(`adminEvents.status.${event.status}`) || statusMeta.label}
                       </span>
                     </div>
                     {statusActions.length > 0 ? (
                       <details className="evt-card-menu">
-                        <summary className="evt-icon-btn evt-icon-btn--sm" title="Cambiar estado" aria-label="Cambiar estado">
+                        <summary className="evt-icon-btn evt-icon-btn--sm" title={t('adminEvents.grid.changeStatus')} aria-label={t('adminEvents.grid.changeStatus')}>
                           <BsThreeDotsVertical />
                         </summary>
                         <div className="evt-card-menu-list">
@@ -86,7 +91,7 @@ export default function EventsGrid({
                                 }}
                               >
                                 <Icon />
-                                {action.label}
+                                {action.labelKey ? t(action.labelKey) : (t(`adminEvents.action.${action.id}`) || action.label)}
                               </button>
                             );
                           })}
@@ -109,12 +114,12 @@ export default function EventsGrid({
                     </span>
                     <span>
                       <BsPeople />
-                      {event.registered}/{event.capacity || '--'} inscritos
+                      {t('adminEvents.grid.registered', { registered: event.registered, capacity: event.capacity || '--' })}
                     </span>
                     {showCommunicationsMeta ? (
                       <span>
                         <BsMegaphone />
-                        {event.communicationsCount} comunicaciones
+                        {t('adminEvents.grid.communications', { count: event.communicationsCount })}
                       </span>
                     ) : null}
                   </div>
@@ -123,7 +128,7 @@ export default function EventsGrid({
                     {event.segments.slice(0, 3).map((segment) => (
                       <span key={segment}>{segment}</span>
                     ))}
-                    {!event.segments.length ? <span>Sin segmentos</span> : null}
+                    {!event.segments.length ? <span>{t('adminEvents.grid.noSegments')}</span> : null}
                   </div>
                 </div>
 
@@ -136,7 +141,7 @@ export default function EventsGrid({
                       onClick={() => onCommunicate(event)}
                     >
                       <BsMegaphone />
-                      Comunicar
+                      {t('adminEvents.grid.communicate')}
                     </button>
                     ) : null}
                     {showPrimaryAction ? (
@@ -146,7 +151,7 @@ export default function EventsGrid({
                         onClick={() => onEditEvent(event)}
                       >
                         <BsPencil />
-                        {primaryActionLabel}
+                        {finalPrimaryActionLabel}
                       </button>
                     ) : null}
                   </div>
@@ -160,7 +165,7 @@ export default function EventsGrid({
           icon={BsCalendarEvent}
           title={emptyState.title}
           description={emptyState.description}
-          hint={emptyHint}
+          hint={finalEmptyHint}
         />
       )}
 
@@ -173,7 +178,7 @@ export default function EventsGrid({
             onClick={() => onGoToPage(currentPage - 1)}
             disabled={currentPage <= 1 || !sourceReady}
           >
-            Anterior
+            {t('adminEvents.common.previous')}
           </button>
           {paginationItems.map((page) => (
             <button
@@ -192,7 +197,7 @@ export default function EventsGrid({
             onClick={() => onGoToPage(currentPage + 1)}
             disabled={currentPage >= totalPages || !sourceReady}
           >
-            Siguiente
+            {t('adminEvents.common.next')}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import {
   BsSearch,
   BsShieldCheck,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EVENT_HISTORY_STATUS,
   EVENT_HISTORY_TYPES,
@@ -40,6 +41,7 @@ export default function EventsHistoryPanel({
   sourceReady,
   historyItems,
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -54,8 +56,8 @@ export default function EventsHistoryPanel({
       <section className="evt-sheet">
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Historial</span>
-            <h2 className="evt-sheet-title">Bitacora administrativa de eventos</h2>
+            <span className="evt-sheet-kicker">{t('adminEvents.history.kicker')}</span>
+            <h2 className="evt-sheet-title">{t('adminEvents.history.title')}</h2>
           </div>
         </div>
 
@@ -69,12 +71,12 @@ export default function EventsHistoryPanel({
               className="evt-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por accion, actor, evento o motivo..."
-              aria-label="Buscar bitacora administrativa"
+              placeholder={t('adminEvents.history.searchPlaceholder')}
+              aria-label={t('adminEvents.history.searchAria')}
             />
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar historial por tipo">
+          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.history.typeAria')}>
             {EVENT_HISTORY_TYPES.map((type) => (
               <button
                 key={type.id}
@@ -82,12 +84,12 @@ export default function EventsHistoryPanel({
                 className={`evt-filter-chip${typeFilter === type.id ? ' active' : ''}`}
                 onClick={() => setTypeFilter(type.id)}
               >
-                {type.label}
+                {t(`adminEvents.historyType.${type.id}`)}
               </button>
             ))}
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar historial por estado">
+          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.history.statusAria')}>
             {EVENT_HISTORY_STATUS.map((status) => (
               <button
                 key={status.id}
@@ -95,7 +97,7 @@ export default function EventsHistoryPanel({
                 className={`evt-filter-chip${statusFilter === status.id ? ' active' : ''}`}
                 onClick={() => setStatusFilter(status.id)}
               >
-                {status.label}
+                {t(`adminEvents.status.${status.id}`)}
               </button>
             ))}
           </div>
@@ -106,12 +108,12 @@ export default function EventsHistoryPanel({
             <table className="evt-history-table">
               <thead>
                 <tr>
-                  <th>Accion</th>
-                  <th>Actor</th>
-                  <th>Entidad</th>
-                  <th>Estado</th>
-                  <th>Detalle</th>
-                  <th>Fecha</th>
+                  <th>{t('adminEvents.history.table.action')}</th>
+                  <th>{t('adminEvents.history.table.actor')}</th>
+                  <th>{t('adminEvents.history.table.entity')}</th>
+                  <th>{t('adminEvents.history.table.status')}</th>
+                  <th>{t('adminEvents.history.table.detail')}</th>
+                  <th>{t('adminEvents.history.table.date')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,7 +130,7 @@ export default function EventsHistoryPanel({
                           </span>
                           <span>
                             <strong>{item.action || item.title}</strong>
-                            <small>{item.module || 'Eventos'} · {typeMeta.label}</small>
+                            <small>{item.module || t('adminEvents.workspace.events')} · {t(`adminEvents.historyType.${item.type}`) || typeMeta.label}</small>
                           </span>
                         </div>
                       </td>
@@ -141,16 +143,16 @@ export default function EventsHistoryPanel({
                       <td>
                         <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
                           <span />
-                          {statusMeta.label}
+                          {t(`adminEvents.status.${item.status}`) || statusMeta.label}
                         </span>
                       </td>
                       <td>
                         <div className="evt-history-detail">
-                          <span>{item.description || item.reason || 'Sin detalle adicional.'}</span>
-                          {item.reason ? <small>Motivo: {item.reason}</small> : null}
+                          <span>{item.description || item.reason || t('adminEvents.history.noDetail')}</span>
+                          {item.reason ? <small>{t('adminEvents.action.reasonLabel')}: {item.reason}</small> : null}
                           {item.previousStatus || item.nextStatus ? (
                             <small>
-                              Estado: {item.previousStatus || 'sin estado'} - {item.nextStatus || item.status}
+                              {t('adminEvents.form.status')}: {item.previousStatus || t('adminEvents.history.noStatus')} - {item.nextStatus || item.status}
                             </small>
                           ) : null}
                           {item.ip ? <small>IP: {item.ip}</small> : null}
@@ -166,11 +168,11 @@ export default function EventsHistoryPanel({
         ) : (
           <EventsEmptyState
             icon={BsClockHistory}
-            title={sourceReady ? 'Sin registros encontrados' : 'Sin historial disponible'}
+            title={sourceReady ? t('adminEvents.history.emptyFoundTitle') : t('adminEvents.history.emptyTitle')}
             description={sourceReady
-              ? 'No hay registros que coincidan con la busqueda o los filtros actuales.'
-              : 'Aqui se mostraran aprobaciones, rechazos, pausas, suspensiones y cambios administrativos.'}
-            hint="La bitacora permite auditar acciones, actores, motivos y eventos afectados."
+              ? t('adminEvents.history.emptyFoundDescription')
+              : t('adminEvents.history.emptyDescription')}
+            hint={t('adminEvents.history.emptyHint')}
           />
         )}
       </section>
@@ -179,15 +181,15 @@ export default function EventsHistoryPanel({
         <div className="evt-chip-list">
           <span className="evt-chip">
             <BsFileText />
-            Cambios de estado
+            {t('adminEvents.history.chip.statusChanges')}
           </span>
           <span className="evt-chip">
             <BsFileText />
-            Solicitudes revisadas
+            {t('adminEvents.adminRequests.kicker')}
           </span>
           <span className="evt-chip">
             <BsFileText />
-            Motivos administrativos
+            {t('adminEvents.history.chip.adminReasons')}
           </span>
         </div>
       </section>

@@ -7,23 +7,27 @@ import {
   BsGeoAlt,
   BsX,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getEventStatusMeta,
   getEventTypeMeta,
 } from '../services/eventsService';
 
-const WEEK_DAYS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-const MONTH_FORMATTER = new Intl.DateTimeFormat('es-BO', { month: 'long', year: 'numeric' });
-const DAY_TITLE_FORMATTER = new Intl.DateTimeFormat('es-BO', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-const TIME_FORMATTER = new Intl.DateTimeFormat('es-BO', {
-  hour: '2-digit',
-  minute: '2-digit',
-});
+const WEEK_DAY_KEYS = [
+  'calendar.week.monday.short',
+  'calendar.week.tuesday.short',
+  'calendar.week.wednesday.short',
+  'calendar.week.thursday.short',
+  'calendar.week.friday.short',
+  'calendar.week.saturday.short',
+  'calendar.week.sunday.short',
+];
+
+function getLocale(language) {
+  if (language === 'en') return 'en-US';
+  if (language === 'pt') return 'pt-BR';
+  return 'es-BO';
+}
 
 function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -79,6 +83,19 @@ export default function EventsCalendar({
   onCommunicate,
   showActions = true,
 }) {
+  const { t, language } = useLanguage();
+  const locale = getLocale(language);
+  const monthFormatter = useMemo(() => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }), [locale]);
+  const dayTitleFormatter = useMemo(() => new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }), [locale]);
+  const timeFormatter = useMemo(() => new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }), [locale]);
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState(null);
   const todayKey = toDateKey(new Date());
@@ -100,15 +117,15 @@ export default function EventsCalendar({
 
   const days = useMemo(() => buildCalendarDays(monthDate), [monthDate]);
   const selectedEvents = selectedDay ? eventsByDay.get(selectedDay.key) || [] : [];
-  const currentMonthLabel = MONTH_FORMATTER.format(monthDate);
+  const currentMonthLabel = monthFormatter.format(monthDate);
 
   return (
     <div className="evt-view-body">
       <section className="evt-sheet evt-calendar-shell">
         <div className="evt-calendar-head">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Calendario</span>
-            <h2 className="evt-sheet-title">Agenda mensual</h2>
+            <span className="evt-sheet-kicker">{t('adminEvents.dashboard.tab.calendar')}</span>
+            <h2 className="evt-sheet-title">{t('adminEvents.calendar.title')}</h2>
           </div>
 
           <div className="evt-calendar-controls">
@@ -116,7 +133,7 @@ export default function EventsCalendar({
               type="button"
               className="evt-icon-btn"
               onClick={() => setMonthDate((current) => addMonths(current, -1))}
-              aria-label="Mes anterior"
+              aria-label={t('adminEvents.calendar.prev')}
             >
               <BsChevronLeft />
             </button>
@@ -125,7 +142,7 @@ export default function EventsCalendar({
               type="button"
               className="evt-icon-btn"
               onClick={() => setMonthDate((current) => addMonths(current, 1))}
-              aria-label="Mes siguiente"
+              aria-label={t('adminEvents.calendar.next')}
             >
               <BsChevronRight />
             </button>
@@ -135,14 +152,14 @@ export default function EventsCalendar({
               onClick={() => setMonthDate(startOfMonth(new Date()))}
             >
               <BsCalendar3 />
-              Hoy
+              {t('adminEvents.calendar.today')}
             </button>
           </div>
         </div>
 
-        <div className="evt-calendar-grid" role="grid" aria-label="Calendario de eventos">
-          {WEEK_DAYS.map((day) => (
-            <div key={day} className="evt-calendar-weekday">{day}</div>
+        <div className="evt-calendar-grid" role="grid" aria-label={t('adminEvents.calendar.title')}>
+          {WEEK_DAY_KEYS.map((dayKey) => (
+            <div key={dayKey} className="evt-calendar-weekday">{t(dayKey)}</div>
           ))}
 
           {days.map((date) => {
@@ -189,16 +206,16 @@ export default function EventsCalendar({
 
       {selectedDay ? (
         <div className="evt-modal-backdrop" role="presentation">
-          <div className="evt-calendar-modal" role="dialog" aria-modal="true" aria-label="Eventos del dia">
+          <div className="evt-calendar-modal" role="dialog" aria-modal="true" aria-label={t('adminEvents.calendar.dayEvents')}>
             <div className="evt-modal-head">
               <span className="evt-modal-icon">
                 <BsCalendar3 />
               </span>
               <div className="evt-modal-copy">
-                <strong>{DAY_TITLE_FORMATTER.format(selectedDay.date)}</strong>
-                <span>{selectedEvents.length ? `${selectedEvents.length} eventos` : 'Sin eventos'}</span>
+                <strong>{dayTitleFormatter.format(selectedDay.date)}</strong>
+                <span>{selectedEvents.length ? t('adminEvents.calendar.count', { count: selectedEvents.length }) : t('adminEvents.calendar.empty')}</span>
               </div>
-              <button type="button" className="evt-modal-close" onClick={() => setSelectedDay(null)} aria-label="Cerrar modal">
+              <button type="button" className="evt-modal-close" onClick={() => setSelectedDay(null)} aria-label={t('adminEvents.calendar.close')}>
                 <BsX />
               </button>
             </div>
@@ -215,11 +232,11 @@ export default function EventsCalendar({
                     <div className="evt-calendar-event-body">
                       <div className="evt-card-badges">
                         <span className={`evt-type-badge evt-type-badge--${typeMeta.tone || 'primary'}`}>
-                          {typeMeta.label}
+                          {t(`adminEvents.type.${event.type}`) || typeMeta.label}
                         </span>
                         <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
                           <span />
-                          {statusMeta.label}
+                          {t(`adminEvents.status.${event.status}`) || statusMeta.label}
                         </span>
                       </div>
                       <h3 className="evt-card-title">{event.title}</h3>
@@ -227,7 +244,7 @@ export default function EventsCalendar({
                       <div className="evt-mini-meta">
                         <span>
                           <BsClock />
-                          {eventDate ? TIME_FORMATTER.format(eventDate) : 'Sin hora'}
+                          {eventDate ? timeFormatter.format(eventDate) : t('adminEvents.common.noTime')}
                         </span>
                         <span>
                           <BsGeoAlt />
@@ -250,7 +267,7 @@ export default function EventsCalendar({
               }) : (
                 <div className="evt-calendar-empty">
                   <BsCalendar3 />
-                  <strong>Sin eventos para este dia</strong>
+                  <strong>{t('adminEvents.calendar.empty')} para este dia</strong>
                   <p>Selecciona otro dia o navega entre meses para revisar la agenda.</p>
                 </div>
               )}

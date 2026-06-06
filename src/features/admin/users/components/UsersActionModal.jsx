@@ -7,6 +7,7 @@ import {
   getUserStatusMeta,
 } from '../services/usersService';
 import CachedUserAvatar from './CachedUserAvatar';
+import { useLanguage } from '../../../../core/i18n';
 
 function CloseIcon() {
   return (
@@ -46,6 +47,8 @@ export default function UsersActionModal({
   onActionMessageChange,
   onToggleActionChannel,
 }) {
+  const { t } = useLanguage();
+
   if (!user) return null;
 
   const statusMeta = getUserStatusMeta(user.estado);
@@ -80,21 +83,21 @@ export default function UsersActionModal({
         className="usr-modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`Gestionar a ${user.nombre || 'usuario'}`}
+        aria-label={t('admin.users.actionModal.aria', { name: user.nombre || t('admin.users.table.unknownUser') })}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="usr-modal-head">
           <CachedUserAvatar user={user} className="usr-modal-avatar" />
 
           <div className="usr-modal-copy">
-            <strong>{user.nombre || 'Usuario sin nombre'}</strong>
-            <span>{user.email || 'Sin correo registrado'}</span>
+            <strong>{user.nombre || t('admin.users.table.unknownUser')}</strong>
+            <span>{user.email || t('admin.users.table.noEmail')}</span>
             <div className={`usr-status-badge usr-status-badge--${statusMeta.tone}`}>
               <span className="usr-status-dot" />
-              {statusMeta.label}
+              {t(`admin.users.status.${user.estado || 'inactivo'}.label`)}
             </div>
             <div className={`usr-role-badge usr-role-badge--${roleMeta.tone}`}>
-              {roleMeta.label}
+              {t(`admin.users.role.${roleValue}.label`)}
             </div>
           </div>
 
@@ -102,8 +105,8 @@ export default function UsersActionModal({
             type="button"
             className="usr-modal-close"
             onClick={onClose}
-            title="Cerrar"
-            aria-label="Cerrar"
+            title={t('admin.users.actionModal.close')}
+            aria-label={t('admin.users.actionModal.close')}
           >
             <CloseIcon />
           </button>
@@ -112,9 +115,9 @@ export default function UsersActionModal({
         <div className="usr-modal-body">
           <section className="usr-modal-section">
             <div className="usr-modal-section-head">
-              <span className="usr-modal-section-kicker">Gestion de cuenta</span>
-              <h3>Acciones disponibles</h3>
-              <p>Activar, pausar, bloquear e inactivar ya aplican su estado real y generan el aviso correspondiente.</p>
+              <span className="usr-modal-section-kicker">{t('admin.users.actionModal.account.kicker')}</span>
+              <h3>{t('admin.users.actionModal.account.title')}</h3>
+              <p>{t('admin.users.actionModal.account.description')}</p>
             </div>
 
             <div className="usr-modal-toolbar">
@@ -123,7 +126,7 @@ export default function UsersActionModal({
                 className="usr-reason-btn usr-reason-btn--primary"
                 onClick={onOpenDirectNotice}
               >
-                Aviso directo
+                {t('admin.users.actionModal.directNotice')}
               </button>
             </div>
 
@@ -139,8 +142,8 @@ export default function UsersActionModal({
                     || (action.id === 'bloquear' && !canBlock)
                     || (action.id === 'inactivar' && !canInactivate)}
                 >
-                  <strong>{action.label}</strong>
-                  <span>{action.description}</span>
+                  <strong>{t(`admin.users.action.${action.id}.label`)}</strong>
+                  <span>{t(`admin.users.action.${action.id}.description`)}</span>
                 </button>
               ))}
             </div>
@@ -148,20 +151,20 @@ export default function UsersActionModal({
             {selectedAccountAction && (
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
-                  <strong>{selectedAccountAction.label}</strong>
-                  <span>{canConfirmSelectedAction ? 'Accion disponible' : 'Pendiente de integracion'}</span>
+                  <strong>{t(`admin.users.action.${selectedAccountAction.id}.label`)}</strong>
+                  <span>{canConfirmSelectedAction ? t('admin.users.actionModal.available') : t('admin.users.actionModal.integrationPending')}</span>
                 </div>
 
                 {canConfirmSelectedAction ? (
                   <>
                     <p className="usr-action-confirm-copy">
                       {isActivation
-                        ? 'La cuenta quedara activa inmediatamente y el usuario podra iniciar sesion sin codigo de verificacion.'
+                        ? t('admin.users.actionModal.activationCopy')
                         : (isPausing
-                          ? 'La cuenta seguira visible y con inicio de sesion, pero solo podra consultar informacion hasta que administracion la active.'
+                          ? t('admin.users.actionModal.pauseCopy')
                           : isBlocking
-                          ? 'La cuenta quedara bloqueada, su contenido dejara de mostrarse y solo un administrador podra activarla nuevamente.'
-                          : 'La cuenta quedara inactiva, su contenido dejara de mostrarse y se cerraran sus sesiones activas.')}
+                          ? t('admin.users.actionModal.blockCopy')
+                          : t('admin.users.actionModal.inactiveCopy'))}
                     </p>
                     <textarea
                       className="usr-reason-textarea"
@@ -170,19 +173,19 @@ export default function UsersActionModal({
                       value={actionMessage}
                       onChange={(event) => onActionMessageChange(event.target.value)}
                       placeholder={isActivation
-                        ? 'Mensaje para el usuario (opcional). Si se deja vacio, se enviara un aviso generico de activacion.'
+                        ? t('admin.users.actionModal.activationPlaceholder')
                         : (isPausing
-                          ? 'Motivo de la pausa. Se mostrara como aviso de solo lectura en su dashboard.'
+                          ? t('admin.users.actionModal.pausePlaceholder')
                           : isBlocking
-                          ? 'Motivo del bloqueo. Se mostrara al usuario cuando intente iniciar sesion.'
-                          : 'Motivo para el usuario (opcional). Si se deja vacio, se enviara un aviso generico.')}
+                          ? t('admin.users.actionModal.blockPlaceholder')
+                          : t('admin.users.actionModal.genericPlaceholder'))}
                     />
                     {isPausing || isBlocking ? (
                       <p className="usr-action-confirm-copy">
-                        El motivo se registrara como notificacion In-app obligatoria para informar esta restriccion.
+                        {t('admin.users.actionModal.restrictionNotice')}
                       </p>
                     ) : (
-                      <div className="usr-action-channels" aria-label={`Canales para notificar la ${isActivation ? 'activacion' : 'inactivacion'}`}>
+                      <div className="usr-action-channels" aria-label={t('admin.users.noticeModal.channelsLabel')}>
                         <label>
                           <input
                             type="checkbox"
@@ -197,7 +200,7 @@ export default function UsersActionModal({
                             checked={actionChannels.includes('email')}
                             onChange={() => onToggleActionChannel('email')}
                           />
-                          <span>Correo</span>
+                          <span>{t('admin.users.channel.email')}</span>
                         </label>
                       </div>
                     )}
@@ -209,7 +212,7 @@ export default function UsersActionModal({
                     maxLength="400"
                     value={actionMessage}
                     onChange={(event) => onActionMessageChange(event.target.value)}
-                    placeholder="Escribe el motivo o una nota interna para esta accion..."
+                    placeholder={t('admin.users.actionModal.internalNotePlaceholder')}
                   />
                 )}
 
@@ -217,11 +220,11 @@ export default function UsersActionModal({
                   <p>
                     {canConfirmSelectedAction
                       ? (isBlocking
-                        ? 'El usuario no podra desbloquearse; la accion Activar cuenta del administrador restaura el acceso.'
+                        ? t('admin.users.actionModal.blockFoot')
                         : (isPausing
-                          ? 'El usuario conservara lectura y visibilidad; la accion Activar cuenta restaura las modificaciones.'
-                          : `Se enviara ${isActivation ? 'el mensaje personalizado' : 'la razon personalizada'} o el aviso generico por los canales seleccionados.`))
-                      : 'Este bloque queda preparado para integrar esta accion posteriormente.'}
+                          ? t('admin.users.actionModal.pauseFoot')
+                          : t('admin.users.actionModal.customMessageFoot', { messageType: isActivation ? t('admin.users.actionModal.customMessage') : t('admin.users.actionModal.customReason') })))
+                      : t('admin.users.actionModal.futureReady')}
                   </p>
 
                   <div className="usr-reason-actions">
@@ -230,7 +233,7 @@ export default function UsersActionModal({
                       className="usr-reason-btn usr-reason-btn--ghost"
                       onClick={onCancelAction}
                     >
-                      Cancelar
+                      {t('admin.users.actionModal.cancel')}
                     </button>
 
                     <button
@@ -241,9 +244,9 @@ export default function UsersActionModal({
                     >
                       {canConfirmSelectedAction
                         ? (actionSubmitting
-                          ? (isActivation ? 'Activando...' : (isPausing ? 'Pausando...' : (isBlocking ? 'Bloqueando...' : 'Inactivando...')))
-                          : (isActivation ? 'Confirmar activacion' : (isPausing ? 'Confirmar pausa' : (isBlocking ? 'Confirmar bloqueo' : 'Confirmar inactivacion'))))
-                        : 'Disponible proximamente'}
+                          ? (isActivation ? t('admin.users.actionModal.activating') : (isPausing ? t('admin.users.actionModal.pausing') : (isBlocking ? t('admin.users.actionModal.blocking') : t('admin.users.actionModal.inactivating'))))
+                          : (isActivation ? t('admin.users.actionModal.confirmActivation') : (isPausing ? t('admin.users.actionModal.confirmPause') : (isBlocking ? t('admin.users.actionModal.confirmBlock') : t('admin.users.actionModal.confirmInactivation')))))
+                        : t('admin.users.actionModal.availableSoon')}
                     </button>
                   </div>
                 </div>
@@ -256,24 +259,23 @@ export default function UsersActionModal({
 
           <section className="usr-modal-section">
             <div className="usr-modal-section-head">
-              <span className="usr-modal-section-kicker">Gestion de rol</span>
-              <h3>Permisos de publicante</h3>
+              <span className="usr-modal-section-kicker">{t('admin.users.actionModal.role.kicker')}</span>
+              <h3>{t('admin.users.actionModal.role.title')}</h3>
               <p>
-                Rol actual: <strong>{roleMeta.label}</strong>. Si un publicante incumple reglas,
-                puedes retirar el permiso registrando un motivo administrativo.
+                {t('admin.users.actionModal.role.description', { role: t(`admin.users.role.${roleValue}.label`) })}
               </p>
             </div>
 
             <div className="usr-role-summary-card">
               <div>
-                <span>Rol actual</span>
-                <strong>{roleMeta.label}</strong>
-                <small>{roleMeta.helper}</small>
+                <span>{t('admin.users.actionModal.currentRole')}</span>
+                <strong>{t(`admin.users.role.${roleValue}.label`)}</strong>
+                <small>{t(`admin.users.role.${roleValue}.helper`)}</small>
               </div>
               <div>
-                <span>Eventos</span>
-                <strong>{roleValue === 'publicante' ? 'Habilitado' : 'Sin permiso'}</strong>
-                <small>El rol publicante permite crear hasta 3 eventos por mes.</small>
+                <span>{t('admin.users.actionModal.events')}</span>
+                <strong>{roleValue === 'publicante' ? t('admin.users.actionModal.enabled') : t('admin.users.actionModal.noPermission')}</strong>
+                <small>{t('admin.users.actionModal.publisherLimit')}</small>
               </div>
             </div>
 
@@ -289,8 +291,8 @@ export default function UsersActionModal({
                     onClick={() => onSelectAction(action.id)}
                     disabled={disabled}
                   >
-                    <strong>{action.label}</strong>
-                    <span>{action.description}</span>
+                    <strong>{t(`admin.users.roleAction.${action.id}.label`)}</strong>
+                    <span>{t(`admin.users.roleAction.${action.id}.description`)}</span>
                   </button>
                 );
               })}
@@ -299,12 +301,12 @@ export default function UsersActionModal({
             {isRoleAction ? (
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
-                  <strong>{selectedRoleAction.label}</strong>
-                  <span>{supportsRoleManagement ? 'Accion conectable con backend' : 'Accion preparada en frontend'}</span>
+                  <strong>{t(`admin.users.roleAction.${selectedRoleAction.id}.label`)}</strong>
+                  <span>{supportsRoleManagement ? t('admin.users.actionModal.backendConnected') : t('admin.users.actionModal.frontendReady')}</span>
                 </div>
 
                 <p className="usr-action-confirm-copy">
-                  Escribe un motivo claro. Este texto debe quedar asociado al cambio de rol y servir como aviso administrativo para el usuario.
+                  {t('admin.users.actionModal.roleReasonCopy')}
                 </p>
 
                 <textarea
@@ -313,12 +315,12 @@ export default function UsersActionModal({
                   maxLength="1000"
                   value={actionMessage}
                   onChange={(event) => onActionMessageChange(event.target.value)}
-                  placeholder="Ej. Se retira el rol publicante por publicar contenido no verificable o incumplir las reglas de eventos..."
+                  placeholder={t('admin.users.actionModal.roleReasonExample')}
                 />
 
                 <div className="usr-reason-foot">
                   <p>
-                    El motivo es obligatorio y debe tener al menos 10 caracteres para confirmar el cambio de rol.
+                    {t('admin.users.actionModal.roleReasonRequired')}
                   </p>
 
                   <div className="usr-reason-actions">
@@ -327,7 +329,7 @@ export default function UsersActionModal({
                       className="usr-reason-btn usr-reason-btn--ghost"
                       onClick={onCancelAction}
                     >
-                      Cancelar
+                      {t('admin.users.actionModal.cancel')}
                     </button>
 
                     <button
@@ -336,7 +338,7 @@ export default function UsersActionModal({
                       disabled={!canConfirmSelectedAction || actionSubmitting}
                       onClick={onConfirmAction}
                     >
-                      {actionSubmitting ? 'Actualizando rol...' : 'Confirmar cambio de rol'}
+                      {actionSubmitting ? t('admin.users.actionModal.updatingRole') : t('admin.users.actionModal.confirmRoleChange')}
                     </button>
                   </div>
                 </div>
@@ -346,9 +348,9 @@ export default function UsersActionModal({
 
           <section className="usr-modal-section">
             <div className="usr-modal-section-head">
-              <span className="usr-modal-section-kicker">Sesiones</span>
-              <h3>Actividad del usuario</h3>
-              <p>{supportsSessions ? `${sessionCount} sesiones visibles para esta cuenta.` : 'El bloque de sesiones quedo preparado para mostrarse cuando exista integracion real.'}</p>
+              <span className="usr-modal-section-kicker">{t('admin.users.actionModal.sessions.kicker')}</span>
+              <h3>{t('admin.users.actionModal.activityTitle')}</h3>
+              <p>{supportsSessions ? t('admin.users.actionModal.sessions.descriptionReady', { count: sessionCount }) : t('admin.users.actionModal.sessions.descriptionPending')}</p>
             </div>
 
             {supportsSessions && sessions.length > 0 ? (
@@ -356,12 +358,12 @@ export default function UsersActionModal({
                 {sessions.map((session) => (
                   <article key={session.id} className="usr-session-card">
                     <div>
-                      <strong>{session.label || 'Dispositivo'}</strong>
-                      <span>{session.loc || 'Ubicacion no disponible'}</span>
+                      <strong>{session.label || t('admin.users.actionModal.device')}</strong>
+                      <span>{session.loc || t('admin.users.actionModal.locationUnavailable')}</span>
                     </div>
                     <div className="usr-session-meta">
-                      <span>{session.ip || 'Sin IP'}</span>
-                      <span>{session.time || 'Sin registro'}</span>
+                      <span>{session.ip || t('admin.users.actionModal.noIp')}</span>
+                      <span>{session.time || t('admin.users.actionModal.noRecord')}</span>
                     </div>
                   </article>
                 ))}
@@ -369,8 +371,8 @@ export default function UsersActionModal({
             ) : (
               <div className="usr-session-empty">
                 {supportsSessions
-                  ? 'No existen sesiones activas registradas para esta cuenta.'
-                  : 'Gestiona las sesiones desde el desplegable de la columna Sesiones en la tabla.'}
+                  ? t('admin.users.actionModal.sessions.empty')
+                  : t('admin.users.actionModal.sessions.hint')}
               </div>
             )}
           </section>
