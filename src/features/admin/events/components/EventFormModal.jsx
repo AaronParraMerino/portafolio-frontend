@@ -119,7 +119,7 @@ function SingleEventImageUpload({
     }
 
     onChange(file);
-  }, [onChange]);
+  }, [onChange, t]);
 
   return (
     <div className="evt-image-upload">
@@ -262,7 +262,7 @@ export default function EventFormModal({
         groupId,
         value,
         label: value,
-        groupLabel: group ? t(`adminEvents.profileTarget.${group.id}.label`) : t('adminEvents.form.segmentFallback'),
+        groupLabel: group ? t(`adminEvents.profileTarget.${group.id}.label`) : 'Segmento',
       };
     }));
   const minDateTime = getDateTimeLocalNow();
@@ -337,7 +337,7 @@ export default function EventFormModal({
 
   const handleEndsAtChange = (value) => {
     if (value && form.startsAt && isSameOrBefore(value, form.startsAt)) {
-      setMessage(t('adminEvents.form.validation.endAfterStartInline'));
+      setMessage('La fecha y hora de fin debe ser posterior al inicio.');
       return;
     }
 
@@ -370,7 +370,7 @@ export default function EventFormModal({
     event.preventDefault();
 
     if (!form.title.trim() || !form.location.trim()) {
-      setMessage(t('adminEvents.form.validation.requiredBasic'));
+      setMessage('Completa al menos el titulo y la ubicacion del evento.');
       return;
     }
 
@@ -381,44 +381,44 @@ export default function EventFormModal({
     now.setSeconds(0, 0);
 
     if (!startsAt) {
-      setMessage(t('adminEvents.form.validation.startRequired'));
+      setMessage('Selecciona la fecha y hora de inicio del evento.');
       return;
     }
 
     if (!isEditing && startsAt < now) {
-      setMessage(t('adminEvents.form.validation.startPast'));
+      setMessage('La fecha de inicio no puede ser anterior a la fecha actual.');
       return;
     }
 
     if (!endsAt) {
-      setMessage(t('adminEvents.form.validation.endRequired'));
+      setMessage('Selecciona la fecha y hora de fin del evento.');
       return;
     }
 
     if (endsAt <= startsAt) {
-      setMessage(t('adminEvents.form.validation.endAfterStart'));
+      setMessage('La fecha de fin debe ser posterior a la fecha de inicio.');
       return;
     }
 
     if (form.sendMode === 'scheduled') {
       if (!sendAt) {
-        setMessage(t('adminEvents.form.validation.sendAtRequired'));
+        setMessage('Selecciona la fecha y hora para programar la publicacion.');
         return;
       }
 
       if (!isEditing && sendAt < now) {
-        setMessage(t('adminEvents.form.validation.sendAtPast'));
+        setMessage('La programacion no puede ser anterior a la fecha actual.');
         return;
       }
 
       if (sendAt > startsAt) {
-        setMessage(t('adminEvents.form.validation.sendBeforeStart'));
+        setMessage('La publicacion programada debe ocurrir antes o al inicio del evento.');
         return;
       }
     }
 
     if (form.targetMode === 'segmented' && selectedTargetsCount === 0) {
-      setMessage(t('adminEvents.form.validation.segmentRequired'));
+      setMessage('Selecciona al menos un criterio para segmentar la audiencia.');
       return;
     }
 
@@ -582,7 +582,7 @@ export default function EventFormModal({
                 </span>
                 <span>
                   <strong>{t('adminEvents.form.publishNow')}</strong>
-                  <small>El evento quedara visible al guardar.</small>
+                  <small>{t('adminEvents.form.publishNowHelper')}</small>
                 </span>
                 <span className="evt-segment-check">
                   <BsCheck2 />
@@ -740,7 +740,7 @@ export default function EventFormModal({
             <div className="evt-audience-preview">
               <strong>{t('adminEvents.form.allAudience')}</strong>
               <span>{t('adminEvents.form.platformUsers')}</span>
-              <small>El evento quedara disponible como convocatoria abierta.</small>
+              <small>{t('adminEvents.targetMode.all_users.helper')}</small>
             </div>
           )}
 
