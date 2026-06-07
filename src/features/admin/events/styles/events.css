@@ -473,10 +473,12 @@
 .evt-card-menu {
   flex: 0 0 auto;
   position: relative;
+  z-index: 30;
 }
 
 .evt-card-menu summary {
   list-style: none;
+  outline: none;
 }
 
 .evt-card-menu summary::-webkit-details-marker {
@@ -490,7 +492,7 @@
   box-shadow: 0 14px 30px rgba(15, 23, 42, .14);
   display: grid;
   gap: 4px;
-  min-width: 156px;
+  min-width: 178px;
   padding: 6px;
   position: absolute;
   right: 0;
@@ -515,6 +517,7 @@
   text-align: left;
   transition: background .15s, color .15s;
   width: 100%;
+  white-space: nowrap;
 }
 
 .evt-card-menu-item:hover {
@@ -523,6 +526,7 @@
 }
 
 .evt-card-menu-item--primary {
+  background: var(--adm-primary-soft, #e0f2f1);
   color: var(--adm-primary, #0f766e);
 }
 
@@ -2235,7 +2239,7 @@
 .evt-profile-checklist-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
 }
 
 .evt-profile-checklist-card {
@@ -2244,6 +2248,9 @@
   border-radius: 14px;
   display: grid;
   gap: 12px;
+  grid-template-rows: auto auto minmax(156px, 1fr);
+  min-height: 292px;
+  min-width: 0;
   padding: 14px;
 }
 
@@ -2269,8 +2276,10 @@
 }
 
 .evt-checkbox-list {
+  align-content: start;
   display: grid;
   gap: 8px;
+  min-height: 156px;
   max-height: 190px;
   overflow-y: auto;
   padding-right: 4px;
@@ -2290,6 +2299,14 @@
   min-height: 36px;
   padding: 0 10px;
   transition: background .15s, border-color .15s, color .15s;
+  width: 100%;
+}
+
+.evt-checkbox-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .evt-checkbox-row:hover {
@@ -2306,12 +2323,15 @@
 }
 
 .evt-checkbox-empty {
+  align-items: center;
   background: #f8fafc;
   border: 1px dashed #dbe4ee;
   border-radius: 10px;
   color: var(--gris-texto, #6b7280);
-  display: block;
+  display: flex;
   font-size: 12px;
+  justify-content: center;
+  min-height: 72px;
   padding: 12px;
   text-align: center;
 }
