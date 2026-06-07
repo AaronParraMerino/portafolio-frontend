@@ -1,11 +1,86 @@
 import {
-  BsBoxArrowUpRight,
   BsClockHistory,
-  BsDisplay,
   BsPersonCircle,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import { getAuditActionTone } from '../services/auditService';
+
+const AUDIT_COLUMNS = [
+  { id: 'action', labelKey: 'adminAudit.table.action' },
+  { id: 'actor', labelKey: 'adminAudit.table.actor' },
+  { id: 'affected', labelKey: 'adminAudit.table.affected' },
+  { id: 'module', labelKey: 'adminAudit.table.module' },
+  { id: 'device', labelKey: 'adminAudit.table.device' },
+  { id: 'date', labelKey: 'adminAudit.table.date' },
+  { id: 'detail', labelKey: '' },
+];
+
+function ColumnIcon({ id }) {
+  const props = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  };
+
+  if (id === 'action') {
+    return (
+      <svg viewBox="0 0 20 20" {...props}>
+        <path d="M5 4.5h10" />
+        <path d="M5 9.5h10" />
+        <path d="M5 14.5h7" />
+        <path d="M3 4.5h.01M3 9.5h.01M3 14.5h.01" />
+      </svg>
+    );
+  }
+
+  if (id === 'actor' || id === 'affected') {
+    return (
+      <svg viewBox="0 0 20 20" {...props}>
+        <circle cx="10" cy="6.5" r="3" />
+        <path d="M4 16c0-3 2.7-5 6-5s6 2 6 5" />
+      </svg>
+    );
+  }
+
+  if (id === 'module') {
+    return (
+      <svg viewBox="0 0 20 20" {...props}>
+        <path d="M4 4.5h12v11H4z" />
+        <path d="M7 8h6M7 11h4" />
+      </svg>
+    );
+  }
+
+  if (id === 'device') {
+    return (
+      <svg viewBox="0 0 20 20" {...props}>
+        <rect x="2.5" y="4" width="15" height="10" rx="2" />
+        <path d="M8 16h4M10 14v2" />
+      </svg>
+    );
+  }
+
+  if (id === 'date') {
+    return (
+      <svg viewBox="0 0 20 20" {...props}>
+        <circle cx="10" cy="10" r="7" />
+        <path d="M10 6.5v4l2.6 1.7" />
+      </svg>
+    );
+  }
+
+  return null;
+}
+
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="m6 3 5 5-5 5" />
+    </svg>
+  );
+}
 
 export default function AuditTable({
   items,
@@ -42,13 +117,14 @@ export default function AuditTable({
         <table className="aud-table">
           <thead>
             <tr>
-              <th>{t('adminAudit.table.action')}</th>
-              <th>{t('adminAudit.table.actor')}</th>
-              <th>{t('adminAudit.table.affected')}</th>
-              <th>{t('adminAudit.table.module')}</th>
-              <th>{t('adminAudit.table.device')}</th>
-              <th>{t('adminAudit.table.date')}</th>
-              <th>{t('adminAudit.table.detail')}</th>
+              {AUDIT_COLUMNS.map((column) => (
+                <th key={column.id}>
+                  <span className="aud-th-inner">
+                    <ColumnIcon id={column.id} />
+                    <span>{column.labelKey ? t(column.labelKey) : ''}</span>
+                  </span>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -91,20 +167,20 @@ export default function AuditTable({
                     {item.recordId ? <small className="aud-record-id">#{item.recordId}</small> : null}
                   </td>
                   <td>
-                    <div className="aud-device-cell">
-                      <BsDisplay />
-                      <span>{item.ipAddress || t('adminAudit.table.noIp')}</span>
-                    </div>
+                    <span className="aud-time-chip">{item.ipAddress || t('adminAudit.table.noIp')}</span>
                   </td>
-                  <td>{item.dateHuman}</td>
                   <td>
+                    <span className="aud-time-chip">{item.dateHuman}</span>
+                  </td>
+                  <td className="aud-row-action-cell">
                     <button
                       type="button"
-                      className="aud-detail-btn"
+                      className="aud-row-action"
                       onClick={() => onOpenDetail(item)}
+                      title={t('adminAudit.table.view')}
+                      aria-label={t('adminAudit.table.view')}
                     >
-                      <BsBoxArrowUpRight />
-                      {t('adminAudit.table.view')}
+                      <ChevronIcon />
                     </button>
                   </td>
                 </tr>
