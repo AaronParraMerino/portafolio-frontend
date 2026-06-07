@@ -337,7 +337,7 @@ export default function EventFormModal({
 
   const handleEndsAtChange = (value) => {
     if (value && form.startsAt && isSameOrBefore(value, form.startsAt)) {
-      setMessage('La fecha y hora de fin debe ser posterior al inicio.');
+      setMessage(t('adminEvents.form.validation.endAfterStartInline'));
       return;
     }
 
@@ -370,7 +370,7 @@ export default function EventFormModal({
     event.preventDefault();
 
     if (!form.title.trim() || !form.location.trim()) {
-      setMessage('Completa al menos el titulo y la ubicacion del evento.');
+      setMessage(t('adminEvents.form.validation.requiredBasic'));
       return;
     }
 
@@ -381,44 +381,44 @@ export default function EventFormModal({
     now.setSeconds(0, 0);
 
     if (!startsAt) {
-      setMessage('Selecciona la fecha y hora de inicio del evento.');
+      setMessage(t('adminEvents.form.validation.startRequired'));
       return;
     }
 
     if (!isEditing && startsAt < now) {
-      setMessage('La fecha de inicio no puede ser anterior a la fecha actual.');
+      setMessage(t('adminEvents.form.validation.startPast'));
       return;
     }
 
     if (!endsAt) {
-      setMessage('Selecciona la fecha y hora de fin del evento.');
+      setMessage(t('adminEvents.form.validation.endRequired'));
       return;
     }
 
     if (endsAt <= startsAt) {
-      setMessage('La fecha de fin debe ser posterior a la fecha de inicio.');
+      setMessage(t('adminEvents.form.validation.endAfterStart'));
       return;
     }
 
     if (form.sendMode === 'scheduled') {
       if (!sendAt) {
-        setMessage('Selecciona la fecha y hora para programar la publicacion.');
+        setMessage(t('adminEvents.form.validation.sendAtRequired'));
         return;
       }
 
       if (!isEditing && sendAt < now) {
-        setMessage('La programacion no puede ser anterior a la fecha actual.');
+        setMessage(t('adminEvents.form.validation.sendAtPast'));
         return;
       }
 
       if (sendAt > startsAt) {
-        setMessage('La publicacion programada debe ocurrir antes o al inicio del evento.');
+        setMessage(t('adminEvents.form.validation.sendBeforeStart'));
         return;
       }
     }
 
     if (form.targetMode === 'segmented' && selectedTargetsCount === 0) {
-      setMessage('Selecciona al menos un criterio para segmentar la audiencia.');
+      setMessage(t('adminEvents.form.validation.segmentRequired'));
       return;
     }
 

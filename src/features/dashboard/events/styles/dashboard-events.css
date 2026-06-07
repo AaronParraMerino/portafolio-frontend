@@ -505,7 +505,8 @@
 .dbe-page .evt-option-btn.active,
 .dbe-page .evt-target-mode-card.active .evt-segment-check,
 .dbe-page .evt-segment-card.active .evt-segment-check,
-.dbe-page .evt-mini-action--primary {
+.dbe-page .evt-mini-action--primary,
+.dbe-page .evt-card-menu-item--primary {
   background: var(--azul, #0077b7);
   border-color: var(--azul, #0077b7);
   color: #fff;
@@ -537,7 +538,8 @@
 .dbe-page .evt-context-btn--primary:hover,
 .dbe-page .evt-btn--primary:hover,
 .dbe-page .evt-reason-btn--primary:hover,
-.dbe-page .evt-mini-action--primary:hover {
+.dbe-page .evt-mini-action--primary:hover,
+.dbe-page .evt-card-menu-item--primary:hover {
   background: var(--azul-hover, #005f95);
   border-color: var(--azul-hover, #005f95);
   color: #fff;

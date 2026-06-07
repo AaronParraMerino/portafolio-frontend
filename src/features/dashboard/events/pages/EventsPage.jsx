@@ -4,18 +4,17 @@ import {
   BsCalendar3,
   BsCheck2Circle,
   BsExclamationTriangle,
-  BsFileEarmarkText,
   BsLock,
   BsShieldCheck,
 } from 'react-icons/bs';
 import Header from '../../layout/Header';
 import { useLanguage } from '../../../../core/i18n';
 import { getStoredUser, isPublisherUser } from '../../../../shared/utils/authStorage';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import EventFormModal from '../../../admin/events/components/EventFormModal';
 import EventsCalendar from '../../../admin/events/components/EventsCalendar';
 import EventsFilters from '../../../admin/events/components/EventsFilters';
 import EventsGrid from '../../../admin/events/components/EventsGrid';
-import EventsTemplatesPanel from '../../../admin/events/components/EventsTemplatesPanel';
 import {
   EVENT_PAGE_SIZE,
   buildEventMetrics,
@@ -35,7 +34,6 @@ const MONTHLY_LIMIT = 3;
 const PUBLISHER_TABS = [
   { id: 'events', labelKey: 'adminEvents.dashboard.tab.events', icon: BsCalendar2Plus },
   { id: 'calendar', labelKey: 'adminEvents.dashboard.tab.calendar', icon: BsCalendar3 },
-  { id: 'templates', labelKey: 'adminEvents.dashboard.tab.templates', icon: BsFileEarmarkText },
 ];
 
 function isSameMonth(dateValue, date = new Date()) {
@@ -43,6 +41,23 @@ function isSameMonth(dateValue, date = new Date()) {
   const parsed = new Date(dateValue);
   if (Number.isNaN(parsed.getTime())) return false;
   return parsed.getFullYear() === date.getFullYear() && parsed.getMonth() === date.getMonth();
+}
+
+function buildPublisherStatusPayload(event, status) {
+  return {
+    title: event.title,
+    type: event.type,
+    status,
+    startsAt: event.startsAt || event.raw?.fecha_inicio || null,
+    endsAt: event.endsAt || event.raw?.fecha_fin || null,
+    sendAt: status === 'programado' ? (event.sendAt || event.raw?.programado_para || null) : null,
+    location: event.location,
+    imageUrl: event.imageUrl || '',
+    capacity: Number(event.capacity || 0),
+    description: event.description || '',
+    targetMode: event.targetMode || event.raw?.targetMode || event.raw?.target_mode || 'all_users',
+    targetSelections: event.targetSelections || event.raw?.targetSelections || event.raw?.target_selections || {},
+  };
 }
 
 export default function DashboardEventsPage() {
@@ -55,13 +70,14 @@ export default function DashboardEventsPage() {
   const [activeView, setActiveView] = useState('events');
   const [eventModal, setEventModal] = useState(null);
   const [events, setEvents] = useState([]);
-  const [templates] = useState([]);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [profileTargets, setProfileTargets] = useState(null);
   const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
+  const [eventSaving, setEventSaving] = useState(false);
+  const [pendingEventSave, setPendingEventSave] = useState(null);
 
   const loadEvents = useCallback(async () => {
     if (!canPublish) return;
@@ -201,19 +217,121 @@ export default function DashboardEventsPage() {
     },
   ];
 
-  const handleSaveEvent = async (payload) => {
+  const getPublisherStatusActions = (event) => {
+    const actions = [
+      {
+        id: 'editar',
+        labelKey: 'adminEvents.action.editar',
+        icon: 'edit',
+        variant: 'primary',
+      },
+    ];
+
+    if (['pausado', 'suspendido', 'cancelado'].includes(event.status)) {
+      return actions;
+    }
+
+    if (event.status === 'borrador') {
+      return [
+        ...actions,
+        {
+          id: 'activar',
+          labelKey: 'adminEvents.action.activar',
+          status: 'activo',
+          icon: 'play',
+          variant: 'primary',
+        },
+        {
+          id: 'cancelar',
+          labelKey: 'adminEvents.action.cancelar',
+          status: 'cancelado',
+          icon: 'cancel',
+          variant: 'danger',
+        },
+      ];
+    }
+
+    return [
+      ...actions,
+      {
+        id: 'borrador',
+        labelKey: 'adminEvents.action.borrador',
+        status: 'borrador',
+        icon: 'draft',
+        variant: 'ghost',
+      },
+      {
+        id: 'cancelar',
+        labelKey: 'adminEvents.action.cancelar',
+        status: 'cancelado',
+        icon: 'cancel',
+        variant: 'danger',
+      },
+    ];
+  };
+
+  const handleRequestSaveEvent = (payload) => {
     if (remainingThisMonth <= 0 && eventModal?.mode !== 'edit') {
       throw new Error(t('adminEvents.dashboard.limitReachedError'));
     }
 
-    if (eventModal?.mode === 'edit' && eventModal.event?.id) {
-      await updatePublisherEvent(eventModal.event.id, payload);
-    } else {
-      await createPublisherEvent(payload);
+    setPendingEventSave({
+      payload,
+      mode: eventModal?.mode || 'create',
+      eventId: eventModal?.event?.id || null,
+    });
+  };
+
+  const handleCancelConfirmSave = () => {
+    setPendingEventSave(null);
+  };
+
+  const handleConfirmSaveEvent = async () => {
+    if (!pendingEventSave) return;
+
+    const saveContext = pendingEventSave;
+
+    setPendingEventSave(null);
+    setEventModal(null);
+    setEventSaving(true);
+
+    try {
+      if (saveContext.mode === 'edit' && saveContext.eventId) {
+        await updatePublisherEvent(saveContext.eventId, saveContext.payload);
+      } else {
+        await createPublisherEvent(saveContext.payload);
+      }
+
+      await loadEvents();
+      setNotice(saveContext.mode === 'edit'
+        ? t('adminEvents.dashboard.updatedNotice')
+        : t('adminEvents.dashboard.savedNotice'));
+    } catch (error) {
+      setNotice(error.message || t('adminEvents.form.validation.saveError'));
+    } finally {
+      setEventSaving(false);
+    }
+  };
+
+  const handlePublisherStatusAction = async (event, action) => {
+    if (action?.id === 'editar') {
+      setEventModal({ mode: 'edit', event });
+      return;
     }
 
-    await loadEvents();
-    setEventModal(null);
+    if (!event?.id || !action?.status) return;
+
+    setEventSaving(true);
+
+    try {
+      await updatePublisherEvent(event.id, buildPublisherStatusPayload(event, action.status));
+      await loadEvents();
+      setNotice(t('adminEvents.dashboard.statusUpdated'));
+    } catch (error) {
+      setNotice(error.message || t('adminEvents.dashboard.statusUpdateError'));
+    } finally {
+      setEventSaving(false);
+    }
   };
 
   const handleSubmitPermission = async (payload) => {
@@ -263,7 +381,7 @@ export default function DashboardEventsPage() {
                 <p>{t('adminEvents.dashboard.identityDescription')}</p>
               </article>
               <article>
-                <BsFileEarmarkText />
+                <BsCalendar2Plus />
                 <strong>{t('adminEvents.dashboard.reasonTitle')}</strong>
                 <p>{t('adminEvents.dashboard.reasonDescription')}</p>
               </article>
@@ -337,12 +455,18 @@ export default function DashboardEventsPage() {
 
               {activeView === 'events' ? (
                 <>
+                  <div className="dbe-admin-state-note">
+                    <BsExclamationTriangle />
+                    <span>{t('adminEvents.dashboard.adminStateNote')}</span>
+                  </div>
+
                   <EventsFilters
                     query={query}
                     statusFilter={statusFilter}
                     typeFilter={typeFilter}
                     statusCounts={statusCounts}
                     sourceReady
+                    showSyncStatus={false}
                     onQueryChange={handleQueryChange}
                     onStatusFilterChange={handleStatusFilterChange}
                     onTypeFilterChange={handleTypeFilterChange}
@@ -358,8 +482,11 @@ export default function DashboardEventsPage() {
                     paginationItems={paginationItems}
                     onGoToPage={handleGoToPage}
                     onEditEvent={(event) => setEventModal({ mode: 'edit', event })}
+                    onStatusAction={handlePublisherStatusAction}
+                    getStatusActions={getPublisherStatusActions}
                     showCommunicationAction={false}
-                    primaryActionLabel={t('adminEvents.common.edit')}
+                    showCommunicationsMeta={false}
+                    showPrimaryAction={false}
                     emptyHint={t('adminEvents.dashboard.firstEventHint')}
                   />
                 </>
@@ -372,12 +499,6 @@ export default function DashboardEventsPage() {
                 />
               ) : null}
 
-              {activeView === 'templates' ? (
-                <EventsTemplatesPanel
-                  sourceReady
-                  templates={templates}
-                />
-              ) : null}
             </section>
           </>
         )}
@@ -395,8 +516,32 @@ export default function DashboardEventsPage() {
         profileTargets={profileTargets}
         profileTargetsLoading={profileTargetsLoading}
         onClose={() => setEventModal(null)}
-        onSave={handleSaveEvent}
+        onSave={handleRequestSaveEvent}
       />
+
+      <ConfirmModal
+        open={!!pendingEventSave}
+        variant="blue"
+        icon="check"
+        title={pendingEventSave?.mode === 'edit'
+          ? t('adminEvents.dashboard.saveEditTitle')
+          : t('adminEvents.dashboard.saveCreateTitle')}
+        subtitle={t('adminEvents.dashboard.saveConfirmSubtitle')}
+        message={pendingEventSave?.mode === 'edit'
+          ? t('adminEvents.dashboard.saveEditMessage')
+          : t('adminEvents.dashboard.saveCreateMessage')}
+        confirmLabel={t('adminEvents.common.save')}
+        cancelLabel={t('adminEvents.common.cancel')}
+        onConfirm={handleConfirmSaveEvent}
+        onClose={handleCancelConfirmSave}
+      />
+
+      {eventSaving ? (
+        <div className="dbe-save-toast" role="status" aria-live="polite">
+          <span className="dbe-save-spinner" />
+          <strong>{t('adminEvents.dashboard.savingEvent')}</strong>
+        </div>
+      ) : null}
     </div>
   );
 }

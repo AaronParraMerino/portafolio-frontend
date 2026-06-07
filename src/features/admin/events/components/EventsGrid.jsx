@@ -91,7 +91,7 @@ export default function EventsGrid({
                                 }}
                               >
                                 <Icon />
-                                {action.labelKey ? t(action.labelKey) : (t(`adminEvents.action.${action.id}`) || action.label)}
+                                {action.labelKey ? t(action.labelKey) : (action.label || t(`adminEvents.action.${action.id}`))}
                               </button>
                             );
                           })}
