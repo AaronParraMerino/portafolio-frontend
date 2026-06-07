@@ -43,7 +43,7 @@ export default function EventDetailModal({
           <BsX />
         </button>
 
-        <EventMedia event={event} className="evh-modal-media">
+        <EventMedia event={event} className="evh-modal-media" containImage>
           <span className="evh-badge">{event.typeLabel}</span>
         </EventMedia>
 

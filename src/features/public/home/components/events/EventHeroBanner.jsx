@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BsChevronLeft, BsChevronRight, BsGeoAlt } from 'react-icons/bs';
+import { BsCalendarEvent, BsChevronLeft, BsChevronRight, BsGeoAlt } from 'react-icons/bs';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
@@ -61,7 +61,7 @@ export default function EventHeroBanner({
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      <EventMedia event={activeEvent} className="evh-hero-media" overlay>
+      <EventMedia event={activeEvent} className="evh-hero-media" containImage>
         <button
           type="button"
           className="evh-hero-hitbox"
@@ -72,45 +72,67 @@ export default function EventHeroBanner({
         <div className="evh-hero-content">
           <div className="evh-hero-topline">
             <span className="evh-badge">{activeEvent.typeLabel}</span>
-            <span className={cx('evh-status', activeEvent.soldOut && 'is-soldout')}>
-              {activeEvent.soldOut ? 'Agotado' : activeEvent.status}
-            </span>
           </div>
 
           <h3>{activeEvent.title}</h3>
-          <p>{getShortDescription(activeEvent.description, 155)}</p>
 
-          <div className="evh-hero-hover">
-            <span>{formatEventDate(activeEvent.startsAt)}</span>
-            {activeEvent.location && (
-              <span>
-                <BsGeoAlt /> {activeEvent.location}
+          <div className="evh-hero-middle">
+            <p>{getShortDescription(activeEvent.description, 100)}</p>
+
+            <div className="evh-hero-extra">
+              <span className="evh-hero-mobile-capacity">
+                {getCapacityLabel(activeEvent)}
               </span>
-            )}
-            <span>{getCapacityLabel(activeEvent)}</span>
-            {activeEvent.authorName && <span>Por {activeEvent.authorName}</span>}
+              <span>
+                <BsCalendarEvent />
+                {formatEventDate(activeEvent.startsAt)}
+              </span>
+              {activeEvent.location && (
+                <span>
+                  <BsGeoAlt />
+                  {activeEvent.location}
+                </span>
+              )}
+              {activeEvent.endsAt && (
+                <span>
+                  <BsCalendarEvent />
+                  Finaliza {formatEventDate(activeEvent.endsAt)}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="evh-hero-actions">
-            {hasEventDetails(activeEvent) && (
-              <button
-                type="button"
-                className="evh-secondary-action"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onViewDetails?.(activeEvent);
-                }}
-              >
-                Ver detalles
-              </button>
+          <div className="evh-hero-bottom">
+            {activeEvent.authorName && (
+              <span className="evh-hero-author">Por {activeEvent.authorName}</span>
             )}
-            <EventActionButton
-              event={activeEvent}
-              loading={String(registeringId || '') === String(activeEvent.id)}
-              onRegister={onRegister}
-            />
+
+            <div className="evh-hero-actions">
+              {hasEventDetails(activeEvent) && (
+                <button
+                  type="button"
+                  className="evh-secondary-action"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onViewDetails?.(activeEvent);
+                  }}
+                >
+                  Ver detalles
+                </button>
+              )}
+              <EventActionButton
+                event={activeEvent}
+                loading={String(registeringId || '') === String(activeEvent.id)}
+                onRegister={onRegister}
+              />
+            </div>
           </div>
         </div>
+
+        <span className={cx('evh-hero-status', 'evh-status', activeEvent.soldOut && 'is-soldout')}>
+          {activeEvent.soldOut ? 'Agotado' : activeEvent.status}
+        </span>
+        <span className="evh-hero-capacity">{getCapacityLabel(activeEvent)}</span>
 
         {visibleEvents.length > 1 && (
           <>
