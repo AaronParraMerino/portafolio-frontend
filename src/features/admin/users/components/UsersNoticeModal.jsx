@@ -5,7 +5,6 @@ import {
   BsEnvelope,
   BsMegaphone,
   BsPeople,
-  BsPhone,
   BsXLg,
 } from 'react-icons/bs';
 import {
@@ -15,14 +14,12 @@ import {
   USER_NOTICE_TYPES,
   USER_NOTICE_URGENCY,
   estimateUsersAudience,
-  getUserRoleValue,
 } from '../services/usersService';
 import { useLanguage } from '../../../../core/i18n';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function toggleOption(value, selectedValues, onChange) {
@@ -32,20 +29,16 @@ function toggleOption(value, selectedValues, onChange) {
     return;
   }
 
-  if (value === 'todos' || value === 'seleccionados') {
+  if (value === 'todos') {
     onChange([value]);
     return;
   }
 
-  onChange([...selectedValues.filter((item) => !['todos', 'seleccionados'].includes(item)), value]);
+  onChange([...selectedValues.filter((item) => item !== 'todos'), value]);
 }
 
-function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
+function resolveNoticeRecipients({ directUser, users, segments }) {
   if (directUser?.id) return [directUser.id];
-
-  if (segments.includes('seleccionados')) {
-    return selectedIds.map((id) => Number(id)).filter(Boolean);
-  }
 
   const statuses = {
     activos: 'activo',
@@ -53,15 +46,10 @@ function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
     bloqueados: 'bloqueado',
     inactivos: 'inactivo',
   };
-  const roles = {
-    publicantes: 'publicante',
-  };
-
   return users
     .filter((user) => (
       segments.includes('todos')
       || segments.some((segment) => statuses[segment] === user.estado)
-      || segments.some((segment) => roles[segment] === getUserRoleValue(user))
     ))
     .map((user) => Number(user.id))
     .filter(Boolean);
@@ -70,7 +58,6 @@ function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
 export default function UsersNoticeModal({
   modal,
   users,
-  selectedIds,
   metrics,
   supportsCommunications,
   onSendNotice,
@@ -96,7 +83,7 @@ export default function UsersNoticeModal({
     setBody(initialNotice.body || initialNotice.preview || initialNotice.cuerpo || '');
     setType(initialNotice.type || initialNotice.tipo || USER_NOTICE_TYPES[0]?.id || '');
     setUrgency(initialNotice.urgency || initialNotice.urgencia || 'baja');
-    setSegments(initialNotice.segments || initialNotice.segmentos || (modal.directUser ? ['seleccionados'] : modal.initialSegments || ['todos']));
+    setSegments(initialNotice.segments || initialNotice.segmentos || modal.initialSegments || ['todos']);
     setChannels(['inapp']);
     setSchedule(initialNotice.scheduledAt || '');
     setMessage('');
@@ -108,10 +95,9 @@ export default function UsersNoticeModal({
 
     return estimateUsersAudience({
       users,
-      selectedIds,
       segments,
     });
-  }, [modal, selectedIds, segments, users]);
+  }, [modal, segments, users]);
 
   const isTemplate = modal?.mode === 'template';
   const isGlobalNotice = !modal?.directUser && segments.length === 1 && segments[0] === 'todos';
@@ -169,7 +155,6 @@ export default function UsersNoticeModal({
     const destinatarios = resolveNoticeRecipients({
       directUser: modal.directUser,
       users,
-      selectedIds,
       segments,
     });
 
@@ -306,42 +291,39 @@ export default function UsersNoticeModal({
             </div>
           </section>
 
-          <section className="usr-notice-modal-section">
-            <span className="usr-field-label">{t('admin.users.noticeModal.segmentationLabel')}</span>
-            <div className="usr-segment-grid">
-              {USER_COMMUNICATION_SEGMENTS.map((segment) => {
-                const selected = segments.includes(segment.id);
-                const count = segment.id === 'seleccionados'
-                  ? selectedIds.length
-                  : segment.role
-                    ? metrics?.publicantes ?? 0
-                    : segment.status
+          {!modal.directUser ? (
+            <section className="usr-notice-modal-section">
+              <span className="usr-field-label">{t('admin.users.noticeModal.segmentationLabel')}</span>
+              <div className="usr-segment-grid">
+                {USER_COMMUNICATION_SEGMENTS.map((segment) => {
+                  const selected = segments.includes(segment.id);
+                  const count = segment.status
                     ? metrics?.[segment.status] ?? 0
                     : metrics?.total ?? 0;
 
-                return (
-                  <button
-                    key={segment.id}
-                    type="button"
-                    className={`usr-segment-card${selected ? ' active' : ''}`}
-                    onClick={() => toggleOption(segment.id, segments, setSegments)}
-                    disabled={!!modal.directUser && segment.id !== 'seleccionados'}
-                  >
-                    <span className="usr-segment-icon">
-                      <BsPeople />
-                    </span>
-                    <span>
-                      <strong>{t(`admin.users.segment.${segment.id}`)}</strong>
-                      <small>{t('admin.users.noticeModal.usersCount', { count })}</small>
-                    </span>
-                    <span className="usr-segment-check">
-                      {selected ? <BsCheckLg /> : null}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+                  return (
+                    <button
+                      key={segment.id}
+                      type="button"
+                      className={`usr-segment-card${selected ? ' active' : ''}`}
+                      onClick={() => toggleOption(segment.id, segments, setSegments)}
+                    >
+                      <span className="usr-segment-icon">
+                        <BsPeople />
+                      </span>
+                      <span>
+                        <strong>{t(`admin.users.segment.${segment.id}`)}</strong>
+                        <small>{t('admin.users.noticeModal.usersCount', { count })}</small>
+                      </span>
+                      <span className="usr-segment-check">
+                        {selected ? <BsCheckLg /> : null}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           <section className="usr-notice-modal-section">
             <span className="usr-field-label">{t('admin.users.noticeModal.channelsLabel')}</span>

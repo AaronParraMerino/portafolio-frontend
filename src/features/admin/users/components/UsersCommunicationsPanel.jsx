@@ -6,7 +6,6 @@ import {
   BsFunnel,
   BsMegaphone,
   BsPeople,
-  BsPhone,
   BsPlusLg,
   BsSearch,
   BsSend,
@@ -24,7 +23,6 @@ import { useLanguage } from '../../../../core/i18n';
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function normalizeNotice(item = {}) {

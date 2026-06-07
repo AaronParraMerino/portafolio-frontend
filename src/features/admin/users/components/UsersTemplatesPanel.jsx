@@ -5,7 +5,6 @@ import {
   BsFileEarmarkPlus,
   BsFileEarmarkText,
   BsMagic,
-  BsPhone,
   BsSearch,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
@@ -18,7 +17,6 @@ import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function normalizeTemplate(template = {}) {

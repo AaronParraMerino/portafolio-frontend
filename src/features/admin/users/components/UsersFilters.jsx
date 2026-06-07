@@ -77,12 +77,6 @@ export default function UsersFilters({
           </button>
         ))}
       </div>
-
-      <div className="usr-toolbar-side">
-        <span className={`usr-toolbar-pill ${sourceReady ? 'ready' : 'pending'}`}>
-          {sourceReady ? t('admin.users.filters.syncReady') : t('admin.users.filters.syncPending')}
-        </span>
-      </div>
     </div>
   );
 }

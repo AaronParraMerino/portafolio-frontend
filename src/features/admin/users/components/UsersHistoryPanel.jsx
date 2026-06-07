@@ -6,7 +6,6 @@ import {
   BsFileText,
   BsMegaphone,
   BsPeople,
-  BsPhone,
   BsSearch,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
@@ -21,7 +20,6 @@ import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function normalizeHistoryItem(item = {}) {

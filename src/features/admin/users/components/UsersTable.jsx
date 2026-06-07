@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   getUserSessionCount,
   getUserRoleMeta,
@@ -104,28 +104,17 @@ function UsersEmptyState({ emptyState }) {
 export default function UsersTable({
   users,
   sourceReady,
-  selectedIds,
-  allVisibleSelected,
-  someVisibleSelected,
   pageSummary,
   emptyState,
   currentPage,
   totalPages,
   paginationItems,
-  onToggleUser,
-  onToggleVisible,
   onGoToPage,
   onOpenUser,
   onSessionCountChange,
 }) {
   const { t } = useLanguage();
-  const masterCheckboxRef = useRef(null);
   const [openSessionsUserId, setOpenSessionsUserId] = useState(null);
-
-  useEffect(() => {
-    if (!masterCheckboxRef.current) return;
-    masterCheckboxRef.current.indeterminate = someVisibleSelected;
-  }, [someVisibleSelected]);
 
   useEffect(() => {
     if (openSessionsUserId === null) return undefined;
@@ -148,22 +137,10 @@ export default function UsersTable({
             <tr>
               {USER_TABLE_COLUMNS.map((column) => (
                 <th key={column.id}>
-                  {column.id === 'selection' ? (
-                    <input
-                      ref={masterCheckboxRef}
-                      type="checkbox"
-                      className="usr-checkbox"
-                      checked={allVisibleSelected}
-                      onChange={onToggleVisible}
-                      disabled={!users.length}
-                      aria-label={t('admin.users.table.selectPage')}
-                    />
-                  ) : (
-                    <span className="usr-th-inner">
-                      <ColumnIcon id={column.id} />
-                      <span>{column.label ? t(`admin.users.columns.${column.id}`) : ''}</span>
-                    </span>
-                  )}
+                  <span className="usr-th-inner">
+                    <ColumnIcon id={column.id} />
+                    <span>{column.label ? t(`admin.users.columns.${column.id}`) : ''}</span>
+                  </span>
                 </th>
               ))}
             </tr>
@@ -172,7 +149,6 @@ export default function UsersTable({
           {users.length > 0 && (
             <tbody>
               {users.map((user) => {
-                const isSelected = selectedIds.includes(String(user.id));
                 const statusMeta = getUserStatusMeta(user.estado);
                 const roleMeta = getUserRoleMeta(user);
                 const roleValue = getUserRoleValue(user);
@@ -182,17 +158,7 @@ export default function UsersTable({
 
                 return (
                   <Fragment key={user.id}>
-                  <tr className={isSelected ? 'selected' : ''}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        className="usr-checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleUser(user.id)}
-                        aria-label={t('admin.users.table.selectUser', { name: user.nombre || t('admin.users.table.unknownUser') })}
-                      />
-                    </td>
-
+                  <tr>
                     <td>
                       <div className="usr-user-cell">
                         <CachedUserAvatar user={user} />

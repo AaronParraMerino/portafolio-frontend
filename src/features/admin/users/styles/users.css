@@ -22,7 +22,7 @@
 .usr-stats-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .usr-stat-card {
@@ -759,6 +759,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.usr-notice-form-grid .usr-field {
+  min-width: 0;
+}
+
 .usr-notice-modal-section {
   display: grid;
   gap: 10px;
@@ -841,9 +845,13 @@
   display: grid;
   gap: 10px;
   grid-template-columns: auto 1fr auto;
-  min-height: 66px;
+  min-height: 74px;
   padding: 12px;
   text-align: left;
+}
+
+.usr-segment-grid--channels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .usr-segment-card.active {

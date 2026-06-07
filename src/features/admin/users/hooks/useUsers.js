@@ -21,7 +21,6 @@ export function useUsersDirectory() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState([]);
   const [activeUserId, setActiveUserId] = useState(null);
   const [pendingActionId, setPendingActionId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
@@ -106,11 +105,7 @@ export function useUsersDirectory() {
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const pageStart = (safeCurrentPage - 1) * pageSize;
   const visibleUsers = filteredUsers.slice(pageStart, pageStart + pageSize);
-  const visibleIds = visibleUsers.map((user) => String(user.id));
   const activeUser = users.find((user) => String(user.id) === String(activeUserId)) || null;
-
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
-  const someVisibleSelected = visibleIds.some((id) => selectedIds.includes(id)) && !allVisibleSelected;
 
   const paginationItems = useMemo(() => {
     const visibleCount = Math.min(3, totalPages);
@@ -176,32 +171,6 @@ export function useUsersDirectory() {
   const handleStatusFilterChange = (nextFilter) => {
     setStatusFilter(nextFilter);
     setCurrentPage(1);
-  };
-
-  const handleToggleUser = (userId) => {
-    const key = String(userId);
-
-    setSelectedIds((current) => (
-      current.includes(key)
-        ? current.filter((item) => item !== key)
-        : [...current, key]
-    ));
-  };
-
-  const handleToggleVisible = () => {
-    if (!visibleIds.length) return;
-
-    setSelectedIds((current) => {
-      if (allVisibleSelected) {
-        return current.filter((id) => !visibleIds.includes(id));
-      }
-
-      return Array.from(new Set([...current, ...visibleIds]));
-    });
-  };
-
-  const handleClearSelection = () => {
-    setSelectedIds([]);
   };
 
   const handleGoToPage = (page) => {
@@ -350,12 +319,6 @@ export function useUsersDirectory() {
     });
   };
 
-  const handleOpenSelectedNoticeModal = () => {
-    handleOpenNoticeModal({
-      initialSegments: selectedIds.length ? ['seleccionados'] : ['todos'],
-    });
-  };
-
   const handleOpenTemplateModal = () => {
     setActiveView('templates');
     setNoticeModal({
@@ -371,7 +334,7 @@ export function useUsersDirectory() {
 
     setNoticeModal({
       mode: 'notice',
-      initialSegments: ['seleccionados'],
+      initialSegments: ['todos'],
       directUser: activeUser,
     });
   };
@@ -444,10 +407,6 @@ export function useUsersDirectory() {
     visibleUsers,
     pageSummary,
     emptyState,
-    selectedIds,
-    selectedCount: selectedIds.length,
-    allVisibleSelected,
-    someVisibleSelected,
     currentPage: safeCurrentPage,
     totalPages,
     paginationItems,
@@ -460,16 +419,12 @@ export function useUsersDirectory() {
     actionSubmitting,
     onViewChange: handleViewChange,
     onOpenNoticeModal: handleOpenNoticeModal,
-    onOpenSelectedNoticeModal: handleOpenSelectedNoticeModal,
     onOpenTemplateModal: handleOpenTemplateModal,
     onOpenDirectNoticeModal: handleOpenDirectNoticeModal,
     onCloseNoticeModal: handleCloseNoticeModal,
     onSendNotice: handleSendNotice,
     onQueryChange: handleQueryChange,
     onStatusFilterChange: handleStatusFilterChange,
-    onToggleUser: handleToggleUser,
-    onToggleVisible: handleToggleVisible,
-    onClearSelection: handleClearSelection,
     onGoToPage: handleGoToPage,
     onOpenUser: handleOpenUser,
     onSessionCountChange: handleSessionCountChange,

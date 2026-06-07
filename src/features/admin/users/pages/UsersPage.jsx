@@ -3,7 +3,6 @@ import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
 import { useUsersDirectory } from '../hooks/useUsers';
 import UsersActionModal from '../components/UsersActionModal';
-import UsersBulkBar from '../components/UsersBulkBar';
 import UsersCommunicationsPanel from '../components/UsersCommunicationsPanel';
 import UsersFilters from '../components/UsersFilters';
 import UsersHistoryPanel from '../components/UsersHistoryPanel';
@@ -43,10 +42,6 @@ export default function UsersPage() {
     visibleUsers,
     pageSummary,
     emptyState,
-    selectedIds,
-    selectedCount,
-    allVisibleSelected,
-    someVisibleSelected,
     currentPage,
     totalPages,
     paginationItems,
@@ -59,16 +54,12 @@ export default function UsersPage() {
     actionSubmitting,
     onViewChange,
     onOpenNoticeModal,
-    onOpenSelectedNoticeModal,
     onOpenTemplateModal,
     onOpenDirectNoticeModal,
     onCloseNoticeModal,
     onSendNotice,
     onQueryChange,
     onStatusFilterChange,
-    onToggleUser,
-    onToggleVisible,
-    onClearSelection,
     onGoToPage,
     onOpenUser,
     onSessionCountChange,
@@ -127,16 +118,11 @@ export default function UsersPage() {
               <UsersTable
                 users={visibleUsers}
                 sourceReady={sourceReady}
-                selectedIds={selectedIds}
-                allVisibleSelected={allVisibleSelected}
-                someVisibleSelected={someVisibleSelected}
                 pageSummary={pageSummary}
                 emptyState={emptyState}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 paginationItems={paginationItems}
-                onToggleUser={onToggleUser}
-                onToggleVisible={onToggleVisible}
                 onGoToPage={onGoToPage}
                 onOpenUser={onOpenUser}
                 onSessionCountChange={onSessionCountChange}
@@ -170,15 +156,6 @@ export default function UsersPage() {
         </section>
       </div>
 
-      {activeView === 'users' ? (
-        <UsersBulkBar
-          selectedCount={selectedCount}
-          supportsMutations={supportsMutations}
-          onClearSelection={onClearSelection}
-          onNotifySelection={onOpenSelectedNoticeModal}
-        />
-      ) : null}
-
       <UsersActionModal
         user={activeUser}
         pendingActionId={pendingActionId}
@@ -205,7 +182,6 @@ export default function UsersPage() {
       <UsersNoticeModal
         modal={noticeModal}
         users={users}
-        selectedIds={selectedIds}
         metrics={metrics}
         supportsMutations={supportsMutations}
         supportsCommunications={supportsCommunications}
