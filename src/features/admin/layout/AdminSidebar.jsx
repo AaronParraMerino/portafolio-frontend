@@ -47,12 +47,6 @@ const NAV_SECTIONS = [
         icon: (<><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4" /><path d="M16 2v4" /><path d="M3 10h18" /><path d="M8 14h3" /><path d="M14 14h2" /><path d="M8 17h2" /></>),
       },
       {
-        id: 'notices',
-        label: 'Avisos',
-        to: '/admin/notices',
-        icon: (<><path d="M4 11v2a2 2 0 0 0 2 2h2l4 4v-4h4l4-4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6Z" /><path d="M8 7h8" /><path d="M8 10h5" /></>),
-      },
-      {
         id: 'reports',
         label: 'Reportes',
         to: '/admin/reports',

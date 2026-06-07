@@ -86,7 +86,6 @@ export default function AppRouter({ isBackendAvailable = true }) {
             <Route path="profile" element={<AdminDashboardPage section="profile" />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="events" element={<EventsPage />} />
-            <Route path="notices" element={<AdminDashboardPage section="notices" />} />
             <Route path="reports" element={<AdminDashboardPage section="reports" />} />
             <Route path="audit" element={<AdminDashboardPage section="audit" />} />
             <Route path="backups" element={<AdminDashboardPage section="backups" />} />

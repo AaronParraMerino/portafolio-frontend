@@ -23,12 +23,6 @@ export const ADMIN_SECTIONS = {
     titleKey: 'admin.layout.section.events.title',
     eyebrowKey: 'admin.layout.eyebrow.management',
   },
-  notices: {
-    title: 'Avisos',
-    eyebrow: 'Gestion',
-    titleKey: 'admin.layout.section.notices.title',
-    eyebrowKey: 'admin.layout.eyebrow.management',
-  },
   reports: {
     title: 'Reportes',
     eyebrow: 'Gestion',
