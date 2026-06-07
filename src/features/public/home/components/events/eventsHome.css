@@ -343,6 +343,7 @@
   font-size: 15px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   line-height: 1.65;
   margin: 14px 0 0;
   max-width: 560px;
