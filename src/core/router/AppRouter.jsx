@@ -12,6 +12,7 @@ import AdminDashboardLayout from '../../features/admin/layout/AdminDashboardLayo
 import AdminDashboardPage from '../../features/admin/dashboard/AdminDashboardPage';
 import UsersPage from '../../features/admin/users/pages/UsersPage';
 import EventsPage from '../../features/admin/events/pages/EventsPage';
+import AuditPage from '../../features/admin/audit/pages/AuditPage';
 import DashboardEventsPage from '../../features/dashboard/events/pages/EventsPage';
 import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
@@ -87,7 +88,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
             <Route path="users" element={<UsersPage />} />
             <Route path="events" element={<EventsPage />} />
             <Route path="reports" element={<AdminDashboardPage section="reports" />} />
-            <Route path="audit" element={<AdminDashboardPage section="audit" />} />
+            <Route path="audit" element={<AuditPage />} />
             <Route path="backups" element={<AdminDashboardPage section="backups" />} />
             <Route path="settings" element={<AdminDashboardPage section="settings" />} />
           </Route>
