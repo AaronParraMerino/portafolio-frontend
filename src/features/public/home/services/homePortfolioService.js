@@ -6,12 +6,17 @@ import {
 } from '../../services/publicCache';
 
 const FEATURED_TTL_MS = 2 * 60 * 1000;
+const STATS_TTL_MS = 2 * 60 * 1000;
 
 function featuredCacheKey(search = '') {
   return publicCacheKey('home:featured', {
     limit: 6,
     q: String(search || '').trim(),
   });
+}
+
+function statsCacheKey() {
+  return publicCacheKey('home:stats', 'summary');
 }
 
 export const getCachedFeaturedPortfolios = (search = '') => (
@@ -35,3 +40,14 @@ export const getFeaturedPortfolios = async (search = '', { force = false } = {})
     { force, ttlMs: FEATURED_TTL_MS },
   );
 };
+
+export const getHomeStats = async ({ force = false } = {}) => (
+  withPublicCache(
+    statsCacheKey(),
+    async () => {
+      const response = await get('/home/stats');
+      return response?.data ?? {};
+    },
+    { force, ttlMs: STATS_TTL_MS },
+  )
+);

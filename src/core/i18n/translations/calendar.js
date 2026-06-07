@@ -1,5 +1,5 @@
 export const calendarTranslations = {
-  es: {
+  "es": {
     "calendar.toggle.label": "Calendario",
     "calendar.toggle.openTitle": "Abrir calendario",
     "calendar.toggle.closeTitle": "Cerrar calendario",
@@ -9,8 +9,7 @@ export const calendarTranslations = {
     "calendar.panel.subtitle": "Crea y gestiona eventos propios",
     "calendar.panel.closeAria": "Cerrar calendario",
     "calendar.panel.sectionLabel": "Calendario",
-    "calendar.history.note":
-      "Fecha pasada: puedes consultar los eventos registrados, pero no crear, editar ni eliminar.",
+    "calendar.history.note": "Fecha pasada: puedes consultar los eventos registrados, pero no crear, editar ni eliminar.",
     "calendar.actions.newEvent": "Nuevo evento",
     "calendar.actions.edit": "Editar",
     "calendar.actions.delete": "Eliminar",
@@ -18,13 +17,15 @@ export const calendarTranslations = {
     "calendar.actions.cancel": "Cancelar",
     "calendar.actions.save": "Guardar",
     "calendar.actions.processing": "Procesando...",
+    "calendar.actions.unsubscribe": "Desinscribirme",
     "calendar.confirm.deleteTitle": "¿Eliminar evento?",
-    "calendar.confirm.deleteMessage":
-      'Se eliminará el evento "{title}". Esta acción no se puede deshacer.',
+    "calendar.confirm.deleteMessage": "Se eliminará el evento \"{title}\". Esta acción no se puede deshacer.",
     "calendar.confirm.deleteConfirm": "Sí, eliminar",
     "calendar.confirm.deleteDayTitle": "¿Eliminar eventos del día?",
-    "calendar.confirm.deleteDayMessage":
-      "Se eliminarán {count} eventos registrados para esta fecha. Esta acción no se puede deshacer.",
+    "calendar.confirm.unsubscribeTitle": "¿Desinscribirse del evento?",
+    "calendar.confirm.unsubscribeMessage": "Dejarás de estar inscrito en \"{title}\". El evento ya no aparecerá en tu calendario.",
+    "calendar.confirm.unsubscribeConfirm": "Sí, desinscribirme",
+    "calendar.confirm.deleteDayMessage": "Se eliminarán {count} eventos registrados para esta fecha. Esta acción no se puede deshacer.",
     "calendar.confirm.deleteAllConfirm": "Sí, eliminar todos",
     "calendar.month.aria": "Calendario mensual",
     "calendar.month.help": "Selecciona un día para ver sus eventos.",
@@ -39,14 +40,20 @@ export const calendarTranslations = {
     "calendar.week.sunday.short": "D",
     "calendar.day.titlePastEvent": "Ver historial de eventos del {date}",
     "calendar.day.titleHasEvent": "Ver eventos del {date}",
+    "calendar.day.titleSubscribedEvent": "Ver eventos inscritos del {date}",
+    "calendar.day.titleMixedEvent": "Ver eventos personales e inscritos del {date}",
     "calendar.day.titlePastDate": "Ver fecha pasada {date}",
     "calendar.day.titleSelect": "Seleccionar {date}",
     "calendar.events.title": "Eventos del {date}",
     "calendar.events.countSingular": "evento",
     "calendar.events.countPlural": "eventos",
+    "calendar.personal.title": "Mis eventos",
+    "calendar.personal.empty": "No tienes eventos personales para este día.",
+    "calendar.subscribed.title": "Eventos inscritos",
+    "calendar.subscribed.empty": "No tienes eventos inscritos para este día.",
+    "calendar.subscribed.badge": "Inscrito",
     "calendar.empty.title": "No hay eventos registrados para esta fecha.",
-    "calendar.empty.createHelp":
-      "Puedes crear un nuevo evento usando la fecha seleccionada.",
+    "calendar.empty.createHelp": "Puedes crear un nuevo evento usando la fecha seleccionada.",
     "calendar.empty.createButton": "Crear evento para este día",
     "calendar.empty.pastHelp": "No se pueden crear eventos en fechas pasadas.",
     "calendar.form.newTitle": "Nuevo evento",
@@ -54,67 +61,59 @@ export const calendarTranslations = {
     "calendar.form.closeAria": "Cerrar formulario",
     "calendar.form.titleLabel": "Título del evento",
     "calendar.form.titlePlaceholder": "Ej: Reunión con QA",
-    "calendar.form.titleHelp":
-      "Solo letras y espacios. Sin números, símbolos ni enlaces.",
+    "calendar.form.titleHelp": "Solo letras y espacios. Sin números, símbolos ni enlaces.",
     "calendar.form.descriptionLabel": "Descripción",
     "calendar.form.descriptionPlaceholder": "Detalle breve del evento",
-    "calendar.form.descriptionHelp":
-      "No se permiten enlaces ni caracteres como # $ % & / * °.",
+    "calendar.form.descriptionHelp": "No se permiten emojis, enlaces, símbolos repetidos ni caracteres fuera de puntuación básica.",
     "calendar.form.dateLabel": "Fecha",
     "calendar.form.visibleFormat": "Formato visible: {date}",
     "calendar.form.timeLabel": "Hora",
+    "calendar.form.timeAria": "Selecciona hora y minutos en formato de 24 horas.",
+    "calendar.form.timeHelp": "Formato 24 horas: HH:MM. El primer bloque es hora y el segundo bloque son minutos.",
+    "calendar.form.timeHourLabel": "HH = hora",
+    "calendar.form.timeMinuteLabel": "MM = minutos",
     "calendar.form.typeLabel": "Tipo",
     "calendar.type.personal": "Personal",
     "calendar.type.academic": "Académico",
     "calendar.type.work": "Trabajo",
     "calendar.type.meeting": "Reunión",
     "calendar.type.delivery": "Entrega",
-    "calendar.type.other": "Otro",
+    "calendar.type.subscribed": "Evento inscrito",
     "calendar.validation.titleRequired": "El título es obligatorio.",
-    "calendar.validation.titleMax":
-      "El título no puede superar los {count} caracteres.",
+    "calendar.validation.titleMax": "El título no puede superar los {count} caracteres.",
     "calendar.validation.titleNoNumbers": "El título no debe contener números.",
-    "calendar.validation.titleNoUrls":
-      "El título no debe contener enlaces o URLs.",
-    "calendar.validation.titleOnlyLetters":
-      "El título solo debe contener letras y espacios, sin símbolos.",
-    "calendar.validation.descriptionMax":
-      "La descripción no puede superar los {count} caracteres.",
-    "calendar.validation.descriptionNoUrls":
-      "La descripción no debe contener enlaces o URLs.",
-    "calendar.validation.descriptionForbidden":
-      "La descripción contiene caracteres no permitidos como # $ % & / * °.",
+    "calendar.validation.titleNoUrls": "El título no debe contener enlaces o URLs.",
+    "calendar.validation.titleOnlyLetters": "El título solo debe contener letras y espacios, sin símbolos.",
+    "calendar.validation.descriptionMax": "La descripción no puede superar los {count} caracteres.",
+    "calendar.validation.descriptionNoUrls": "La descripción no debe contener enlaces o URLs.",
+    "calendar.validation.descriptionForbidden": "La descripción contiene caracteres no permitidos.",
+    "calendar.validation.descriptionNoEmoji": "La descripción no permite emojis.",
+    "calendar.validation.descriptionOnlyBasic": "La descripción solo permite letras, números, espacios y puntuación básica.",
+    "calendar.validation.descriptionRepeatedSymbols": "La descripción no debe contener símbolos repetidos.",
+    "calendar.validation.descriptionReadable": "La descripción debe contener texto legible.",
     "calendar.validation.dateRequired": "La fecha es obligatoria.",
-    "calendar.validation.noPastDate":
-      "No se pueden crear eventos en fechas pasadas.",
+    "calendar.validation.noPastDate": "No se pueden crear eventos en fechas pasadas.",
     "calendar.validation.timeRequired": "La hora es obligatoria.",
-    "calendar.validation.saveGeneric":
-      "No se pudo guardar el evento. Revisa los datos ingresados.",
+    "calendar.validation.saveGeneric": "No se pudo guardar el evento. Revisa los datos ingresados.",
     "calendar.validation.saveShort": "No se pudo guardar el evento.",
-    "calendar.feedback.pastSelected":
-      "Fecha pasada seleccionada. Los eventos quedan solo como historial.",
-    "calendar.feedback.noCreatePast":
-      "No se pueden crear eventos en fechas pasadas.",
-    "calendar.feedback.noEditPast":
-      "No se pueden editar eventos de fechas pasadas. Este evento queda como historial.",
-    "calendar.feedback.noModifyPast":
-      "No se puede modificar un evento de una fecha pasada.",
-    "calendar.feedback.eventDatePast":
-      "La fecha del evento no puede ser anterior a la fecha actual.",
-    "calendar.feedback.timeConflict":
-      "Ya existe un evento registrado para esta fecha y hora. Cambia la hora o selecciona otra fecha.",
+    "calendar.feedback.pastSelected": "Fecha pasada seleccionada. Los eventos quedan solo como historial.",
+    "calendar.feedback.noCreatePast": "No se pueden crear eventos en fechas pasadas.",
+    "calendar.feedback.noEditPast": "No se pueden editar eventos de fechas pasadas. Este evento queda como historial.",
+    "calendar.feedback.noModifyPast": "No se puede modificar un evento de una fecha pasada.",
+    "calendar.feedback.eventDatePast": "La fecha del evento no puede ser anterior a la fecha actual.",
+    "calendar.feedback.timeConflict": "Ya existe un evento registrado para esta fecha y hora. Cambia la hora o selecciona otra fecha.",
     "calendar.feedback.updated": "Evento actualizado correctamente.",
     "calendar.feedback.created": "Evento creado correctamente.",
-    "calendar.feedback.noDeletePast":
-      "No se pueden eliminar eventos de fechas pasadas. Este evento queda como historial.",
+    "calendar.feedback.draftRestored": "Se recuperó un borrador no guardado del formulario.",
+    "calendar.feedback.noDeletePast": "No se pueden eliminar eventos de fechas pasadas. Este evento queda como historial.",
     "calendar.feedback.deleted": "Evento eliminado correctamente.",
-    "calendar.feedback.noDeletePastMany":
-      "No se pueden eliminar eventos de fechas pasadas. Estos eventos quedan como historial.",
+    "calendar.feedback.unsubscribed": "Te desinscribiste del evento correctamente.",
+    "calendar.feedback.unsubscribeError": "No se pudo completar la desinscripción del evento.",
+    "calendar.feedback.noDeletePastMany": "No se pueden eliminar eventos de fechas pasadas. Estos eventos quedan como historial.",
     "calendar.feedback.deletedOne": "1 evento eliminado correctamente.",
-    "calendar.feedback.deletedMany":
-      "{count} eventos eliminados correctamente.",
+    "calendar.feedback.deletedMany": "{count} eventos eliminados correctamente."
   },
-  en: {
+  "en": {
     "calendar.toggle.label": "Calendar",
     "calendar.toggle.openTitle": "Open calendar",
     "calendar.toggle.closeTitle": "Close calendar",
@@ -124,8 +123,7 @@ export const calendarTranslations = {
     "calendar.panel.subtitle": "Create and manage your own events",
     "calendar.panel.closeAria": "Close calendar",
     "calendar.panel.sectionLabel": "Calendar",
-    "calendar.history.note":
-      "Past date: you can view registered events, but you cannot create, edit, or delete them.",
+    "calendar.history.note": "Past date: you can view registered events, but you cannot create, edit, or delete them.",
     "calendar.actions.newEvent": "New event",
     "calendar.actions.edit": "Edit",
     "calendar.actions.delete": "Delete",
@@ -133,13 +131,15 @@ export const calendarTranslations = {
     "calendar.actions.cancel": "Cancel",
     "calendar.actions.save": "Save",
     "calendar.actions.processing": "Processing...",
+    "calendar.actions.unsubscribe": "Unsubscribe",
     "calendar.confirm.deleteTitle": "Delete event?",
-    "calendar.confirm.deleteMessage":
-      'The event "{title}" will be deleted. This action cannot be undone.',
+    "calendar.confirm.deleteMessage": "The event \"{title}\" will be deleted. This action cannot be undone.",
     "calendar.confirm.deleteConfirm": "Yes, delete",
     "calendar.confirm.deleteDayTitle": "Delete day events?",
-    "calendar.confirm.deleteDayMessage":
-      "{count} events registered for this date will be deleted. This action cannot be undone.",
+    "calendar.confirm.unsubscribeTitle": "Unsubscribe from event?",
+    "calendar.confirm.unsubscribeMessage": "You will no longer be registered for \"{title}\". The event will no longer appear on your calendar.",
+    "calendar.confirm.unsubscribeConfirm": "Yes, unsubscribe",
+    "calendar.confirm.deleteDayMessage": "{count} events registered for this date will be deleted. This action cannot be undone.",
     "calendar.confirm.deleteAllConfirm": "Yes, delete all",
     "calendar.month.aria": "Monthly calendar",
     "calendar.month.help": "Select a day to view its events.",
@@ -154,14 +154,20 @@ export const calendarTranslations = {
     "calendar.week.sunday.short": "S",
     "calendar.day.titlePastEvent": "View event history for {date}",
     "calendar.day.titleHasEvent": "View events for {date}",
+    "calendar.day.titleSubscribedEvent": "View subscribed events for {date}",
+    "calendar.day.titleMixedEvent": "View personal and subscribed events for {date}",
     "calendar.day.titlePastDate": "View past date {date}",
     "calendar.day.titleSelect": "Select {date}",
     "calendar.events.title": "Events for {date}",
     "calendar.events.countSingular": "event",
     "calendar.events.countPlural": "events",
+    "calendar.personal.title": "My events",
+    "calendar.personal.empty": "You have no personal events for this day.",
+    "calendar.subscribed.title": "Subscribed events",
+    "calendar.subscribed.empty": "You have no subscribed events for this day.",
+    "calendar.subscribed.badge": "Registered",
     "calendar.empty.title": "There are no events registered for this date.",
-    "calendar.empty.createHelp":
-      "You can create a new event using the selected date.",
+    "calendar.empty.createHelp": "You can create a new event using the selected date.",
     "calendar.empty.createButton": "Create event for this day",
     "calendar.empty.pastHelp": "Events cannot be created on past dates.",
     "calendar.form.newTitle": "New event",
@@ -169,64 +175,59 @@ export const calendarTranslations = {
     "calendar.form.closeAria": "Close form",
     "calendar.form.titleLabel": "Event title",
     "calendar.form.titlePlaceholder": "Ex: QA meeting",
-    "calendar.form.titleHelp":
-      "Only letters and spaces. No numbers, symbols, or links.",
+    "calendar.form.titleHelp": "Only letters and spaces. No numbers, symbols, or links.",
     "calendar.form.descriptionLabel": "Description",
     "calendar.form.descriptionPlaceholder": "Brief event details",
-    "calendar.form.descriptionHelp":
-      "Links and characters like # $ % & / * ° are not allowed.",
+    "calendar.form.descriptionHelp": "Emojis, links, repeated symbols, and characters outside basic punctuation are not allowed.",
     "calendar.form.dateLabel": "Date",
     "calendar.form.visibleFormat": "Visible format: {date}",
     "calendar.form.timeLabel": "Time",
+    "calendar.form.timeAria": "Select hours and minutes in 24-hour format.",
+    "calendar.form.timeHelp": "24-hour format: HH:MM. The first block is hours and the second block is minutes.",
+    "calendar.form.timeHourLabel": "HH = hours",
+    "calendar.form.timeMinuteLabel": "MM = minutes",
     "calendar.form.typeLabel": "Type",
     "calendar.type.personal": "Personal",
     "calendar.type.academic": "Academic",
     "calendar.type.work": "Work",
     "calendar.type.meeting": "Meeting",
     "calendar.type.delivery": "Delivery",
-    "calendar.type.other": "Other",
+    "calendar.type.subscribed": "Subscribed event",
     "calendar.validation.titleRequired": "The title is required.",
-    "calendar.validation.titleMax":
-      "The title cannot exceed {count} characters.",
+    "calendar.validation.titleMax": "The title cannot exceed {count} characters.",
     "calendar.validation.titleNoNumbers": "The title must not contain numbers.",
-    "calendar.validation.titleNoUrls":
-      "The title must not contain links or URLs.",
-    "calendar.validation.titleOnlyLetters":
-      "The title must contain only letters and spaces, without symbols.",
-    "calendar.validation.descriptionMax":
-      "The description cannot exceed {count} characters.",
-    "calendar.validation.descriptionNoUrls":
-      "The description must not contain links or URLs.",
-    "calendar.validation.descriptionForbidden":
-      "The description contains forbidden characters such as # $ % & / * °.",
+    "calendar.validation.titleNoUrls": "The title must not contain links or URLs.",
+    "calendar.validation.titleOnlyLetters": "The title must contain only letters and spaces, without symbols.",
+    "calendar.validation.descriptionMax": "The description cannot exceed {count} characters.",
+    "calendar.validation.descriptionNoUrls": "The description must not contain links or URLs.",
+    "calendar.validation.descriptionForbidden": "The description contains forbidden characters.",
+    "calendar.validation.descriptionNoEmoji": "The description does not allow emojis.",
+    "calendar.validation.descriptionOnlyBasic": "The description only allows letters, numbers, spaces, and basic punctuation.",
+    "calendar.validation.descriptionRepeatedSymbols": "The description must not contain repeated symbols.",
+    "calendar.validation.descriptionReadable": "The description must contain readable text.",
     "calendar.validation.dateRequired": "The date is required.",
     "calendar.validation.noPastDate": "Events cannot be created on past dates.",
     "calendar.validation.timeRequired": "The time is required.",
-    "calendar.validation.saveGeneric":
-      "The event could not be saved. Check the entered data.",
+    "calendar.validation.saveGeneric": "The event could not be saved. Check the entered data.",
     "calendar.validation.saveShort": "The event could not be saved.",
-    "calendar.feedback.pastSelected":
-      "Past date selected. Events remain as history only.",
+    "calendar.feedback.pastSelected": "Past date selected. Events remain as history only.",
     "calendar.feedback.noCreatePast": "Events cannot be created on past dates.",
-    "calendar.feedback.noEditPast":
-      "Events from past dates cannot be edited. This event remains as history.",
-    "calendar.feedback.noModifyPast":
-      "An event from a past date cannot be modified.",
-    "calendar.feedback.eventDatePast":
-      "The event date cannot be earlier than the current date.",
-    "calendar.feedback.timeConflict":
-      "An event already exists for this date and time. Change the time or select another date.",
+    "calendar.feedback.noEditPast": "Events from past dates cannot be edited. This event remains as history.",
+    "calendar.feedback.noModifyPast": "An event from a past date cannot be modified.",
+    "calendar.feedback.eventDatePast": "The event date cannot be earlier than the current date.",
+    "calendar.feedback.timeConflict": "An event already exists for this date and time. Change the time or select another date.",
     "calendar.feedback.updated": "Event updated successfully.",
     "calendar.feedback.created": "Event created successfully.",
-    "calendar.feedback.noDeletePast":
-      "Events from past dates cannot be deleted. This event remains as history.",
+    "calendar.feedback.draftRestored": "An unsaved form draft was recovered.",
+    "calendar.feedback.noDeletePast": "Events from past dates cannot be deleted. This event remains as history.",
     "calendar.feedback.deleted": "Event deleted successfully.",
-    "calendar.feedback.noDeletePastMany":
-      "Events from past dates cannot be deleted. These events remain as history.",
+    "calendar.feedback.unsubscribed": "You have successfully unsubscribed from the event.",
+    "calendar.feedback.unsubscribeError": "The event unsubscription could not be completed.",
+    "calendar.feedback.noDeletePastMany": "Events from past dates cannot be deleted. These events remain as history.",
     "calendar.feedback.deletedOne": "1 event deleted successfully.",
-    "calendar.feedback.deletedMany": "{count} events deleted successfully.",
+    "calendar.feedback.deletedMany": "{count} events deleted successfully."
   },
-  pt: {
+  "pt": {
     "calendar.toggle.label": "Calendário",
     "calendar.toggle.openTitle": "Abrir calendário",
     "calendar.toggle.closeTitle": "Fechar calendário",
@@ -236,8 +237,7 @@ export const calendarTranslations = {
     "calendar.panel.subtitle": "Crie e gerencie seus próprios eventos",
     "calendar.panel.closeAria": "Fechar calendário",
     "calendar.panel.sectionLabel": "Calendário",
-    "calendar.history.note":
-      "Data passada: você pode consultar os eventos registrados, mas não criar, editar nem excluir.",
+    "calendar.history.note": "Data passada: você pode consultar os eventos registrados, mas não criar, editar nem excluir.",
     "calendar.actions.newEvent": "Novo evento",
     "calendar.actions.edit": "Editar",
     "calendar.actions.delete": "Excluir",
@@ -245,13 +245,15 @@ export const calendarTranslations = {
     "calendar.actions.cancel": "Cancelar",
     "calendar.actions.save": "Salvar",
     "calendar.actions.processing": "Processando...",
+    "calendar.actions.unsubscribe": "Cancelar inscrição",
     "calendar.confirm.deleteTitle": "Excluir evento?",
-    "calendar.confirm.deleteMessage":
-      'O evento "{title}" será excluído. Esta ação não pode ser desfeita.',
+    "calendar.confirm.deleteMessage": "O evento \"{title}\" será excluído. Esta ação não pode ser desfeita.",
     "calendar.confirm.deleteConfirm": "Sim, excluir",
     "calendar.confirm.deleteDayTitle": "Excluir eventos do dia?",
-    "calendar.confirm.deleteDayMessage":
-      "Serão excluídos {count} eventos registrados para esta data. Esta ação não pode ser desfeita.",
+    "calendar.confirm.unsubscribeTitle": "Cancelar inscrição no evento?",
+    "calendar.confirm.unsubscribeMessage": "Você deixará de estar inscrito em \"{title}\". O evento não aparecerá mais no seu calendário.",
+    "calendar.confirm.unsubscribeConfirm": "Sim, cancelar inscrição",
+    "calendar.confirm.deleteDayMessage": "Serão excluídos {count} eventos registrados para esta data. Esta ação não pode ser desfeita.",
     "calendar.confirm.deleteAllConfirm": "Sim, excluir todos",
     "calendar.month.aria": "Calendário mensal",
     "calendar.month.help": "Selecione um dia para ver seus eventos.",
@@ -266,28 +268,31 @@ export const calendarTranslations = {
     "calendar.week.sunday.short": "D",
     "calendar.day.titlePastEvent": "Ver histórico de eventos de {date}",
     "calendar.day.titleHasEvent": "Ver eventos de {date}",
+    "calendar.day.titleSubscribedEvent": "Ver eventos inscritos de {date}",
+    "calendar.day.titleMixedEvent": "Ver eventos pessoais e inscritos de {date}",
     "calendar.day.titlePastDate": "Ver data passada {date}",
     "calendar.day.titleSelect": "Selecionar {date}",
     "calendar.events.title": "Eventos de {date}",
     "calendar.events.countSingular": "evento",
     "calendar.events.countPlural": "eventos",
+    "calendar.personal.title": "Meus eventos",
+    "calendar.personal.empty": "Você não tem eventos pessoais para este dia.",
+    "calendar.subscribed.title": "Eventos inscritos",
+    "calendar.subscribed.empty": "Você não tem eventos inscritos para este dia.",
+    "calendar.subscribed.badge": "Inscrito",
     "calendar.empty.title": "Não há eventos registrados para esta data.",
-    "calendar.empty.createHelp":
-      "Você pode criar um novo evento usando a data selecionada.",
+    "calendar.empty.createHelp": "Você pode criar um novo evento usando a data selecionada.",
     "calendar.empty.createButton": "Criar evento para este dia",
-    "calendar.empty.pastHelp":
-      "Não é possível criar eventos em datas passadas.",
+    "calendar.empty.pastHelp": "Não é possível criar eventos em datas passadas.",
     "calendar.form.newTitle": "Novo evento",
     "calendar.form.editTitle": "Editar evento",
     "calendar.form.closeAria": "Fechar formulário",
     "calendar.form.titleLabel": "Título do evento",
     "calendar.form.titlePlaceholder": "Ex: Reunião com QA",
-    "calendar.form.titleHelp":
-      "Apenas letras e espaços. Sem números, símbolos nem links.",
+    "calendar.form.titleHelp": "Apenas letras e espaços. Sem números, símbolos nem links.",
     "calendar.form.descriptionLabel": "Descrição",
     "calendar.form.descriptionPlaceholder": "Detalhe breve do evento",
-    "calendar.form.descriptionHelp":
-      "Links e caracteres como # $ % & / * ° não são permitidos.",
+    "calendar.form.descriptionHelp": "Emojis, links, símbolos repetidos e caracteres fora da pontuação básica não são permitidos.",
     "calendar.form.dateLabel": "Data",
     "calendar.form.visibleFormat": "Formato visível: {date}",
     "calendar.form.timeLabel": "Hora",
@@ -297,48 +302,39 @@ export const calendarTranslations = {
     "calendar.type.work": "Trabalho",
     "calendar.type.meeting": "Reunião",
     "calendar.type.delivery": "Entrega",
-    "calendar.type.other": "Outro",
+    "calendar.type.subscribed": "Evento inscrito",
     "calendar.validation.titleRequired": "O título é obrigatório.",
-    "calendar.validation.titleMax":
-      "O título não pode ultrapassar {count} caracteres.",
+    "calendar.validation.titleMax": "O título não pode ultrapassar {count} caracteres.",
     "calendar.validation.titleNoNumbers": "O título não deve conter números.",
-    "calendar.validation.titleNoUrls":
-      "O título não deve conter links ou URLs.",
-    "calendar.validation.titleOnlyLetters":
-      "O título deve conter apenas letras e espaços, sem símbolos.",
-    "calendar.validation.descriptionMax":
-      "A descrição não pode ultrapassar {count} caracteres.",
-    "calendar.validation.descriptionNoUrls":
-      "A descrição não deve conter links ou URLs.",
-    "calendar.validation.descriptionForbidden":
-      "A descrição contém caracteres não permitidos como # $ % & / * °.",
+    "calendar.validation.titleNoUrls": "O título não deve conter links ou URLs.",
+    "calendar.validation.titleOnlyLetters": "O título deve conter apenas letras e espaços, sem símbolos.",
+    "calendar.validation.descriptionMax": "A descrição não pode ultrapassar {count} caracteres.",
+    "calendar.validation.descriptionNoUrls": "A descrição não deve conter links ou URLs.",
+    "calendar.validation.descriptionForbidden": "A descrição contém caracteres não permitidos.",
+    "calendar.validation.descriptionNoEmoji": "A descrição não permite emojis.",
+    "calendar.validation.descriptionOnlyBasic": "A descrição permite apenas letras, números, espaços e pontuação básica.",
+    "calendar.validation.descriptionRepeatedSymbols": "A descrição não deve conter símbolos repetidos.",
+    "calendar.validation.descriptionReadable": "A descrição deve conter texto legível.",
     "calendar.validation.dateRequired": "A data é obrigatória.",
-    "calendar.validation.noPastDate":
-      "Não é possível criar eventos em datas passadas.",
+    "calendar.validation.noPastDate": "Não é possível criar eventos em datas passadas.",
     "calendar.validation.timeRequired": "A hora é obrigatória.",
-    "calendar.validation.saveGeneric":
-      "Não foi possível salvar o evento. Revise os dados informados.",
+    "calendar.validation.saveGeneric": "Não foi possível salvar o evento. Revise os dados informados.",
     "calendar.validation.saveShort": "Não foi possível salvar o evento.",
-    "calendar.feedback.pastSelected":
-      "Data passada selecionada. Os eventos ficam apenas como histórico.",
-    "calendar.feedback.noCreatePast":
-      "Não é possível criar eventos em datas passadas.",
-    "calendar.feedback.noEditPast":
-      "Não é possível editar eventos de datas passadas. Este evento fica como histórico.",
-    "calendar.feedback.noModifyPast":
-      "Não é possível modificar um evento de uma data passada.",
-    "calendar.feedback.eventDatePast":
-      "A data do evento não pode ser anterior à data atual.",
-    "calendar.feedback.timeConflict":
-      "Já existe um evento registrado para esta data e hora. Altere a hora ou selecione outra data.",
+    "calendar.feedback.pastSelected": "Data passada selecionada. Os eventos ficam apenas como histórico.",
+    "calendar.feedback.noCreatePast": "Não é possível criar eventos em datas passadas.",
+    "calendar.feedback.noEditPast": "Não é possível editar eventos de datas passadas. Este evento fica como histórico.",
+    "calendar.feedback.noModifyPast": "Não é possível modificar um evento de uma data passada.",
+    "calendar.feedback.eventDatePast": "A data do evento não pode ser anterior à data atual.",
+    "calendar.feedback.timeConflict": "Já existe um evento registrado para esta data e hora. Altere a hora ou selecione outra data.",
     "calendar.feedback.updated": "Evento atualizado corretamente.",
     "calendar.feedback.created": "Evento criado corretamente.",
-    "calendar.feedback.noDeletePast":
-      "Não é possível excluir eventos de datas passadas. Este evento fica como histórico.",
+    "calendar.feedback.draftRestored": "Um rascunho não salvo do formulário foi recuperado.",
+    "calendar.feedback.noDeletePast": "Não é possível excluir eventos de datas passadas. Este evento fica como histórico.",
     "calendar.feedback.deleted": "Evento excluído corretamente.",
-    "calendar.feedback.noDeletePastMany":
-      "Não é possível excluir eventos de datas passadas. Estes eventos ficam como histórico.",
+    "calendar.feedback.unsubscribed": "Sua inscrição no evento foi cancelada corretamente.",
+    "calendar.feedback.unsubscribeError": "Não foi possível cancelar a inscrição no evento.",
+    "calendar.feedback.noDeletePastMany": "Não é possível excluir eventos de datas passadas. Estes eventos ficam como histórico.",
     "calendar.feedback.deletedOne": "1 evento excluído corretamente.",
-    "calendar.feedback.deletedMany": "{count} eventos excluídos corretamente.",
-  },
+    "calendar.feedback.deletedMany": "{count} eventos excluídos corretamente."
+  }
 };

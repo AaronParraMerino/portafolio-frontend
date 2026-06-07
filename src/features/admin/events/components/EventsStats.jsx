@@ -5,6 +5,7 @@ import {
   BsClockHistory,
   BsMegaphone,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import { EVENT_STATS } from '../services/eventsService';
 
 const STAT_ICONS = {
@@ -16,8 +17,10 @@ const STAT_ICONS = {
 };
 
 export default function EventsStats({ metrics, sourceReady }) {
+  const { t } = useLanguage();
+
   return (
-    <section className="evt-stats-grid" aria-label="Resumen de eventos">
+    <section className="evt-stats-grid" aria-label={t('adminEvents.dashboard.publisherSummaryAria')}>
       {EVENT_STATS.map((stat) => {
         const Icon = STAT_ICONS[stat.tone] || BsCalendar2Event;
 
@@ -29,8 +32,8 @@ export default function EventsStats({ metrics, sourceReady }) {
             <div className="evt-stat-value">
               {sourceReady ? metrics?.[stat.id] ?? 0 : '--'}
             </div>
-            <div className="evt-stat-label">{stat.label}</div>
-            <div className="evt-stat-helper">{stat.helper}</div>
+            <div className="evt-stat-label">{t(`adminEvents.stats.${stat.id}.label`)}</div>
+            <div className="evt-stat-helper">{t(`adminEvents.stats.${stat.id}.helper`)}</div>
           </article>
         );
       })}

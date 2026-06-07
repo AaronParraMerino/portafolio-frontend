@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLanguage } from '../../../core/i18n';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { clearAuthStorage } from '../../../shared/utils/authStorage';
@@ -113,6 +114,7 @@ function getActiveId(pathname) {
 }
 
 export default function AdminSidebar({ collapsed, onToggle }) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const activeId = getActiveId(location.pathname);
@@ -133,7 +135,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {
-      console.error('Error al intentar cerrar sesion:', err);
+      console.error(t('admin.layout.logout.error'), err);
     }
 
     clearAuthStorage();
@@ -202,6 +204,12 @@ export default function AdminSidebar({ collapsed, onToggle }) {
     };
   }, [collapsed]);
 
+  const getSectionKey = (label) => {
+    if (label === 'Gestion') return 'management';
+    if (label === 'Cuenta') return 'account';
+    return 'general';
+  };
+
   const handleNavClick = (item, inDrawer = false) => {
     if (item.id === 'logout') {
       setMobileOpen(false);
@@ -217,7 +225,9 @@ export default function AdminSidebar({ collapsed, onToggle }) {
     <>
       {NAV_SECTIONS.map((section, sectionIndex) => (
         <div className="dsh-nav-section" key={section.label} style={{ paddingTop: sectionIndex === 0 ? 18 : undefined }}>
-          <div className="dsh-nav-section-label">{section.label}</div>
+          <div className="dsh-nav-section-label">
+            {t(`admin.layout.section.${getSectionKey(section.label)}`)}
+          </div>
 
           {section.items.map((item) => (
             <button
@@ -228,13 +238,13 @@ export default function AdminSidebar({ collapsed, onToggle }) {
                 activeId === item.id ? 'active' : '',
                 item.danger ? 'danger' : '',
               ].filter(Boolean).join(' ')}
-              data-tip={item.label}
+              data-tip={t(`admin.layout.nav.${item.id}`)}
               onClick={() => handleNavClick(item, inDrawer)}
             >
               <svg className="dsh-nav-icon" viewBox="0 0 24 24" {...ICON_PROPS}>
                 {item.icon}
               </svg>
-              <span className="dsh-nav-text">{item.label}</span>
+              <span className="dsh-nav-text">{t(`admin.layout.nav.${item.id}`)}</span>
             </button>
           ))}
         </div>
@@ -242,8 +252,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
 
       <div className="dsh-sidebar-footer">
         <div className="dsh-progress-label">
-          <span>Panel administrativo</span>
-          <strong>Activo</strong>
+          <span>{t('admin.layout.footer.panel')}</span>
+          <strong>{t('admin.layout.footer.active')}</strong>
         </div>
         <div className="dsh-progress-bar">
           <div className="dsh-progress-fill" style={{ width: '100%' }} />
@@ -264,7 +274,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
       <button
         type="button"
         onClick={onToggle}
-        title={collapsed ? 'Expandir menu' : 'Colapsar menu'}
+        title={collapsed ? t('admin.layout.toggle.expand') : t('admin.layout.toggle.collapse')}
         className="dsh-sidebar-toggle"
         style={{ left: collapsed ? 'calc(64px - 13px)' : 'calc(240px - 13px)' }}
       >
@@ -278,7 +288,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         onClick={() => setMobileOpen(false)}
         aria-hidden="true"
       />
-      <nav className={`dsh-drawer${mobileOpen ? ' open' : ''}`} aria-label="Menu administrador">
+      <nav className={`dsh-drawer${mobileOpen ? ' open' : ''}`} aria-label={t('admin.layout.drawer.aria')}>
         <NavContent inDrawer />
       </nav>
 
@@ -286,8 +296,8 @@ export default function AdminSidebar({ collapsed, onToggle }) {
         type="button"
         className={`dsh-fab${mobileOpen ? ' open' : ''}`}
         onClick={() => setMobileOpen(value => !value)}
-        aria-label={mobileOpen ? 'Cerrar menu' : 'Abrir menu'}
-        title={mobileOpen ? 'Cerrar menu' : 'Abrir menu'}
+        aria-label={mobileOpen ? t('admin.layout.drawer.close') : t('admin.layout.drawer.open')}
+        title={mobileOpen ? t('admin.layout.drawer.close') : t('admin.layout.drawer.open')}
       >
         <svg viewBox="0 0 24 24">
           {mobileOpen ? (
@@ -300,10 +310,10 @@ export default function AdminSidebar({ collapsed, onToggle }) {
 
       <ConfirmModal
         open={logoutModal}
-        title="Cerrar sesion?"
-        message="Tu sesion administrativa se cerrara y tendras que volver a iniciar sesion."
-        confirmLabel="Si, cerrar sesion"
-        cancelLabel="Cancelar"
+        title={t('admin.layout.logout.title')}
+        message={t('admin.layout.logout.message')}
+        confirmLabel={t('admin.layout.logout.confirm')}
+        cancelLabel={t('actions.cancel')}
         variant="red"
         icon="logout"
         loading={loggingOut}

@@ -1,3 +1,4 @@
+import { useLanguage } from '../../../../core/i18n';
 import {
   BsClockHistory,
   BsFileEarmarkText,
@@ -18,9 +19,11 @@ export default function UsersModuleTabs({
   counts,
   onViewChange,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="usr-view-tabs-wrap">
-      <div className="usr-view-tabs" role="tablist" aria-label="Vistas del modulo de usuarios">
+      <div className="usr-view-tabs" role="tablist" aria-label={t('admin.users.tabs.aria')}>
         {USER_MANAGEMENT_VIEWS.map((view) => {
           const Icon = VIEW_ICONS[view.id];
           const countValue = counts?.[view.id] ?? '--';
@@ -37,7 +40,7 @@ export default function UsersModuleTabs({
               <span className="usr-view-tab-icon">
                 {Icon ? <Icon /> : null}
               </span>
-              <span className="usr-view-tab-label">{view.label}</span>
+              <span className="usr-view-tab-label">{t(`admin.users.tabs.${view.id}`)}</span>
               <span className="usr-view-tab-count">{countValue}</span>
             </button>
           );

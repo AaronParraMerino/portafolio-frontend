@@ -1,18 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BsCheck2,
   BsShieldExclamation,
   BsX,
 } from 'react-icons/bs';
-
-const ACTION_LABELS = {
-  aceptar: 'Aceptar solicitud',
-  rechazar: 'Rechazar solicitud',
-  activar: 'Activar evento',
-  pausar: 'Pausar evento',
-  suspender: 'Suspender evento',
-  eliminar: 'Eliminar evento',
-};
+import { useLanguage } from '../../../../core/i18n';
 
 export default function AdminEventActionModal({
   action,
@@ -20,19 +12,25 @@ export default function AdminEventActionModal({
   onClose,
   onConfirm,
 }) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
 
+  useEffect(() => {
+    setReason('');
+    setMessage('');
+  }, [action, target?.id]);
+
   if (!action || !target) return null;
 
-  const label = ACTION_LABELS[action] || 'Confirmar accion';
-  const targetName = target.title || target.name || 'Registro seleccionado';
+  const label = t(`adminEvents.action.${action}`) || t('adminEvents.action.confirmTitle');
+  const targetName = target.title || target.name || t('adminEvents.action.selectedRecord');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!reason.trim()) {
-      setMessage('Registra un motivo para notificar al usuario.');
+      setMessage(t('adminEvents.action.reasonRequired'));
       return;
     }
 
@@ -41,7 +39,7 @@ export default function AdminEventActionModal({
       setReason('');
       setMessage('');
     } catch (error) {
-      setMessage(error.message || 'No se pudo confirmar la accion.');
+      setMessage(error.message || t('adminEvents.action.confirmError'));
     }
   };
 
@@ -56,14 +54,14 @@ export default function AdminEventActionModal({
             <strong>{label}</strong>
             <span>{targetName}</span>
           </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label="Cerrar modal">
+          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
             <BsX />
           </button>
         </div>
 
         <div className="evt-modal-body">
           <label className="evt-field evt-field--full">
-            <span>Motivo para notificar</span>
+            <span>{t('adminEvents.action.reasonLabel')}</span>
             <textarea
               className="evt-field-input evt-field-input--textarea"
               value={reason}
@@ -71,21 +69,21 @@ export default function AdminEventActionModal({
                 setReason(event.target.value);
                 setMessage('');
               }}
-              placeholder="Explica de forma clara por que se realiza esta accion."
+              placeholder={t('adminEvents.action.reasonPlaceholder')}
             />
           </label>
           {message ? <div className="evt-modal-message">{message}</div> : null}
         </div>
 
         <div className="evt-modal-foot">
-          <span>El motivo se usara como base para la notificacion al usuario.</span>
+          <span>{t('adminEvents.action.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
-              Cancelar
+              {t('adminEvents.common.cancel')}
             </button>
             <button type="submit" className="evt-reason-btn evt-reason-btn--primary">
               <BsCheck2 />
-              Confirmar
+              {t('adminEvents.common.confirm')}
             </button>
           </div>
         </div>

@@ -15,10 +15,10 @@ import {
 } from '../../services/notificationService';
 
 const READ_PAGE_SIZE = 20;
-const MODULE_TITLES = {
-  proyectos: 'Proyectos',
-  eventos: 'Eventos',
-  administracion: 'Administracion',
+const MODULE_TITLE_KEYS = {
+  proyectos: 'nav.module.projects',
+  eventos: 'nav.module.events',
+  administracion: 'nav.module.administration',
 };
 
 function formatRelativeTime(value, language = 'es') {
@@ -56,14 +56,17 @@ function formatDateTime(value, language = 'es') {
   }).format(date);
 }
 
-function moduleTitle(modulo) {
-  return MODULE_TITLES[modulo] || modulo || 'Notificaciones';
+function moduleTitle(modulo, t) {
+  const key = MODULE_TITLE_KEYS[modulo];
+
+  if (key) return t(key);
+  return modulo || t('nav.module.default');
 }
 
-function notificationTitle(notification) {
+function notificationTitle(notification, t) {
   return notification?.grupo_titulo
     || notification?.titulo
-    || moduleTitle(notification?.modulo);
+    || moduleTitle(notification?.modulo, t);
 }
 
 function notificationMessage(notification) {
@@ -474,12 +477,12 @@ export default function NotificationCenterModal({
   const selectedDetailNotification = selectedNotification;
 
   const selectedModuleTitle = useMemo(
-    () => selectedModule?.titulo || moduleTitle(selectedModule?.modulo),
-    [selectedModule]
+    () => moduleTitle(selectedModule?.modulo, t),
+    [selectedModule, t]
   );
   const selectedReadModuleTitle = useMemo(
-    () => selectedReadModule?.titulo || moduleTitle(selectedReadModule?.modulo),
-    [selectedReadModule]
+    () => moduleTitle(selectedReadModule?.modulo, t),
+    [selectedReadModule, t]
   );
 
   const loadModules = useCallback(async ({ force = false } = {}) => {
@@ -883,14 +886,14 @@ export default function NotificationCenterModal({
     return (
       <div className="ncm-detail">
         <div className="ncm-detail-title">
-          {notificationTitle(notification)}
+          {notificationTitle(notification, t)}
         </div>
         <div className="ncm-detail-message">
           {notificationMessage(notification) || t('nav.noNotificationMessage')}
         </div>
 
         <div className="ncm-detail-grid">
-          <DetailField label={t('nav.module')} value={moduleTitle(notification.modulo)} />
+          <DetailField label={t('nav.module')} value={moduleTitle(notification.modulo, t)} />
           <DetailField label={t('nav.type')} value={notification.tipo} />
           <DetailField label={t('nav.group')} value={notification.contexto_referencia} />
           <DetailField label={t('nav.actor')} value={actorName} />
@@ -1005,7 +1008,7 @@ export default function NotificationCenterModal({
                         onClick={() => handleModuleSelect(moduleItem)}
                       >
                         <div className="ncm-row-main">
-                          <strong>{moduleItem.titulo || moduleTitle(moduleItem.modulo)}</strong>
+                          <strong>{moduleTitle(moduleItem.modulo, t)}</strong>
                           <span>{Number(moduleItem.cantidad || 0)} {t('nav.pendingNotifications')}</span>
                         </div>
                         <span className="ncm-count">{Number(moduleItem.cantidad || 0)}</span>
@@ -1034,7 +1037,7 @@ export default function NotificationCenterModal({
                       >
                         <span className="ncm-message-dot" />
                         <div className="ncm-row-main">
-                          <strong>{notificationTitle(notification)}</strong>
+                          <strong>{notificationTitle(notification, t)}</strong>
                           <span>{notificationMessage(notification)}</span>
                         </div>
                       </button>
@@ -1077,7 +1080,7 @@ export default function NotificationCenterModal({
                       >
                         <span className="ncm-message-dot" />
                         <div className="ncm-row-main">
-                          <strong>{notificationTitle(notification)}</strong>
+                          <strong>{notificationTitle(notification, t)}</strong>
                           <span>{notificationMessage(notification)}</span>
                           <span>{formatRelativeTime(notification.created_at, language)}</span>
                         </div>
@@ -1111,7 +1114,7 @@ export default function NotificationCenterModal({
                         onClick={() => handleReadModuleSelect(moduleItem)}
                       >
                         <div className="ncm-row-main">
-                          <strong>{moduleItem.titulo || moduleTitle(moduleItem.modulo)}</strong>
+                          <strong>{moduleTitle(moduleItem.modulo, t)}</strong>
                           <span>{Number(moduleItem.cantidad || 0)} {t('nav.readNotifications')}</span>
                         </div>
                         <span className="ncm-count">{Number(moduleItem.cantidad || 0)}</span>
@@ -1137,7 +1140,7 @@ export default function NotificationCenterModal({
                       >
                         <span className="ncm-message-dot" />
                         <div className="ncm-row-main">
-                          <strong>{notificationTitle(notification)}</strong>
+                          <strong>{notificationTitle(notification, t)}</strong>
                           <span>{notificationMessage(notification)}</span>
                           <span>{formatRelativeTime(notification.leido_en || notification.created_at, language)}</span>
                         </div>
@@ -1190,7 +1193,7 @@ export default function NotificationCenterModal({
                       >
                         <span className="ncm-message-dot" />
                         <div className="ncm-row-main">
-                          <strong>{notificationTitle(notification)}</strong>
+                          <strong>{notificationTitle(notification, t)}</strong>
                           <span>{notificationMessage(notification)}</span>
                           <span>{formatRelativeTime(notification.leido_en || notification.created_at, language)}</span>
                         </div>

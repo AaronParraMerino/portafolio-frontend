@@ -11,6 +11,7 @@ import {
   BsSend,
   BsThreeDots,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EVENT_COMMUNICATION_STATUS,
   EVENT_COMMUNICATION_TYPES,
@@ -49,10 +50,14 @@ export default function EventsCommunicationsPanel({
   communications,
   onCreateCommunication,
   onEditCommunication,
-  title = 'Anuncios de plataforma',
-  kicker = 'Comunicaciones',
-  createLabel = 'Nuevo anuncio',
+  title,
+  kicker,
+  createLabel,
 }) {
+  const { t } = useLanguage();
+  const finalTitle = title || t('adminEvents.communications.title');
+  const finalKicker = kicker || t('adminEvents.workspace.events');
+  const finalCreateLabel = createLabel || t('adminEvents.communications.new');
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -67,22 +72,19 @@ export default function EventsCommunicationsPanel({
       <section className="evt-sheet">
         {!onCreateCommunication ? (
           <div className="evt-admin-notification-context">
-            <strong>Centro de notificaciones administrativas</strong>
-            <p>
-              Aqui se revisan las notificaciones generadas por decisiones del administrador:
-              aprobaciones de publicantes, rechazos, pausas, suspensiones, activaciones y eliminaciones de eventos.
-            </p>
+            <strong>{t('adminEvents.communications.adminCenterTitle')}</strong>
+            <p>{t('adminEvents.communications.adminCenterDescription')}</p>
           </div>
         ) : null}
 
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">{kicker}</span>
-            <h2 className="evt-sheet-title">{title}</h2>
+            <span className="evt-sheet-kicker">{finalKicker}</span>
+            <h2 className="evt-sheet-title">{finalTitle}</h2>
           </div>
 
           <div className="evt-view-toolbar-actions">
-            <button type="button" className="evt-icon-btn" title="Filtros" aria-label="Filtros">
+            <button type="button" className="evt-icon-btn" title={t('adminEvents.communications.filters')} aria-label={t('adminEvents.communications.filters')}>
               <BsFunnel />
             </button>
             {onCreateCommunication ? (
@@ -92,7 +94,7 @@ export default function EventsCommunicationsPanel({
                 onClick={onCreateCommunication}
               >
                 <BsPlusLg />
-                {createLabel}
+                {finalCreateLabel}
               </button>
             ) : null}
           </div>
@@ -108,12 +110,12 @@ export default function EventsCommunicationsPanel({
               className="evt-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar anuncio..."
-              aria-label="Buscar comunicaciones"
+              placeholder={t('adminEvents.communications.searchPlaceholder')}
+              aria-label={t('adminEvents.communications.searchAria')}
             />
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar comunicaciones por tipo">
+          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.communications.typeAria')}>
             {EVENT_COMMUNICATION_TYPES.map((type) => (
               <button
                 key={type.id}
@@ -121,12 +123,12 @@ export default function EventsCommunicationsPanel({
                 className={`evt-filter-chip${typeFilter === type.id ? ' active' : ''}`}
                 onClick={() => setTypeFilter(type.id)}
               >
-                {type.label}
+                {t(`adminEvents.type.${type.id}`)}
               </button>
             ))}
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar comunicaciones por estado">
+          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.communications.statusAria')}>
             {EVENT_COMMUNICATION_STATUS.map((status) => (
               <button
                 key={status.id}
@@ -134,7 +136,7 @@ export default function EventsCommunicationsPanel({
                 className={`evt-filter-chip${statusFilter === status.id ? ' active' : ''}`}
                 onClick={() => setStatusFilter(status.id)}
               >
-                {status.label}
+                {t(`adminEvents.status.${status.id}`)}
               </button>
             ))}
           </div>
@@ -155,15 +157,15 @@ export default function EventsCommunicationsPanel({
                       <div className="evt-card-badges">
                         <span className={`evt-type-badge evt-type-badge--${typeMeta.tone}`}>
                           <BsMegaphone />
-                          {typeMeta.label}
+                          {t(`adminEvents.type.${item.type}`) || typeMeta.label}
                         </span>
                         <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
                           <span />
-                          {statusMeta.label}
+                          {t(`adminEvents.status.${item.status}`) || statusMeta.label}
                         </span>
                       </div>
 
-                      <button type="button" className="evt-icon-btn evt-icon-btn--sm" title="Mas opciones" aria-label="Mas opciones">
+                      <button type="button" className="evt-icon-btn evt-icon-btn--sm" title={t('adminEvents.communications.more')} aria-label={t('adminEvents.communications.more')}>
                         <BsThreeDots />
                       </button>
                     </div>
@@ -172,11 +174,11 @@ export default function EventsCommunicationsPanel({
                     <p className="evt-card-desc">{item.body}</p>
 
                     <div className="evt-mini-meta">
-                      <span>{item.eventId ? item.eventTitle : 'Comunicado general'}</span>
+                      <span>{item.eventId ? item.eventTitle : t('adminEvents.communications.general')}</span>
                       <span>{item.date}</span>
                       <span>
                         <BsPeople />
-                        {item.audience} destinatarios
+                        {t('adminEvents.communications.recipients', { count: item.audience })}
                       </span>
                     </div>
                   </div>
@@ -188,7 +190,7 @@ export default function EventsCommunicationsPanel({
 
                         return <Icon key={channel} title={channel} />;
                       })}
-                      {!item.channels.length ? <span>Sin canal</span> : null}
+                      {!item.channels.length ? <span>{t('adminEvents.channel.inapp')}</span> : null}
                     </div>
 
                     <button
@@ -206,11 +208,11 @@ export default function EventsCommunicationsPanel({
         ) : (
           <EventsEmptyState
             icon={BsSend}
-            title={sourceReady ? 'Sin comunicaciones encontradas' : 'Sin comunicaciones registradas'}
+            title={sourceReady ? t('adminEvents.communications.emptyFoundTitle') : t('adminEvents.communications.emptyTitle')}
             description={sourceReady
-              ? 'No hay mensajes que coincidan con la busqueda o los filtros actuales.'
-              : 'Aqui apareceran anuncios de plataforma, oportunidades, seguridad, mantenimiento y comunidad.'}
-            hint="Nuevo anuncio abre el modal preparado para audiencias generales o vinculadas a un evento."
+              ? t('adminEvents.communications.emptyFoundDescription')
+              : t('adminEvents.communications.emptyDescription')}
+            hint={t('adminEvents.communications.emptyHint')}
           />
         )}
       </section>

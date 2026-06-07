@@ -1,6 +1,7 @@
 import BASE_URL from '../../../../services/http/const';
 
 export const EVENT_PAGE_SIZE = 9;
+const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 
 export const EVENT_WORKSPACE_VIEWS = [
   { id: 'requests', label: 'Solicitudes' },
@@ -47,6 +48,27 @@ export const EVENT_COMMUNICATION_STATUS = [
   { id: 'programado', label: 'Programado', tone: 'warning' },
   { id: 'enviado', label: 'Enviado', tone: 'success' },
   { id: 'archivado', label: 'Archivado', tone: 'muted' },
+];
+
+export const EVENT_HISTORY_TYPES = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'solicitud', label: 'Solicitudes', tone: 'primary' },
+  { id: 'evento', label: 'Eventos', tone: 'success' },
+  { id: 'plataforma', label: 'Plataforma', tone: 'primary' },
+];
+
+export const EVENT_HISTORY_STATUS = [
+  { id: 'todos', label: 'Todos', tone: 'primary' },
+  { id: 'pendiente', label: 'Pendiente', tone: 'warning' },
+  { id: 'aprobada', label: 'Aprobada', tone: 'success' },
+  { id: 'rechazada', label: 'Rechazada', tone: 'danger' },
+  { id: 'activo', label: 'Activo', tone: 'success' },
+  { id: 'programado', label: 'Programado', tone: 'warning' },
+  { id: 'borrador', label: 'Borrador', tone: 'muted' },
+  { id: 'pausado', label: 'Pausado', tone: 'warning' },
+  { id: 'suspendido', label: 'Suspendido', tone: 'danger' },
+  { id: 'cancelado', label: 'Cancelado', tone: 'danger' },
+  { id: 'eliminado', label: 'Eliminado', tone: 'danger' },
 ];
 
 export const EVENT_AUDIENCE_SEGMENTS = [
@@ -239,6 +261,20 @@ function buildEventFormData(payload = {}, method = null) {
   return formData;
 }
 
+function formatEventImageUrl(path) {
+  if (!path) return '';
+
+  const value = String(path).trim();
+
+  if (!value) return '';
+  if (value.startsWith('http://')) return value;
+  if (value.startsWith('https://')) return value;
+  if (value.startsWith('blob:')) return value;
+  if (value.startsWith('data:')) return value;
+
+  return `${STORAGE_URL}/${value.replace(/^\/+/, '')}`;
+}
+
 export async function fetchEventsWorkspace() {
   const response = await fetch(`${BASE_URL}/administrador/eventos/workspace`, {
     headers: getAdminRequestHeaders(),
@@ -390,6 +426,40 @@ export async function fetchPublisherEvents() {
   return Array.isArray(payload?.data) ? payload.data : [];
 }
 
+async function fetchEventCatalog(path) {
+  const response = await fetch(`${BASE_URL}/buscar/catalogos/${path}`, {
+    headers: getAdminRequestHeaders(),
+  });
+  const payload = await parseAdminResponse(response, 'No se pudo cargar la segmentacion.');
+  const list = Array.isArray(payload) ? payload : (payload?.data || payload?.items || []);
+
+  return [...new Set(list
+    .map((item) => (typeof item === 'string'
+      ? item
+      : (item?.nombre || item?.name || item?.titulo || item?.valor || item?.cargo || '')))
+    .map((item) => String(item || '').trim())
+    .filter(Boolean))];
+}
+
+export async function fetchEventProfileTargets() {
+  const [
+    technicalSkills,
+    softSkills,
+    experiencePositions,
+  ] = await Promise.all([
+    fetchEventCatalog('habilidades-tecnicas'),
+    fetchEventCatalog('habilidades-blandas'),
+    fetchEventCatalog('cargos-experiencia'),
+  ]);
+
+  return {
+    technicalSkills,
+    softSkills,
+    academicExperience: experiencePositions,
+    workExperience: experiencePositions,
+  };
+}
+
 export async function createPublisherEvent(payload) {
   const response = await fetch(`${BASE_URL}/publicante/eventos`, {
     method: 'POST',
@@ -413,6 +483,19 @@ export async function updatePublisherEvent(eventId, payload) {
 export function normalizeEvent(item = {}) {
   const segments = item.segments || item.segmentos || item.segs || [];
   const channels = item.channels || item.canales || [];
+  const targetSelections = item.targetSelections || item.target_selections || {};
+  const segmentChips = Array.isArray(segments)
+    ? segments
+    : Object.values(targetSelections).flat().filter(Boolean);
+  const imageUrl = formatEventImageUrl(
+    item.imageUrl
+    || item.image_url
+    || item.imagen_url
+    || item.imagen_portada_url
+    || item.imagen_portada_path
+    || item.banner_url
+    || item.imagen
+  );
 
   return {
     id: item.id || item.id_evento || item.eventId,
@@ -425,18 +508,20 @@ export function normalizeEvent(item = {}) {
     date: item.date || item.fecha || item.fecha_inicio || item.fechaEvento || '--',
     time: item.time || item.hora || item.hora_inicio || '',
     location: item.location || item.lugar || item.ubicacion || 'Sin lugar',
-    imageUrl: item.imageUrl || item.image_url || item.imagen_url || item.banner_url || item.imagen || '',
+    imageUrl,
     imagePreview: item.imagePreview || item.preview || '',
     imageFile: item.imageFile || null,
     publisherId: item.publisherId || item.publicante_id || item.usuario_creador_id || item.usuario_id,
     publisherName: item.publisherName || item.publicante || item.nombre_publicante || item.creador?.nombre || item.usuario?.nombre || 'Publicante sin nombre',
     publisherEmail: item.publisherEmail || item.correo_publicante || item.creador?.correo || item.usuario?.correo || 'Sin correo',
+    targetMode: item.targetMode || item.target_mode || 'all_users',
+    targetSelections,
     capacity: Number(item.capacity ?? item.cupo ?? item.cupos ?? 0),
     registered: Number(item.registered ?? item.inscritos ?? item.asistentes ?? 0),
     interested: Number(item.interested ?? item.interesados ?? 0),
     waitlist: Number(item.waitlist ?? item.espera ?? 0),
     communicationsCount: Number(item.communicationsCount ?? item.comunicaciones ?? item.avisos ?? 0),
-    segments: Array.isArray(segments) ? segments : [],
+    segments: segmentChips,
     channels: Array.isArray(channels) ? channels : [],
     raw: item,
   };
@@ -465,12 +550,34 @@ export function normalizeEventCommunication(item = {}) {
 }
 
 export function normalizePublisherRequest(item = {}) {
+  const sourceUser = item.user || item.usuario || {};
+  const name = item.name || item.nombre || item.legalName || item.nombre_legal || sourceUser.nombre || 'Usuario sin nombre';
+  const email = item.email || item.correo || sourceUser.email || sourceUser.correo || item.backupEmail || item.correo_respaldo || 'Sin correo';
+  const avatarUrl = item.fotoPerfilThumbUrl
+    || item.foto_perfil_thumb_url
+    || item.avatarUrl
+    || item.avatar_url
+    || sourceUser.fotoPerfilThumbUrl
+    || sourceUser.foto_perfil_thumb_url
+    || sourceUser.avatarUrl
+    || sourceUser.avatar_url
+    || '';
+
   return {
     id: item.id || item.id_solicitud || item.requestId,
-    userId: item.userId || item.usuario_id || item.id_usuario,
-    name: item.name || item.nombre || item.legalName || item.nombre_legal || 'Usuario sin nombre',
-    email: item.email || item.correo || item.backupEmail || item.correo_respaldo || 'Sin correo',
+    userId: item.userId || item.usuario_id || item.id_usuario || sourceUser.id || sourceUser.id_usuario,
+    name,
+    email,
     phone: item.phone || item.telefono || 'Sin telefono',
+    fotoPerfilThumbUrl: avatarUrl,
+    avatarUrl,
+    user: {
+      id: item.userId || item.usuario_id || item.id_usuario || sourceUser.id || sourceUser.id_usuario,
+      nombre: name,
+      email,
+      correo: email,
+      fotoPerfilThumbUrl: avatarUrl,
+    },
     documentId: item.documentId || item.documento || item.ci || 'Sin documento',
     organization: item.organization || item.organizacion || 'Independiente',
     role: item.role || item.cargo || 'No especificado',
@@ -478,6 +585,7 @@ export function normalizePublisherRequest(item = {}) {
     experience: item.experience || item.experiencia || '',
     links: item.links || item.enlaces || '',
     status: item.status || item.estado || 'pendiente',
+    revisionReason: item.revisionReason || item.motivo_revision || '',
     date: item.date || item.fecha || item.createdAt || item.creado || '--',
     raw: item,
   };
@@ -499,13 +607,24 @@ export function normalizeEventTemplate(item = {}) {
 
 export function normalizeEventHistoryItem(item = {}) {
   const channels = item.channels || item.canales || [];
+  const metadata = item.metadata || item.meta || {};
+  const entityType = item.entityType || item.entidad_tipo || metadata.entidad_tipo || '';
+  const status = item.status
+    || item.estado
+    || metadata.estado_nuevo
+    || metadata.estado
+    || 'activo';
+  const type = item.type
+    || item.tipo
+    || entityType
+    || (String(item.action || item.accion || '').includes('solicitud') ? 'solicitud' : 'evento');
 
   return {
     id: item.id || item.id_historial,
     title: item.title || item.titulo || item.action || 'Registro sin titulo',
     description: item.description || item.descripcion || item.body || '',
-    type: item.type || item.tipo || 'plataforma',
-    status: item.status || item.estado || 'enviado',
+    type,
+    status,
     target: item.target || item.destino || item.eventTitle || item.evento || 'Sin destino',
     date: item.date || item.fecha || item.createdAt || item.creado || '--',
     actor: item.actor || item.usuario || item.admin || item.adminName || item.nombre_admin || 'Sistema',
@@ -514,7 +633,10 @@ export function normalizeEventHistoryItem(item = {}) {
     reason: item.reason || item.motivo || item.observacion || '',
     entity: item.entity || item.entidad || item.eventTitle || item.evento || item.target || item.destino || 'Registro',
     ip: item.ip || item.ip_address || '',
+    previousStatus: item.previousStatus || item.estado_anterior || metadata.estado_anterior || '',
+    nextStatus: item.nextStatus || item.estado_nuevo || metadata.estado_nuevo || '',
     channels: Array.isArray(channels) ? channels : [],
+    metadata,
     raw: item,
   };
 }
@@ -535,12 +657,20 @@ export function getEventCommunicationStatusMeta(status) {
   return EVENT_COMMUNICATION_STATUS.find((item) => item.id === status) || EVENT_COMMUNICATION_STATUS[1];
 }
 
+export function getEventHistoryTypeMeta(type) {
+  return EVENT_HISTORY_TYPES.find((item) => item.id === type) || EVENT_HISTORY_TYPES[2];
+}
+
+export function getEventHistoryStatusMeta(status) {
+  return EVENT_HISTORY_STATUS.find((item) => item.id === status) || EVENT_HISTORY_STATUS[4];
+}
+
 export function buildEventMetrics(events = [], communications = [], requests = []) {
   const normalizedEvents = events.map(normalizeEvent);
 
   return {
     total: normalizedEvents.length,
-    requests: requests.length,
+    requests: requests.filter((request) => (request.status || request.estado || 'pendiente') === 'pendiente').length,
     activo: normalizedEvents.filter((event) => event.status === 'activo').length,
     programado: normalizedEvents.filter((event) => event.status === 'programado').length,
     pausado: normalizedEvents.filter((event) => event.status === 'pausado').length,
@@ -567,7 +697,7 @@ export function buildEventWorkspaceCounts({
   }
 
   return {
-    requests: requests.length,
+    requests: requests.filter((request) => (request.status || request.estado || 'pendiente') === 'pendiente').length,
     events: events.length,
     history: history.length,
     templates: templates.length,

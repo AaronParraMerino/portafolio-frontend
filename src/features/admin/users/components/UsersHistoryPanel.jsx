@@ -9,6 +9,7 @@ import {
   BsPhone,
   BsSearch,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   USER_NOTICE_STATUSES,
   USER_NOTICE_TYPES,
@@ -28,11 +29,11 @@ function normalizeHistoryItem(item = {}) {
 
   return {
     id: item.id || item.id_historial,
-    title: item.title || item.titulo || item.action || 'Registro sin titulo',
+    title: item.title || item.titulo || item.action || '',
     body: item.body || item.preview || item.descripcion || '',
     type: item.type || item.tipo || 'sistema',
     status: item.status || item.estado || 'enviado',
-    audience: item.audience || item.dest || item.destinatarios || item.usuario || 'Sin destinatarios',
+    audience: item.audience || item.dest || item.destinatarios || item.usuario || '',
     date: item.date || item.fecha || item.createdAt || item.creado || '--',
     channels: Array.isArray(channels) ? channels : [],
   };
@@ -60,6 +61,7 @@ export default function UsersHistoryPanel({
   sourceReady,
   historyItems,
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -79,8 +81,8 @@ export default function UsersHistoryPanel({
       <section className="usr-sheet">
         <div className="usr-view-toolbar">
           <div className="usr-view-toolbar-copy">
-            <span className="usr-sheet-kicker">Historial</span>
-            <h2 className="usr-sheet-title">Seguimiento unificado</h2>
+            <span className="usr-sheet-kicker">{t('admin.users.history.kicker')}</span>
+            <h2 className="usr-sheet-title">{t('admin.users.history.title')}</h2>
           </div>
         </div>
 
@@ -94,12 +96,12 @@ export default function UsersHistoryPanel({
               className="usr-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar historial..."
-              aria-label="Buscar historial"
+              placeholder={t('admin.users.history.searchPlaceholder')}
+              aria-label={t('admin.users.history.searchAria')}
             />
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label="Filtrar historial por tipo">
+          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.history.typeAria')}>
             <button
               type="button"
               className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
@@ -114,12 +116,12 @@ export default function UsersHistoryPanel({
                 className={`usr-filter-chip${typeFilter === type.id ? ' active' : ''}`}
                 onClick={() => setTypeFilter(type.id)}
               >
-                {type.label}
+                {t(`admin.users.noticeType.${type.id}`)}
               </button>
             ))}
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label="Filtrar historial por estado">
+          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.history.statusAria')}>
             {USER_NOTICE_STATUSES.map((status) => (
               <button
                 key={status.id}
@@ -127,7 +129,7 @@ export default function UsersHistoryPanel({
                 className={`usr-filter-chip${statusFilter === status.id ? ' active' : ''}`}
                 onClick={() => setStatusFilter(status.id)}
               >
-                {status.label}
+                {t(`admin.users.status.${status.id}.label`)}
               </button>
             ))}
           </div>
@@ -138,12 +140,12 @@ export default function UsersHistoryPanel({
             <table className="usr-history-table">
               <thead>
                 <tr>
-                  <th>Registro</th>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                  <th>Destino</th>
-                  <th>Canales</th>
-                  <th>Fecha</th>
+                  <th>{t('admin.users.history.record')}</th>
+                  <th>{t('admin.users.history.type')}</th>
+                  <th>{t('admin.users.history.status')}</th>
+                  <th>{t('admin.users.history.destination')}</th>
+                  <th>{t('admin.users.history.channels')}</th>
+                  <th>{t('admin.users.history.date')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -159,26 +161,26 @@ export default function UsersHistoryPanel({
                             <BsMegaphone />
                           </span>
                           <span>
-                            <strong>{item.title}</strong>
+                            <strong>{item.title || t('admin.users.history.untitled')}</strong>
                             {item.body ? <small>{item.body}</small> : null}
                           </span>
                         </div>
                       </td>
                       <td>
                         <span className={`usr-type-badge usr-type-badge--${typeMeta.tone}`}>
-                          {typeMeta.label}
+                          {t(`admin.users.noticeType.${item.type}`)}
                         </span>
                       </td>
                       <td>
                         <span className={`usr-status-badge usr-status-badge--${statusMeta.tone}`}>
                           <span className="usr-status-dot" />
-                          {statusMeta.label}
+                          {t(`admin.users.status.${item.status}.label`)}
                         </span>
                       </td>
                       <td>
                         <span className="usr-history-audience">
                           <BsPeople />
-                          {item.audience}
+                          {item.audience || t('admin.users.history.noRecipients')}
                         </span>
                       </td>
                       <td>
@@ -188,7 +190,7 @@ export default function UsersHistoryPanel({
 
                             return <Icon key={channel} title={channel} />;
                           })}
-                          {!item.channels.length ? <span>Sin canal</span> : null}
+                          {!item.channels.length ? <span>{t('admin.users.history.noChannel')}</span> : null}
                         </div>
                       </td>
                       <td>{item.date}</td>
@@ -201,11 +203,11 @@ export default function UsersHistoryPanel({
         ) : (
           <UsersWorkspaceEmpty
             icon={BsClockHistory}
-            title={sourceReady ? 'Sin registros encontrados' : 'Sin historial disponible'}
+            title={sourceReady ? t('admin.users.history.emptyFoundTitle') : t('admin.users.history.emptyTitle')}
             description={sourceReady
-              ? 'No hay registros que coincidan con la busqueda o los filtros actuales.'
-              : 'Cuando el backend este conectado, aqui veras envios, cambios de cuenta y trazabilidad de las acciones hechas sobre usuarios.'}
-            hint="La estructura ya esta preparada para mostrar datos reales del backend."
+              ? t('admin.users.history.emptyFoundDescription')
+              : t('admin.users.history.emptyDescription')}
+            hint={t('admin.users.history.emptyHint')}
           />
         )}
       </section>
@@ -214,15 +216,15 @@ export default function UsersHistoryPanel({
         <div className="usr-chip-list">
           <span className="usr-chip">
             <BsFileText />
-            Acciones de cuenta
+            {t('admin.users.history.accountActions')}
           </span>
           <span className="usr-chip">
             <BsFileText />
-            Comunicaciones emitidas
+            {t('admin.users.history.sentCommunications')}
           </span>
           <span className="usr-chip">
             <BsFileText />
-            Cambios administrativos
+            {t('admin.users.history.adminChanges')}
           </span>
         </div>
       </section>

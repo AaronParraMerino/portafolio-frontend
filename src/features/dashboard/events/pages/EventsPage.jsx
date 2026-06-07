@@ -9,6 +9,7 @@ import {
   BsShieldCheck,
 } from 'react-icons/bs';
 import Header from '../../layout/Header';
+import { useLanguage } from '../../../../core/i18n';
 import { getStoredUser, isPublisherUser } from '../../../../shared/utils/authStorage';
 import EventFormModal from '../../../admin/events/components/EventFormModal';
 import EventsCalendar from '../../../admin/events/components/EventsCalendar';
@@ -20,9 +21,8 @@ import {
   buildEventMetrics,
   createPublisherEvent,
   createPublisherRequest,
+  fetchEventProfileTargets,
   fetchPublisherEvents,
-  getEventsEmptyState,
-  getEventsPageSummary,
   normalizeEvent,
   updatePublisherEvent,
 } from '../../../admin/events/services/eventsService';
@@ -33,9 +33,9 @@ import PublisherPermissionModal from '../components/PublisherPermissionModal';
 const MONTHLY_LIMIT = 3;
 
 const PUBLISHER_TABS = [
-  { id: 'events', label: 'Mis eventos', icon: BsCalendar2Plus },
-  { id: 'calendar', label: 'Calendario', icon: BsCalendar3 },
-  { id: 'templates', label: 'Plantillas', icon: BsFileEarmarkText },
+  { id: 'events', labelKey: 'adminEvents.dashboard.tab.events', icon: BsCalendar2Plus },
+  { id: 'calendar', labelKey: 'adminEvents.dashboard.tab.calendar', icon: BsCalendar3 },
+  { id: 'templates', labelKey: 'adminEvents.dashboard.tab.templates', icon: BsFileEarmarkText },
 ];
 
 function isSameMonth(dateValue, date = new Date()) {
@@ -46,6 +46,7 @@ function isSameMonth(dateValue, date = new Date()) {
 }
 
 export default function DashboardEventsPage() {
+  const { t } = useLanguage();
   const user = getStoredUser();
   const canPublish = isPublisherUser(user);
   const [permissionModalOpen, setPermissionModalOpen] = useState(false);
@@ -59,6 +60,8 @@ export default function DashboardEventsPage() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [profileTargets, setProfileTargets] = useState(null);
+  const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
 
   const loadEvents = useCallback(async () => {
     if (!canPublish) return;
@@ -68,13 +71,35 @@ export default function DashboardEventsPage() {
       setEvents(data);
       setNotice('');
     } catch (error) {
-      setNotice(error.message || 'No se pudieron cargar tus eventos.');
+      setNotice(error.message || t('adminEvents.dashboard.noLoadEvents'));
     }
-  }, [canPublish]);
+  }, [canPublish, t]);
 
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  useEffect(() => {
+    if (!canPublish) return undefined;
+
+    let active = true;
+    setProfileTargetsLoading(true);
+
+    fetchEventProfileTargets()
+      .then((targets) => {
+        if (active) setProfileTargets(targets);
+      })
+      .catch(() => {
+        if (active) setProfileTargets(null);
+      })
+      .finally(() => {
+        if (active) setProfileTargetsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canPublish]);
 
   const normalizedEvents = useMemo(
     () => events.map(normalizeEvent),
@@ -123,17 +148,23 @@ export default function DashboardEventsPage() {
     suspendido: normalizedEvents.filter((event) => event.status === 'suspendido').length,
     cancelado: normalizedEvents.filter((event) => event.status === 'cancelado').length,
   }), [normalizedEvents]);
-  const pageSummary = getEventsPageSummary({
-    sourceReady: true,
-    filteredCount: filteredEvents.length,
-    currentPage: safeCurrentPage,
-    pageSize: EVENT_PAGE_SIZE,
-  });
-  const emptyState = getEventsEmptyState({
-    sourceReady: true,
-    hasQuery: !!query.trim(),
-    hasFilters: statusFilter !== 'todos' || typeFilter !== 'todos',
-  });
+  const pageSummary = filteredEvents.length
+    ? t('adminEvents.pagination.showingEvents', {
+      start: ((safeCurrentPage - 1) * EVENT_PAGE_SIZE) + 1,
+      end: Math.min(safeCurrentPage * EVENT_PAGE_SIZE, filteredEvents.length),
+      count: filteredEvents.length,
+    })
+    : t('adminEvents.pagination.noResults');
+
+  const emptyState = query.trim() || statusFilter !== 'todos' || typeFilter !== 'todos'
+    ? {
+      title: t('adminEvents.empty.notFound.title'),
+      description: t('adminEvents.empty.notFound.description'),
+    }
+    : {
+      title: t('adminEvents.empty.available.title'),
+      description: t('adminEvents.empty.available.description'),
+    };
   const handleGoToPage = (page) => {
     setCurrentPage(Math.min(Math.max(page, 1), totalPages));
   };
@@ -153,7 +184,7 @@ export default function DashboardEventsPage() {
   const headerActions = canPublish ? [
     {
       key: 'create-event',
-      label: remainingThisMonth > 0 ? 'Agregar evento' : 'Limite mensual',
+      label: remainingThisMonth > 0 ? t('adminEvents.dashboard.addEvent') : t('adminEvents.dashboard.monthlyLimit'),
       icon: <BsCalendar2Plus />,
       variant: 'primary',
       disabled: remainingThisMonth <= 0,
@@ -162,7 +193,7 @@ export default function DashboardEventsPage() {
   ] : [
     {
       key: 'request-permission',
-      label: requestSent ? 'Solicitud enviada' : 'Solicitar permiso',
+      label: requestSent ? t('adminEvents.dashboard.requestSent') : t('adminEvents.dashboard.requestPermission'),
       icon: requestSent ? <BsCheck2Circle /> : <BsShieldCheck />,
       variant: requestSent ? 'secondary' : 'primary',
       disabled: requestSent,
@@ -172,7 +203,7 @@ export default function DashboardEventsPage() {
 
   const handleSaveEvent = async (payload) => {
     if (remainingThisMonth <= 0 && eventModal?.mode !== 'edit') {
-      throw new Error('Ya alcanzaste el limite de 3 eventos este mes.');
+      throw new Error(t('adminEvents.dashboard.limitReachedError'));
     }
 
     if (eventModal?.mode === 'edit' && eventModal.event?.id) {
@@ -189,14 +220,14 @@ export default function DashboardEventsPage() {
     await createPublisherRequest(payload);
     setRequestSent(true);
     setPermissionModalOpen(false);
-    setNotice('Tu solicitud fue enviada para revision administrativa.');
+    setNotice(t('adminEvents.dashboard.requestReviewNotice'));
   };
 
   return (
     <div className="dbe-page">
       <Header
-        eyebrow="Publicar"
-        title="Eventos"
+        eyebrow={t('adminEvents.dashboard.eyebrow')}
+        title={t('adminEvents.dashboard.title')}
         actions={headerActions}
       />
 
@@ -212,46 +243,43 @@ export default function DashboardEventsPage() {
                 <BsLock />
               </span>
               <div>
-                <span className="dbe-kicker">Acceso con permiso</span>
-                <h2>Publicar eventos requiere revision administrativa</h2>
-                <p>
-                  Este espacio permite solicitar el rol publicador. Antes de habilitar la creacion,
-                  administracion revisara tus datos, respaldo de contacto y responsabilidad de uso.
-                </p>
+                <span className="dbe-kicker">{t('adminEvents.dashboard.permissionAccess')}</span>
+                <h2>{t('adminEvents.dashboard.permissionTitle')}</h2>
+                <p>{t('adminEvents.dashboard.permissionDescription')}</p>
               </div>
             </div>
 
             {requestSent ? (
               <div className="dbe-request-status">
                 <BsCheck2Circle />
-                <span>Tu solicitud fue preparada para revision.</span>
+                <span>{t('adminEvents.dashboard.requestPrepared')}</span>
               </div>
             ) : null}
 
             <div className="dbe-requirement-grid">
               <article>
                 <BsShieldCheck />
-                <strong>Identidad verificable</strong>
-                <p>Usa datos personales claros, correo de respaldo y canales de contacto reales.</p>
+                <strong>{t('adminEvents.dashboard.identityTitle')}</strong>
+                <p>{t('adminEvents.dashboard.identityDescription')}</p>
               </article>
               <article>
                 <BsFileEarmarkText />
-                <strong>Motivo de publicacion</strong>
-                <p>Explica que tipo de cursos, trabajos, ferias o convocatorias deseas publicar.</p>
+                <strong>{t('adminEvents.dashboard.reasonTitle')}</strong>
+                <p>{t('adminEvents.dashboard.reasonDescription')}</p>
               </article>
               <article>
                 <BsExclamationTriangle />
-                <strong>Responsabilidad</strong>
-                <p>Los eventos deben ser utiles, verificables y respetar las reglas de la plataforma.</p>
+                <strong>{t('adminEvents.dashboard.responsibilityTitle')}</strong>
+                <p>{t('adminEvents.dashboard.responsibilityDescription')}</p>
               </article>
             </div>
 
             <div className="dbe-note-panel">
-              <strong>Cuando seas publicador</strong>
-              <p>Podras crear hasta 3 eventos por mes, revisar tus eventos, consultar el calendario y preparar convocatorias con plantillas.</p>
+              <strong>{t('adminEvents.dashboard.whenPublisherTitle')}</strong>
+              <p>{t('adminEvents.dashboard.whenPublisherDescription')}</p>
               <button type="button" className="evt-context-btn evt-context-btn--primary" onClick={() => setPermissionModalOpen(true)}>
                 <BsShieldCheck />
-                Solicitar permisos
+                {t('adminEvents.dashboard.requestPermissions')}
               </button>
             </div>
           </section>
@@ -259,37 +287,37 @@ export default function DashboardEventsPage() {
           <>
             <section className="dbe-quota">
               <div>
-                <span className="dbe-kicker">Limite mensual</span>
-                <strong>{currentMonthCount}/{MONTHLY_LIMIT} eventos creados este mes</strong>
-                <p>Puedes publicar hasta 3 eventos por mes. Planifica cursos, trabajos o convocatorias con datos verificables.</p>
+                <span className="dbe-kicker">{t('adminEvents.dashboard.monthlyLimit')}</span>
+                <strong>{t('adminEvents.dashboard.monthlyCreated', { current: currentMonthCount, limit: MONTHLY_LIMIT })}</strong>
+                <p>{t('adminEvents.dashboard.monthlyDescription')}</p>
               </div>
               <span className={`dbe-quota-pill${remainingThisMonth <= 0 ? ' locked' : ''}`}>
-                {remainingThisMonth > 0 ? `${remainingThisMonth} disponibles` : 'Limite alcanzado'}
+                {remainingThisMonth > 0 ? t('adminEvents.dashboard.available', { count: remainingThisMonth }) : t('adminEvents.dashboard.limitReached')}
               </span>
             </section>
 
-            <section className="dbe-publisher-stats" aria-label="Resumen de eventos del publicador">
+            <section className="dbe-publisher-stats" aria-label={t('adminEvents.dashboard.publisherSummaryAria')}>
               <article>
-                <span>Total eventos</span>
+                <span>{t('adminEvents.dashboard.totalEvents')}</span>
                 <strong>{metrics.total}</strong>
               </article>
               <article>
-                <span>Activos</span>
+                <span>{t('adminEvents.dashboard.active')}</span>
                 <strong>{metrics.activo}</strong>
               </article>
               <article>
-                <span>Programados</span>
+                <span>{t('adminEvents.dashboard.scheduled')}</span>
                 <strong>{metrics.programado}</strong>
               </article>
               <article>
-                <span>Cupo mensual</span>
+                <span>{t('adminEvents.dashboard.monthlyQuota')}</span>
                 <strong>{remainingThisMonth}/{MONTHLY_LIMIT}</strong>
               </article>
             </section>
 
             <section className="evt-panel">
               <div className="evt-tabs-wrap">
-                <div className="evt-tabs" role="tablist" aria-label="Vistas de eventos del publicador">
+                <div className="evt-tabs" role="tablist" aria-label={t('adminEvents.dashboard.publisherViewsAria')}>
                   {PUBLISHER_TABS.map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -300,7 +328,7 @@ export default function DashboardEventsPage() {
                         onClick={() => setActiveView(tab.id)}
                       >
                         <Icon />
-                        <span>{tab.label}</span>
+                        <span>{t(tab.labelKey)}</span>
                       </button>
                     );
                   })}
@@ -331,8 +359,8 @@ export default function DashboardEventsPage() {
                     onGoToPage={handleGoToPage}
                     onEditEvent={(event) => setEventModal({ mode: 'edit', event })}
                     showCommunicationAction={false}
-                    primaryActionLabel="Editar"
-                    emptyHint="Crea tu primer evento cuando tengas una convocatoria lista para publicar."
+                    primaryActionLabel={t('adminEvents.common.edit')}
+                    emptyHint={t('adminEvents.dashboard.firstEventHint')}
                   />
                 </>
               ) : null}
@@ -364,6 +392,8 @@ export default function DashboardEventsPage() {
 
       <EventFormModal
         modal={eventModal}
+        profileTargets={profileTargets}
+        profileTargetsLoading={profileTargetsLoading}
         onClose={() => setEventModal(null)}
         onSave={handleSaveEvent}
       />

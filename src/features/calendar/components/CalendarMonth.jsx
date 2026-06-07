@@ -18,6 +18,7 @@ export default function CalendarMonth({
   selectedDate,
   today,
   eventDates,
+  eventDateMeta,
   onPrevMonth,
   onNextMonth,
   onSelectDate,
@@ -44,9 +45,13 @@ export default function CalendarMonth({
     date.setDate(startDate.getDate() + index);
 
     const iso = toISODate(date);
+    const meta = eventDateMeta?.get?.(iso) || {};
     const isCurrentMonth = date.getMonth() === month;
     const isSelected = iso === selectedDate;
     const hasEvent = eventDates.has(iso);
+    const hasPersonalEvent = !!meta.personal;
+    const hasSubscribedEvent = !!meta.subscribed;
+    const hasMixedEvents = hasPersonalEvent && hasSubscribedEvent;
     const isPast = iso < today;
     const isPastEvent = isPast && hasEvent;
 
@@ -57,6 +62,9 @@ export default function CalendarMonth({
       isCurrentMonth,
       isSelected,
       hasEvent,
+      hasPersonalEvent,
+      hasSubscribedEvent,
+      hasMixedEvents,
       isPast,
       isPastEvent,
     };
@@ -87,6 +95,9 @@ export default function CalendarMonth({
             !item.isCurrentMonth ? 'other-month' : '',
             item.isSelected ? 'selected' : '',
             item.hasEvent ? 'has-event' : '',
+            item.hasPersonalEvent ? 'has-personal-event' : '',
+            item.hasSubscribedEvent ? 'has-subscribed-event' : '',
+            item.hasMixedEvents ? 'has-mixed-events' : '',
             item.isPast ? 'past' : '',
             item.isPastEvent ? 'past-event' : '',
           ].filter(Boolean).join(' ');
@@ -94,11 +105,15 @@ export default function CalendarMonth({
           const dateText = formatDateDisplay(item.iso);
           const title = item.isPastEvent
             ? t('calendar.day.titlePastEvent', { date: dateText })
-            : item.hasEvent
-              ? t('calendar.day.titleHasEvent', { date: dateText })
-              : item.isPast
-                ? t('calendar.day.titlePastDate', { date: dateText })
-                : t('calendar.day.titleSelect', { date: dateText });
+            : item.hasMixedEvents
+              ? t('calendar.day.titleMixedEvent', { date: dateText })
+              : item.hasSubscribedEvent
+                ? t('calendar.day.titleSubscribedEvent', { date: dateText })
+                : item.hasEvent
+                  ? t('calendar.day.titleHasEvent', { date: dateText })
+                  : item.isPast
+                    ? t('calendar.day.titlePastDate', { date: dateText })
+                    : t('calendar.day.titleSelect', { date: dateText });
 
           return (
             <button

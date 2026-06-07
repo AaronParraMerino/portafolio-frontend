@@ -7,16 +7,16 @@ import {
   createUsersDirectoryShell,
   createGlobalAdminNotice,
   fetchUsersDirectory,
-  getUsersEmptyState,
-  getUsersPageSummary,
   inactivateUserAccount,
   normalizeUsersDirectory,
   pauseUserAccount,
   sendAdminNotice,
   updateUserRole,
 } from '../services/usersService';
+import { useLanguage } from '../../../../core/i18n';
 
 export function useUsersDirectory() {
+  const { t } = useLanguage();
   const [activeView, setActiveView] = useState('users');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -48,14 +48,14 @@ export function useUsersDirectory() {
       })
       .catch((error) => {
         if (!cancelled) {
-          setLoadError(error.message || 'No se pudo cargar la lista de usuarios.');
+          setLoadError(error.message || t('admin.users.loadError'));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const users = directory.items;
   const communications = directory.communications;
@@ -129,18 +129,40 @@ export function useUsersDirectory() {
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   }), [users]);
 
-  const pageSummary = useMemo(() => getUsersPageSummary({
-    sourceReady,
-    filteredCount: filteredUsers.length,
-    currentPage: safeCurrentPage,
-    pageSize,
-  }), [filteredUsers.length, pageSize, safeCurrentPage, sourceReady]);
+  const pageSummary = useMemo(() => {
+    if (!sourceReady) return t('admin.users.pagination.pending');
+    if (!filteredUsers.length) return t('admin.users.pagination.noResults');
 
-  const emptyState = useMemo(() => getUsersEmptyState({
-    sourceReady,
-    hasQuery: !!query.trim(),
-    hasFilters: statusFilter !== 'todos',
-  }), [query, sourceReady, statusFilter]);
+    const start = (safeCurrentPage - 1) * pageSize + 1;
+    const end = Math.min(safeCurrentPage * pageSize, filteredUsers.length);
+
+    return t('admin.users.pagination.range', {
+      start,
+      end,
+      total: filteredUsers.length,
+    });
+  }, [filteredUsers.length, pageSize, safeCurrentPage, sourceReady, t]);
+
+  const emptyState = useMemo(() => {
+    if (!sourceReady) {
+      return {
+        title: t('admin.users.empty.ready.title'),
+        description: t('admin.users.empty.ready.description'),
+      };
+    }
+
+    if (query.trim() || statusFilter !== 'todos') {
+      return {
+        title: t('admin.users.empty.filtered.title'),
+        description: t('admin.users.empty.filtered.description'),
+      };
+    }
+
+    return {
+      title: t('admin.users.empty.none.title'),
+      description: t('admin.users.empty.none.description'),
+    };
+  }, [query, sourceReady, statusFilter, t]);
 
   const handleQueryChange = (nextQuery) => {
     setQuery(nextQuery);
@@ -247,7 +269,7 @@ export function useUsersDirectory() {
       const isRoleAction = isRoleAssign || isRoleRemove;
 
       if (isRoleAction && actionMessage.trim().length < 10) {
-        setActionError('Escribe un motivo de al menos 10 caracteres para cambiar el rol.');
+        setActionError(t('admin.users.actionModal.reasonRequired'));
         setActionSubmitting(false);
         return;
       }
@@ -261,7 +283,7 @@ export function useUsersDirectory() {
       const response = isRoleAction
         ? (supportsRoleManagement
           ? await updateUserRole(activeUser.id, { rol: nextRole, razon: actionMessage.trim(), canales: actionChannels })
-          : { message: 'Rol actualizado en la vista de gestion. La integracion persistente queda lista para backend.' })
+          : { message: t('admin.users.actionModal.frontendReady') })
         : (isActivation
           ? await activateUserAccount(activeUser.id, actionPayload)
           : (isPausing
@@ -286,25 +308,25 @@ export function useUsersDirectory() {
         )),
       }));
       setActionSuccess(response?.message || (isRoleAction
-        ? (isRoleAssign ? 'Rol publicante asignado correctamente.' : 'Rol publicante retirado correctamente.')
+        ? (isRoleAssign ? t('admin.users.roleAction.asignar_publicante.label') : t('admin.users.roleAction.quitar_publicante.label'))
         : (isActivation
-        ? 'Cuenta activada correctamente.'
+        ? t('admin.users.action.activar.label')
         : (isPausing
-          ? 'Cuenta pausada correctamente.'
-          : (isBlocking ? 'Cuenta bloqueada correctamente.' : 'Cuenta inactivada correctamente.')))));
+          ? t('admin.users.action.pausar.label')
+          : (isBlocking ? t('admin.users.action.bloquear.label') : t('admin.users.action.inactivar.label'))))));
       setPendingActionId('');
       setActionMessage('');
       setActionChannels(['inapp', 'email']);
     } catch (error) {
       setActionError(error.message || (pendingActionId === 'activar'
-        ? 'No se pudo activar la cuenta.'
+        ? t('admin.users.action.activar.description')
         : (pendingActionId === 'pausar'
-          ? 'No se pudo pausar la cuenta.'
+          ? t('admin.users.action.pausar.description')
           : pendingActionId === 'bloquear'
-          ? 'No se pudo bloquear la cuenta.'
+          ? t('admin.users.action.bloquear.description')
           : pendingActionId === 'asignar_publicante' || pendingActionId === 'quitar_publicante'
-          ? 'No se pudo actualizar el rol del usuario.'
-          : 'No se pudo inactivar la cuenta.')));
+          ? t('admin.users.noticeModal.sendError')
+          : t('admin.users.action.inactivar.description'))));
     } finally {
       setActionSubmitting(false);
     }

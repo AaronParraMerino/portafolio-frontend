@@ -8,6 +8,7 @@ import {
   BsPhone,
   BsSearch,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EVENT_COMMUNICATION_TYPES,
   getEventCommunicationTypeMeta,
@@ -40,6 +41,7 @@ export default function EventsTemplatesPanel({
   onCreateTemplate,
   onUseTemplate,
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
 
@@ -53,8 +55,8 @@ export default function EventsTemplatesPanel({
       <section className="evt-sheet evt-sheet--highlight">
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Plantillas</span>
-            <h2 className="evt-sheet-title">Mensajes reutilizables de plataforma</h2>
+            <span className="evt-sheet-kicker">{t('adminEvents.workspace.templates')}</span>
+            <h2 className="evt-sheet-title">{t('adminEvents.templates.title')}</h2>
           </div>
 
           {onCreateTemplate ? (
@@ -64,7 +66,7 @@ export default function EventsTemplatesPanel({
               onClick={() => onCreateTemplate()}
             >
               <BsFileEarmarkPlus />
-              Nueva plantilla
+              {t('adminEvents.templates.new')}
             </button>
           ) : null}
         </div>
@@ -72,15 +74,15 @@ export default function EventsTemplatesPanel({
         <div className="evt-chip-list">
           <span className="evt-chip">
             <BsMegaphone />
-            Comunicados
+            {t('adminEvents.communications.title')}
           </span>
           <span className="evt-chip">
             <BsFileEarmarkText />
-            Oportunidades
+            {t('adminEvents.templates.opportunities')}
           </span>
           <span className="evt-chip">
             <BsFileEarmarkPlus />
-            Comunidad
+            {t('adminEvents.templates.community')}
           </span>
         </div>
       </section>
@@ -88,8 +90,8 @@ export default function EventsTemplatesPanel({
       <section className="evt-sheet">
         <div className="evt-view-toolbar">
           <div className="evt-view-toolbar-copy">
-            <span className="evt-sheet-kicker">Catalogo</span>
-            <h2 className="evt-sheet-title">Plantillas disponibles</h2>
+            <span className="evt-sheet-kicker">{t('adminEvents.templates.catalog')}</span>
+            <h2 className="evt-sheet-title">{t('adminEvents.templates.available')}</h2>
           </div>
         </div>
 
@@ -103,12 +105,12 @@ export default function EventsTemplatesPanel({
               className="evt-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar plantilla..."
-              aria-label="Buscar plantillas"
+              placeholder={t('adminEvents.templates.searchPlaceholder')}
+              aria-label={t('adminEvents.templates.searchAria')}
             />
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label="Filtrar plantillas por tipo">
+          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.templates.typeAria')}>
             {EVENT_COMMUNICATION_TYPES.map((type) => (
               <button
                 key={type.id}
@@ -116,7 +118,7 @@ export default function EventsTemplatesPanel({
                 className={`evt-filter-chip${typeFilter === type.id ? ' active' : ''}`}
                 onClick={() => setTypeFilter(type.id)}
               >
-                {type.label}
+                {t(`adminEvents.type.${type.id}`)}
               </button>
             ))}
           </div>
@@ -134,7 +136,7 @@ export default function EventsTemplatesPanel({
                       <BsFileEarmarkText />
                     </span>
                     <span className={`evt-type-badge evt-type-badge--${typeMeta.tone}`}>
-                      {typeMeta.label}
+                      {t(`adminEvents.type.${template.type}`) || typeMeta.label}
                     </span>
                   </div>
 
@@ -142,14 +144,14 @@ export default function EventsTemplatesPanel({
                   <p>{template.body}</p>
 
                   <div className="evt-template-footer">
-                    <span>{template.used} usos</span>
+                    <span>{t('adminEvents.templates.uses', { count: template.used })}</span>
                     <div className="evt-channel-icons">
                       {template.channels.map((channel) => {
                         const Icon = CHANNEL_ICONS[channel] || BsBell;
 
                         return <Icon key={channel} title={channel} />;
                       })}
-                      {!template.channels.length ? <span>Sin canal</span> : null}
+                      {!template.channels.length ? <span>{t('adminEvents.channel.inapp')}</span> : null}
                     </div>
                   </div>
 
@@ -169,11 +171,11 @@ export default function EventsTemplatesPanel({
         ) : (
           <EventsEmptyState
             icon={BsFileEarmarkText}
-            title={sourceReady ? 'Sin plantillas encontradas' : 'Sin plantillas registradas'}
+            title={sourceReady ? t('adminEvents.templates.emptyFoundTitle') : t('adminEvents.templates.emptyTitle')}
             description={sourceReady
-              ? 'No hay plantillas que coincidan con la busqueda o el filtro actual.'
-              : 'El catalogo mostrara plantillas reutilizables para anuncios y convocatorias.'}
-            hint="Nueva plantilla abre el modal de creacion de contenido reutilizable."
+              ? t('adminEvents.templates.emptyFoundDescription')
+              : t('adminEvents.templates.emptyDescription')}
+            hint={t('adminEvents.templates.emptyHint')}
           />
         )}
       </section>

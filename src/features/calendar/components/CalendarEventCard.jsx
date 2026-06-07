@@ -6,7 +6,6 @@ const TYPE_CLASS = {
   Trabajo: 'work',
   Reunión: 'meeting',
   Entrega: 'delivery',
-  Otro: 'other',
 };
 
 const TYPE_LABEL_KEY = {
@@ -15,7 +14,6 @@ const TYPE_LABEL_KEY = {
   Trabajo: 'calendar.type.work',
   Reunión: 'calendar.type.meeting',
   Entrega: 'calendar.type.delivery',
-  Otro: 'calendar.type.other',
 };
 
 export default function CalendarEventCard({

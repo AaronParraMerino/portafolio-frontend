@@ -14,9 +14,11 @@ import { projectsTranslations } from './projects';
 import { experienceTranslations } from './experience';
 import { viewTranslations } from './view';
 import { linksTranslations } from './links';
+import { adminEventsTranslations } from './adminEvents';
+import { adminUsersTranslations } from './adminUsers';
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'es', label: 'Español', shortLabel: 'ES', flag: '🇪🇸' },
+  { code: 'es', label: 'Español', shortLabel: 'ES', flag: '🇧🇴' },
   { code: 'en', label: 'English', shortLabel: 'EN', flag: '🇺🇸' },
   { code: 'pt', label: 'Português', shortLabel: 'PT', flag: '🇧🇷' },
 ];
@@ -40,6 +42,8 @@ const translationModules = [
   experienceTranslations,
   viewTranslations,
   linksTranslations,
+  adminEventsTranslations,
+  adminUsersTranslations,
 ];
 
 const createEmptyTranslations = () => (

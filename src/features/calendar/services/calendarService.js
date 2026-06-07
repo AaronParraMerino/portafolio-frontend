@@ -1,4 +1,5 @@
 import BASE_URL from '../../../services/http/const';
+import { getStoredUser } from '../../../shared/utils/authStorage';
 
 const getToken = () => (
   localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT') || ''
@@ -18,7 +19,7 @@ const parseJson = async (res) => {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const error = new Error(data?.message || 'Error en la solicitud.');
+    const error = new Error(data?.message || data?.mensaje || 'Error en la solicitud.');
     error.payload = data;
     error.status = res.status;
     throw error;
@@ -35,7 +36,15 @@ const TYPE_TO_FRONT = {
   reunion: 'Reunión',
   reunión: 'Reunión',
   entrega: 'Entrega',
-  otro: 'Otro',
+  taller: 'Inscrito',
+  charla: 'Inscrito',
+  webinar: 'Inscrito',
+  feria: 'Inscrito',
+  capacitacion: 'Inscrito',
+  networking: 'Inscrito',
+  curso: 'Inscrito',
+  convocatoria: 'Inscrito',
+  otro: 'Personal',
 };
 
 const TYPE_TO_BACK = {
@@ -46,7 +55,6 @@ const TYPE_TO_BACK = {
   Reunión: 'reunion',
   Reunion: 'reunion',
   Entrega: 'entrega',
-  Otro: 'otro',
 };
 
 const normalizeText = (value) => (
@@ -57,14 +65,14 @@ const normalizeText = (value) => (
     .replace(/[\u0300-\u036f]/g, '')
 );
 
-const normalizeTypeToFront = (value) => {
+const normalizeTypeToFront = (value, fallback = 'Personal') => {
   const raw = String(value || '').trim();
   const normalized = normalizeText(raw);
 
   return TYPE_TO_FRONT[raw]
     || TYPE_TO_FRONT[normalized]
     || TYPE_TO_FRONT[normalized.replace(/\s+/g, '_')]
-    || 'Personal';
+    || fallback;
 };
 
 const normalizeTypeToBack = (value) => {
@@ -86,6 +94,27 @@ const extractList = (data) => {
   return [];
 };
 
+const getCurrentUserId = () => {
+  const user = getStoredUser();
+  return user?.id_usuario ?? user?.id ?? user?.usuario_id ?? user?.userId ?? null;
+};
+
+const splitDateTime = (value = '') => {
+  const text = String(value || '').trim();
+
+  if (!text) {
+    return { fecha: '', hora: '' };
+  }
+
+  const [datePart, timePart = ''] = text.replace('T', ' ').split(' ');
+  const hora = timePart ? timePart.slice(0, 5) : '';
+
+  return {
+    fecha: datePart,
+    hora,
+  };
+};
+
 const mapEventToFront = (item = {}) => ({
   id: item.id_evento ?? item.id ?? item.uuid,
   titulo: item.titulo ?? item.title ?? '',
@@ -93,7 +122,36 @@ const mapEventToFront = (item = {}) => ({
   fecha: item.fecha ?? item.date ?? '',
   hora: item.hora ?? item.time ?? item.hora_inicio ?? '',
   tipo: normalizeTypeToFront(item.tipo ?? item.tipo_label ?? item.type),
+  origen: 'personal',
+  editable: true,
+  desinscribible: false,
 });
+
+const mapSubscribedEventToFront = (item = {}) => {
+  const start = splitDateTime(item.fecha_inicio ?? item.startsAt ?? item.startDate ?? item.fecha ?? item.date);
+  const end = splitDateTime(item.fecha_fin ?? item.endsAt ?? item.endDate);
+  const eventoId = item.id_evento ?? item.evento_id ?? item.id ?? item.eventId;
+  const idInscripcion = item.id_inscripcion ?? item.inscripcion_id ?? item.subscriptionId;
+
+  return {
+    id: `inscrito-${eventoId}`,
+    eventoId,
+    idInscripcion,
+    titulo: item.titulo ?? item.title ?? item.nombre ?? '',
+    descripcion: item.descripcion ?? item.description ?? '',
+    fecha: start.fecha,
+    hora: start.hora || item.hora || item.time || '',
+    fechaFin: end.fecha,
+    horaFin: end.hora,
+    tipo: 'Inscrito',
+    tipoOriginal: item.tipo ?? item.type ?? '',
+    ubicacion: item.ubicacion ?? item.location ?? item.lugar ?? '',
+    origen: 'inscrito',
+    editable: false,
+    desinscribible: true,
+    raw: item,
+  };
+};
 
 const mapEventToBack = (event = {}) => ({
   titulo: event.titulo,
@@ -118,6 +176,26 @@ export const getCalendarEvents = async ({ month } = {}) => {
 
   const data = await parseJson(res);
   return extractList(data).map(mapEventToFront).filter((event) => event.id);
+};
+
+export const getSubscribedCalendarEvents = async () => {
+  const userId = getCurrentUserId();
+
+  if (!userId) {
+    return [];
+  }
+
+  const res = await fetch(`${BASE_URL}/eventos/${userId}?por_pagina=100`, {
+    method: 'GET',
+    headers: buildHeaders(),
+  });
+
+  const data = await parseJson(res);
+
+  return extractList(data)
+    .filter((item) => item.esta_inscrito === true || item.esta_inscrito === 1 || item.esta_inscrito === '1')
+    .map(mapSubscribedEventToFront)
+    .filter((event) => event.eventoId && event.fecha);
 };
 
 export const createCalendarEvent = async (event) => {
@@ -154,6 +232,21 @@ export const deleteCalendarEvent = async (id) => {
 export const deleteCalendarEventsByDate = async (date) => {
   const res = await fetch(`${BASE_URL}/eventos-personales/dia/${date}`, {
     method: 'DELETE',
+    headers: buildHeaders(),
+  });
+
+  return parseJson(res);
+};
+
+export const unsubscribeCalendarEvent = async (eventoId) => {
+  const userId = getCurrentUserId();
+
+  if (!userId || !eventoId) {
+    throw new Error('No se pudo identificar la inscripción del evento.');
+  }
+
+  const res = await fetch(`${BASE_URL}/eventos/${userId}/${eventoId}/desinscribirse`, {
+    method: 'POST',
     headers: buildHeaders(),
   });
 

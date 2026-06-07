@@ -4,6 +4,7 @@ import {
   BsPersonCheck,
   BsStars,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import { EVENT_WORKSPACE_VIEWS } from '../services/eventsService';
 
 const VIEW_ICONS = {
@@ -18,9 +19,10 @@ export default function EventsWorkspaceTabs({
   counts,
   onViewChange,
 }) {
+  const { t } = useLanguage();
   return (
     <div className="evt-tabs-wrap">
-      <div className="evt-tabs" role="tablist" aria-label="Vistas del modulo de eventos">
+      <div className="evt-tabs" role="tablist" aria-label={t('adminEvents.workspace.aria')}>
         {EVENT_WORKSPACE_VIEWS.map((view) => {
           const Icon = VIEW_ICONS[view.id] || BsStars;
 
@@ -34,7 +36,7 @@ export default function EventsWorkspaceTabs({
               onClick={() => onViewChange(view.id)}
             >
               <Icon />
-              <span>{view.label}</span>
+              <span>{t(`adminEvents.workspace.${view.id}`)}</span>
               <small>{counts?.[view.id] ?? '--'}</small>
             </button>
           );
