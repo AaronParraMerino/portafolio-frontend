@@ -84,13 +84,11 @@ export default function AppRouter({ isBackendAvailable = true }) {
           </Route>
           <Route path="admin" element={<RoleGate adminOnly><AdminDashboardLayout /></RoleGate>}>
             <Route index element={<AdminDashboardPage />} />
-            <Route path="profile" element={<AdminDashboardPage section="profile" />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="events" element={<EventsPage />} />
             <Route path="reports" element={<AdminDashboardPage section="reports" />} />
             <Route path="audit" element={<AuditPage />} />
             <Route path="backups" element={<AdminDashboardPage section="backups" />} />
-            <Route path="settings" element={<AdminDashboardPage section="settings" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
