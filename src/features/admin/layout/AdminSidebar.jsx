@@ -23,12 +23,6 @@ const NAV_SECTIONS = [
         exact: true,
         icon: (<><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></>),
       },
-      {
-        id: 'profile',
-        label: 'Perfil',
-        to: '/admin/profile',
-        icon: (<><path d="M19 21a7 7 0 0 0-14 0" /><circle cx="12" cy="8" r="4" /><path d="M16 11.5 18 13l3-4" /></>),
-      },
     ],
   },
   {
@@ -45,12 +39,6 @@ const NAV_SECTIONS = [
         label: 'Eventos',
         to: '/admin/events',
         icon: (<><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4" /><path d="M16 2v4" /><path d="M3 10h18" /><path d="M8 14h3" /><path d="M14 14h2" /><path d="M8 17h2" /></>),
-      },
-      {
-        id: 'notices',
-        label: 'Avisos',
-        to: '/admin/notices',
-        icon: (<><path d="M4 11v2a2 2 0 0 0 2 2h2l4 4v-4h4l4-4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6Z" /><path d="M8 7h8" /><path d="M8 10h5" /></>),
       },
       {
         id: 'reports',
@@ -73,14 +61,8 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Cuenta',
+    label: 'Sesion',
     items: [
-      {
-        id: 'settings',
-        label: 'Configuracion',
-        to: '/admin/settings',
-        icon: (<><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" /></>),
-      },
       {
         id: 'logout',
         label: 'Cerrar sesion',
@@ -206,7 +188,7 @@ export default function AdminSidebar({ collapsed, onToggle }) {
 
   const getSectionKey = (label) => {
     if (label === 'Gestion') return 'management';
-    if (label === 'Cuenta') return 'account';
+    if (label === 'Sesion') return 'session';
     return 'general';
   };
 

@@ -35,18 +35,6 @@ const QUICK_MODULES = [
     ),
   },
   {
-    id: 'notices',
-    labelKey: 'admin.dashboard.module.notices.title',
-    descKey: 'admin.dashboard.module.notices.description',
-    to: '/admin/notices',
-    icon: (
-      <>
-        <path d="M4 11v2a2 2 0 0 0 2 2h2l4 4v-4h4l4-4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6Z" />
-        <path d="M8 7h8" />
-      </>
-    ),
-  },
-  {
     id: 'reports',
     labelKey: 'admin.dashboard.module.reports.title',
     descKey: 'admin.dashboard.module.reports.description',
@@ -144,12 +132,6 @@ export default function AdminDashboardPage({ section = 'dashboard' }) {
 
           <div className="adm-stat-card">
             <span>{t('admin.dashboard.stats.events')}</span>
-            <strong>--</strong>
-            <small>{t('admin.dashboard.stats.moduleReady')}</small>
-          </div>
-
-          <div className="adm-stat-card">
-            <span>{t('admin.dashboard.stats.notices')}</span>
             <strong>--</strong>
             <small>{t('admin.dashboard.stats.moduleReady')}</small>
           </div>
