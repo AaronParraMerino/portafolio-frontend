@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../../../core/i18n';
 import { getProjectPlatformLabel } from '../../../../dashboard/projects/model/projectsModel';
 import RecentProjectCard from './RecentProjectCard';
 import './recentProjectsCarousel.css';
 
-export default function RecentProjectsCarousel({ projects = [] }) {
+export default function RecentProjectsCarousel({ projects = [], onViewDetails }) {
   const { t } = useLanguage();
   const trackRef = useRef(null);
   const [activePlatform, setActivePlatform] = useState('todos');
@@ -42,13 +43,16 @@ export default function RecentProjectsCarousel({ projects = [] }) {
             <span>Explorar proyectos</span>
             <h2 id="prc-title">Construido para</h2>
           </div>
-          <div className="prc-controls">
-            <button type="button" onClick={() => scrollBy(-1)} aria-label="Ver proyectos anteriores">
-              <BsChevronLeft />
-            </button>
-            <button type="button" onClick={() => scrollBy(1)} aria-label="Ver mas proyectos">
-              <BsChevronRight />
-            </button>
+          <div className="prc-head-actions">
+            <Link to="/proyectos">Ver todos</Link>
+            <div className="prc-controls">
+              <button type="button" onClick={() => scrollBy(-1)} aria-label="Ver proyectos anteriores">
+                <BsChevronLeft />
+              </button>
+              <button type="button" onClick={() => scrollBy(1)} aria-label="Ver mas proyectos">
+                <BsChevronRight />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -76,7 +80,7 @@ export default function RecentProjectsCarousel({ projects = [] }) {
 
         <div className="prc-track" ref={trackRef}>
           {visibleProjects.map((project) => (
-            <RecentProjectCard key={project.id} project={project} />
+            <RecentProjectCard key={project.id} project={project} onViewDetails={onViewDetails} />
           ))}
         </div>
       </div>

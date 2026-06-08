@@ -52,7 +52,7 @@ const NAV_LINKS = [
   },
   {
     labelKey: 'nav.projects',
-    href: '#proyectos',
+    href: '/proyectos',
     icon: (
       <>
         <path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" />

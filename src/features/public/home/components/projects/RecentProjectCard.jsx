@@ -30,7 +30,7 @@ function formatPublishedDate(value, language) {
   ).format(date);
 }
 
-export default function RecentProjectCard({ project }) {
+export default function RecentProjectCard({ project, onViewDetails }) {
   const { language, t } = useLanguage();
   const technologies = project.technologies || [];
 
@@ -80,7 +80,10 @@ export default function RecentProjectCard({ project }) {
           )}
         </div>
 
-        <span className="prc-date">Publicado el {formatPublishedDate(project.publishedAt, language)}</span>
+        <div className="prc-card-foot">
+          <span className="prc-date">Publicado el {formatPublishedDate(project.publishedAt, language)}</span>
+          <button type="button" onClick={() => onViewDetails?.(project)}>Ver detalle</button>
+        </div>
       </div>
     </article>
   );

@@ -31,6 +31,7 @@ import OAuthCallbackPage from '../../features/auth/pages/OAuthCallbackPage';
 import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
+import PublicProjectsPage from '../../features/public/projects/pages/PublicProjectsPage';
 import { getStoredUser, isAdminUser } from '../../shared/utils/authStorage';
 import { LanguageProvider } from '../i18n';
 
@@ -64,6 +65,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
           <Route path="portafolios" element={<PortfolioSearchPage />} />
           <Route path="desarrolladores" element={<DevelopersPage />} />
           <Route path="eventos" element={<PublicEventsPage />} />
+          <Route path="proyectos" element={<PublicProjectsPage />} />
           <Route path="portafolio/:userId" element={<PortfolioPage />} />
           <Route path="dashboard" element={<RoleGate userOnly><DashboardLayout /></RoleGate>}>
             <Route index element={<DashboardPage />} />

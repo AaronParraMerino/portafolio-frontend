@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { BsChevronDown, BsChevronUp, BsGeoAlt, BsInfoCircle } from 'react-icons/bs';
+import { BsInfoCircle } from 'react-icons/bs';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
@@ -7,7 +6,6 @@ import {
   formatEventDate,
   getCapacityLabel,
   getShortDescription,
-  hasEventDetails,
 } from './eventUiHelpers';
 import './eventsHome.css';
 
@@ -19,9 +17,6 @@ export default function EventCard({
   containImage = false,
   className = '',
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const showDetails = hasEventDetails(event);
-
   return (
     <article className={cx('evh-card', containImage && 'evh-card-contain-image', className)}>
       <button
@@ -41,17 +36,6 @@ export default function EventCard({
       <div className="evh-card-body">
         <div className="evh-card-title-row">
           <h3>{event.title}</h3>
-          {showDetails && (
-            <button
-              type="button"
-              className="evh-icon-button"
-              onClick={() => onViewDetails?.(event)}
-              aria-label={`Abrir detalle de ${event.title}`}
-              title="Ver detalles"
-            >
-              <BsInfoCircle />
-            </button>
-          )}
         </div>
 
         <p className="evh-card-summary">{getShortDescription(event.description, 92)}</p>
@@ -61,27 +45,14 @@ export default function EventCard({
           <span>{getCapacityLabel(event)}</span>
         </div>
 
-        {expanded && (
-          <div className="evh-card-details">
-            {event.location && (
-              <span>
-                <BsGeoAlt /> {event.location}
-              </span>
-            )}
-            {event.authorName && <span>Por {event.authorName}</span>}
-            {event.endsAt && <span>Finaliza {formatEventDate(event.endsAt)}</span>}
-          </div>
-        )}
-
         <div className="evh-card-actions">
           <button
             type="button"
             className="evh-ghost-button"
-            onClick={() => setExpanded((value) => !value)}
-            aria-expanded={expanded}
+            onClick={() => onViewDetails?.(event)}
           >
-            {expanded ? <BsChevronUp /> : <BsChevronDown />}
-            {expanded ? 'Menos' : 'Detalles'}
+            <BsInfoCircle />
+            Ver detalles
           </button>
 
           <EventActionButton

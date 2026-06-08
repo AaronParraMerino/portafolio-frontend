@@ -552,28 +552,19 @@
   min-height: 38px;
 }
 
-.evh-card-meta,
-.evh-card-details {
+.evh-card-meta {
   display: grid;
   gap: 7px;
   margin-top: 13px;
 }
 
-.evh-card-meta span,
-.evh-card-details span {
+.evh-card-meta span {
   align-items: center;
   color: var(--gris-oscuro);
   display: inline-flex;
   font-size: 12px;
   gap: 6px;
   line-height: 1.35;
-}
-
-.evh-card-details {
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px;
 }
 
 .evh-card-actions {

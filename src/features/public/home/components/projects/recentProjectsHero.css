@@ -15,7 +15,7 @@
   box-shadow: 0 24px 60px rgba(6, 53, 82, .2);
   display: grid;
   grid-template-columns: minmax(0, 35fr) minmax(0, 65fr);
-  height: 517px;
+  height: 430px;
   overflow: visible;
   position: relative;
   touch-action: pan-y;
@@ -31,7 +31,7 @@
   justify-content: center;
   max-height: 100%;
   overflow: hidden;
-  padding: 48px 42px 50px 66px;
+  padding: 36px 42px 38px 66px;
   position: relative;
   z-index: 2;
   border-radius: 14px 0 0 14px;
@@ -58,6 +58,10 @@
 .prh-meta .prh-type {
   background: var(--blanco);
   color: var(--azul-deep);
+}
+
+.prh-content-mobile-only {
+  display: none;
 }
 
 .prh-content h3 {
@@ -139,10 +143,29 @@
   text-transform: uppercase;
 }
 
+.prh-detail-button {
+  align-self: flex-start;
+  background: var(--blanco);
+  border: 1.5px solid var(--blanco);
+  border-radius: 7px;
+  color: var(--azul-deep);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 900;
+  margin-top: 18px;
+  padding: 10px 14px;
+}
+
+.prh-detail-button:hover {
+  background: var(--azul-light);
+  border-color: var(--azul-mid);
+}
+
 .prh-media {
   background: #dce8ee;
   border-radius: 0 14px 14px 0;
-  height: 517px;
+  height: 430px;
   overflow: hidden;
   position: relative;
 }
@@ -198,6 +221,47 @@
   width: 72px;
 }
 
+.prh-media-actions {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  inset: 0;
+  justify-content: space-between;
+  padding: 20px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+}
+
+.prh-media-actions .prh-meta {
+  justify-content: flex-end;
+}
+
+.prh-media-actions .prh-meta span {
+  background: rgba(4, 58, 89, .88);
+  border-color: rgba(255, 255, 255, .42);
+  color: var(--blanco);
+  box-shadow: 0 5px 16px rgba(15, 23, 42, .2);
+}
+
+.prh-media-actions .prh-meta .prh-type {
+  background: rgba(255, 255, 255, .96);
+  color: var(--azul-deep);
+}
+
+.prh-media-actions .prh-detail-button {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--blanco);
+  margin-top: 0;
+  pointer-events: auto;
+}
+
+.prh-media-actions .prh-detail-button:hover {
+  background: var(--azul-deep);
+  border-color: var(--azul-deep);
+}
+
 .prh-nav {
   align-items: center;
   background: #fff;
@@ -250,6 +314,18 @@
 }
 
 @media (max-width: 860px) {
+  .prh-content-mobile-only {
+    display: flex;
+  }
+
+  .prh-detail-button.prh-content-mobile-only {
+    display: block;
+  }
+
+  .prh-media-actions {
+    display: none;
+  }
+
   .prh-hero {
     grid-template-columns: 1fr;
     height: 639px;

@@ -32,7 +32,7 @@ function formatPublishedDate(value, language) {
   ).format(date);
 }
 
-export default function RecentProjectsHero({ projects = [] }) {
+export default function RecentProjectsHero({ projects = [], onViewDetails }) {
   const { language, t } = useLanguage();
   const visibleProjects = projects.filter(Boolean).slice(0, 6);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -91,7 +91,7 @@ export default function RecentProjectsHero({ projects = [] }) {
           onTouchEnd={handleTouchEnd}
         >
           <div className="prh-content">
-            <div className="prh-meta">
+            <div className="prh-meta prh-content-mobile-only">
               <span className="prh-type">{getProjectTypeLabel(project.type, t)}</span>
               <span>{getProjectPlatformLabel(project.platform, t)}</span>
             </div>
@@ -125,9 +125,12 @@ export default function RecentProjectsHero({ projects = [] }) {
             </div>
 
             <span className="prh-date">Publicado el {formatPublishedDate(project.publishedAt, language)}</span>
+            <button type="button" className="prh-detail-button prh-content-mobile-only" onClick={() => onViewDetails?.(project)}>
+              Ver detalle
+            </button>
           </div>
 
-          <div className="prh-media" aria-hidden="true">
+          <div className="prh-media">
             {project.imageUrl ? (
               <>
                 <img className="prh-media-backdrop" src={project.imageUrl} alt="" />
@@ -139,6 +142,15 @@ export default function RecentProjectsHero({ projects = [] }) {
                 <span>{getProjectTypeLabel(project.type, t)}</span>
               </div>
             )}
+            <div className="prh-media-actions">
+              <div className="prh-meta">
+                <span className="prh-type">{getProjectTypeLabel(project.type, t)}</span>
+                <span>{getProjectPlatformLabel(project.platform, t)}</span>
+              </div>
+              <button type="button" className="prh-detail-button" onClick={() => onViewDetails?.(project)}>
+                Ver detalle
+              </button>
+            </div>
           </div>
 
           {visibleProjects.length > 1 && (
