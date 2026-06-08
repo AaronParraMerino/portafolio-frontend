@@ -90,10 +90,20 @@ function configStorageKey(userId) {
   return `${CONFIG_STORAGE_PREFIX}:${userId}`;
 }
 
-function dataCacheKey(userId) {
-  return `${DATA_CACHE_PREFIX}:${userId}`;
+function normalizeLanguage(language = 'es') {
+  return ['es', 'en', 'pt'].includes(language) ? language : 'es';
 }
 
+function dataCacheKey(userId, language = 'es') {
+  return `${DATA_CACHE_PREFIX}:${userId}:${normalizeLanguage(language)}`;
+}
+
+function withLanguage(endpoint, language = 'es') {
+  const lang = normalizeLanguage(language);
+  const separator = endpoint.includes('?') ? '&' : '?';
+
+  return `${endpoint}${separator}lang=${encodeURIComponent(lang)}`;
+}
 function readStoredConfig(userId) {
   const raw = localStorage.getItem(configStorageKey(userId));
   const parsed = parseJsonStorage(raw, {});
@@ -106,14 +116,21 @@ function readStoredConfig(userId) {
   };
 }
 
-export function loadCachedPortfolioViewData(userId = getSession().userId) {
-  const cached = parseJsonStorage(sessionStorage.getItem(dataCacheKey(userId)), null);
+export function loadCachedPortfolioViewData(
+  userId = getSession().userId,
+  language = 'es'
+) {
+  const cached = parseJsonStorage(
+    sessionStorage.getItem(dataCacheKey(userId, language)),
+    null
+  );
+
   return cached?.data ? cached.data : null;
 }
 
-function saveCachedPortfolioViewData(userId, data) {
+function saveCachedPortfolioViewData(userId, data, language = 'es') {
   try {
-    sessionStorage.setItem(dataCacheKey(userId), JSON.stringify({
+    sessionStorage.setItem(dataCacheKey(userId, language), JSON.stringify({
       cachedAt: Date.now(),
       data,
     }));
@@ -870,10 +887,101 @@ export async function getProyectosPublicos({ force = false } = {}) {
   return apiFetch(`/projects/usuario/${userId}`, { force });
 }
 
-export async function getPortfolioViewData({ force = false } = {}) {
+function normalizePublicPortfolioView(raw = {}, storedConfig = {}) {
+  const source = raw?.data && typeof raw.data === 'object' ? raw.data : raw;
+
+  const backendConfig = mapConfigFromBackend(source.config || source.personalizacion || {});
+  const savedVisibility = backendConfig.visibilidad || storedConfig.visibilidad;
+
+  const perfilRaw = source.perfil || source.usuario || null;
+  const perfil = mapPerfilFromBackend(perfilRaw);
+
+  const redes = mapRedesFromBackend(unwrapList(source.redes || source.enlaces), {
+    includeHidden: true,
+  });
+
+  const experiencias = mapExperienciasFromBackend(unwrapList(source.experiencias), {
+    includeHidden: true,
+  });
+
+  const habilidades = source.habilidades?.tecnicas || source.habilidades?.blandas
+    ? {
+        tecnicas: source.habilidades?.tecnicas || [],
+        blandas: source.habilidades?.blandas || [],
+      }
+    : mapHabilidadesFromBackend(unwrapList(source.habilidades), {
+        includeHidden: true,
+      });
+
+  const proyectos = mapProyectosFromBackend(unwrapList(source.proyectos), {
+    includeHidden: true,
+  });
+
+  const stats = buildStats({
+    habilidades,
+    experiencias,
+    proyectos,
+  });
+
+  const visibilidad = buildRuntimeVisibility({
+    perfilRaw,
+    redes,
+    stats,
+    habilidades,
+    experiencias,
+    proyectos,
+    storedVisibility: savedVisibility,
+  });
+
+  const imageSourceDefaults = {
+    ...(!backendConfig.heroBgSource && perfil?.bannerUrl ? { heroBgSource: 'foto' } : {}),
+    ...(!backendConfig.avatarBgSource && perfil?.avatarUrl ? { avatarBgSource: 'foto' } : {}),
+  };
+
+  return {
+    perfil,
+    redes,
+    stats,
+    habilidades,
+    experiencias,
+    proyectos,
+    config: normalizeConfig({
+      ...storedConfig,
+      ...backendConfig,
+      ...imageSourceDefaults,
+      publicado: perfil?.portfolioPublico ?? backendConfig.publicado ?? storedConfig.publicado,
+      visibilidad,
+    }),
+  };
+}
+
+export async function getPortfolioViewData({force = false,language = 'es',} = {}) {
   const { userId } = getSession();
   const stored = readStoredConfig(userId);
   const storedConfig = stored.config;
+
+  const lang = normalizeLanguage(language);
+
+  if (lang !== 'es') {
+    try {
+      const publicPayload = await apiFetch(
+        withLanguage(`/portfolio/${userId}/public`, lang),
+        { force }
+      );
+
+      const translatedData = normalizePublicPortfolioView(publicPayload, storedConfig);
+
+      saveCachedPortfolioViewData(userId, translatedData, lang);
+
+      return {
+        data: translatedData,
+        warnings: [],
+      };
+    } catch {
+      // Si el portafolio público no está disponible, continúa con los endpoints privados.
+    }
+  }
+
   const entries = await Promise.allSettled([
     getPerfil({ force }),
     getRedes({ force }),
@@ -944,7 +1052,7 @@ export async function getPortfolioViewData({ force = false } = {}) {
     }),
   };
 
-  saveCachedPortfolioViewData(userId, data);
+  saveCachedPortfolioViewData(userId, data, lang);
 
   return {
     data: {

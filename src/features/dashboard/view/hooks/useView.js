@@ -12,6 +12,8 @@ import {
   publicarPortafolio,
   saveConfig,
 } from '../services/viewService';
+import { useLanguage } from '../../../../core/i18n';
+
 
 function clone(data) {
   return JSON.parse(JSON.stringify(data));
@@ -70,9 +72,9 @@ function normalizeViewData(patch = {}, previous = clone(EMPTY_VIEW)) {
   return next;
 }
 
-function getInitialViewState() {
+function getInitialViewState(language = 'es') {
   try {
-    const cached = loadCachedPortfolioViewData();
+    const cached = loadCachedPortfolioViewData(undefined, language);
 
     if (cached) {
       return {
@@ -97,6 +99,8 @@ function getResponseData(response) {
 }
 
 export function useView() {
+  const { language } = useLanguage();
+
   const [initialState] = useState(getInitialViewState);
   const [data, setData] = useState(initialState.data);
   const [toast, setToast] = useState(null);
@@ -119,7 +123,7 @@ export function useView() {
     setError(null);
 
     try {
-      const result = await getPortfolioViewData({ force: initialState.hasCache });
+      const result = await getPortfolioViewData({force: initialState.hasCache, language,});
 
       setData((prev) => normalizeViewData(result.data, prev));
       setDataSource(result.warnings.length ? 'partial' : 'backend');
@@ -139,7 +143,7 @@ export function useView() {
     } finally {
       setLoading(false);
     }
-  }, [initialState.hasCache, showToast]);
+  }, [initialState.hasCache, showToast, language]);
 
   useEffect(() => {
     loadData();
