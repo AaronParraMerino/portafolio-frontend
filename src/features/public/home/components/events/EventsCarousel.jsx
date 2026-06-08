@@ -1,10 +1,12 @@
 import { useRef } from 'react';
 import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { Link } from 'react-router-dom';
 import EventCard from './EventCard';
 import './eventsHome.css';
 
 export default function EventsCarousel({
   events = [],
+  showAllPath = '',
   onRegister,
   onViewDetails,
   registeringId = null,
@@ -27,13 +29,16 @@ export default function EventsCarousel({
     <div className="evh-carousel">
       <div className="evh-carousel-head">
         <h3>Mas eventos</h3>
-        <div className="evh-carousel-controls">
-          <button type="button" onClick={() => scrollBy(-1)} aria-label="Ver eventos anteriores">
-            <BsChevronLeft />
-          </button>
-          <button type="button" onClick={() => scrollBy(1)} aria-label="Ver mas eventos">
-            <BsChevronRight />
-          </button>
+        <div className="evh-carousel-head-actions">
+          {showAllPath && <Link to={showAllPath}>Ver todos</Link>}
+          <div className="evh-carousel-controls">
+            <button type="button" onClick={() => scrollBy(-1)} aria-label="Ver eventos anteriores">
+              <BsChevronLeft />
+            </button>
+            <button type="button" onClick={() => scrollBy(1)} aria-label="Ver mas eventos">
+              <BsChevronRight />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -45,6 +50,7 @@ export default function EventsCarousel({
             onRegister={onRegister}
             onViewDetails={onViewDetails}
             registering={String(registeringId || '') === String(event.id)}
+            containImage
             className="evh-carousel-item"
           />
         ))}

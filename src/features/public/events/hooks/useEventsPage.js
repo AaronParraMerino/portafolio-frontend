@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   EVENTS_LIST_PAGE_SIZE,
   getCachedHomeEvents,
+  getCachedPublicHomeEvents,
   getCurrentEventsUser,
   getHomeEvents,
+  getPublicHomeEvents,
   registerHomeEvent,
   sortEventsForHighlights,
 } from '../../home/services/homeEventsService';
@@ -33,12 +35,24 @@ function normalizePagination(pagination = {}, page = 1) {
 
 function getInitialPage(page) {
   try {
-    const cached = getCachedHomeEvents({
-      allowStale: true,
-      page,
-      perPage: EVENTS_LIST_PAGE_SIZE,
-      scope: 'events-page',
-    });
+    let cached;
+
+    try {
+      getCurrentEventsUser();
+      cached = getCachedHomeEvents({
+        allowStale: true,
+        page,
+        perPage: EVENTS_LIST_PAGE_SIZE,
+        scope: 'events-page',
+      });
+    } catch {
+      cached = getCachedPublicHomeEvents({
+        allowStale: true,
+        page,
+        perPage: EVENTS_LIST_PAGE_SIZE,
+        scope: 'events-page-public',
+      });
+    }
 
     if (!cached?.value) return initialState;
 
@@ -66,14 +80,25 @@ export default function useEventsPage() {
 
     async function loadPage() {
       let cached = null;
+      let authenticated = true;
 
       try {
         getCurrentEventsUser();
-        cached = getCachedHomeEvents({
+      } catch {
+        authenticated = false;
+      }
+
+      try {
+        cached = authenticated ? getCachedHomeEvents({
           allowStale: true,
           page,
           perPage: EVENTS_LIST_PAGE_SIZE,
           scope: 'events-page',
+        }) : getCachedPublicHomeEvents({
+          allowStale: true,
+          page,
+          perPage: EVENTS_LIST_PAGE_SIZE,
+          scope: 'events-page-public',
         });
 
         if (cached?.value && mounted) {
@@ -85,10 +110,14 @@ export default function useEventsPage() {
           setLoading(false);
         }
 
-        const result = await getHomeEvents({
+        const result = authenticated ? await getHomeEvents({
           page,
           perPage: EVENTS_LIST_PAGE_SIZE,
           scope: 'events-page',
+        }) : await getPublicHomeEvents({
+          page,
+          perPage: EVENTS_LIST_PAGE_SIZE,
+          scope: 'events-page-public',
         });
 
         if (mounted) {
@@ -108,7 +137,7 @@ export default function useEventsPage() {
           || message.toLowerCase().includes('autentic')
           || message.toLowerCase().includes('no autorizado');
 
-        setAuthRequired(isAuthError);
+        setAuthRequired(isAuthError && authenticated);
         if (!cached?.value) {
           setError(isAuthError ? '' : message);
         }
@@ -170,12 +199,24 @@ export default function useEventsPage() {
     setError('');
 
     try {
-      const result = await getHomeEvents({
-        force: true,
-        page,
-        perPage: EVENTS_LIST_PAGE_SIZE,
-        scope: 'events-page',
-      });
+      let result;
+
+      try {
+        getCurrentEventsUser();
+        result = await getHomeEvents({
+          force: true,
+          page,
+          perPage: EVENTS_LIST_PAGE_SIZE,
+          scope: 'events-page',
+        });
+      } catch {
+        result = await getPublicHomeEvents({
+          force: true,
+          page,
+          perPage: EVENTS_LIST_PAGE_SIZE,
+          scope: 'events-page-public',
+        });
+      }
 
       setData({
         ...initialState,

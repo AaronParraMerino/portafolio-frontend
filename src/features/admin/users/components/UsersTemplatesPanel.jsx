@@ -4,8 +4,11 @@ import {
   BsEnvelope,
   BsFileEarmarkPlus,
   BsFileEarmarkText,
+  BsPencil,
   BsMagic,
   BsSearch,
+  BsSend,
+  BsTrash,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import {
@@ -27,6 +30,7 @@ function normalizeTemplate(template = {}) {
     title: template.title || template.titulo || template.name || '',
     body: template.body || template.cuerpo || template.descripcion || '',
     type: template.type || template.tipo || 'sistema',
+    urgency: template.urgency || template.urgencia || 'baja',
     channels: Array.isArray(channels) ? channels : [],
     used: template.used || template.usadas || 0,
   };
@@ -50,10 +54,15 @@ export default function UsersTemplatesPanel({
   sourceReady,
   templates,
   onCreateTemplate,
+  onEditTemplate,
+  onDeleteTemplate,
+  onUseTemplate,
 }) {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
+  const [busyId, setBusyId] = useState(null);
+  const [message, setMessage] = useState('');
 
   const normalizedTemplates = useMemo(
     () => templates.map(normalizeTemplate),
@@ -64,6 +73,34 @@ export default function UsersTemplatesPanel({
     () => normalizedTemplates.filter((template) => matchesTemplateFilters(template, query, typeFilter)),
     [normalizedTemplates, query, typeFilter],
   );
+
+  const handleDelete = async (template) => {
+    if (!window.confirm(t('admin.users.templates.deleteConfirm', { title: template.title }))) return;
+
+    setBusyId(template.id);
+    setMessage('');
+
+    try {
+      const response = await onDeleteTemplate(template.id);
+      setMessage(response?.message || t('admin.users.templates.deleted'));
+    } catch (error) {
+      setMessage(error.message || t('admin.users.templates.actionError'));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleUse = async (template) => {
+    setBusyId(template.id);
+    setMessage('');
+
+    try {
+      await onUseTemplate(template);
+    } catch (error) {
+      setMessage(error.message || t('admin.users.templates.actionError'));
+      setBusyId(null);
+    }
+  };
 
   return (
     <div className="usr-view-body">
@@ -144,6 +181,8 @@ export default function UsersTemplatesPanel({
           </div>
         </div>
 
+        {message ? <div className="usr-notice-message" role="status">{message}</div> : null}
+
         {sourceReady && visibleTemplates.length > 0 ? (
           <div className="usr-template-list">
             {visibleTemplates.map((template) => {
@@ -171,6 +210,35 @@ export default function UsersTemplatesPanel({
                       })}
                       {!template.channels.length ? <span>{t('admin.users.templates.noChannel')}</span> : null}
                     </div>
+                  </div>
+                  <div className="usr-template-actions">
+                    <button
+                      type="button"
+                      className="usr-mini-action usr-mini-action--primary"
+                      disabled={busyId === template.id}
+                      onClick={() => handleUse(template)}
+                    >
+                      <BsSend />
+                      {t('admin.users.templates.use')}
+                    </button>
+                    <button
+                      type="button"
+                      className="usr-mini-action"
+                      disabled={busyId === template.id}
+                      onClick={() => onEditTemplate(template)}
+                    >
+                      <BsPencil />
+                      {t('admin.users.templates.edit')}
+                    </button>
+                    <button
+                      type="button"
+                      className="usr-mini-action usr-mini-action--danger"
+                      disabled={busyId === template.id}
+                      onClick={() => handleDelete(template)}
+                    >
+                      <BsTrash />
+                      {t('admin.users.templates.delete')}
+                    </button>
                   </div>
                 </article>
               );

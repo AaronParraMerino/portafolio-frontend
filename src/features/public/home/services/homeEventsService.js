@@ -8,6 +8,7 @@ import {
   withHomeEventsCache,
   writeHomeEventsCache,
 } from './homeEventsCache';
+import { scheduleRequest } from '../../../../shared/services/requestScheduler';
 
 export const HOME_EVENTS_PAGE_SIZE = 20;
 export const EVENTS_LIST_PAGE_SIZE = 12;
@@ -150,6 +151,7 @@ export function normalizeHomeEvent(item = {}) {
     availableSlots,
     soldOut: capacity > 0 && availableSlots <= 0,
     isRegistered: Boolean(item.esta_inscrito || item.isRegistered),
+    requiresLogin: Boolean(item.requiresLogin || item.requiere_login),
     inscriptionId: item.id_inscripcion ?? item.inscriptionId ?? null,
     inscriptionDate: item.fecha_inscripcion || item.inscriptionDate || null,
     channels: Array.isArray(item.canales || item.channels) ? (item.canales || item.channels) : [],
@@ -159,6 +161,16 @@ export function normalizeHomeEvent(item = {}) {
     authorName,
     updatedAt: item.updated_at || item.updatedAt || item.fecha_actualizacion || '',
     raw: item,
+  };
+}
+
+function markEventsAsLoginRequired(payload = {}) {
+  return {
+    ...payload,
+    events: (payload.events || []).map((event) => ({
+      ...event,
+      requiresLogin: true,
+    })),
   };
 }
 
@@ -201,13 +213,64 @@ function eventsListCacheKey({ userId, page = 1, perPage = HOME_EVENTS_PAGE_SIZE,
 }
 
 async function requestEvents({ userId, page = 1, perPage = HOME_EVENTS_PAGE_SIZE } = {}) {
-  const response = await fetch(`${BASE_URL}${endpointForEvents({ userId, page, perPage })}`, {
-    method: 'GET',
-    headers: buildHeaders(),
+  const endpoint = endpointForEvents({ userId, page, perPage });
+  return scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: buildHeaders(),
+    });
+    const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos.');
+    return normalizeHomeEventsPayload(payload);
+  }, {
+    key: `events:user:${userId}:${page}:${perPage}`,
+    priority: 'normal',
   });
+}
 
-  const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos.');
-  return normalizeHomeEventsPayload(payload);
+async function requestPublicEvents({ page = 1, perPage = HOME_EVENTS_PAGE_SIZE } = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    por_pagina: String(perPage),
+  });
+  const endpoint = `/eventos/publicos?${params.toString()}`;
+  return scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos publicos.');
+    return markEventsAsLoginRequired(normalizeHomeEventsPayload(payload));
+  }, {
+    key: `events:public:${page}:${perPage}`,
+    priority: 'normal',
+  });
+}
+
+export function getCachedPublicHomeEvents(options = {}) {
+  const page = options.page || 1;
+  const perPage = options.perPage || HOME_EVENTS_PAGE_SIZE;
+  const scope = options.scope || 'home-public';
+  const ttlMs = Number(options.ttlMs ?? HOME_EVENTS_TTL_MS);
+  const key = eventsListCacheKey({ userId: 'public', page, perPage, scope });
+
+  return readHomeEventsCache(key, {
+    allowStale: Boolean(options.allowStale),
+    ttlMs,
+  });
+}
+
+export async function getPublicHomeEvents(options = {}) {
+  const page = options.page || 1;
+  const perPage = options.perPage || HOME_EVENTS_PAGE_SIZE;
+  const scope = options.scope || 'home-public';
+  const ttlMs = Number(options.ttlMs ?? HOME_EVENTS_TTL_MS);
+  const key = eventsListCacheKey({ userId: 'public', page, perPage, scope });
+
+  return withHomeEventsCache(
+    key,
+    () => requestPublicEvents({ page, perPage }),
+    { force: Boolean(options.force), ttlMs },
+  );
 }
 
 export function getCachedHomeEvents(options = {}) {
@@ -253,12 +316,17 @@ export async function registerHomeEvent(eventId, options = {}) {
     throw new Error('No se encontro el evento seleccionado.');
   }
 
-  const response = await fetch(`${BASE_URL}/eventos/${userId}/${eventId}/inscribirse`, {
-    method: 'POST',
-    headers: buildHeaders(),
+  const payload = await scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}/eventos/${userId}/${eventId}/inscribirse`, {
+      method: 'POST',
+      headers: buildHeaders(),
+    });
+    return parseEventResponse(response, 'No se pudo inscribir al evento.');
+  }, {
+    key: `events:register:${userId}:${eventId}`,
+    priority: 'high',
   });
 
-  const payload = await parseEventResponse(response, 'No se pudo inscribir al evento.');
   clearHomeEventsCacheForUser(userId);
 
   if (options.refresh !== false) {

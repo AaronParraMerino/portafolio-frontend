@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import { getHomeStats } from '../services/homePortfolioService';
+import { EventDetailModal, EventHeroBanner } from './events';
 
 /* ── Datos ── */
 const CHIPS_LEFT = [
@@ -40,12 +42,18 @@ function formatStatValue(value) {
 }
 
 
-export default function Hero() {
+export default function Hero({ eventsState }) {
   const { t } = useLanguage();
   const heroRef = useRef(null);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [stats, setStats] = useState(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const touchStartX = useRef(null);
+  const highlighted = eventsState?.highlighted || [];
+  const slideCount = highlighted.length + 1;
 
   useEffect(() => {
     let active = true;
@@ -63,6 +71,22 @@ export default function Hero() {
     };
   }, []);
 
+  useEffect(() => {
+    if (carouselPaused || slideCount <= 1) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((index) => (index + 1) % slideCount);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [carouselPaused, slideCount]);
+
+  useEffect(() => {
+    if (activeSlide >= slideCount) {
+      setActiveSlide(0);
+    }
+  }, [activeSlide, slideCount]);
+
   const goToSearch = (term = searchTerm) => {
     const cleanTerm = term.trim();
     if (cleanTerm) {
@@ -75,6 +99,42 @@ export default function Hero() {
   const handleSubmit = (event) => {
     event.preventDefault();
     goToSearch();
+  };
+
+  const moveSlide = (step) => {
+    setActiveSlide((index) => (index + step + slideCount) % slideCount);
+  };
+
+  const handleRegister = async (event) => {
+    if (event?.requiresLogin) {
+      navigate('/auth/login', { state: { from: '/' } });
+      return;
+    }
+
+    const result = await eventsState?.register?.(event);
+    if (result?.refreshed && selectedEvent) {
+      const updated = result.refreshed.events.find((item) => String(item.id) === String(selectedEvent.id));
+      if (updated) setSelectedEvent(updated);
+    }
+  };
+
+  const handleTouchStart = (event) => {
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    touchStartX.current = event.touches?.[0]?.clientX ?? null;
+    setCarouselPaused(true);
+  };
+
+  const handleTouchEnd = (event) => {
+    if (!window.matchMedia('(max-width: 768px)').matches) return;
+    const endX = event.changedTouches?.[0]?.clientX;
+    const startX = touchStartX.current;
+
+    if (typeof startX === 'number' && typeof endX === 'number' && Math.abs(endX - startX) >= 50) {
+      moveSlide(endX > startX ? -1 : 1);
+    }
+
+    touchStartX.current = null;
+    setCarouselPaused(false);
   };
 
 
@@ -204,6 +264,60 @@ export default function Hero() {
           align-items: center;
           order: 1;
         }
+
+        .spk-hero-showcase {
+          order: 1;
+          position: relative;
+          width: min(1180px, calc(100% - 72px));
+          z-index: 3;
+        }
+        .spk-hero-institutional {
+          align-items: center;
+          display: flex;
+          justify-content: center;
+          min-height: 430px;
+          padding: 24px;
+        }
+        .spk-hero-showcase .spk-hero-inner { max-width: 880px; }
+        .spk-hero-showcase-nav {
+          align-items: center;
+          background: var(--blanco);
+          border: 1.5px solid var(--azul-mid);
+          border-radius: 7px;
+          box-shadow: 0 6px 18px rgba(17,24,39,.12);
+          color: var(--azul-deep);
+          cursor: pointer;
+          display: flex;
+          height: 72px;
+          justify-content: center;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 30px;
+          z-index: 8;
+        }
+        .spk-hero-showcase-nav:hover { background: var(--azul-light); border-color: var(--azul); color: var(--azul); }
+        .spk-hero-showcase-prev { left: -20px; }
+        .spk-hero-showcase-next { right: -20px; }
+        .spk-hero-showcase-dots {
+          bottom: 12px;
+          display: flex;
+          gap: 7px;
+          left: 50%;
+          position: absolute;
+          transform: translateX(-50%);
+          z-index: 8;
+        }
+        .spk-hero-showcase-dot {
+          background: rgba(0,119,183,.35);
+          border: 0;
+          border-radius: 999px;
+          cursor: pointer;
+          height: 8px;
+          padding: 0;
+          width: 8px;
+        }
+        .spk-hero-showcase-dot.active { background: var(--azul); width: 26px; }
 
         /* badge institución */
         .spk-badge {
@@ -485,6 +599,10 @@ export default function Hero() {
           .spk-stat:nth-child(3),
           .spk-stat:nth-child(4) { border-bottom: none; }
           .spk-copyright { right: 20px; }
+          .spk-hero-showcase { width: 100%; }
+          .spk-hero-institutional { min-height: 0; padding: 16px 0 28px; }
+          .spk-hero-showcase-nav,
+          .spk-hero-showcase-dots { display: none; }
         }
         @media (max-width: 520px) {
           .spk-badge {
@@ -590,43 +708,76 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Contenido principal */}
-        <div className="spk-hero-inner">
+        {/* Contenido principal y eventos destacados */}
+        <div
+          className="spk-hero-showcase"
+          onMouseEnter={() => setCarouselPaused(true)}
+          onMouseLeave={() => setCarouselPaused(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {activeSlide === 0 ? (
+            <div className="spk-hero-institutional">
+              <div className="spk-hero-inner">
+                <div className="spk-badge">
+                  <div className="spk-badge-dot" />
+                  {t('hero.badge')}
+                </div>
 
-          {/* Badge institución */}
-          <div className="spk-badge">
-            <div className="spk-badge-dot" />
-            {t('hero.badge')}
-          </div>
+                <h1 className="spk-hero-title">
+                  <span className="spk-title-blue">{t('hero.title.brand')}</span>{' '}
+                  <span className="spk-title-dark">{t('hero.title.line1')}</span>
+                  <br />
+                  <span className="spk-title-dark">{t('hero.title.line2')}</span>
+                </h1>
 
-          {/* Título */}
-          <h1 className="spk-hero-title">
-            <span className="spk-title-blue">{t('hero.title.brand')}</span>{' '}
-            <span className="spk-title-dark">{t('hero.title.line1')}</span>
-            <br />
-            <span className="spk-title-dark">{t('hero.title.line2')}</span>
-          </h1>
+                <div className="spk-divider" />
 
-          {/* Divisor */}
-          <div className="spk-divider" />
+                <p className="spk-hero-desc">
+                  <strong>{t('hero.description.prefix')}</strong> {t('hero.description.text')}
+                </p>
 
-          {/* Descripción */}
-          <p className="spk-hero-desc">
-            <strong>{t('hero.description.prefix')}</strong> {t('hero.description.text')}
-          </p>
-
-
-
-          {/* Mini stats */}
-          <div className="spk-stats">
-            {STATS.map(({ key, labelKey, red }) => (
-              <div key={labelKey} className={`spk-stat${red ? ' stat-red' : ''}`}>
-                <div className="spk-stat-num">{formatStatValue(stats?.[key])}</div>
-                <div className="spk-stat-lbl">{t(labelKey)}</div>
+                <div className="spk-stats">
+                  {STATS.map(({ key, labelKey, red }) => (
+                    <div key={labelKey} className={`spk-stat${red ? ' stat-red' : ''}`}>
+                      <div className="spk-stat-num">{formatStatValue(stats?.[key])}</div>
+                      <div className="spk-stat-lbl">{t(labelKey)}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <EventHeroBanner
+              events={[highlighted[activeSlide - 1]]}
+              onRegister={handleRegister}
+              onViewDetails={setSelectedEvent}
+              registeringId={eventsState?.registeringId}
+              showMobileNavigation={false}
+            />
+          )}
 
+          {slideCount > 1 && (
+            <>
+              <button type="button" className="spk-hero-showcase-nav spk-hero-showcase-prev" onClick={() => moveSlide(-1)} aria-label="Banner anterior">
+                <BsChevronLeft />
+              </button>
+              <button type="button" className="spk-hero-showcase-nav spk-hero-showcase-next" onClick={() => moveSlide(1)} aria-label="Siguiente banner">
+                <BsChevronRight />
+              </button>
+              <div className="spk-hero-showcase-dots" aria-label="Banners principales">
+                {Array.from({ length: slideCount }, (_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className={`spk-hero-showcase-dot${index === activeSlide ? ' active' : ''}`}
+                    onClick={() => setActiveSlide(index)}
+                    aria-label={`Mostrar banner ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Scroll hint */}
@@ -636,6 +787,13 @@ export default function Hero() {
         </div>
 
       </section>
+
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        onRegister={handleRegister}
+        registering={String(eventsState?.registeringId || '') === String(selectedEvent?.id || '')}
+      />
     </>
   );
 }

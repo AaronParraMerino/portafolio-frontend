@@ -120,7 +120,9 @@ export default function LoginForm() {
 
   const handleSuccessfulAuth = async (result) => {
     await persistAuthSession(result, baseUrl);
-    window.location.href = "/";
+    const returnTo = sessionStorage.getItem("auth:return-to");
+    sessionStorage.removeItem("auth:return-to");
+    window.location.href = returnTo?.startsWith("/") ? returnTo : "/";
   };
 
   const handleInactiveAccount = (payload, fallbackEmail = "") => {

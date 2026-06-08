@@ -52,7 +52,7 @@ const NAV_LINKS = [
   },
   {
     labelKey: 'nav.projects',
-    href: '#proyectos',
+    href: '/proyectos',
     icon: (
       <>
         <path d="M3 7.5V6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1.5" />
@@ -622,13 +622,22 @@ export default function Navbar() {
           }
         }
         @media (max-width: 768px) {
-          .spk-nav-links,
+          .spk-nav-links {
+            display: none;
+          }
+
           .spk-nav-right {
+            display: flex;
+            margin-left: auto;
+          }
+
+          .spk-nav-right > :not(.spk-bell-wrap) {
             display: none;
           }
 
           .spk-hamburger {
             display: flex;
+            margin-left: 0;
           }
         }
       `}</style>

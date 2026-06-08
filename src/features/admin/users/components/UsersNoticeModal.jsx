@@ -100,10 +100,12 @@ export default function UsersNoticeModal({
   }, [modal, segments, users]);
 
   const isTemplate = modal?.mode === 'template';
-  const isGlobalNotice = !modal?.directUser && segments.length === 1 && segments[0] === 'todos';
-  const availableTypes = isGlobalNotice ? USER_GLOBAL_NOTICE_TYPES : USER_NOTICE_TYPES;
+  const isGlobalNotice = !modal?.fromTemplate && !modal?.directUser && segments.length === 1 && segments[0] === 'todos';
+  const availableTypes = isGlobalNotice && !isTemplate ? USER_GLOBAL_NOTICE_TYPES : USER_NOTICE_TYPES;
   const modalTitle = isTemplate
-    ? t('admin.users.noticeModal.templateTitle')
+    ? (modal?.initialNotice
+      ? t('admin.users.noticeModal.editTemplateTitle')
+      : t('admin.users.noticeModal.templateTitle'))
     : modal?.initialNotice
       ? t('admin.users.noticeModal.editTitle')
       : t('admin.users.noticeModal.newTitle');
@@ -133,7 +135,24 @@ export default function UsersNoticeModal({
     }
 
     if (isTemplate) {
-      setMessage(t('admin.users.noticeModal.templatesSoon'));
+      setSubmitting(true);
+      setMessage('');
+
+      try {
+        const response = await onSendNotice({
+          templateId: modal.initialNotice?.id || modal.initialNotice?.id_plantilla || null,
+          titulo: title.trim(),
+          contenido: body.trim(),
+          tipo: type,
+          urgencia: urgency,
+          isTemplate: true,
+        });
+        setMessage(response?.message || t('admin.users.noticeModal.templateReusable'));
+      } catch (error) {
+        setMessage(error.message || t('admin.users.noticeModal.sendError'));
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -172,6 +191,7 @@ export default function UsersNoticeModal({
         canales: ['inapp'],
         segmentos: segments,
         directUser: modal.directUser || null,
+        forceUserNotice: !!modal.fromTemplate,
       });
 
       setMessage(response?.message || (isGlobalNotice ? t('admin.users.noticeModal.globalCreated') : t('admin.users.noticeModal.sentCount', { count: destinatarios.length })));
@@ -398,7 +418,13 @@ export default function UsersNoticeModal({
               onClick={() => handleSubmit(isTemplate ? 'template' : 'send')}
               disabled={submitting}
             >
-              {isTemplate ? t('admin.users.noticeModal.saveTemplate') : submitting ? t('admin.users.noticeModal.sending') : t('admin.users.noticeModal.sendNow')}
+              {isTemplate
+                ? (submitting
+                  ? t('admin.users.noticeModal.sending')
+                  : modal.initialNotice
+                    ? t('admin.users.noticeModal.updateTemplate')
+                    : t('admin.users.noticeModal.saveTemplate'))
+                : submitting ? t('admin.users.noticeModal.sending') : t('admin.users.noticeModal.sendNow')}
             </button>
           </div>
         </div>

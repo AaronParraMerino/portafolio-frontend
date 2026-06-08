@@ -3,7 +3,6 @@ import {
   BsBell,
   BsClockHistory,
   BsEnvelope,
-  BsFileText,
   BsMegaphone,
   BsPeople,
   BsSearch,
@@ -210,22 +209,6 @@ export default function UsersHistoryPanel({
         )}
       </section>
 
-      <section className="usr-sheet usr-sheet--subtle">
-        <div className="usr-chip-list">
-          <span className="usr-chip">
-            <BsFileText />
-            {t('admin.users.history.accountActions')}
-          </span>
-          <span className="usr-chip">
-            <BsFileText />
-            {t('admin.users.history.sentCommunications')}
-          </span>
-          <span className="usr-chip">
-            <BsFileText />
-            {t('admin.users.history.adminChanges')}
-          </span>
-        </div>
-      </section>
     </div>
   );
 }

@@ -421,6 +421,50 @@ export async function createGlobalAdminNotice(payload) {
   return parseAdminResponse(response, 'No se pudo crear el aviso global.');
 }
 
+export async function createAdminNoticeTemplate(payload) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/plantillas`, {
+    method: 'POST',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo guardar la plantilla.');
+}
+
+export async function updateAdminNoticeTemplate(templateId, payload) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/plantillas/${templateId}`, {
+    method: 'PUT',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar la plantilla.');
+}
+
+export async function deleteAdminNoticeTemplate(templateId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/plantillas/${templateId}`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudo eliminar la plantilla.');
+}
+
+export async function registerAdminNoticeTemplateUse(templateId) {
+  const response = await fetch(`${BASE_URL}/administrador/usuarios/plantillas/${templateId}/usar`, {
+    method: 'POST',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudo usar la plantilla.');
+}
+
 export function normalizeUsersDirectory(payload = {}) {
   const base = createUsersDirectoryShell();
   const items = Array.isArray(payload.items) ? payload.items : base.items;

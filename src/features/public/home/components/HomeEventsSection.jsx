@@ -1,32 +1,34 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   EventDetailModal,
-  EventHeroBanner,
   EventsCarousel,
 } from './events';
-import useHomeEvents from '../hooks/useHomeEvents';
 
-export default function HomeEventsSection() {
+export default function HomeEventsSection({ eventsState }) {
   const {
-    authAvailable,
     carousel,
     error,
     events,
-    highlighted,
     loading,
     notice,
     register,
     registeringId,
     setNotice,
-  } = useHomeEvents();
+  } = eventsState;
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const navigate = useNavigate();
 
-  if (!authAvailable) return null;
   if (!events.length && loading) return null;
   if (!events.length && !loading) return null;
+  if (!carousel.length && !notice && !error) return null;
 
   const handleRegister = async (event) => {
+    if (event?.requiresLogin) {
+      navigate('/auth/login', { state: { from: '/' } });
+      return;
+    }
+
     const result = await register(event);
 
     if (result?.refreshed && selectedEvent) {
@@ -39,20 +41,6 @@ export default function HomeEventsSection() {
     <>
       <section className="evh-section" id="eventos-home">
         <div className="evh-section-inner">
-          <div className="evh-section-header">
-            <div>
-              <div className="evh-section-kicker">Eventos</div>
-              <h2>Eventos proximos</h2>
-              <p>
-                Talleres, ferias y convocatorias visibles para tu perfil.
-              </p>
-            </div>
-
-            <Link className="evh-section-link" to="/eventos">
-              Ver todos
-            </Link>
-          </div>
-
           {(notice || error) && (
             <div className={`evh-section-message${error ? ' is-error' : ''}`} role="status">
               <span>{error || notice}</span>
@@ -64,15 +52,9 @@ export default function HomeEventsSection() {
             </div>
           )}
 
-          <EventHeroBanner
-            events={highlighted}
-            onRegister={handleRegister}
-            onViewDetails={setSelectedEvent}
-            registeringId={registeringId}
-          />
-
           <EventsCarousel
             events={carousel}
+            showAllPath="/eventos"
             onRegister={handleRegister}
             onViewDetails={setSelectedEvent}
             registeringId={registeringId}

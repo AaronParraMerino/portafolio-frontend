@@ -55,6 +55,8 @@ export default function UsersPage() {
     onViewChange,
     onOpenNoticeModal,
     onOpenTemplateModal,
+    onDeleteTemplate,
+    onUseTemplate,
     onOpenDirectNoticeModal,
     onCloseNoticeModal,
     onSendNotice,
@@ -151,6 +153,9 @@ export default function UsersPage() {
               sourceReady={sourceReady}
               templates={templates}
               onCreateTemplate={onOpenTemplateModal}
+              onEditTemplate={onOpenTemplateModal}
+              onDeleteTemplate={onDeleteTemplate}
+              onUseTemplate={onUseTemplate}
             />
           ) : null}
         </section>

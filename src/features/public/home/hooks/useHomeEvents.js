@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   HOME_EVENTS_PAGE_SIZE,
   getCachedHomeEvents,
+  getCachedPublicHomeEvents,
   getCurrentEventsUser,
   getHomeEvents,
+  getPublicHomeEvents,
   registerHomeEvent,
   splitHomeEvents,
 } from '../services/homeEventsService';
@@ -16,12 +18,24 @@ const initialState = {
 
 function getInitialEvents() {
   try {
-    const cached = getCachedHomeEvents({
-      allowStale: true,
-      page: 1,
-      perPage: HOME_EVENTS_PAGE_SIZE,
-      scope: 'home',
-    });
+    let cached;
+
+    try {
+      getCurrentEventsUser();
+      cached = getCachedHomeEvents({
+        allowStale: true,
+        page: 1,
+        perPage: HOME_EVENTS_PAGE_SIZE,
+        scope: 'home',
+      });
+    } catch {
+      cached = getCachedPublicHomeEvents({
+        allowStale: true,
+        page: 1,
+        perPage: HOME_EVENTS_PAGE_SIZE,
+        scope: 'home-public',
+      });
+    }
 
     return cached?.value || initialState;
   } catch {
@@ -42,14 +56,25 @@ export default function useHomeEvents() {
 
     async function loadEvents() {
       let cached = null;
+      let authenticated = true;
 
       try {
         getCurrentEventsUser();
-        cached = getCachedHomeEvents({
+      } catch {
+        authenticated = false;
+      }
+
+      try {
+        cached = authenticated ? getCachedHomeEvents({
           allowStale: true,
           page: 1,
           perPage: HOME_EVENTS_PAGE_SIZE,
           scope: 'home',
+        }) : getCachedPublicHomeEvents({
+          allowStale: true,
+          page: 1,
+          perPage: HOME_EVENTS_PAGE_SIZE,
+          scope: 'home-public',
         });
 
         if (cached?.value && mounted) {
@@ -57,17 +82,22 @@ export default function useHomeEvents() {
           setLoading(false);
         }
 
-        const result = await getHomeEvents({
+        const result = authenticated ? await getHomeEvents({
           force: false,
           page: 1,
           perPage: HOME_EVENTS_PAGE_SIZE,
           scope: 'home',
+        }) : await getPublicHomeEvents({
+          force: false,
+          page: 1,
+          perPage: HOME_EVENTS_PAGE_SIZE,
+          scope: 'home-public',
         });
 
         if (mounted) {
           setData({ ...initialState, ...result });
           setError('');
-          setAuthAvailable(true);
+          setAuthAvailable(authenticated);
         }
       } catch (err) {
         if (!mounted) return;
@@ -77,7 +107,7 @@ export default function useHomeEvents() {
           || message.toLowerCase().includes('autentic')
           || message.toLowerCase().includes('no autorizado');
 
-        setAuthAvailable(!isAuthError);
+        setAuthAvailable(!isAuthError && authenticated);
         if (!cached?.value && !isAuthError) {
           setError(message);
         }

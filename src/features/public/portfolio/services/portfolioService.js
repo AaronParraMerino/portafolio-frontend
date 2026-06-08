@@ -161,20 +161,27 @@ function mapPublicProyectosFromBackend(response) {
   });
 }
 
-function cacheKey(userId) {
-  return publicCacheKey('portfolio:view', String(userId || '').trim());
+function normalizeLanguage(language = 'es') {
+  return ['es', 'en', 'pt'].includes(language) ? language : 'es';
 }
 
-export function loadCachedPublicPortfolio(userId) {
+function cacheKey(userId, language = 'es') {
+  const lang = normalizeLanguage(language);
+  return publicCacheKey('portfolio:view', `${String(userId || '').trim()}:${lang}`);
+}
+
+export function loadCachedPublicPortfolio(userId, language = 'es') {
   if (!userId) return null;
 
-  return readPublicCache(cacheKey(userId), { ttlMs: PUBLIC_PORTFOLIO_TTL_MS }) || null;
+  return readPublicCache(cacheKey(userId, language), {
+    ttlMs: PUBLIC_PORTFOLIO_TTL_MS,
+  }) || null;
 }
 
-export function clearCachedPublicPortfolio(userId) {
+export function clearCachedPublicPortfolio(userId, language = 'es') {
   if (!userId) return;
 
-  removePublicCache(cacheKey(userId));
+  removePublicCache(cacheKey(userId, language));
 }
 
 async function safeJson(res) {
@@ -326,15 +333,20 @@ function normalizePublicPortfolio(raw = {}) {
   };
 }
 
-export async function getPublicPortfolio(userId, { force = false } = {}) {
+export async function getPublicPortfolio(userId, { force = false, language = 'es' } = {}) {
   if (!userId) {
     throw new Error('No se encontro el portafolio solicitado.');
   }
 
+  const lang = normalizeLanguage(language);
+
   return withPublicCache(
-    cacheKey(userId),
+    cacheKey(userId, lang),
     async () => {
-      const payload = await publicFetch(`/portfolio/${encodeURIComponent(userId)}/public`);
+      const payload = await publicFetch(
+        `/portfolio/${encodeURIComponent(userId)}/public?lang=${encodeURIComponent(lang)}`
+      );
+
       return normalizePublicPortfolio(payload);
     },
     { force, ttlMs: PUBLIC_PORTFOLIO_TTL_MS },

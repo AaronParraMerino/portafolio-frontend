@@ -1,5 +1,6 @@
 import BASE_URL from '../../services/http/const';
 import { getStoredUser } from '../utils/authStorage';
+import { scheduleRequest } from './requestScheduler';
 
 const NOTIFICATIONS_CACHE_PREFIX = 'notifications-cache:v2';
 const UNREAD_CACHE_TTL_MS = 30 * 1000;
@@ -154,15 +155,26 @@ async function requestJson(path, options = {}) {
   const context = getRequestContext();
   if (!context) throw new Error('No hay una sesion activa.');
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      ...headers(context.token, Boolean(options.body)),
-      ...(options.headers || {}),
-    },
-  });
+  const {
+    fallbackMessage,
+    schedulerPriority,
+    ...fetchOptions
+  } = options;
+  const method = String(fetchOptions.method || 'GET').toUpperCase();
+  return scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      ...fetchOptions,
+      headers: {
+        ...headers(context.token, Boolean(fetchOptions.body)),
+        ...(fetchOptions.headers || {}),
+      },
+    });
 
-  return resolveResponse(response, options.fallbackMessage || 'No se pudo completar la solicitud.');
+    return resolveResponse(response, fallbackMessage || 'No se pudo completar la solicitud.');
+  }, {
+    key: method === 'GET' ? `notifications:${context.userId}:${path}` : '',
+    priority: schedulerPriority || (method === 'GET' ? 'normal' : 'high'),
+  });
 }
 
 async function withCache({
@@ -230,7 +242,10 @@ export async function fetchNotificationModules({ force = false } = {}) {
     force,
     loader: () => requestJson(
       `/notificaciones/${context.userId}/modulos`,
-      { fallbackMessage: 'No se pudieron cargar los modulos de notificaciones.' }
+      {
+        fallbackMessage: 'No se pudieron cargar los modulos de notificaciones.',
+        schedulerPriority: 'background',
+      }
     ),
   });
 }

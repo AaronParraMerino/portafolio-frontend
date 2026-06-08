@@ -1387,6 +1387,39 @@
   font-weight: 800;
 }
 
+.usr-template-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.usr-template-actions .usr-mini-action {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.usr-mini-action--primary {
+  background: var(--adm-primary, #0f766e);
+  border-color: var(--adm-primary, #0f766e);
+  color: #fff;
+}
+
+.usr-mini-action--primary:hover {
+  background: var(--adm-primary-hover, #0b5f59);
+  color: #fff;
+}
+
+.usr-mini-action--danger {
+  color: #b91c1c;
+}
+
+.usr-mini-action--danger:hover {
+  background: #fef2f2;
+  border-color: rgba(185, 28, 28, .24);
+  color: #991b1b;
+}
+
 .usr-history-main {
   align-items: center;
   display: flex;
