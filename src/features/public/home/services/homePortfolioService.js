@@ -6,6 +6,7 @@ import {
 } from '../../services/publicCache';
 
 const FEATURED_TTL_MS = 2 * 60 * 1000;
+const RECENT_PROJECTS_TTL_MS = 2 * 60 * 1000;
 const STATS_TTL_MS = 2 * 60 * 1000;
 
 function featuredCacheKey(search = '') {
@@ -17,6 +18,28 @@ function featuredCacheKey(search = '') {
 
 function statsCacheKey() {
   return publicCacheKey('home:stats', 'summary');
+}
+
+function recentProjectsCacheKey() {
+  return publicCacheKey('home:recent-projects', { limit: 12 });
+}
+
+function normalizeRecentProject(project = {}) {
+  const cover = project.imagen_portada || {};
+
+  return {
+    ...project,
+    id: project.id ?? project.id_proyecto,
+    title: project.titulo || project.title || 'Proyecto sin titulo',
+    description: project.descripcion || project.description || '',
+    type: project.tipo || project.categoria_proyecto || 'sin_especificar',
+    platform: project.desarrollado_para || project.plataforma_objetivo || 'sin_especificar',
+    publishedAt: project.publicado_at || project.updated_at || '',
+    imageUrl: cover.imagen_detail_url || cover.imagen_card_url || cover.url || '',
+    technologies: Array.isArray(project.tecnologias_detalle)
+      ? project.tecnologias_detalle
+      : (project.tecnologias || []).map((name) => ({ nombre: name })),
+  };
 }
 
 export const getCachedFeaturedPortfolios = (search = '') => (
@@ -40,6 +63,27 @@ export const getFeaturedPortfolios = async (search = '', { force = false } = {})
     { force, ttlMs: FEATURED_TTL_MS },
   );
 };
+
+export const getCachedRecentProjects = () => (
+  readPublicCache(recentProjectsCacheKey(), { ttlMs: RECENT_PROJECTS_TTL_MS }) || null
+);
+
+export const getRecentProjects = async ({ force = false } = {}) => (
+  withPublicCache(
+    recentProjectsCacheKey(),
+    async () => {
+      const response = await get('/home/proyectos-recientes?limit=12');
+      const payload = response?.data ?? {};
+
+      return {
+        ...payload,
+        hero: Array.isArray(payload.hero) ? payload.hero.map(normalizeRecentProject) : [],
+        recientes: Array.isArray(payload.recientes) ? payload.recientes.map(normalizeRecentProject) : [],
+      };
+    },
+    { force, ttlMs: RECENT_PROJECTS_TTL_MS },
+  )
+);
 
 export const getHomeStats = async ({ force = false } = {}) => (
   withPublicCache(

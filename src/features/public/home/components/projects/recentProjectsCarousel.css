@@ -1,0 +1,321 @@
+.prc-section {
+  background: var(--blanco);
+  padding: 0 24px 84px;
+}
+
+.prc-inner {
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.prc-head {
+  align-items: end;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.prc-head > div:first-child > span {
+  color: var(--azul);
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.prc-head h2 {
+  color: var(--negro-texto);
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.prc-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.prc-controls button {
+  align-items: center;
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 50%;
+  color: var(--gris-oscuro);
+  cursor: pointer;
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  transition: border-color .15s, color .15s, transform .15s;
+  width: 38px;
+}
+
+.prc-controls button:hover {
+  border-color: var(--azul);
+  color: var(--azul);
+  transform: translateY(-1px);
+}
+
+.prc-platform-filters {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  scrollbar-width: thin;
+}
+
+.prc-platform-filters button {
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 8px;
+  color: var(--gris-oscuro);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+}
+
+.prc-platform-filters button span {
+  align-items: center;
+  background: var(--blanco);
+  border: 1px solid var(--gris-borde);
+  border-radius: 999px;
+  color: var(--gris-texto);
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 9px;
+  height: 21px;
+  justify-content: center;
+  min-width: 21px;
+  padding: 0 5px;
+}
+
+.prc-platform-filters button:hover {
+  border-color: var(--azul-mid);
+  color: var(--azul-deep);
+}
+
+.prc-platform-filters button.active {
+  background: var(--azul-light);
+  border-color: var(--azul);
+  box-shadow: 0 6px 18px rgba(0, 119, 183, .12);
+  color: var(--azul-deep);
+}
+
+.prc-platform-filters button.active span {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--blanco);
+}
+
+.prc-track {
+  display: grid;
+  gap: 16px;
+  grid-auto-columns: minmax(290px, 350px);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  padding: 3px 3px 16px;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: var(--gris-borde) transparent;
+  scrollbar-width: thin;
+}
+
+.prc-card {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(17, 24, 39, .07);
+  display: flex;
+  flex-direction: column;
+  min-height: 430px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+
+.prc-card:hover {
+  border-color: var(--azul-mid);
+  box-shadow: 0 15px 34px rgba(17, 24, 39, .12);
+  transform: translateY(-3px);
+}
+
+.prc-media {
+  aspect-ratio: 16 / 10;
+  background: linear-gradient(135deg, #d8eef9, #86c8e8);
+  overflow: hidden;
+  position: relative;
+}
+
+.prc-media-backdrop {
+  filter: blur(20px) saturate(1.12);
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  opacity: .7;
+  position: absolute;
+  transform: scale(1.12);
+  width: 100%;
+}
+
+.prc-media-image {
+  height: 100%;
+  object-fit: contain;
+  position: relative;
+  width: 100%;
+}
+
+.prc-media-fallback {
+  align-items: center;
+  background:
+    linear-gradient(rgba(255, 255, 255, .16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .16) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--azul-deep);
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}
+
+.prc-media-fallback svg {
+  height: 46px;
+  width: 46px;
+}
+
+.prc-type {
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid rgba(255, 255, 255, .98);
+  border-radius: 999px;
+  color: var(--azul-deep);
+  font-size: 10px;
+  font-weight: 900;
+  left: 12px;
+  padding: 7px 9px;
+  position: absolute;
+  text-transform: uppercase;
+  top: 12px;
+}
+
+.prc-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 17px;
+}
+
+.prc-platform {
+  color: var(--azul);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.prc-body h3 {
+  color: var(--negro-texto);
+  display: -webkit-box;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 8px 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.prc-body > p {
+  color: var(--gris-texto);
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 9px 0 0;
+  min-height: 58px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.prc-technologies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 15px;
+}
+
+.prc-technologies > span {
+  align-items: center;
+  background: var(--prc-tech-bg, var(--azul-light));
+  border: 1px solid var(--prc-tech-border, var(--azul-mid));
+  border-radius: 7px;
+  color: var(--negro-texto);
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  gap: 6px;
+  min-height: 29px;
+  padding: 5px 8px;
+}
+
+.prc-tech-icon {
+  align-items: center;
+  background: var(--prc-tech-color, var(--azul-mid));
+  border-radius: 4px;
+  display: inline-flex;
+  font-size: 8px;
+  height: 18px;
+  justify-content: center;
+  overflow: hidden;
+  width: 18px;
+}
+
+.prc-tech-icon img {
+  background: rgba(255, 255, 255, .94);
+  height: 100%;
+  object-fit: contain;
+  padding: 2px;
+  width: 100%;
+}
+
+.prc-date {
+  border-top: 1px solid #eef2f6;
+  color: var(--gris-texto);
+  font-family: var(--mono);
+  font-size: 9px;
+  margin-top: auto;
+  padding-top: 14px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 620px) {
+  .prc-section {
+    padding: 0 18px 66px;
+  }
+
+  .prc-head {
+    align-items: flex-start;
+  }
+
+  .prc-head h2 {
+    font-size: 19px;
+  }
+
+  .prc-platform-filters {
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+
+  .prc-track {
+    grid-auto-columns: minmax(270px, 88vw);
+  }
+}
