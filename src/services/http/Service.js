@@ -1,9 +1,14 @@
 import BASE_URL from './const';
 
-const headers = {
-  'Content-Type': 'application/json',
-  Accept: 'application/json',
-};
+function requestHeaders() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+
+  return {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 const apiActivityListeners = new Set();
 
@@ -28,7 +33,7 @@ async function request(method, endpoint, body) {
   try {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
       method,
-      headers,
+      headers: requestHeaders(),
       credentials: 'include',
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });

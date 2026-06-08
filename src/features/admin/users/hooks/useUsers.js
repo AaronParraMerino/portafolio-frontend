@@ -6,11 +6,15 @@ import {
   buildUsersMetrics,
   createUsersDirectoryShell,
   createGlobalAdminNotice,
+  createAdminNoticeTemplate,
+  deleteAdminNoticeTemplate,
   fetchUsersDirectory,
   inactivateUserAccount,
   normalizeUsersDirectory,
   pauseUserAccount,
+  registerAdminNoticeTemplateUse,
   sendAdminNotice,
+  updateAdminNoticeTemplate,
   updateUserRole,
 } from '../services/usersService';
 import { useLanguage } from '../../../../core/i18n';
@@ -319,14 +323,47 @@ export function useUsersDirectory() {
     });
   };
 
-  const handleOpenTemplateModal = () => {
+  const handleOpenTemplateModal = (template = null) => {
     setActiveView('templates');
     setNoticeModal({
       mode: 'template',
       initialSegments: ['todos'],
       directUser: null,
-      initialNotice: null,
+      initialNotice: template,
     });
+  };
+
+  const handleDeleteTemplate = async (templateId) => {
+    const response = await deleteAdminNoticeTemplate(templateId);
+
+    setDirectory((current) => ({
+      ...current,
+      templates: current.templates.filter((template) => String(template.id) !== String(templateId)),
+    }));
+
+    return response;
+  };
+
+  const handleUseTemplate = async (template) => {
+    const response = await registerAdminNoticeTemplateUse(template.id);
+    const updatedTemplate = response?.data || template;
+
+    setDirectory((current) => ({
+      ...current,
+      templates: current.templates.map((item) => (
+        String(item.id) === String(template.id) ? updatedTemplate : item
+      )),
+    }));
+    setActiveView('communications');
+    setNoticeModal({
+      mode: 'notice',
+      initialSegments: ['todos'],
+      directUser: null,
+      initialNotice: updatedTemplate,
+      fromTemplate: true,
+    });
+
+    return response;
   };
 
   const handleOpenDirectNoticeModal = () => {
@@ -344,7 +381,38 @@ export function useUsersDirectory() {
   };
 
   const handleSendNotice = async (payload) => {
-    const isGlobalNotice = !payload.directUser && Array.isArray(payload.segmentos) && payload.segmentos.length === 1 && payload.segmentos[0] === 'todos';
+    if (payload.isTemplate) {
+      const templatePayload = {
+        titulo: payload.titulo,
+        cuerpo: payload.contenido,
+        tipo: payload.tipo,
+        urgencia: payload.urgencia,
+        canales: ['inapp'],
+      };
+      const response = payload.templateId
+        ? await updateAdminNoticeTemplate(payload.templateId, templatePayload)
+        : await createAdminNoticeTemplate(templatePayload);
+      const template = response?.data;
+
+      if (template) {
+        setDirectory((current) => ({
+          ...current,
+          templates: payload.templateId
+            ? current.templates.map((item) => (
+              String(item.id) === String(payload.templateId) ? template : item
+            ))
+            : [template, ...current.templates],
+        }));
+      }
+
+      return response;
+    }
+
+    const isGlobalNotice = !payload.forceUserNotice
+      && !payload.directUser
+      && Array.isArray(payload.segmentos)
+      && payload.segmentos.length === 1
+      && payload.segmentos[0] === 'todos';
     const response = isGlobalNotice
       ? await createGlobalAdminNotice({
         tipo: payload.tipo,
@@ -376,6 +444,19 @@ export function useUsersDirectory() {
         },
         ...current.communications,
       ],
+      history: [
+        {
+          id: notice.id_aviso || notice.id_envio,
+          titulo: notice.titulo || payload.titulo,
+          cuerpo: notice.mensaje || notice.contenido || payload.contenido,
+          tipo: notice.tipo || payload.tipo,
+          estado: notice.estado || 'enviado',
+          destinatarios: notice.destinatarios || (isGlobalNotice ? current.items.length : 0),
+          creado: new Date(createdAt).toLocaleString('es-BO'),
+          canales: notice.canales || ['inapp'],
+        },
+        ...current.history,
+      ].slice(0, 20),
     }));
 
     return response;
@@ -420,6 +501,8 @@ export function useUsersDirectory() {
     onViewChange: handleViewChange,
     onOpenNoticeModal: handleOpenNoticeModal,
     onOpenTemplateModal: handleOpenTemplateModal,
+    onDeleteTemplate: handleDeleteTemplate,
+    onUseTemplate: handleUseTemplate,
     onOpenDirectNoticeModal: handleOpenDirectNoticeModal,
     onCloseNoticeModal: handleCloseNoticeModal,
     onSendNotice: handleSendNotice,
