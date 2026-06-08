@@ -78,6 +78,14 @@ export function getEventActionState(event = {}, registering = false) {
     };
   }
 
+  if (event.requiresLogin) {
+    return {
+      disabled: false,
+      label: 'Iniciar sesion',
+      tone: 'primary',
+    };
+  }
+
   return {
     disabled: false,
     label: 'Inscribirme',

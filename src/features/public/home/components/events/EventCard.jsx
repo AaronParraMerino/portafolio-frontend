@@ -16,20 +16,21 @@ export default function EventCard({
   onRegister,
   onViewDetails,
   registering = false,
+  containImage = false,
   className = '',
 }) {
   const [expanded, setExpanded] = useState(false);
   const showDetails = hasEventDetails(event);
 
   return (
-    <article className={cx('evh-card', className)}>
+    <article className={cx('evh-card', containImage && 'evh-card-contain-image', className)}>
       <button
         type="button"
         className="evh-card-media-button"
         onClick={() => onViewDetails?.(event)}
         aria-label={`Ver detalles de ${event.title}`}
       >
-        <EventMedia event={event} className="evh-card-media">
+        <EventMedia event={event} className="evh-card-media" containImage={containImage}>
           <span className="evh-badge">{event.typeLabel}</span>
           <span className={cx('evh-status', event.soldOut && 'is-soldout')}>
             {event.soldOut ? 'Agotado' : event.status}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BsArrowClockwise, BsArrowLeft, BsCalendarEvent } from 'react-icons/bs';
 import {
   EventCard,
@@ -27,6 +27,7 @@ export default function PublicEventsPage() {
     setNotice,
   } = useEventsPage();
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const navigate = useNavigate();
 
   const currentPage = pagination.pagina_actual || page;
   const lastPage = pagination.ultima_pagina || 1;
@@ -38,6 +39,11 @@ export default function PublicEventsPage() {
       : 'Sin eventos visibles';
 
   const handleRegister = async (event) => {
+    if (event?.requiresLogin) {
+      navigate('/auth/login', { state: { from: '/eventos' } });
+      return;
+    }
+
     const result = await register(event);
 
     if (result?.refreshed && selectedEvent) {
@@ -115,6 +121,7 @@ export default function PublicEventsPage() {
               onRegister={handleRegister}
               onViewDetails={setSelectedEvent}
               registering={String(registeringId || '') === String(event.id)}
+              containImage
             />
           ))}
         </section>
