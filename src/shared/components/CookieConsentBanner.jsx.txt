@@ -219,3 +219,5 @@ const styles = {
     cursor: 'pointer',
   },
 };
+
+#eliminar
