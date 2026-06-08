@@ -14,7 +14,7 @@ import './eventsHome.css';
 
 export default function EventHeroBanner({
   events = [],
-  autoAdvanceMs = 4700,
+  autoAdvanceMs = 5000,
   onRegister,
   onViewDetails,
   registeringId = null,

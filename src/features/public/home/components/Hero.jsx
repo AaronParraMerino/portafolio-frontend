@@ -76,7 +76,7 @@ export default function Hero({ eventsState }) {
 
     const timer = window.setInterval(() => {
       setActiveSlide((index) => (index + 1) % slideCount);
-    }, 9000);
+    }, 5000);
 
     return () => window.clearInterval(timer);
   }, [carouselPaused, slideCount]);
