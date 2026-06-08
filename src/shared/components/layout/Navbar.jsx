@@ -622,13 +622,22 @@ export default function Navbar() {
           }
         }
         @media (max-width: 768px) {
-          .spk-nav-links,
+          .spk-nav-links {
+            display: none;
+          }
+
           .spk-nav-right {
+            display: flex;
+            margin-left: auto;
+          }
+
+          .spk-nav-right > :not(.spk-bell-wrap) {
             display: none;
           }
 
           .spk-hamburger {
             display: flex;
+            margin-left: 0;
           }
         }
       `}</style>

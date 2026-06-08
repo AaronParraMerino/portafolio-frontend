@@ -8,6 +8,7 @@ import {
   withHomeEventsCache,
   writeHomeEventsCache,
 } from './homeEventsCache';
+import { scheduleRequest } from '../../../../shared/services/requestScheduler';
 
 export const HOME_EVENTS_PAGE_SIZE = 20;
 export const EVENTS_LIST_PAGE_SIZE = 12;
@@ -212,13 +213,18 @@ function eventsListCacheKey({ userId, page = 1, perPage = HOME_EVENTS_PAGE_SIZE,
 }
 
 async function requestEvents({ userId, page = 1, perPage = HOME_EVENTS_PAGE_SIZE } = {}) {
-  const response = await fetch(`${BASE_URL}${endpointForEvents({ userId, page, perPage })}`, {
-    method: 'GET',
-    headers: buildHeaders(),
+  const endpoint = endpointForEvents({ userId, page, perPage });
+  return scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: buildHeaders(),
+    });
+    const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos.');
+    return normalizeHomeEventsPayload(payload);
+  }, {
+    key: `events:user:${userId}:${page}:${perPage}`,
+    priority: 'normal',
   });
-
-  const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos.');
-  return normalizeHomeEventsPayload(payload);
 }
 
 async function requestPublicEvents({ page = 1, perPage = HOME_EVENTS_PAGE_SIZE } = {}) {
@@ -226,13 +232,18 @@ async function requestPublicEvents({ page = 1, perPage = HOME_EVENTS_PAGE_SIZE }
     page: String(page),
     por_pagina: String(perPage),
   });
-  const response = await fetch(`${BASE_URL}/eventos/publicos?${params.toString()}`, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
+  const endpoint = `/eventos/publicos?${params.toString()}`;
+  return scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos publicos.');
+    return markEventsAsLoginRequired(normalizeHomeEventsPayload(payload));
+  }, {
+    key: `events:public:${page}:${perPage}`,
+    priority: 'normal',
   });
-
-  const payload = await parseEventResponse(response, 'No se pudieron cargar los eventos publicos.');
-  return markEventsAsLoginRequired(normalizeHomeEventsPayload(payload));
 }
 
 export function getCachedPublicHomeEvents(options = {}) {
@@ -305,12 +316,17 @@ export async function registerHomeEvent(eventId, options = {}) {
     throw new Error('No se encontro el evento seleccionado.');
   }
 
-  const response = await fetch(`${BASE_URL}/eventos/${userId}/${eventId}/inscribirse`, {
-    method: 'POST',
-    headers: buildHeaders(),
+  const payload = await scheduleRequest(async () => {
+    const response = await fetch(`${BASE_URL}/eventos/${userId}/${eventId}/inscribirse`, {
+      method: 'POST',
+      headers: buildHeaders(),
+    });
+    return parseEventResponse(response, 'No se pudo inscribir al evento.');
+  }, {
+    key: `events:register:${userId}:${eventId}`,
+    priority: 'high',
   });
 
-  const payload = await parseEventResponse(response, 'No se pudo inscribir al evento.');
   clearHomeEventsCacheForUser(userId);
 
   if (options.refresh !== false) {

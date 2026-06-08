@@ -5,6 +5,7 @@ import {
   withPublicCache,
 } from '../../services/publicCache';
 import { getStoredUser } from '../../../../shared/utils/authStorage';
+import { scheduleRequest } from '../../../../shared/services/requestScheduler';
 
 const FEATURED_TTL_MS = 2 * 60 * 1000;
 const RECENT_PROJECTS_TTL_MS = 2 * 60 * 1000;
@@ -70,7 +71,11 @@ export const getFeaturedPortfolios = async (search = '', { force = false } = {})
   return withPublicCache(
     featuredCacheKey(search),
     async () => {
-      const response = await get(`/home/portafolios-destacados?${params.toString()}`);
+      const endpoint = `/home/portafolios-destacados?${params.toString()}`;
+      const response = await scheduleRequest(() => get(endpoint), {
+        key: `home:featured:${params.toString()}`,
+        priority: 'normal',
+      });
       return response?.data ?? {};
     },
     { force, ttlMs: FEATURED_TTL_MS },
@@ -89,7 +94,10 @@ export const getRecentProjects = async ({ force = false } = {}) => (
   withPublicCache(
     recentProjectsCacheKey(),
     async () => {
-      const response = await get('/home/proyectos-recientes?limit=12');
+      const response = await scheduleRequest(() => get('/home/proyectos-recientes?limit=12'), {
+        key: 'home:recent-projects',
+        priority: 'normal',
+      });
       const payload = response?.data ?? {};
 
       return {
@@ -108,7 +116,11 @@ export const getPublicProjectDetail = async (projectId, { force = false } = {}) 
   return withPublicCache(
     projectDetailCacheKey(projectId),
     async () => {
-      const response = await get(`/projects/public/${encodeURIComponent(projectId)}`);
+      const endpoint = `/projects/public/${encodeURIComponent(projectId)}`;
+      const response = await scheduleRequest(() => get(endpoint), {
+        key: `projects:public-detail:${projectId}`,
+        priority: 'high',
+      });
       return response?.data ?? {};
     },
     { force, ttlMs: PROJECT_DETAIL_TTL_MS },
@@ -119,7 +131,10 @@ export const getAllPublicProjects = async ({ force = false } = {}) => (
   withPublicCache(
     allProjectsCacheKey(),
     async () => {
-      const response = await get('/home/proyectos-recientes?limit=24');
+      const response = await scheduleRequest(() => get('/home/proyectos-recientes?limit=24'), {
+        key: 'projects:public-list',
+        priority: 'normal',
+      });
       const payload = response?.data ?? {};
 
       return Array.isArray(payload.recientes) ? payload.recientes.map(normalizeRecentProject) : [];
@@ -132,7 +147,10 @@ export const getHomeStats = async ({ force = false } = {}) => (
   withPublicCache(
     statsCacheKey(),
     async () => {
-      const response = await get('/home/stats');
+      const response = await scheduleRequest(() => get('/home/stats'), {
+        key: 'home:stats',
+        priority: 'background',
+      });
       return response?.data ?? {};
     },
     { force, ttlMs: STATS_TTL_MS },
