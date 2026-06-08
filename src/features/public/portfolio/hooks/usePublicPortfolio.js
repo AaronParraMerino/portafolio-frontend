@@ -8,7 +8,7 @@ import {
 } from '../services/portfolioService';
 
 export function usePublicPortfolio(userId) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [state, setState] = useState({
     data: EMPTY_VIEW,
     loading: true,
@@ -30,7 +30,7 @@ export function usePublicPortfolio(userId) {
       };
     }
 
-    const cached = loadCachedPublicPortfolio(userId);
+    const cached = loadCachedPublicPortfolio(userId, language);
 
     setState({
       data: cached || EMPTY_VIEW,
@@ -38,7 +38,7 @@ export function usePublicPortfolio(userId) {
       error: null,
     });
 
-    getPublicPortfolio(userId, { force: false })
+    getPublicPortfolio(userId, { force: false, language})
       .then((data) => {
         if (!active) return;
 
@@ -52,7 +52,7 @@ export function usePublicPortfolio(userId) {
         if (!active) return;
 
         if (error?.status === 403 || error?.status === 404) {
-          clearCachedPublicPortfolio(userId);
+          clearCachedPublicPortfolio(userId, language);
         }
 
         const unavailable = error?.status === 403 || error?.status === 404;
@@ -69,7 +69,7 @@ export function usePublicPortfolio(userId) {
     return () => {
       active = false;
     };
-  }, [userId, t]);
+  }, [userId, t, language]);
 
   return state;
 }
