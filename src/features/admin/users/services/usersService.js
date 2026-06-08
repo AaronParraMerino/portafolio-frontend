@@ -94,12 +94,6 @@ export const USER_STATS = [
     tone: 'danger',
   },
   {
-    id: 'publicantes',
-    label: 'Publicantes',
-    helper: 'Pueden publicar eventos',
-    tone: 'info',
-  },
-  {
     id: 'inactivo',
     label: 'Inactivos',
     helper: 'Cuentas desactivadas',
@@ -108,7 +102,6 @@ export const USER_STATS = [
 ];
 
 export const USER_TABLE_COLUMNS = [
-  { id: 'selection', label: '' },
   { id: 'user', label: 'Usuario' },
   { id: 'role', label: 'Rol' },
   { id: 'status', label: 'Estado' },
@@ -175,14 +168,11 @@ export const USER_COMMUNICATION_SEGMENTS = [
   { id: 'pausados', label: 'Pausados', status: 'pausado' },
   { id: 'bloqueados', label: 'Bloqueados', status: 'bloqueado' },
   { id: 'inactivos', label: 'Inactivos', status: 'inactivo' },
-  { id: 'publicantes', label: 'Publicantes', role: 'publicante' },
-  { id: 'seleccionados', label: 'Seleccionados', status: null },
 ];
 
 export const USER_COMMUNICATION_CHANNELS = [
   { id: 'inapp', label: 'In-app' },
   { id: 'email', label: 'Correo' },
-  { id: 'push', label: 'Push' },
 ];
 
 export const USER_GLOBAL_NOTICE_TYPES = [
@@ -230,12 +220,10 @@ export function getUserNoticeStatusMeta(status) {
 
 export function estimateUsersAudience({
   users = [],
-  selectedIds = [],
   segments = [],
 }) {
   if (!Array.isArray(segments) || !segments.length) return 0;
   if (segments.includes('todos')) return users.length;
-  if (segments.includes('seleccionados')) return selectedIds.length;
 
   const selectedStatuses = USER_COMMUNICATION_SEGMENTS
     .filter((segment) => segment.status && segments.includes(segment.id))
@@ -471,7 +459,6 @@ export function buildUsersMetrics(users = []) {
     activo: users.filter((user) => user.estado === 'activo').length,
     pausado: users.filter((user) => user.estado === 'pausado').length,
     bloqueado: users.filter((user) => user.estado === 'bloqueado').length,
-    publicantes: users.filter((user) => getUserRoleValue(user) === 'publicante').length,
     inactivo: users.filter((user) => user.estado === 'inactivo').length,
   };
 }

@@ -44,7 +44,7 @@ const TYPE_TO_FRONT = {
   networking: 'Inscrito',
   curso: 'Inscrito',
   convocatoria: 'Inscrito',
-  otro: 'Otro',
+  otro: 'Personal',
 };
 
 const TYPE_TO_BACK = {
@@ -55,7 +55,6 @@ const TYPE_TO_BACK = {
   Reunión: 'reunion',
   Reunion: 'reunion',
   Entrega: 'entrega',
-  Otro: 'otro',
 };
 
 const normalizeText = (value) => (

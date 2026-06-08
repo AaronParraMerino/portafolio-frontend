@@ -13,11 +13,35 @@ import {
 } from '../services/calendarService';
 
 const OLD_STORAGE_KEY = 'creafolio_calendar_events_v1';
+const FORM_DRAFT_STORAGE_KEY = 'creafolio_calendar_event_form_draft_v2';
 const ORIGIN_PERSONAL = 'personal';
 const ORIGIN_SUBSCRIBED = 'inscrito';
 
 function todayISO() {
   return toISODate(new Date());
+}
+
+
+function getInitialFormDraft(today) {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const rawDraft = window.localStorage.getItem(FORM_DRAFT_STORAGE_KEY);
+    if (!rawDraft) return null;
+
+    const draft = JSON.parse(rawDraft);
+    const fecha = draft?.values?.fecha || '';
+
+    if (today && fecha && fecha < today) {
+      window.localStorage.removeItem(FORM_DRAFT_STORAGE_KEY);
+      return null;
+    }
+
+    return draft;
+  } catch (error) {
+    window.localStorage.removeItem(FORM_DRAFT_STORAGE_KEY);
+    return null;
+  }
 }
 
 function getMonthDateFromISO(isoDate) {
@@ -86,11 +110,14 @@ export default function useCalendarEvents() {
   const { t } = useLanguage();
 
   const today = useMemo(() => todayISO(), []);
-  const [open, setOpen] = useState(false);
+  const [initialFormDraft] = useState(() => getInitialFormDraft(today));
+  const initialDraftDate = initialFormDraft?.values?.fecha || today;
+  const [draftRestorePending, setDraftRestorePending] = useState(() => !!initialFormDraft);
+  const [open, setOpen] = useState(() => !!initialFormDraft);
   const [events, setEvents] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(today);
-  const [currentMonth, setCurrentMonth] = useState(() => getMonthDateFromISO(today));
-  const [formOpen, setFormOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(initialDraftDate);
+  const [currentMonth, setCurrentMonth] = useState(() => getMonthDateFromISO(initialDraftDate));
+  const [formOpen, setFormOpen] = useState(() => !!initialFormDraft);
   const [formMode, setFormMode] = useState('create');
   const [editingEvent, setEditingEvent] = useState(null);
   const [feedbackKey, setFeedbackKey] = useState('');
@@ -152,13 +179,22 @@ export default function useCalendarEvents() {
   useEffect(() => {
     if (!open) return;
 
+    if (draftRestorePending) {
+      setFormOpen(true);
+      setEditingEvent(null);
+      setFormMode('create');
+      showFeedback('calendar.feedback.draftRestored');
+      setDraftRestorePending(false);
+      return;
+    }
+
     setSelectedDate(today);
     setCurrentMonth(getMonthDateFromISO(today));
     setFormOpen(false);
     setEditingEvent(null);
     setFormMode('create');
     clearFeedback();
-  }, [clearFeedback, open, today]);
+  }, [clearFeedback, draftRestorePending, open, showFeedback, today]);
 
   useEffect(() => {
     loadEvents();

@@ -6,7 +6,6 @@ import {
   BsFunnel,
   BsMegaphone,
   BsPeople,
-  BsPhone,
   BsPlusLg,
   BsSearch,
   BsSend,
@@ -19,11 +18,11 @@ import {
   getUserNoticeTypeMeta,
 } from '../services/usersService';
 import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
+import { useLanguage } from '../../../../core/i18n';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function normalizeNotice(item = {}) {
@@ -31,8 +30,8 @@ function normalizeNotice(item = {}) {
 
   return {
     id: item.id || item.id_aviso || item.id_comunicacion,
-    title: item.title || item.titulo || 'Aviso sin titulo',
-    body: item.body || item.preview || item.cuerpo || item.descripcion || 'Sin descripcion disponible.',
+    title: item.title || item.titulo || '',
+    body: item.body || item.preview || item.cuerpo || item.descripcion || '',
     type: item.type || item.tipo || 'sistema',
     status: item.status || item.estado || 'borrador',
     urgency: item.urgency || item.urgencia || 'baja',
@@ -68,6 +67,7 @@ export default function UsersCommunicationsPanel({
   onCreateNotice,
   onEditNotice,
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
@@ -87,15 +87,15 @@ export default function UsersCommunicationsPanel({
       <section className="usr-sheet">
         <div className="usr-view-toolbar">
           <div className="usr-view-toolbar-copy">
-            <span className="usr-sheet-kicker">Avisos</span>
-            <h2 className="usr-sheet-title">Avisos generales del sistema</h2>
+            <span className="usr-sheet-kicker">{t('admin.users.communications.kicker')}</span>
+            <h2 className="usr-sheet-title">{t('admin.users.communications.title')}</h2>
             <p className="usr-sheet-copy">
-              Gestiona comunicados generales, seguridad, mantenimiento y mensajes dirigidos por estado o rol.
+              {t('admin.users.communications.description')}
             </p>
           </div>
 
           <div className="usr-view-toolbar-actions">
-            <button type="button" className="usr-icon-tool" title="Filtros" aria-label="Filtros">
+            <button type="button" className="usr-icon-tool" title={t('admin.users.communications.filters')} aria-label={t('admin.users.communications.filters')}>
               <BsFunnel />
             </button>
             <button
@@ -104,7 +104,7 @@ export default function UsersCommunicationsPanel({
               onClick={onCreateNotice}
             >
               <BsPlusLg />
-              Nuevo aviso
+              {t('admin.users.communications.new')}
             </button>
           </div>
         </div>
@@ -119,18 +119,18 @@ export default function UsersCommunicationsPanel({
               className="usr-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar aviso..."
-              aria-label="Buscar avisos"
+              placeholder={t('admin.users.communications.searchPlaceholder')}
+              aria-label={t('admin.users.communications.searchAria')}
             />
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label="Filtrar avisos por tipo">
+          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.communications.filterTypeAria')}>
             <button
               type="button"
               className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
               onClick={() => setTypeFilter('todos')}
             >
-              Todos
+              {t('admin.users.communications.all')}
             </button>
             {USER_ALL_NOTICE_TYPES.map((type) => (
               <button
@@ -139,12 +139,12 @@ export default function UsersCommunicationsPanel({
                 className={`usr-filter-chip${typeFilter === type.id ? ' active' : ''}`}
                 onClick={() => setTypeFilter(type.id)}
               >
-                {type.label}
+                {t(`admin.users.noticeType.${type.id}`)}
               </button>
             ))}
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label="Filtrar avisos por estado">
+          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.communications.filterStatusAria')}>
             {USER_NOTICE_STATUSES.map((status) => (
               <button
                 key={status.id}
@@ -152,7 +152,7 @@ export default function UsersCommunicationsPanel({
                 className={`usr-filter-chip${statusFilter === status.id ? ' active' : ''}`}
                 onClick={() => setStatusFilter(status.id)}
               >
-                {status.label}
+                {t(`admin.users.status.${status.id}.label`)}
               </button>
             ))}
           </div>
@@ -173,21 +173,21 @@ export default function UsersCommunicationsPanel({
                       <div className="usr-notice-badges">
                         <span className={`usr-type-badge usr-type-badge--${typeMeta.tone}`}>
                           <BsMegaphone />
-                          {typeMeta.label}
+                          {t(`admin.users.noticeType.${notice.type}`)}
                         </span>
                         <span className={`usr-status-badge usr-status-badge--${statusMeta.tone}`}>
                           <span className="usr-status-dot" />
-                          {statusMeta.label}
+                          {t(`admin.users.status.${notice.status}.label`)}
                         </span>
                       </div>
 
-                      <button type="button" className="usr-icon-tool usr-icon-tool--sm" title="Mas opciones" aria-label="Mas opciones">
+                      <button type="button" className="usr-icon-tool usr-icon-tool--sm" title={t('admin.users.communications.moreOptions')} aria-label={t('admin.users.communications.moreOptions')}>
                         <BsThreeDots />
                       </button>
                     </div>
 
-                    <h3 className="usr-notice-title">{notice.title}</h3>
-                    <p className="usr-notice-desc">{notice.body}</p>
+                    <h3 className="usr-notice-title">{notice.title || t('admin.users.communications.defaultTitle')}</h3>
+                    <p className="usr-notice-desc">{notice.body || t('admin.users.communications.defaultBody')}</p>
 
                     <div className="usr-notice-meta-grid">
                       <span>
@@ -196,19 +196,19 @@ export default function UsersCommunicationsPanel({
                       </span>
                       <span>
                         <BsPeople />
-                        {notice.audience} usuarios
+                        {t('admin.users.communications.usersCount', { count: notice.audience })}
                       </span>
                       <span>
                         <span className={`usr-urgency-dot usr-urgency-dot--${notice.urgency}`} />
-                        Urgencia {notice.urgency}
+                        {t('admin.users.communications.urgency', { urgency: notice.urgency })}
                       </span>
                     </div>
 
                     <div className="usr-notice-chip-row">
                       {notice.segments.slice(0, 3).map((segment) => (
-                        <span key={segment} className="usr-mini-chip">{segment}</span>
+                        <span key={segment} className="usr-mini-chip">{t(`admin.users.segment.${segment}`)}</span>
                       ))}
-                      {!notice.segments.length ? <span className="usr-mini-chip">Sin segmento</span> : null}
+                      {!notice.segments.length ? <span className="usr-mini-chip">{t('admin.users.communications.noSegment')}</span> : null}
                     </div>
                   </div>
 
@@ -219,7 +219,7 @@ export default function UsersCommunicationsPanel({
 
                         return <Icon key={channel} title={channel} />;
                       })}
-                      {!notice.channels.length ? <span>Sin canal</span> : null}
+                      {!notice.channels.length ? <span>{t('admin.users.communications.noChannel')}</span> : null}
                     </div>
 
                     <button
@@ -227,7 +227,7 @@ export default function UsersCommunicationsPanel({
                       className="usr-mini-action"
                       onClick={() => onEditNotice(notice.raw)}
                     >
-                      Editar
+                      {t('admin.users.communications.edit')}
                     </button>
                   </div>
                 </article>
@@ -237,11 +237,13 @@ export default function UsersCommunicationsPanel({
         ) : (
           <UsersWorkspaceEmpty
             icon={BsSend}
-            title={sourceReady ? 'Sin avisos encontrados' : 'Sin avisos registrados'}
+            title={sourceReady
+              ? t('admin.users.communications.emptyFilteredTitle')
+              : t('admin.users.communications.emptyRegisteredTitle')}
             description={sourceReady
-              ? 'No hay avisos que coincidan con la busqueda o los filtros actuales.'
-              : 'Aqui apareceran avisos generales, comunicados de seguridad, mantenimiento o mensajes por rol cuando exista informacion real.'}
-            hint="El boton Nuevo aviso abre el modal de redaccion, urgencia y segmentacion."
+              ? t('admin.users.communications.emptyFilteredDescription')
+              : t('admin.users.communications.emptyDescription')}
+            hint={t('admin.users.communications.emptyHint')}
           />
         )}
       </section>

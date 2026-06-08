@@ -5,9 +5,9 @@ import {
   BsFileEarmarkPlus,
   BsFileEarmarkText,
   BsMagic,
-  BsPhone,
   BsSearch,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   USER_NOTICE_TYPES,
   getUserNoticeTypeMeta,
@@ -17,7 +17,6 @@ import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function normalizeTemplate(template = {}) {
@@ -25,8 +24,8 @@ function normalizeTemplate(template = {}) {
 
   return {
     id: template.id || template.id_plantilla,
-    title: template.title || template.titulo || template.name || 'Plantilla sin nombre',
-    body: template.body || template.cuerpo || template.descripcion || 'Sin contenido disponible.',
+    title: template.title || template.titulo || template.name || '',
+    body: template.body || template.cuerpo || template.descripcion || '',
     type: template.type || template.tipo || 'sistema',
     channels: Array.isArray(channels) ? channels : [],
     used: template.used || template.usadas || 0,
@@ -52,6 +51,7 @@ export default function UsersTemplatesPanel({
   templates,
   onCreateTemplate,
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
 
@@ -70,8 +70,8 @@ export default function UsersTemplatesPanel({
       <section className="usr-sheet usr-sheet--highlight">
         <div className="usr-view-toolbar">
           <div className="usr-view-toolbar-copy">
-            <span className="usr-sheet-kicker">Plantillas</span>
-            <h2 className="usr-sheet-title">Plantillas reutilizables</h2>
+            <span className="usr-sheet-kicker">{t('admin.users.templates.kicker')}</span>
+            <h2 className="usr-sheet-title">{t('admin.users.templates.title')}</h2>
           </div>
 
           <button
@@ -80,22 +80,22 @@ export default function UsersTemplatesPanel({
             onClick={onCreateTemplate}
           >
             <BsFileEarmarkPlus />
-            Nueva plantilla
+            {t('admin.users.templates.new')}
           </button>
         </div>
 
         <div className="usr-chip-list">
           <span className="usr-chip usr-chip--ready">
             <BsFileEarmarkText />
-            Mensajes recurrentes
+            {t('admin.users.templates.recurring')}
           </span>
           <span className="usr-chip usr-chip--ready">
             <BsMagic />
-            Reutilizacion futura
+            {t('admin.users.templates.futureReuse')}
           </span>
           <span className="usr-chip usr-chip--ready">
             <BsFileEarmarkPlus />
-            Edicion centralizada
+            {t('admin.users.templates.centralizedEdit')}
           </span>
         </div>
       </section>
@@ -103,8 +103,8 @@ export default function UsersTemplatesPanel({
       <section className="usr-sheet">
         <div className="usr-view-toolbar">
           <div className="usr-view-toolbar-copy">
-            <span className="usr-sheet-kicker">Catalogo</span>
-            <h2 className="usr-sheet-title">Plantillas disponibles</h2>
+            <span className="usr-sheet-kicker">{t('admin.users.templates.catalog')}</span>
+            <h2 className="usr-sheet-title">{t('admin.users.templates.available')}</h2>
           </div>
         </div>
 
@@ -118,12 +118,12 @@ export default function UsersTemplatesPanel({
               className="usr-search-input"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar plantilla..."
-              aria-label="Buscar plantillas"
+              placeholder={t('admin.users.templates.searchPlaceholder')}
+              aria-label={t('admin.users.templates.searchAria')}
             />
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label="Filtrar plantillas por tipo">
+          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.templates.typeAria')}>
             <button
               type="button"
               className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
@@ -138,7 +138,7 @@ export default function UsersTemplatesPanel({
                 className={`usr-filter-chip${typeFilter === type.id ? ' active' : ''}`}
                 onClick={() => setTypeFilter(type.id)}
               >
-                {type.label}
+                {t(`admin.users.noticeType.${type.id}`)}
               </button>
             ))}
           </div>
@@ -156,20 +156,20 @@ export default function UsersTemplatesPanel({
                       <BsFileEarmarkText />
                     </span>
                     <span className={`usr-type-badge usr-type-badge--${typeMeta.tone}`}>
-                      {typeMeta.label}
+                      {t(`admin.users.noticeType.${template.type}`)}
                     </span>
                   </div>
-                  <strong>{template.title}</strong>
-                  <p>{template.body}</p>
+                  <strong>{template.title || t('admin.users.templates.unnamed')}</strong>
+                  <p>{template.body || t('admin.users.templates.noContent')}</p>
                   <div className="usr-template-footer">
-                    <span>{template.used} usos</span>
+                    <span>{t('admin.users.templates.uses', { count: template.used })}</span>
                     <div className="usr-channel-icons">
                       {template.channels.map((channel) => {
                         const Icon = CHANNEL_ICONS[channel] || BsBell;
 
                         return <Icon key={channel} title={channel} />;
                       })}
-                      {!template.channels.length ? <span>Sin canal</span> : null}
+                      {!template.channels.length ? <span>{t('admin.users.templates.noChannel')}</span> : null}
                     </div>
                   </div>
                 </article>
@@ -179,11 +179,11 @@ export default function UsersTemplatesPanel({
         ) : (
           <UsersWorkspaceEmpty
             icon={BsFileEarmarkText}
-            title={sourceReady ? 'Sin plantillas encontradas' : 'Sin plantillas registradas'}
+            title={sourceReady ? t('admin.users.templates.emptyFoundTitle') : t('admin.users.templates.emptyTitle')}
             description={sourceReady
-              ? 'No hay plantillas que coincidan con la busqueda o el filtro actual.'
-              : 'La coleccion quedo preparada para alojar mensajes reutilizables de bienvenida, cuenta y seguridad.'}
-            hint="Usa Nueva plantilla para abrir el modal de creacion."
+              ? t('admin.users.templates.emptyFoundDescription')
+              : t('admin.users.templates.emptyDescription')}
+            hint={t('admin.users.templates.emptyHint')}
           />
         )}
       </section>

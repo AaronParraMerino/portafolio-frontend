@@ -1,12 +1,14 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   getUserSessionCount,
   getUserRoleMeta,
+  getUserRoleValue,
   getUserStatusMeta,
   USER_TABLE_COLUMNS,
 } from '../services/usersService';
 import CachedUserAvatar from './CachedUserAvatar';
 import UsersSessionsMenu from './UsersSessionsMenu';
+import { useLanguage } from '../../../../core/i18n';
 
 function ColumnIcon({ id }) {
   const props = {
@@ -102,27 +104,17 @@ function UsersEmptyState({ emptyState }) {
 export default function UsersTable({
   users,
   sourceReady,
-  selectedIds,
-  allVisibleSelected,
-  someVisibleSelected,
   pageSummary,
   emptyState,
   currentPage,
   totalPages,
   paginationItems,
-  onToggleUser,
-  onToggleVisible,
   onGoToPage,
   onOpenUser,
   onSessionCountChange,
 }) {
-  const masterCheckboxRef = useRef(null);
+  const { t } = useLanguage();
   const [openSessionsUserId, setOpenSessionsUserId] = useState(null);
-
-  useEffect(() => {
-    if (!masterCheckboxRef.current) return;
-    masterCheckboxRef.current.indeterminate = someVisibleSelected;
-  }, [someVisibleSelected]);
 
   useEffect(() => {
     if (openSessionsUserId === null) return undefined;
@@ -145,22 +137,10 @@ export default function UsersTable({
             <tr>
               {USER_TABLE_COLUMNS.map((column) => (
                 <th key={column.id}>
-                  {column.id === 'selection' ? (
-                    <input
-                      ref={masterCheckboxRef}
-                      type="checkbox"
-                      className="usr-checkbox"
-                      checked={allVisibleSelected}
-                      onChange={onToggleVisible}
-                      disabled={!users.length}
-                      aria-label="Seleccionar pagina actual"
-                    />
-                  ) : (
-                    <span className="usr-th-inner">
-                      <ColumnIcon id={column.id} />
-                      <span>{column.label}</span>
-                    </span>
-                  )}
+                  <span className="usr-th-inner">
+                    <ColumnIcon id={column.id} />
+                    <span>{column.label ? t(`admin.users.columns.${column.id}`) : ''}</span>
+                  </span>
                 </th>
               ))}
             </tr>
@@ -169,47 +149,37 @@ export default function UsersTable({
           {users.length > 0 && (
             <tbody>
               {users.map((user) => {
-                const isSelected = selectedIds.includes(String(user.id));
                 const statusMeta = getUserStatusMeta(user.estado);
                 const roleMeta = getUserRoleMeta(user);
+                const roleValue = getUserRoleValue(user);
                 const sessionCount = getUserSessionCount(user);
 
                 const isSessionsOpen = String(openSessionsUserId) === String(user.id);
 
                 return (
                   <Fragment key={user.id}>
-                  <tr className={isSelected ? 'selected' : ''}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        className="usr-checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleUser(user.id)}
-                        aria-label={`Seleccionar a ${user.nombre || 'usuario'}`}
-                      />
-                    </td>
-
+                  <tr>
                     <td>
                       <div className="usr-user-cell">
                         <CachedUserAvatar user={user} />
 
                         <div className="usr-user-copy">
-                          <strong>{user.nombre || 'Usuario sin nombre'}</strong>
-                          <span>{user.email || 'Sin correo registrado'}</span>
+                          <strong>{user.nombre || t('admin.users.table.unknownUser')}</strong>
+                          <span>{user.email || t('admin.users.table.noEmail')}</span>
                         </div>
                       </div>
                     </td>
 
                     <td>
                       <span className={`usr-role-badge usr-role-badge--${roleMeta.tone}`}>
-                        {roleMeta.label}
+                        {t(`admin.users.role.${roleValue}.label`)}
                       </span>
                     </td>
 
                     <td>
                       <span className={`usr-status-badge usr-status-badge--${statusMeta.tone}`}>
                         <span className="usr-status-dot" />
-                        {statusMeta.label}
+                        {t(`admin.users.status.${user.estado || 'inactivo'}.label`)}
                       </span>
                     </td>
 
@@ -219,9 +189,9 @@ export default function UsersTable({
                         className={`usr-session-pill usr-session-trigger${sessionCount > 0 ? ' active' : ''}${isSessionsOpen ? ' open' : ''}`}
                         onClick={() => setOpenSessionsUserId(isSessionsOpen ? null : user.id)}
                         aria-expanded={isSessionsOpen}
-                        aria-label={`Ver sesiones de ${user.nombre || 'usuario'}`}
+                        aria-label={t('admin.users.table.viewSessions', { name: user.nombre || t('admin.users.table.unknownUser') })}
                       >
-                        {sessionCount > 0 ? sessionCount : 'Sin sesiones'}
+                        {sessionCount > 0 ? sessionCount : t('admin.users.table.noSessions')}
                         <span aria-hidden="true" className="usr-session-chevron">v</span>
                       </button>
                     </td>
@@ -243,8 +213,8 @@ export default function UsersTable({
                         type="button"
                         className="usr-row-action"
                         onClick={() => onOpenUser(user.id)}
-                        title="Gestionar usuario"
-                        aria-label={`Gestionar a ${user.nombre || 'usuario'}`}
+                        title={t('admin.users.table.manageUser')}
+                        aria-label={t('admin.users.table.manageUserAria', { name: user.nombre || t('admin.users.table.unknownUser') })}
                       >
                         <ChevronIcon />
                       </button>
@@ -280,7 +250,7 @@ export default function UsersTable({
             onClick={() => onGoToPage(currentPage - 1)}
             disabled={currentPage <= 1 || !sourceReady}
           >
-            Anterior
+            {t('admin.users.table.previous')}
           </button>
 
           {paginationItems.map((page) => (
@@ -301,7 +271,7 @@ export default function UsersTable({
             onClick={() => onGoToPage(currentPage + 1)}
             disabled={currentPage >= totalPages || !sourceReady}
           >
-            Siguiente
+            {t('admin.users.table.next')}
           </button>
         </div>
       </div>

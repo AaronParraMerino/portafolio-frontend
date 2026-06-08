@@ -8,6 +8,7 @@ import {
   BsPhone,
   BsX,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EVENT_COMMUNICATION_AUDIENCES,
   EVENT_COMMUNICATION_CHANNELS,
@@ -32,9 +33,9 @@ const CHANNEL_ICONS = {
 };
 
 const URGENCY_OPTIONS = [
-  { id: 'baja', label: 'Baja', helper: 'Informativa' },
-  { id: 'media', label: 'Media', helper: 'Atencion moderada' },
-  { id: 'alta', label: 'Alta', helper: 'Prioridad alta' },
+  { id: 'baja' },
+  { id: 'media' },
+  { id: 'alta' },
 ];
 
 function toggleValue(values, value) {
@@ -49,6 +50,7 @@ export default function EventCommunicationModal({
   onClose,
   onSave,
 }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(DEFAULT_FORM);
   const [message, setMessage] = useState('');
 
@@ -91,7 +93,7 @@ export default function EventCommunicationModal({
     event.preventDefault();
 
     if (!form.title.trim() || !form.body.trim()) {
-      setMessage('Completa el titulo y el mensaje antes de continuar.');
+      setMessage(t('adminEvents.communicationModal.validationRequired'));
       return;
     }
 
@@ -121,22 +123,22 @@ export default function EventCommunicationModal({
     try {
       await onSave?.(payload);
     } catch (error) {
-      setMessage(error.message || 'No se pudo guardar el anuncio.');
+      setMessage(error.message || t('adminEvents.communicationModal.saveError'));
     }
   };
 
   return (
     <div className="evt-modal-backdrop" role="presentation">
-      <form className="evt-modal" onSubmit={handleSubmit} aria-label={isTemplateMode ? 'Crear plantilla' : 'Crear comunicacion'}>
+      <form className="evt-modal" onSubmit={handleSubmit} aria-label={isTemplateMode ? t('adminEvents.communicationModal.createTemplate') : t('adminEvents.communicationModal.createCommunication')}>
         <div className="evt-modal-head">
           <span className="evt-modal-icon">
             <BsMegaphone />
           </span>
           <div className="evt-modal-copy">
-            <strong>{isTemplateMode ? 'Plantilla de anuncio' : 'Anuncio de plataforma'}</strong>
-            <span>{isTemplateMode ? 'Guarda una base reutilizable para comunicados.' : 'Comunica cambios, oportunidades o novedades sin depender de un evento.'}</span>
+            <strong>{isTemplateMode ? t('adminEvents.communicationModal.templateTitle') : t('adminEvents.communicationModal.announcementTitle')}</strong>
+            <span>{isTemplateMode ? t('adminEvents.communicationModal.templateSubtitle') : t('adminEvents.communicationModal.announcementSubtitle')}</span>
           </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label="Cerrar modal">
+          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
             <BsX />
           </button>
         </div>
@@ -145,13 +147,13 @@ export default function EventCommunicationModal({
           <div className="evt-form-grid">
             {!isTemplateMode ? (
               <label className="evt-field evt-field--full">
-                <span>Evento relacionado opcional</span>
+                <span>{t('adminEvents.communicationModal.related', { title: '' }).replace(': ', '')}</span>
                 <select
                   className="evt-field-input"
                   value={form.eventId}
                   onChange={(event) => handleChange('eventId', event.target.value)}
                 >
-                  <option value="">Sin evento relacionado</option>
+                  <option value="">{t('adminEvents.communicationModal.independent')}</option>
                   {events.map((event) => (
                     <option key={event.id || event.title} value={event.id}>{event.title}</option>
                   ))}
@@ -160,32 +162,32 @@ export default function EventCommunicationModal({
             ) : null}
 
             <label className="evt-field evt-field--full">
-              <span>{isTemplateMode ? 'Nombre de la plantilla' : 'Titulo del anuncio'}</span>
+              <span>{isTemplateMode ? t('adminEvents.communicationModal.nameLabel') : t('adminEvents.communicationModal.titleLabel')}</span>
               <input
                 type="text"
                 className="evt-field-input"
                 value={form.title}
                 onChange={(event) => handleChange('title', event.target.value)}
-                placeholder={isTemplateMode ? 'Plantilla de comunicado' : 'Actualizacion importante de la plataforma'}
+                placeholder={isTemplateMode ? t('adminEvents.communicationModal.templatePlaceholder') : t('adminEvents.communicationModal.announcementPlaceholder')}
               />
             </label>
 
             <label className="evt-field">
-              <span>Tipo</span>
+              <span>{t('adminEvents.form.type')}</span>
               <select
                 className="evt-field-input"
                 value={form.type}
                 onChange={(event) => handleChange('type', event.target.value)}
               >
                 {EVENT_COMMUNICATION_TYPES.filter((type) => type.id !== 'todos').map((type) => (
-                  <option key={type.id} value={type.id}>{type.label}</option>
+                  <option key={type.id} value={type.id}>{t(`adminEvents.type.${type.id}`)}</option>
                 ))}
               </select>
             </label>
 
             {!isTemplateMode ? (
               <label className="evt-field">
-                <span>Programacion</span>
+                <span>{t('adminEvents.communicationModal.schedule')}</span>
                 <input
                   type="datetime-local"
                   className="evt-field-input"
@@ -196,19 +198,19 @@ export default function EventCommunicationModal({
             ) : null}
 
             <label className="evt-field evt-field--full">
-              <span>Mensaje</span>
+              <span>{t('adminEvents.communicationModal.message')}</span>
               <textarea
                 className="evt-field-input evt-field-input--textarea"
                 value={form.body}
                 onChange={(event) => handleChange('body', event.target.value)}
-                placeholder="Contenido del anuncio"
+                placeholder={t('adminEvents.communicationModal.contentPlaceholder')}
               />
             </label>
           </div>
 
           {!isTemplateMode ? (
             <div className="evt-modal-section">
-              <span className="evt-modal-section-label">Urgencia</span>
+              <span className="evt-modal-section-label">{t('adminEvents.communicationModal.urgency')}</span>
               <div className="evt-urgency-grid">
                 {URGENCY_OPTIONS.map((option) => (
                   <button
@@ -218,8 +220,8 @@ export default function EventCommunicationModal({
                     onClick={() => handleChange('urgency', option.id)}
                   >
                     <span className="evt-urgency-dot" />
-                    <strong>{option.label}</strong>
-                    <small>{option.helper}</small>
+                    <strong>{t(`adminEvents.urgency.${option.id}`)}</strong>
+                    <small>{t(`adminEvents.urgency.${option.id}Helper`)}</small>
                   </button>
                 ))}
               </div>
@@ -227,7 +229,7 @@ export default function EventCommunicationModal({
           ) : null}
 
           <div className="evt-modal-section">
-            <span className="evt-modal-section-label">Canales</span>
+            <span className="evt-modal-section-label">{t('adminEvents.communicationModal.channels')}</span>
             <div className="evt-option-row">
               {EVENT_COMMUNICATION_CHANNELS.map((channel) => {
                 const Icon = CHANNEL_ICONS[channel.id] || BsBell;
@@ -240,7 +242,7 @@ export default function EventCommunicationModal({
                     onClick={() => handleChange('channels', toggleValue(form.channels, channel.id))}
                   >
                     <Icon />
-                    {channel.label}
+                    {t(`adminEvents.channel.${channel.id}`)}
                   </button>
                 );
               })}
@@ -249,7 +251,7 @@ export default function EventCommunicationModal({
 
           {!isTemplateMode ? (
             <div className="evt-modal-section">
-              <span className="evt-modal-section-label">Audiencia del anuncio</span>
+              <span className="evt-modal-section-label">{t('adminEvents.communicationModal.audience')}</span>
               <div className="evt-segment-grid">
                 {EVENT_COMMUNICATION_AUDIENCES.map((segment) => (
                   <button
@@ -262,8 +264,8 @@ export default function EventCommunicationModal({
                       <BsPeople />
                     </span>
                     <span>
-                      <strong>{segment.label}</strong>
-                      <small>{segment.helper}</small>
+                      <strong>{t(`adminEvents.communicationAudience.${segment.id}.label`)}</strong>
+                      <small>{t(`adminEvents.communicationAudience.${segment.id}.helper`)}</small>
                     </span>
                     <span className="evt-segment-check">
                       <BsCheck2 />
@@ -274,8 +276,8 @@ export default function EventCommunicationModal({
 
               <div className="evt-audience-preview">
                 <strong>{form.audiences.length}</strong>
-                <span>segmentos seleccionados</span>
-                <small>{selectedEvent ? `Relacionado con: ${selectedEvent.title}` : 'Anuncio independiente de eventos.'}</small>
+                <span>{t('adminEvents.common.selected', { count: form.audiences.length })}</span>
+                <small>{selectedEvent ? t('adminEvents.communicationModal.related', { title: selectedEvent.title }) : t('adminEvents.communicationModal.independent')}</small>
               </div>
             </div>
           ) : null}
@@ -284,14 +286,14 @@ export default function EventCommunicationModal({
         </div>
 
         <div className="evt-modal-foot">
-          <span>Revisa audiencia, canales y programacion antes de guardar.</span>
+          <span>{t('adminEvents.communicationModal.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
-              Cancelar
+              {t('adminEvents.common.cancel')}
             </button>
             <button type="submit" className="evt-reason-btn evt-reason-btn--primary">
               <BsCheck2 />
-              {isTemplateMode ? 'Guardar plantilla' : 'Guardar anuncio'}
+              {isTemplateMode ? t('adminEvents.communicationModal.saveTemplate') : t('adminEvents.communicationModal.saveAnnouncement')}
             </button>
           </div>
         </div>

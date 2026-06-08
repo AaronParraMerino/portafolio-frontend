@@ -12,7 +12,7 @@ const LANGUAGE_ORDER = {
 const LANGUAGE_LABELS = {
   es: {
     es: 'Español',
-    en: 'English',
+    en: 'Inglés',
     pt: 'Português',
   },
   en: {

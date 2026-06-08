@@ -4,8 +4,12 @@ import {
   BsMegaphone,
   BsPeople,
   BsPencil,
-  BsThreeDots,
+  BsPlayFill,
+  BsThreeDotsVertical,
+  BsFileEarmarkText,
+  BsXCircle,
 } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   getEventStatusMeta,
   getEventTypeMeta,
@@ -23,10 +27,18 @@ export default function EventsGrid({
   onGoToPage,
   onEditEvent,
   onCommunicate,
+  onStatusAction,
+  getStatusActions,
   showCommunicationAction = true,
-  primaryActionLabel = 'Editar',
-  emptyHint = 'Las estadisticas no navegan; usa los botones del panel para crear o comunicar eventos.',
+  showCommunicationsMeta = true,
+  showPrimaryAction = true,
+  primaryActionLabel,
+  emptyHint,
 }) {
+  const { t } = useLanguage();
+  const finalPrimaryActionLabel = primaryActionLabel || t('adminEvents.common.edit');
+  const finalEmptyHint = emptyHint || t('adminEvents.grid.defaultHint');
+
   return (
     <>
       {events.length > 0 ? (
@@ -34,6 +46,7 @@ export default function EventsGrid({
           {events.map((event) => {
             const statusMeta = getEventStatusMeta(event.status);
             const typeMeta = getEventTypeMeta(event.type);
+            const statusActions = typeof getStatusActions === 'function' ? getStatusActions(event) : [];
 
             return (
               <article key={event.id || event.title} className="evt-card">
@@ -46,15 +59,45 @@ export default function EventsGrid({
                 <div className="evt-card-body">
                   <div className="evt-card-top">
                     <div className="evt-card-badges">
-                      <span className="evt-type-badge">{typeMeta.label}</span>
+                      <span className="evt-type-badge">{t(`adminEvents.type.${event.type}`) || typeMeta.label}</span>
                       <span className={`evt-status-badge evt-status-badge--${statusMeta.tone}`}>
                         <span />
-                        {statusMeta.label}
+                        {t(`adminEvents.status.${event.status}`) || statusMeta.label}
                       </span>
                     </div>
-                    <button type="button" className="evt-icon-btn evt-icon-btn--sm" title="Mas opciones" aria-label="Mas opciones">
-                      <BsThreeDots />
-                    </button>
+                    {statusActions.length > 0 ? (
+                      <details className="evt-card-menu">
+                        <summary className="evt-icon-btn evt-icon-btn--sm" title={t('adminEvents.grid.changeStatus')} aria-label={t('adminEvents.grid.changeStatus')}>
+                          <BsThreeDotsVertical />
+                        </summary>
+                        <div className="evt-card-menu-list">
+                          {statusActions.map((action) => {
+                            const Icon = action.icon === 'edit'
+                              ? BsPencil
+                              : action.icon === 'draft'
+                                ? BsFileEarmarkText
+                                : action.icon === 'cancel'
+                                  ? BsXCircle
+                                  : BsPlayFill;
+
+                            return (
+                              <button
+                                key={action.id}
+                                type="button"
+                                className={`evt-card-menu-item evt-card-menu-item--${action.variant || 'ghost'}`}
+                                onClick={(clickEvent) => {
+                                  clickEvent.currentTarget.closest('details')?.removeAttribute('open');
+                                  onStatusAction?.(event, action);
+                                }}
+                              >
+                                <Icon />
+                                {action.labelKey ? t(action.labelKey) : (action.label || t(`adminEvents.action.${action.id}`))}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    ) : null}
                   </div>
 
                   <h3 className="evt-card-title">{event.title}</h3>
@@ -71,41 +114,47 @@ export default function EventsGrid({
                     </span>
                     <span>
                       <BsPeople />
-                      {event.registered}/{event.capacity || '--'} inscritos
+                      {t('adminEvents.grid.registered', { registered: event.registered, capacity: event.capacity || '--' })}
                     </span>
-                    <span>
-                      <BsMegaphone />
-                      {event.communicationsCount} comunicaciones
-                    </span>
+                    {showCommunicationsMeta ? (
+                      <span>
+                        <BsMegaphone />
+                        {t('adminEvents.grid.communications', { count: event.communicationsCount })}
+                      </span>
+                    ) : null}
                   </div>
 
                   <div className="evt-card-chips">
                     {event.segments.slice(0, 3).map((segment) => (
                       <span key={segment}>{segment}</span>
                     ))}
-                    {!event.segments.length ? <span>Sin segmentos</span> : null}
+                    {!event.segments.length ? <span>{t('adminEvents.grid.noSegments')}</span> : null}
                   </div>
                 </div>
 
                 <div className="evt-card-actions">
-                  {showCommunicationAction ? (
+                  <div className="evt-card-action-group evt-card-action-group--right">
+                    {showCommunicationAction ? (
                     <button
                       type="button"
                       className="evt-btn evt-btn--ghost"
                       onClick={() => onCommunicate(event)}
                     >
                       <BsMegaphone />
-                      Comunicar
+                      {t('adminEvents.grid.communicate')}
                     </button>
-                  ) : <span className="evt-card-action-spacer" />}
-                  <button
-                    type="button"
-                    className="evt-btn evt-btn--primary"
-                    onClick={() => onEditEvent(event)}
-                  >
-                    <BsPencil />
-                    {primaryActionLabel}
-                  </button>
+                    ) : null}
+                    {showPrimaryAction ? (
+                      <button
+                        type="button"
+                        className="evt-btn evt-btn--primary"
+                        onClick={() => onEditEvent(event)}
+                      >
+                        <BsPencil />
+                        {finalPrimaryActionLabel}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             );
@@ -116,7 +165,7 @@ export default function EventsGrid({
           icon={BsCalendarEvent}
           title={emptyState.title}
           description={emptyState.description}
-          hint={emptyHint}
+          hint={finalEmptyHint}
         />
       )}
 
@@ -129,7 +178,7 @@ export default function EventsGrid({
             onClick={() => onGoToPage(currentPage - 1)}
             disabled={currentPage <= 1 || !sourceReady}
           >
-            Anterior
+            {t('adminEvents.common.previous')}
           </button>
           {paginationItems.map((page) => (
             <button
@@ -148,7 +197,7 @@ export default function EventsGrid({
             onClick={() => onGoToPage(currentPage + 1)}
             disabled={currentPage >= totalPages || !sourceReady}
           >
-            Siguiente
+            {t('adminEvents.common.next')}
           </button>
         </div>
       </div>

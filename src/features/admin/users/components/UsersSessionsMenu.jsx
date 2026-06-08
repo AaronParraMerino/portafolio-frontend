@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   closeAllUserSessions,
   closeUserSession,
   fetchUserSessions,
 } from '../services/usersService';
 
-function relativeTime(input) {
+function relativeTime(input, language, t) {
   const timestamp = new Date(input).getTime();
 
-  if (!input || Number.isNaN(timestamp)) return 'Sin actividad reciente';
+  if (!input || Number.isNaN(timestamp)) return t('admin.users.sessions.noActivity');
 
   const seconds = Math.round((timestamp - Date.now()) / 1000);
   const absolute = Math.abs(seconds);
-  const formatter = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });
+  const formatter = new Intl.RelativeTimeFormat(language || 'es', { numeric: 'auto' });
 
   if (absolute < 60) return formatter.format(seconds, 'second');
   if (absolute < 3600) return formatter.format(Math.round(seconds / 60), 'minute');
@@ -20,15 +21,16 @@ function relativeTime(input) {
   return formatter.format(Math.round(seconds / 86400), 'day');
 }
 
-function sessionLabel(session) {
+function sessionLabel(session, t) {
   return [
-    session.sistema_operativo || 'Sistema desconocido',
-    session.navegador_nombre || 'Navegador desconocido',
+    session.sistema_operativo || t('admin.users.sessions.unknownSystem'),
+    session.navegador_nombre || t('admin.users.sessions.unknownBrowser'),
     session.navegador_version,
   ].filter(Boolean).join(' - ');
 }
 
 export default function UsersSessionsMenu({ user, onCountChange }) {
+  const { language, t } = useLanguage();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,7 +47,7 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
         onCountChange(user.id, items.length);
       })
       .catch((requestError) => {
-        if (active) setError(requestError.message || 'No se pudieron cargar las sesiones.');
+        if (active) setError(requestError.message || t('admin.users.sessions.loadError'));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -54,7 +56,7 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
     return () => {
       active = false;
     };
-  }, [onCountChange, user.id]);
+  }, [onCountChange, t, user.id]);
 
   const handleCloseSession = async (sessionId) => {
     setBusyId(sessionId);
@@ -68,7 +70,7 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
         return next;
       });
     } catch (requestError) {
-      setError(requestError.message || 'No se pudo cerrar la sesion.');
+      setError(requestError.message || t('admin.users.sessions.closeError'));
     } finally {
       setBusyId(null);
     }
@@ -83,7 +85,7 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
       setSessions([]);
       onCountChange(user.id, 0);
     } catch (requestError) {
-      setError(requestError.message || 'No se pudieron cerrar las sesiones.');
+      setError(requestError.message || t('admin.users.sessions.closeAllError'));
     } finally {
       setClosingAll(false);
     }
@@ -93,14 +95,14 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
     <div className="usr-session-menu">
       <section className="usr-session-menu-list">
         <div className="usr-session-menu-head">
-          <strong>Dispositivos vinculados</strong>
-          <span>{sessions.length} sesiones activas</span>
+          <strong>{t('admin.users.sessions.devices')}</strong>
+          <span>{t('admin.users.sessions.active', { count: sessions.length })}</span>
         </div>
 
-        {loading ? <p className="usr-session-menu-state">Cargando sesiones...</p> : null}
+        {loading ? <p className="usr-session-menu-state">{t('admin.users.sessions.loading')}</p> : null}
         {!loading && error ? <p className="usr-session-menu-error">{error}</p> : null}
         {!loading && !error && sessions.length === 0 ? (
-          <p className="usr-session-menu-state">No existen sesiones activas para este usuario.</p>
+          <p className="usr-session-menu-state">{t('admin.users.sessions.empty')}</p>
         ) : null}
 
         {!loading && sessions.length > 0 ? (
@@ -112,11 +114,11 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
               return (
                 <article className="usr-session-menu-device" key={id}>
                   <div>
-                    <strong>{sessionLabel(session)}</strong>
+                    <strong>{sessionLabel(session, t)}</strong>
                     <span>
-                      {[session.pais_codigo, session.ip_address].filter(Boolean).join(' - ') || 'Ubicacion no disponible'}
+                      {[session.pais_codigo, session.ip_address].filter(Boolean).join(' - ') || t('admin.users.sessions.locationUnavailable')}
                     </span>
-                    <span>{relativeTime(session.ultima_actividad)}</span>
+                    <span>{relativeTime(session.ultima_actividad, language, t)}</span>
                   </div>
                   <button
                     className="usr-session-close-btn"
@@ -124,7 +126,7 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
                     onClick={() => handleCloseSession(id)}
                     type="button"
                   >
-                    {busy ? 'Cerrando...' : 'Cerrar sesion'}
+                    {busy ? t('admin.users.sessions.closing') : t('admin.users.sessions.closeSession')}
                   </button>
                 </article>
               );
@@ -134,15 +136,15 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
       </section>
 
       <section className="usr-session-menu-all">
-        <strong>Cerrar en todos los dispositivos</strong>
-        <p>Finaliza todas las sesiones activas registradas para {user.nombre}.</p>
+        <strong>{t('admin.users.sessions.closeAllTitle')}</strong>
+        <p>{t('admin.users.sessions.closeAllDescription', { name: user.nombre })}</p>
         <button
           className="usr-session-close-all"
           disabled={loading || sessions.length === 0 || closingAll}
           onClick={handleCloseAll}
           type="button"
         >
-          {closingAll ? 'Cerrando sesiones...' : 'Cerrar todas'}
+          {closingAll ? t('admin.users.sessions.closingAll') : t('admin.users.sessions.closeAll')}
         </button>
       </section>
     </div>

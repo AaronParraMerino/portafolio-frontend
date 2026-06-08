@@ -5,7 +5,6 @@ import {
   BsEnvelope,
   BsMegaphone,
   BsPeople,
-  BsPhone,
   BsXLg,
 } from 'react-icons/bs';
 import {
@@ -15,13 +14,12 @@ import {
   USER_NOTICE_TYPES,
   USER_NOTICE_URGENCY,
   estimateUsersAudience,
-  getUserRoleValue,
 } from '../services/usersService';
+import { useLanguage } from '../../../../core/i18n';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
-  push: BsPhone,
 };
 
 function toggleOption(value, selectedValues, onChange) {
@@ -31,20 +29,16 @@ function toggleOption(value, selectedValues, onChange) {
     return;
   }
 
-  if (value === 'todos' || value === 'seleccionados') {
+  if (value === 'todos') {
     onChange([value]);
     return;
   }
 
-  onChange([...selectedValues.filter((item) => !['todos', 'seleccionados'].includes(item)), value]);
+  onChange([...selectedValues.filter((item) => item !== 'todos'), value]);
 }
 
-function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
+function resolveNoticeRecipients({ directUser, users, segments }) {
   if (directUser?.id) return [directUser.id];
-
-  if (segments.includes('seleccionados')) {
-    return selectedIds.map((id) => Number(id)).filter(Boolean);
-  }
 
   const statuses = {
     activos: 'activo',
@@ -52,15 +46,10 @@ function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
     bloqueados: 'bloqueado',
     inactivos: 'inactivo',
   };
-  const roles = {
-    publicantes: 'publicante',
-  };
-
   return users
     .filter((user) => (
       segments.includes('todos')
       || segments.some((segment) => statuses[segment] === user.estado)
-      || segments.some((segment) => roles[segment] === getUserRoleValue(user))
     ))
     .map((user) => Number(user.id))
     .filter(Boolean);
@@ -69,12 +58,12 @@ function resolveNoticeRecipients({ directUser, users, selectedIds, segments }) {
 export default function UsersNoticeModal({
   modal,
   users,
-  selectedIds,
   metrics,
   supportsCommunications,
   onSendNotice,
   onClose,
 }) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [type, setType] = useState(USER_NOTICE_TYPES[0]?.id || '');
@@ -90,38 +79,37 @@ export default function UsersNoticeModal({
 
     const initialNotice = modal.initialNotice || {};
 
-    setTitle(initialNotice.title || initialNotice.titulo || (modal.directUser ? `Aviso para ${modal.directUser.nombre || 'usuario'}` : ''));
+    setTitle(initialNotice.title || initialNotice.titulo || (modal.directUser ? t('admin.users.noticeModal.directTitle', { name: modal.directUser.nombre || t('admin.users.table.unknownUser') }) : ''));
     setBody(initialNotice.body || initialNotice.preview || initialNotice.cuerpo || '');
     setType(initialNotice.type || initialNotice.tipo || USER_NOTICE_TYPES[0]?.id || '');
     setUrgency(initialNotice.urgency || initialNotice.urgencia || 'baja');
-    setSegments(initialNotice.segments || initialNotice.segmentos || (modal.directUser ? ['seleccionados'] : modal.initialSegments || ['todos']));
+    setSegments(initialNotice.segments || initialNotice.segmentos || modal.initialSegments || ['todos']);
     setChannels(['inapp']);
     setSchedule(initialNotice.scheduledAt || '');
     setMessage('');
     setSubmitting(false);
-  }, [modal]);
+  }, [modal, t]);
 
   const audience = useMemo(() => {
     if (modal?.directUser) return 1;
 
     return estimateUsersAudience({
       users,
-      selectedIds,
       segments,
     });
-  }, [modal, selectedIds, segments, users]);
+  }, [modal, segments, users]);
 
   const isTemplate = modal?.mode === 'template';
   const isGlobalNotice = !modal?.directUser && segments.length === 1 && segments[0] === 'todos';
   const availableTypes = isGlobalNotice ? USER_GLOBAL_NOTICE_TYPES : USER_NOTICE_TYPES;
   const modalTitle = isTemplate
-    ? 'Nueva plantilla de aviso'
+    ? t('admin.users.noticeModal.templateTitle')
     : modal?.initialNotice
-      ? 'Editar aviso general'
-      : 'Nuevo aviso general del sistema';
+      ? t('admin.users.noticeModal.editTitle')
+      : t('admin.users.noticeModal.newTitle');
   const modalSubtitle = isTemplate
-    ? 'Guarda una estructura reutilizable para comunicados frecuentes.'
-    : 'Segmenta por estado, rol publicante, seleccion o usuario puntual.';
+    ? t('admin.users.noticeModal.templateSubtitle')
+    : t('admin.users.noticeModal.noticeSubtitle');
   const selectedType = availableTypes.find((item) => item.id === type);
 
   useEffect(() => {
@@ -135,39 +123,38 @@ export default function UsersNoticeModal({
 
   const handleSubmit = async (intent) => {
     if (!title.trim() || !body.trim()) {
-      setMessage('Completa titulo y mensaje antes de continuar.');
+      setMessage(t('admin.users.noticeModal.titleRequired'));
       return;
     }
 
     if (!isTemplate && !audience) {
-      setMessage('La segmentacion actual no tiene destinatarios.');
+      setMessage(t('admin.users.noticeModal.noAudience'));
       return;
     }
 
     if (isTemplate) {
-      setMessage('Las plantillas se habilitaran en una siguiente integracion.');
+      setMessage(t('admin.users.noticeModal.templatesSoon'));
       return;
     }
 
     if (intent === 'draft') {
-      setMessage('El guardado de borradores aun no esta disponible.');
+      setMessage(t('admin.users.noticeModal.draftsSoon'));
       return;
     }
 
     if (schedule) {
-      setMessage('La programacion aun no esta disponible. Quita la fecha para enviar ahora.');
+      setMessage(t('admin.users.noticeModal.scheduleSoon'));
       return;
     }
 
     if (!supportsCommunications) {
-      setMessage('El envio in-app todavia no esta disponible.');
+      setMessage(t('admin.users.noticeModal.inappUnavailable'));
       return;
     }
 
     const destinatarios = resolveNoticeRecipients({
       directUser: modal.directUser,
       users,
-      selectedIds,
       segments,
     });
 
@@ -187,9 +174,9 @@ export default function UsersNoticeModal({
         directUser: modal.directUser || null,
       });
 
-      setMessage(response?.message || (isGlobalNotice ? 'Aviso global creado correctamente.' : `Aviso enviado a ${destinatarios.length} usuario(s).`));
+      setMessage(response?.message || (isGlobalNotice ? t('admin.users.noticeModal.globalCreated') : t('admin.users.noticeModal.sentCount', { count: destinatarios.length })));
     } catch (error) {
-      setMessage(error.message || 'No se pudo enviar el aviso.');
+      setMessage(error.message || t('admin.users.noticeModal.sendError'));
     } finally {
       setSubmitting(false);
     }
@@ -218,8 +205,8 @@ export default function UsersNoticeModal({
             type="button"
             className="usr-modal-close"
             onClick={onClose}
-            title="Cerrar"
-            aria-label="Cerrar"
+            title={t('admin.users.actionModal.close')}
+            aria-label={t('admin.users.actionModal.close')}
           >
             <BsXLg />
           </button>
@@ -228,37 +215,37 @@ export default function UsersNoticeModal({
         <div className="usr-notice-modal-body">
           {modal.directUser ? (
             <div className="usr-direct-user">
-              <span>Usuario directo</span>
-              <strong>{modal.directUser.nombre || 'Usuario sin nombre'}</strong>
-              <small>{modal.directUser.email || 'Sin correo registrado'}</small>
+              <span>{t('admin.users.noticeModal.directUser')}</span>
+              <strong>{modal.directUser.nombre || t('admin.users.table.unknownUser')}</strong>
+              <small>{modal.directUser.email || t('admin.users.table.noEmail')}</small>
             </div>
           ) : null}
 
           <div className="usr-notice-form-grid">
             <label className="usr-field usr-field--full">
-              <span className="usr-field-label">Titulo</span>
+              <span className="usr-field-label">{t('admin.users.noticeModal.titleLabel')}</span>
               <input
                 type="text"
                 className="usr-field-input"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder={isTemplate ? 'Nombre visible de la plantilla' : 'Titulo del aviso'}
+                placeholder={isTemplate ? t('admin.users.noticeModal.templateNamePlaceholder') : t('admin.users.noticeModal.titlePlaceholder')}
               />
             </label>
 
             <label className="usr-field usr-field--full">
-              <span className="usr-field-label">Mensaje</span>
+              <span className="usr-field-label">{t('admin.users.noticeModal.bodyLabel')}</span>
               <textarea
                 className="usr-field-input usr-field-input--textarea"
                 rows="5"
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="Contenido claro del aviso: motivo, impacto, fecha y accion esperada si corresponde."
+                placeholder={t('admin.users.noticeModal.bodyPlaceholder')}
               />
             </label>
 
             <label className="usr-field">
-              <span className="usr-field-label">Tipo</span>
+              <span className="usr-field-label">{t('admin.users.noticeModal.typeLabel')}</span>
               <select
                 className="usr-field-input"
                 value={type}
@@ -266,7 +253,7 @@ export default function UsersNoticeModal({
               >
                 {availableTypes.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.label}
+                    {t(`admin.users.noticeType.${item.id}`)}
                   </option>
                 ))}
               </select>
@@ -274,20 +261,20 @@ export default function UsersNoticeModal({
 
             {!isTemplate ? (
               <label className="usr-field">
-                <span className="usr-field-label">Programacion</span>
+                <span className="usr-field-label">{t('admin.users.noticeModal.scheduleLabel')}</span>
                 <input
                   type="datetime-local"
                   className="usr-field-input"
                   value={schedule}
                   onChange={(event) => setSchedule(event.target.value)}
                 />
-                <small>Proximamente. Por ahora el envio es inmediato.</small>
+                <small>{t('admin.users.noticeModal.scheduleSoonShort')}</small>
               </label>
             ) : null}
           </div>
 
           <section className="usr-notice-modal-section">
-            <span className="usr-field-label">Urgencia</span>
+            <span className="usr-field-label">{t('admin.users.noticeModal.urgencyLabel')}</span>
             <div className="usr-urgency-grid">
               {USER_NOTICE_URGENCY.map((item) => (
                 <button
@@ -297,52 +284,49 @@ export default function UsersNoticeModal({
                   onClick={() => setUrgency(item.id)}
                 >
                   <span className="usr-urgency-dot" />
-                  <strong>{item.label}</strong>
-                  <small>{item.helper}</small>
+                  <strong>{t(`admin.users.urgency.${item.id}.label`)}</strong>
+                  <small>{t(`admin.users.urgency.${item.id}.helper`)}</small>
                 </button>
               ))}
             </div>
           </section>
 
-          <section className="usr-notice-modal-section">
-            <span className="usr-field-label">Segmentacion</span>
-            <div className="usr-segment-grid">
-              {USER_COMMUNICATION_SEGMENTS.map((segment) => {
-                const selected = segments.includes(segment.id);
-                const count = segment.id === 'seleccionados'
-                  ? selectedIds.length
-                  : segment.role
-                    ? metrics?.publicantes ?? 0
-                    : segment.status
+          {!modal.directUser ? (
+            <section className="usr-notice-modal-section">
+              <span className="usr-field-label">{t('admin.users.noticeModal.segmentationLabel')}</span>
+              <div className="usr-segment-grid">
+                {USER_COMMUNICATION_SEGMENTS.map((segment) => {
+                  const selected = segments.includes(segment.id);
+                  const count = segment.status
                     ? metrics?.[segment.status] ?? 0
                     : metrics?.total ?? 0;
 
-                return (
-                  <button
-                    key={segment.id}
-                    type="button"
-                    className={`usr-segment-card${selected ? ' active' : ''}`}
-                    onClick={() => toggleOption(segment.id, segments, setSegments)}
-                    disabled={!!modal.directUser && segment.id !== 'seleccionados'}
-                  >
-                    <span className="usr-segment-icon">
-                      <BsPeople />
-                    </span>
-                    <span>
-                      <strong>{segment.label}</strong>
-                      <small>{count} usuario{count === 1 ? '' : 's'}</small>
-                    </span>
-                    <span className="usr-segment-check">
-                      {selected ? <BsCheckLg /> : null}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+                  return (
+                    <button
+                      key={segment.id}
+                      type="button"
+                      className={`usr-segment-card${selected ? ' active' : ''}`}
+                      onClick={() => toggleOption(segment.id, segments, setSegments)}
+                    >
+                      <span className="usr-segment-icon">
+                        <BsPeople />
+                      </span>
+                      <span>
+                        <strong>{t(`admin.users.segment.${segment.id}`)}</strong>
+                        <small>{t('admin.users.noticeModal.usersCount', { count })}</small>
+                      </span>
+                      <span className="usr-segment-check">
+                        {selected ? <BsCheckLg /> : null}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           <section className="usr-notice-modal-section">
-            <span className="usr-field-label">Canales</span>
+            <span className="usr-field-label">{t('admin.users.noticeModal.channelsLabel')}</span>
             <div className="usr-segment-grid usr-segment-grid--channels">
               {USER_COMMUNICATION_CHANNELS.map((channel) => {
                 const selected = channels.includes(channel.id);
@@ -360,8 +344,8 @@ export default function UsersNoticeModal({
                       <Icon />
                     </span>
                     <span>
-                      <strong>{channel.label}</strong>
-                      <small>{channel.id === 'inapp' ? 'Incluido' : 'Proximamente'}</small>
+                      <strong>{t(`admin.users.channel.${channel.id}`)}</strong>
+                      <small>{channel.id === 'inapp' ? t('admin.users.noticeModal.included') : t('admin.users.noticeModal.soon')}</small>
                     </span>
                     <span className="usr-segment-check">
                       {selected ? <BsCheckLg /> : null}
@@ -375,10 +359,8 @@ export default function UsersNoticeModal({
           {!isTemplate ? (
             <div className="usr-audience-preview">
               <strong>{audience}</strong>
-              <span>
-                destinatario{audience === 1 ? '' : 's'} estimado{audience === 1 ? '' : 's'}
-              </span>
-              <small>{selectedType?.label || 'Aviso'} - urgencia {urgency}</small>
+              <span>{t('admin.users.noticeModal.recipientEstimated', { count: audience })}</span>
+              <small>{t(`admin.users.noticeType.${selectedType?.id || type}`)} - {t('admin.users.communications.urgency', { urgency })}</small>
             </div>
           ) : null}
 
@@ -392,10 +374,10 @@ export default function UsersNoticeModal({
         <div className="usr-notice-modal-foot">
           <span>
             {isTemplate
-              ? 'Plantilla reutilizable para futuros avisos.'
+              ? t('admin.users.noticeModal.templateReusable')
               : schedule
-                ? 'El aviso quedara programado con la fecha elegida.'
-                : 'Aviso general preparado para envio inmediato.'}
+                ? t('admin.users.noticeModal.scheduledFoot')
+                : t('admin.users.noticeModal.previewFallback')}
           </span>
 
           <div className="usr-notice-foot-actions">
@@ -406,7 +388,7 @@ export default function UsersNoticeModal({
                 onClick={() => handleSubmit('draft')}
                 disabled={submitting}
               >
-                Guardar borrador
+                {t('admin.users.noticeModal.saveDraft')}
               </button>
             ) : null}
 
@@ -416,7 +398,7 @@ export default function UsersNoticeModal({
               onClick={() => handleSubmit(isTemplate ? 'template' : 'send')}
               disabled={submitting}
             >
-              {isTemplate ? 'Guardar plantilla' : submitting ? 'Enviando...' : 'Enviar ahora'}
+              {isTemplate ? t('admin.users.noticeModal.saveTemplate') : submitting ? t('admin.users.noticeModal.sending') : t('admin.users.noticeModal.sendNow')}
             </button>
           </div>
         </div>

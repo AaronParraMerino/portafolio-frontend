@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../../core/i18n';
+import { getHomeStats } from '../services/homePortfolioService';
 
 /* ── Datos ── */
 const CHIPS_LEFT = [
@@ -25,11 +26,18 @@ const CHIPS_TOP = [
 ];
 
 const STATS = [
-  { num: '1,240+', labelKey: 'hero.stats.developers' },
-  { num: '380+',   labelKey: 'hero.stats.projects' },
-  { num: '95',     labelKey: 'hero.stats.hires', red: true },
-  { num: '18+',    labelKey: 'hero.stats.technologies' },
+  { key: 'developers', labelKey: 'hero.stats.developers' },
+  { key: 'projects', labelKey: 'hero.stats.projects' },
+  { key: 'technologies', labelKey: 'hero.stats.technologies' },
+  { key: 'events', labelKey: 'hero.stats.events', red: true },
 ];
+
+function formatStatValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '--';
+
+  return new Intl.NumberFormat().format(number);
+}
 
 
 export default function Hero() {
@@ -37,6 +45,23 @@ export default function Hero() {
   const heroRef = useRef(null);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    getHomeStats()
+      .then((nextStats) => {
+        if (active) setStats(nextStats);
+      })
+      .catch(() => {
+        if (active) setStats({});
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const goToSearch = (term = searchTerm) => {
     const cleanTerm = term.trim();
@@ -177,6 +202,7 @@ export default function Hero() {
           max-width: 880px; width: 100%;
           display: flex; flex-direction: column;
           align-items: center;
+          order: 1;
         }
 
         /* badge institución */
@@ -231,14 +257,13 @@ export default function Hero() {
 
         /* ══ BUSCADOR PÚBLICO ══ */
         .spk-search-box {
-          position: absolute;
-          top: 24px;
-          left: 28px;
+          position: relative;
           z-index: 4;
-          width: min(440px, calc(100% - 56px));
-          margin: 0;
-          text-align: left;
-          animation: fadeUp .5s .12s ease both;
+          width: min(540px, 100%);
+          margin: 22px auto 0;
+          text-align: center;
+          order: 2;
+          animation: fadeUp .5s .52s ease both;
         }
         .spk-portfolio-search {
           display: flex;
@@ -326,7 +351,7 @@ export default function Hero() {
         .spk-search-meta {
           display: flex;
           align-items: center;
-          justify-content: flex-start;
+          justify-content: center;
           gap: 8px;
           flex-wrap: wrap;
           margin-top: 9px;
@@ -432,11 +457,8 @@ export default function Hero() {
         @media (max-width: 768px) {
           .spk-hero { padding: 34px 20px 80px; }
           .spk-search-box {
-            position: relative;
-            top: auto;
-            left: auto;
             width: min(100%, 560px);
-            margin: 0 auto 28px;
+            margin: 20px auto 0;
           }
           .spk-portfolio-search {
             flex-direction: column;
@@ -480,8 +502,21 @@ export default function Hero() {
           .spk-search-input {
             font-size: 13px;
           }
-          .spk-stats { flex-direction: column; width: min(100%, 340px); }
-          .spk-stat { border-right: none !important; }
+          .spk-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: min(100%, 340px);
+          }
+          .spk-stat {
+            border-right: 1px solid var(--gris-borde) !important;
+            border-bottom: 1px solid var(--gris-borde);
+          }
+          .spk-stat:nth-child(2n) {
+            border-right: none !important;
+          }
+          .spk-stat:nth-last-child(-n + 2) {
+            border-bottom: none;
+          }
           .spk-copyright { font-size: 10px; }
         }
       `}</style>
@@ -584,9 +619,9 @@ export default function Hero() {
 
           {/* Mini stats */}
           <div className="spk-stats">
-            {STATS.map(({ num, labelKey, red }) => (
+            {STATS.map(({ key, labelKey, red }) => (
               <div key={labelKey} className={`spk-stat${red ? ' stat-red' : ''}`}>
-                <div className="spk-stat-num">{num}</div>
+                <div className="spk-stat-num">{formatStatValue(stats?.[key])}</div>
                 <div className="spk-stat-lbl">{t(labelKey)}</div>
               </div>
             ))}

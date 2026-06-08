@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   applyAdminEventAction,
   approvePublisherRequest,
@@ -9,8 +10,6 @@ import {
   createAdminEventTemplate,
   createEventsWorkspaceShell,
   fetchEventsWorkspace,
-  getEventsEmptyState,
-  getEventsPageSummary,
   normalizeEvent,
   normalizeEventCommunication,
   normalizeEventHistoryItem,
@@ -24,6 +23,7 @@ import {
 } from '../services/eventsService';
 
 export function useEventsWorkspace() {
+  const { t } = useLanguage();
   const [workspace, setWorkspace] = useState(() => normalizeEventsWorkspace(createEventsWorkspaceShell()));
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -44,11 +44,11 @@ export function useEventsWorkspace() {
       setWorkspace(nextWorkspace);
     } catch (error) {
       setWorkspace(normalizeEventsWorkspace(createEventsWorkspaceShell()));
-      setErrorMessage(error.message || 'No se pudo cargar el workspace de eventos.');
+      setErrorMessage(error.message || t('adminEvents.eventsPage.loadWorkspaceError'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadWorkspace();
@@ -136,18 +136,40 @@ export function useEventsWorkspace() {
     cancelado: events.filter((event) => event.status === 'cancelado').length,
   }), [events]);
 
-  const pageSummary = useMemo(() => getEventsPageSummary({
-    sourceReady,
-    filteredCount: filteredEvents.length,
-    currentPage: safeCurrentPage,
-    pageSize,
-  }), [filteredEvents.length, pageSize, safeCurrentPage, sourceReady]);
+  const pageSummary = useMemo(() => {
+    if (!sourceReady) return t('adminEvents.pagination.noRecords');
+    if (!filteredEvents.length) return t('adminEvents.pagination.noResults');
 
-  const emptyState = useMemo(() => getEventsEmptyState({
-    sourceReady,
-    hasQuery: !!query.trim(),
-    hasFilters: statusFilter !== 'todos' || typeFilter !== 'todos',
-  }), [query, sourceReady, statusFilter, typeFilter]);
+    const start = (safeCurrentPage - 1) * pageSize + 1;
+    const end = Math.min(safeCurrentPage * pageSize, filteredEvents.length);
+
+    return t('adminEvents.pagination.showingEvents', {
+      start,
+      end,
+      count: filteredEvents.length,
+    });
+  }, [filteredEvents.length, pageSize, safeCurrentPage, sourceReady, t]);
+
+  const emptyState = useMemo(() => {
+    if (!sourceReady) {
+      return {
+        title: t('adminEvents.empty.noRegistered.title'),
+        description: t('adminEvents.empty.noRegistered.description'),
+      };
+    }
+
+    if (query.trim() || statusFilter !== 'todos' || typeFilter !== 'todos') {
+      return {
+        title: t('adminEvents.empty.notFound.title'),
+        description: t('adminEvents.empty.notFound.description'),
+      };
+    }
+
+    return {
+      title: t('adminEvents.empty.available.title'),
+      description: t('adminEvents.empty.available.description'),
+    };
+  }, [query, sourceReady, statusFilter, t, typeFilter]);
 
   const handleViewChange = (nextView) => {
     setActiveView(nextView);

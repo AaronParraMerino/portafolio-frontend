@@ -3,7 +3,6 @@ import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
 import { useUsersDirectory } from '../hooks/useUsers';
 import UsersActionModal from '../components/UsersActionModal';
-import UsersBulkBar from '../components/UsersBulkBar';
 import UsersCommunicationsPanel from '../components/UsersCommunicationsPanel';
 import UsersFilters from '../components/UsersFilters';
 import UsersHistoryPanel from '../components/UsersHistoryPanel';
@@ -13,8 +12,10 @@ import UsersStats from '../components/UsersStats';
 import UsersTable from '../components/UsersTable';
 import UsersTemplatesPanel from '../components/UsersTemplatesPanel';
 import '../styles/users.css';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function UsersPage() {
+  const { t } = useLanguage();
   const headerConfig = getAdminSectionConfig('users');
   const {
     sourceReady,
@@ -41,10 +42,6 @@ export default function UsersPage() {
     visibleUsers,
     pageSummary,
     emptyState,
-    selectedIds,
-    selectedCount,
-    allVisibleSelected,
-    someVisibleSelected,
     currentPage,
     totalPages,
     paginationItems,
@@ -57,16 +54,12 @@ export default function UsersPage() {
     actionSubmitting,
     onViewChange,
     onOpenNoticeModal,
-    onOpenSelectedNoticeModal,
     onOpenTemplateModal,
     onOpenDirectNoticeModal,
     onCloseNoticeModal,
     onSendNotice,
     onQueryChange,
     onStatusFilterChange,
-    onToggleUser,
-    onToggleVisible,
-    onClearSelection,
     onGoToPage,
     onOpenUser,
     onSessionCountChange,
@@ -81,9 +74,9 @@ export default function UsersPage() {
   const headerActions = [
     {
       key: 'communication',
-      label: 'Aviso general',
-      title: 'Crear aviso general del sistema',
-      ariaLabel: 'Crear aviso general del sistema',
+      label: t('admin.users.header.action.notice'),
+      title: t('admin.users.header.action.noticeTitle'),
+      ariaLabel: t('admin.users.header.action.noticeTitle'),
       icon: <BsMegaphone />,
       variant: 'primary',
       onClick: () => onOpenNoticeModal(),
@@ -93,8 +86,8 @@ export default function UsersPage() {
   return (
     <div className="usr-page">
       <AdminHeader
-        eyebrow={headerConfig.eyebrow}
-        title={headerConfig.title}
+        eyebrow={t(headerConfig.eyebrowKey || 'admin.layout.eyebrow.management')}
+        title={t(headerConfig.titleKey || 'admin.layout.section.users.title')}
         actions={headerActions}
       />
 
@@ -125,16 +118,11 @@ export default function UsersPage() {
               <UsersTable
                 users={visibleUsers}
                 sourceReady={sourceReady}
-                selectedIds={selectedIds}
-                allVisibleSelected={allVisibleSelected}
-                someVisibleSelected={someVisibleSelected}
                 pageSummary={pageSummary}
                 emptyState={emptyState}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 paginationItems={paginationItems}
-                onToggleUser={onToggleUser}
-                onToggleVisible={onToggleVisible}
                 onGoToPage={onGoToPage}
                 onOpenUser={onOpenUser}
                 onSessionCountChange={onSessionCountChange}
@@ -168,15 +156,6 @@ export default function UsersPage() {
         </section>
       </div>
 
-      {activeView === 'users' ? (
-        <UsersBulkBar
-          selectedCount={selectedCount}
-          supportsMutations={supportsMutations}
-          onClearSelection={onClearSelection}
-          onNotifySelection={onOpenSelectedNoticeModal}
-        />
-      ) : null}
-
       <UsersActionModal
         user={activeUser}
         pendingActionId={pendingActionId}
@@ -203,7 +182,6 @@ export default function UsersPage() {
       <UsersNoticeModal
         modal={noticeModal}
         users={users}
-        selectedIds={selectedIds}
         metrics={metrics}
         supportsMutations={supportsMutations}
         supportsCommunications={supportsCommunications}
