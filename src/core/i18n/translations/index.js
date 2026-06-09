@@ -17,6 +17,7 @@ import { linksTranslations } from './links';
 import { adminEventsTranslations } from './adminEvents';
 import { adminUsersTranslations } from './adminUsers';
 import { adminAuditTranslations } from './adminAudit';
+import { publicHomeContentTranslations } from './publicHomeContent';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'es', label: 'Español', shortLabel: 'ES', flag: '🇧🇴' },
@@ -46,6 +47,7 @@ const translationModules = [
   adminEventsTranslations,
   adminUsersTranslations,
   adminAuditTranslations,
+  publicHomeContentTranslations,
 ];
 
 const createEmptyTranslations = () => (

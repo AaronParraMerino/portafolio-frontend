@@ -40,29 +40,29 @@ export default function RecentProjectsCarousel({ projects = [], onViewDetails })
       <div className="prc-inner">
         <div className="prc-head">
           <div>
-            <span>Explorar proyectos</span>
-            <h2 id="prc-title">Construido para</h2>
+            <span>{t('home.projects.explore')}</span>
+            <h2 id="prc-title">{t('home.projects.builtFor')}</h2>
           </div>
           <div className="prc-head-actions">
-            <Link to="/proyectos">Ver todos</Link>
+            <Link to="/proyectos">{t('home.projects.all')}</Link>
             <div className="prc-controls">
-              <button type="button" onClick={() => scrollBy(-1)} aria-label="Ver proyectos anteriores">
+              <button type="button" onClick={() => scrollBy(-1)} aria-label={t('home.projects.previousList')}>
                 <BsChevronLeft />
               </button>
-              <button type="button" onClick={() => scrollBy(1)} aria-label="Ver mas proyectos">
+              <button type="button" onClick={() => scrollBy(1)} aria-label={t('home.projects.nextList')}>
                 <BsChevronRight />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="prc-platform-filters" role="group" aria-label="Filtrar proyectos por plataforma">
+        <div className="prc-platform-filters" role="group" aria-label={t('home.projects.filterAria')}>
           <button
             type="button"
             className={activePlatform === 'todos' ? 'active' : ''}
             onClick={() => selectPlatform('todos')}
           >
-            Todos
+            {t('home.projects.filterAll')}
             <span>{allProjects.length}</span>
           </button>
           {platforms.map((platform) => (

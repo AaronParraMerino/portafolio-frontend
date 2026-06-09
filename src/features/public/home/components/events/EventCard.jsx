@@ -1,10 +1,13 @@
 import { BsInfoCircle } from 'react-icons/bs';
+import { useLanguage } from '../../../../../core/i18n';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
   cx,
   formatEventDate,
   getCapacityLabel,
+  getEventStatusLabel,
+  getEventTypeLabel,
   getShortDescription,
 } from './eventUiHelpers';
 import './eventsHome.css';
@@ -17,18 +20,20 @@ export default function EventCard({
   containImage = false,
   className = '',
 }) {
+  const { language, t } = useLanguage();
+
   return (
     <article className={cx('evh-card', containImage && 'evh-card-contain-image', className)}>
       <button
         type="button"
         className="evh-card-media-button"
         onClick={() => onViewDetails?.(event)}
-        aria-label={`Ver detalles de ${event.title}`}
+        aria-label={t('home.events.detailsAria', { title: event.title })}
       >
         <EventMedia event={event} className="evh-card-media" containImage={containImage}>
-          <span className="evh-badge">{event.typeLabel}</span>
+          <span className="evh-badge">{getEventTypeLabel(event, t)}</span>
           <span className={cx('evh-status', event.soldOut && 'is-soldout')}>
-            {event.soldOut ? 'Agotado' : event.status}
+            {getEventStatusLabel(event, t)}
           </span>
         </EventMedia>
       </button>
@@ -41,8 +46,8 @@ export default function EventCard({
         <p className="evh-card-summary">{getShortDescription(event.description, 92)}</p>
 
         <div className="evh-card-meta">
-          <span>{formatEventDate(event.startsAt, { withYear: false })}</span>
-          <span>{getCapacityLabel(event)}</span>
+          <span>{formatEventDate(event.startsAt, language, { withYear: false }, t)}</span>
+          <span>{getCapacityLabel(event, t)}</span>
         </div>
 
         <div className="evh-card-actions">
@@ -52,7 +57,7 @@ export default function EventCard({
             onClick={() => onViewDetails?.(event)}
           >
             <BsInfoCircle />
-            Ver detalles
+            {t('home.events.details')}
           </button>
 
           <EventActionButton

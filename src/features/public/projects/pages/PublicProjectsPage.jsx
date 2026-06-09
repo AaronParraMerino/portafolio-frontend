@@ -25,6 +25,13 @@ export default function PublicProjectsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
 
+  const translateKnownProjectError = (message, fallbackKey) => {
+    if (message === 'No se encontro el proyecto seleccionado.') {
+      return t('public.projects.missingSelection');
+    }
+    return message || t(fallbackKey);
+  };
+
   const platforms = useMemo(
     () => [...new Set(projects.map((project) => project.platform).filter(Boolean))],
     [projects],
@@ -39,7 +46,7 @@ export default function PublicProjectsPage() {
     try {
       setProjects(await getAllPublicProjects({ force }));
     } catch (requestError) {
-      setError(requestError?.message || 'No se pudieron cargar los proyectos.');
+      setError(translateKnownProjectError(requestError?.message, 'public.projects.loadError'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +71,7 @@ export default function PublicProjectsPage() {
     try {
       setSelectedProject(await getPublicProjectDetail(project.id || project.id_proyecto));
     } catch (requestError) {
-      setDetailError(requestError?.message || 'No se pudo cargar el detalle del proyecto.');
+      setDetailError(translateKnownProjectError(requestError?.message, 'public.projects.detailError'));
     } finally {
       setDetailLoading(false);
     }
@@ -75,19 +82,19 @@ export default function PublicProjectsPage() {
       <section className="prjpub-shell">
         <header className="prjpub-header">
           <div>
-            <span>Explorar proyectos</span>
-            <h1>Todos los proyectos</h1>
-            <p>Descubre proyectos publicados y filtralos por la plataforma para la que fueron construidos.</p>
+            <span>{t('public.projects.kicker')}</span>
+            <h1>{t('public.projects.title')}</h1>
+            <p>{t('public.projects.description')}</p>
           </div>
           <div className="prjpub-actions">
-            <button type="button" onClick={() => loadProjects({ force: true })} disabled={loading}><BsArrowClockwise />Actualizar</button>
-            <Link to="/"><BsArrowLeft />Volver al inicio</Link>
+            <button type="button" onClick={() => loadProjects({ force: true })} disabled={loading}><BsArrowClockwise />{t('public.projects.refresh')}</button>
+            <Link to="/"><BsArrowLeft />{t('public.projects.backHome')}</Link>
           </div>
         </header>
 
-        <div className="prjpub-filters" role="group" aria-label="Filtrar proyectos por plataforma">
+        <div className="prjpub-filters" role="group" aria-label={t('public.projects.filterAria')}>
           <button type="button" className={activePlatform === 'todos' ? 'active' : ''} onClick={() => setActivePlatform('todos')}>
-            Todos <span>{projects.length}</span>
+            {t('public.projects.filterAll')} <span>{projects.length}</span>
           </button>
           {platforms.map((platform) => (
             <button type="button" key={platform} className={activePlatform === platform ? 'active' : ''} onClick={() => setActivePlatform(platform)}>
@@ -98,9 +105,9 @@ export default function PublicProjectsPage() {
         </div>
 
         {error && <div className="prjpub-state is-error">{error}</div>}
-        {loading && <div className="prjpub-state">Los proyectos se estan cargando...</div>}
+        {loading && <div className="prjpub-state">{t('public.projects.loading')}</div>}
         {!loading && !error && visibleProjects.length === 0 && (
-          <div className="prjpub-state"><BsCodeSlash /><span>No hay proyectos disponibles en esta categoria.</span></div>
+          <div className="prjpub-state"><BsCodeSlash /><span>{t('public.projects.empty')}</span></div>
         )}
         {!loading && !error && visibleProjects.length > 0 && (
           <section className="prjpub-grid" aria-live="polite">

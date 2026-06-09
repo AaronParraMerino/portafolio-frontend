@@ -24,7 +24,7 @@ function colorWithAlpha(color, alphaHex) {
 
 function formatPublishedDate(value, language) {
   const date = new Date(value || '');
-  if (Number.isNaN(date.getTime())) return 'Publicado recientemente';
+  if (Number.isNaN(date.getTime())) return '';
 
   return new Intl.DateTimeFormat(
     language === 'en' ? 'en-US' : language === 'pt' ? 'pt-BR' : 'es-BO',
@@ -97,9 +97,9 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
             </div>
 
             <h3>{project.title}</h3>
-            <p className="prh-description">{project.description || 'Proyecto publicado recientemente en Creafolio.'}</p>
+            <p className="prh-description">{project.description || t('home.projects.recentDescription')}</p>
 
-            <div className="prh-technologies" aria-label="Tecnologias del proyecto">
+            <div className="prh-technologies" aria-label={t('home.projects.technologiesAria')}>
               {technologies.slice(0, VISIBLE_TECHNOLOGIES).map((technology) => (
                 <span
                   key={technology.id_tecnologia || technology.nombre}
@@ -124,9 +124,9 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
               )}
             </div>
 
-            <span className="prh-date">Publicado el {formatPublishedDate(project.publishedAt, language)}</span>
+            <span className="prh-date">{t('home.projects.publishedOn', { date: formatPublishedDate(project.publishedAt, language) || t('home.projects.publishedRecently') })}</span>
             <button type="button" className="prh-detail-button prh-content-mobile-only" onClick={() => onViewDetails?.(project)}>
-              Ver detalle
+              {t('home.projects.details')}
             </button>
           </div>
 
@@ -148,17 +148,17 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
                 <span>{getProjectPlatformLabel(project.platform, t)}</span>
               </div>
               <button type="button" className="prh-detail-button" onClick={() => onViewDetails?.(project)}>
-                Ver detalle
+                {t('home.projects.details')}
               </button>
             </div>
           </div>
 
           {visibleProjects.length > 1 && (
             <>
-              <button type="button" className="prh-nav prh-prev" onClick={() => move(-1)} aria-label="Proyecto anterior">
+              <button type="button" className="prh-nav prh-prev" onClick={() => move(-1)} aria-label={t('home.projects.previous')}>
                 <BsChevronLeft />
               </button>
-              <button type="button" className="prh-nav prh-next" onClick={() => move(1)} aria-label="Siguiente proyecto">
+              <button type="button" className="prh-nav prh-next" onClick={() => move(1)} aria-label={t('home.projects.next')}>
                 <BsChevronRight />
               </button>
             </>
@@ -166,14 +166,14 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
         </article>
 
         {visibleProjects.length > 1 && (
-          <div className="prh-dots" aria-label="Proyectos recientes">
+          <div className="prh-dots" aria-label={t('home.projects.recentAria')}>
             {visibleProjects.map((item, index) => (
               <button
                 key={item.id}
                 type="button"
                 className={index === activeIndex ? 'active' : ''}
                 onClick={() => setActiveIndex(index)}
-                aria-label={`Mostrar ${item.title}`}
+                aria-label={t('home.projects.showAria', { title: item.title })}
               />
             ))}
           </div>

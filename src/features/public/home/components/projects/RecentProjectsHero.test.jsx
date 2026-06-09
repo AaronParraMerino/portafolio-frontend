@@ -58,6 +58,6 @@ test('muestra el logo de la tecnologia y admite hasta seis proyectos', () => {
   const { container } = render(<RecentProjectsHero projects={sixProjects} />);
 
   expect(container.querySelector('.prh-tech-icon img')).toHaveAttribute('src', 'https://example.com/react.svg');
-  expect(screen.getAllByRole('button', { name: /mostrar proyecto/i })).toHaveLength(6);
+  expect(screen.getAllByRole('button', { name: 'home.projects.showAria' })).toHaveLength(6);
   expect(screen.queryByRole('heading', { name: 'Proyectos recientes' })).not.toBeInTheDocument();
 });

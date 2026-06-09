@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
 import { BsCalendarEvent, BsGeoAlt, BsPeople, BsX } from 'react-icons/bs';
+import { useLanguage } from '../../../../../core/i18n';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
   formatEventDate,
   getCapacityLabel,
+  getEventStatusLabel,
+  getEventTypeLabel,
   hasEventDetails,
 } from './eventUiHelpers';
 import './eventsHome.css';
@@ -15,6 +18,8 @@ export default function EventDetailModal({
   onRegister,
   registering = false,
 }) {
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     if (!event) return undefined;
 
@@ -39,20 +44,20 @@ export default function EventDetailModal({
         aria-labelledby="evh-modal-title"
         onMouseDown={(mouseEvent) => mouseEvent.stopPropagation()}
       >
-        <button type="button" className="evh-modal-close" onClick={onClose} aria-label="Cerrar detalle">
+        <button type="button" className="evh-modal-close" onClick={onClose} aria-label={t('home.events.closeDetails')}>
           <BsX />
         </button>
 
         <EventMedia event={event} className="evh-modal-media" containImage>
-          <span className="evh-badge">{event.typeLabel}</span>
+          <span className="evh-badge">{getEventTypeLabel(event, t)}</span>
         </EventMedia>
 
         <div className="evh-modal-body">
           <div className="evh-modal-head">
             <div>
-              <span className="evh-status">{event.soldOut ? 'Agotado' : event.status}</span>
+              <span className="evh-status">{getEventStatusLabel(event, t)}</span>
               <h2 id="evh-modal-title">{event.title}</h2>
-              {event.authorName && <p>Por {event.authorName}</p>}
+              {event.authorName && <p>{t('home.events.by', { author: event.authorName })}</p>}
             </div>
             <EventActionButton event={event} loading={registering} onRegister={onRegister} />
           </div>
@@ -62,12 +67,12 @@ export default function EventDetailModal({
           <div className="evh-modal-facts">
             <span>
               <BsCalendarEvent />
-              Inicio: {formatEventDate(event.startsAt)}
+              {t('home.events.start', { date: formatEventDate(event.startsAt, language, {}, t) })}
             </span>
             {event.endsAt && (
               <span>
                 <BsCalendarEvent />
-                Fin: {formatEventDate(event.endsAt)}
+                {t('home.events.end', { date: formatEventDate(event.endsAt, language, {}, t) })}
               </span>
             )}
             {event.location && (
@@ -78,13 +83,13 @@ export default function EventDetailModal({
             )}
             <span>
               <BsPeople />
-              {getCapacityLabel(event)}
+              {getCapacityLabel(event, t)}
             </span>
           </div>
 
           {event.channels?.length > 0 && (
             <div className="evh-modal-channels">
-              <strong>Canales</strong>
+              <strong>{t('home.events.channels')}</strong>
               <div>
                 {event.channels.map((channel, index) => (
                   <span key={`${channel.id || channel.nombre || channel}-${index}`}>

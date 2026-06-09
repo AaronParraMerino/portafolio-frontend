@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BsArrowClockwise, BsArrowLeft, BsCalendarEvent } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EventCard,
   EventDetailModal,
@@ -12,6 +13,7 @@ import '../styles/publicEvents.css';
 const skeletonItems = Array.from({ length: 6 }, (_, index) => index + 1);
 
 export default function PublicEventsPage() {
+  const { t } = useLanguage();
   const {
     authRequired,
     error,
@@ -33,10 +35,14 @@ export default function PublicEventsPage() {
   const lastPage = pagination.ultima_pagina || 1;
   const hasEvents = events.length > 0;
   const countLabel = loading
-    ? 'Cargando eventos...'
+    ? t('public.events.loading')
     : pagination.total > 0
-      ? `Mostrando ${pagination.desde || 1}-${pagination.hasta || events.length} de ${pagination.total}`
-      : 'Sin eventos visibles';
+      ? t('public.events.showing', {
+        from: pagination.desde || 1,
+        to: pagination.hasta || events.length,
+        total: pagination.total,
+      })
+      : t('public.events.noneVisible');
 
   const handleRegister = async (event) => {
     if (event?.requiresLogin) {
@@ -59,37 +65,35 @@ export default function PublicEventsPage() {
           <div>
             <div className="evtpub-kicker">
               <BsCalendarEvent aria-hidden="true" />
-              Eventos visibles
+              {t('public.events.kicker')}
             </div>
-            <h1>Todos los eventos</h1>
-            <p>
-              Revisa talleres, ferias y convocatorias disponibles para tu perfil.
-            </p>
+            <h1>{t('public.events.title')}</h1>
+            <p>{t('public.events.description')}</p>
           </div>
 
           <div className="evtpub-header-actions">
             <button type="button" onClick={refresh} disabled={loading}>
               <BsArrowClockwise />
-              Actualizar
+              {t('public.events.refresh')}
             </button>
             <Link to="/">
               <BsArrowLeft />
-              Volver al inicio
+              {t('public.events.backHome')}
             </Link>
           </div>
         </header>
 
         <div className="evtpub-summary" aria-live="polite">
           <span>{countLabel}</span>
-          <strong>Pagina {currentPage} de {lastPage}</strong>
+          <strong>{t('public.events.page', { current: currentPage, last: lastPage })}</strong>
         </div>
 
         {authRequired && (
           <div className="evtpub-state">
             <BsCalendarEvent aria-hidden="true" />
             <div>
-              <strong>Inicia sesion para ver eventos</strong>
-              <span>La lista usa tu perfil para mostrar eventos publicos y segmentados.</span>
+              <strong>{t('public.events.authTitle')}</strong>
+              <span>{t('public.events.authText')}</span>
             </div>
           </div>
         )}
@@ -98,8 +102,8 @@ export default function PublicEventsPage() {
           <div className={`evtpub-message${error ? ' is-error' : ''}`} role={error ? 'alert' : 'status'}>
             <span>{error || notice}</span>
             {notice && (
-              <button type="button" onClick={() => setNotice('')} aria-label="Cerrar mensaje">
-                Cerrar
+              <button type="button" onClick={() => setNotice('')} aria-label={t('public.events.closeMessage')}>
+                {t('public.events.close')}
               </button>
             )}
           </div>
@@ -130,8 +134,8 @@ export default function PublicEventsPage() {
           <div className="evtpub-state">
             <BsCalendarEvent aria-hidden="true" />
             <div>
-              <strong>No hay eventos disponibles</strong>
-              <span>Cuando existan eventos visibles para tu perfil apareceran aqui.</span>
+              <strong>{t('public.events.emptyTitle')}</strong>
+              <span>{t('public.events.emptyText')}</span>
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 
 function getPages(currentPage, lastPage) {
   const start = Math.max(1, currentPage - 2);
@@ -14,17 +15,18 @@ export default function EventsPagination({
   loading = false,
   onPageChange,
 }) {
+  const { t } = useLanguage();
   if (lastPage <= 1) return null;
 
   const pages = getPages(currentPage, lastPage);
 
   return (
-    <nav className="evtpub-pagination" aria-label="Paginacion de eventos">
+    <nav className="evtpub-pagination" aria-label={t('public.events.paginationAria')}>
       <button
         type="button"
         disabled={loading || currentPage <= 1}
         onClick={() => onPageChange?.(currentPage - 1)}
-        aria-label="Pagina anterior"
+        aria-label={t('public.events.previousPage')}
       >
         <BsChevronLeft />
       </button>
@@ -45,7 +47,7 @@ export default function EventsPagination({
         type="button"
         disabled={loading || currentPage >= lastPage}
         onClick={() => onPageChange?.(currentPage + 1)}
-        aria-label="Pagina siguiente"
+        aria-label={t('public.events.nextPage')}
       >
         <BsChevronRight />
       </button>

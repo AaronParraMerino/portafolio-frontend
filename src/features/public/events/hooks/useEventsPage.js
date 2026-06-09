@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   EVENTS_LIST_PAGE_SIZE,
   getCachedHomeEvents,
@@ -21,6 +22,16 @@ const initialState = {
     hasta: null,
   },
 };
+
+function translateKnownEventError(message, t) {
+  const knownErrors = {
+    'No se pudieron cargar los eventos.': 'public.events.loadError',
+    'No se pudieron cargar los eventos publicos.': 'public.events.loadError',
+    'No se pudo inscribir al evento.': 'public.events.registrationError',
+  };
+
+  return knownErrors[message] ? t(knownErrors[message]) : message;
+}
 
 function normalizePagination(pagination = {}, page = 1) {
   return {
@@ -67,6 +78,7 @@ function getInitialPage(page) {
 }
 
 export default function useEventsPage() {
+  const { t } = useLanguage();
   const [page, setPage] = useState(1);
   const [data, setData] = useState(() => getInitialPage(1));
   const [loading, setLoading] = useState(() => getInitialPage(1).events.length === 0);
@@ -132,7 +144,7 @@ export default function useEventsPage() {
       } catch (err) {
         if (!mounted) return;
 
-        const message = err?.message || 'No se pudieron cargar los eventos.';
+        const message = translateKnownEventError(err?.message, t) || t('public.events.loadError');
         const isAuthError = message.toLowerCase().includes('sesion')
           || message.toLowerCase().includes('autentic')
           || message.toLowerCase().includes('no autorizado');
@@ -154,7 +166,7 @@ export default function useEventsPage() {
     return () => {
       mounted = false;
     };
-  }, [page]);
+  }, [page, t]);
 
   const events = useMemo(() => sortEventsForHighlights(data.events), [data.events]);
   const pagination = useMemo(
@@ -184,10 +196,10 @@ export default function useEventsPage() {
         });
       }
 
-      setNotice(payload?.mensaje || payload?.message || 'Inscripcion realizada.');
+      setNotice(payload?.mensaje || payload?.message || t('public.events.registrationSuccess'));
       return payload;
     } catch (err) {
-      setError(err?.message || 'No se pudo inscribir al evento.');
+      setError(translateKnownEventError(err?.message, t) || t('public.events.registrationError'));
       return null;
     } finally {
       setRegisteringId(null);
@@ -223,9 +235,9 @@ export default function useEventsPage() {
         ...result,
         pagination: normalizePagination(result.pagination, page),
       });
-      setNotice('Eventos actualizados.');
+      setNotice(t('public.events.refreshSuccess'));
     } catch (err) {
-      setError(err?.message || 'No se pudieron actualizar los eventos.');
+      setError(translateKnownEventError(err?.message, t) || t('public.events.refreshError'));
     } finally {
       setLoading(false);
     }

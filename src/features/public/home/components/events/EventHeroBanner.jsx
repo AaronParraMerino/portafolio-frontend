@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BsCalendarEvent, BsChevronLeft, BsChevronRight, BsGeoAlt } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../../../../core/i18n';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
   cx,
   formatEventDate,
   getCapacityLabel,
+  getEventStatusLabel,
+  getEventTypeLabel,
   getShortDescription,
   hasEventDetails,
 } from './eventUiHelpers';
@@ -20,6 +23,7 @@ export default function EventHeroBanner({
   registeringId = null,
   showMobileNavigation = true,
 }) {
+  const { language, t } = useLanguage();
   const visibleEvents = useMemo(() => events.filter(Boolean).slice(0, 5), [events]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -97,16 +101,16 @@ export default function EventHeroBanner({
             type="button"
             onClick={() => move(-1)}
             disabled={visibleEvents.length <= 1}
-            aria-label="Evento anterior"
+            aria-label={t('home.events.previous')}
           >
             <BsChevronLeft />
           </button>
-          <Link to="/eventos">Ver todos</Link>
+          <Link to="/eventos">{t('home.events.all')}</Link>
           <button
             type="button"
             onClick={() => move(1)}
             disabled={visibleEvents.length <= 1}
-            aria-label="Siguiente evento"
+            aria-label={t('home.events.next')}
           >
             <BsChevronRight />
           </button>
@@ -117,12 +121,12 @@ export default function EventHeroBanner({
           type="button"
           className="evh-hero-hitbox"
           onClick={openDetails}
-          aria-label={`Ver detalles de ${activeEvent.title}`}
+          aria-label={t('home.events.detailsAria', { title: activeEvent.title })}
         />
 
         <div className="evh-hero-content">
           <div className="evh-hero-topline">
-            <span className="evh-badge">{activeEvent.typeLabel}</span>
+            <span className="evh-badge">{getEventTypeLabel(activeEvent, t)}</span>
           </div>
 
           <h3>{activeEvent.title}</h3>
@@ -132,11 +136,11 @@ export default function EventHeroBanner({
 
             <div className="evh-hero-extra">
               <span className="evh-hero-mobile-capacity">
-                {getCapacityLabel(activeEvent)}
+                {getCapacityLabel(activeEvent, t)}
               </span>
               <span>
                 <BsCalendarEvent />
-                {formatEventDate(activeEvent.startsAt)}
+                {formatEventDate(activeEvent.startsAt, language, {}, t)}
               </span>
               {activeEvent.location && (
                 <span>
@@ -147,7 +151,7 @@ export default function EventHeroBanner({
               {activeEvent.endsAt && (
                 <span>
                   <BsCalendarEvent />
-                  Finaliza {formatEventDate(activeEvent.endsAt)}
+                  {t('home.events.ends', { date: formatEventDate(activeEvent.endsAt, language, {}, t) })}
                 </span>
               )}
             </div>
@@ -155,7 +159,7 @@ export default function EventHeroBanner({
 
           <div className="evh-hero-bottom">
             {activeEvent.authorName && (
-              <span className="evh-hero-author">Por {activeEvent.authorName}</span>
+              <span className="evh-hero-author">{t('home.events.by', { author: activeEvent.authorName })}</span>
             )}
 
             <div className="evh-hero-actions">
@@ -168,7 +172,7 @@ export default function EventHeroBanner({
                     onViewDetails?.(activeEvent);
                   }}
                 >
-                  Ver detalles
+                  {t('home.events.details')}
                 </button>
               )}
               <EventActionButton
@@ -181,9 +185,9 @@ export default function EventHeroBanner({
         </div>
 
         <span className={cx('evh-hero-status', 'evh-status', activeEvent.soldOut && 'is-soldout')}>
-          {activeEvent.soldOut ? 'Agotado' : activeEvent.status}
+          {getEventStatusLabel(activeEvent, t)}
         </span>
-        <span className="evh-hero-capacity">{getCapacityLabel(activeEvent)}</span>
+        <span className="evh-hero-capacity">{getCapacityLabel(activeEvent, t)}</span>
 
         {visibleEvents.length > 1 && (
           <>
@@ -194,7 +198,7 @@ export default function EventHeroBanner({
                 event.stopPropagation();
                 move(-1);
               }}
-              aria-label="Evento anterior"
+              aria-label={t('home.events.previous')}
             >
               <BsChevronLeft />
             </button>
@@ -205,7 +209,7 @@ export default function EventHeroBanner({
                 event.stopPropagation();
                 move(1);
               }}
-              aria-label="Siguiente evento"
+              aria-label={t('home.events.next')}
             >
               <BsChevronRight />
             </button>
@@ -214,7 +218,7 @@ export default function EventHeroBanner({
       </EventMedia>
 
       {visibleEvents.length > 1 && (
-        <div className="evh-hero-dots" aria-label="Eventos destacados">
+        <div className="evh-hero-dots" aria-label={t('home.events.featuredAria')}>
           {visibleEvents.map((event, index) => (
             <button
               key={event.id}
@@ -224,7 +228,7 @@ export default function EventHeroBanner({
                 setActiveIndex(index);
                 setInteractionKey((key) => key + 1);
               }}
-              aria-label={`Mostrar ${event.title}`}
+              aria-label={t('home.events.showAria', { title: event.title })}
             />
           ))}
         </div>

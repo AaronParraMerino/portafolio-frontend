@@ -1,4 +1,5 @@
 import { getEventActionState } from './eventUiHelpers';
+import { useLanguage } from '../../../../../core/i18n';
 
 export default function EventActionButton({
   event,
@@ -6,7 +7,8 @@ export default function EventActionButton({
   onRegister,
   className = '',
 }) {
-  const action = getEventActionState(event, loading);
+  const { t } = useLanguage();
+  const action = getEventActionState(event, loading, t);
 
   const handleClick = (clickEvent) => {
     clickEvent.stopPropagation();

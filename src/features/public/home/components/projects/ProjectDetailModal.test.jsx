@@ -35,8 +35,8 @@ test('muestra el detalle completo y permite cerrar con Escape', () => {
   expect(screen.getByText('React')).toBeInTheDocument();
   expect(screen.getByText('frontend')).toBeInTheDocument();
   expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Ver portafolio de Ada Lovelace' })).toHaveAttribute('href', '/portafolio/10');
-  expect(screen.getByRole('link', { name: 'Ver portafolio de Ada Lovelace' })).toHaveClass('is-repository-linked');
+  expect(screen.getByRole('link', { name: 'home.projects.detail.viewPortfolio' })).toHaveAttribute('href', '/portafolio/10');
+  expect(screen.getByRole('link', { name: 'home.projects.detail.viewPortfolio' })).toHaveClass('is-repository-linked');
 
   fireEvent.keyDown(window, { key: 'Escape' });
   expect(onClose).toHaveBeenCalled();
@@ -51,6 +51,6 @@ test('no falla cuando el modal esta cerrado sin proyecto', () => {
 test('muestra miniatura de YouTube y el estado de carga', () => {
   const { container } = render(<ProjectDetailModal project={project} loading onClose={jest.fn()} />);
 
-  expect(screen.getByRole('status')).toHaveTextContent('Los espacios se estan cargando...');
+  expect(screen.getByRole('status')).toHaveTextContent('home.projects.detail.loading');
   expect(container.querySelector('img[src="https://i.ytimg.com/vi/abc123/mqdefault.jpg"]')).toBeInTheDocument();
 });
