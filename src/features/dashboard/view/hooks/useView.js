@@ -101,7 +101,7 @@ function getResponseData(response) {
 export function useView() {
   const { language } = useLanguage();
 
-  const [initialState] = useState(getInitialViewState);
+  const [initialState] = useState(() => getInitialViewState(language));
   const [data, setData] = useState(initialState.data);
   const [toast, setToast] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -123,7 +123,7 @@ export function useView() {
     setError(null);
 
     try {
-      const result = await getPortfolioViewData({force: initialState.hasCache, language,});
+      const result = await getPortfolioViewData({force: true,language,});
 
       setData((prev) => normalizeViewData(result.data, prev));
       setDataSource(result.warnings.length ? 'partial' : 'backend');
