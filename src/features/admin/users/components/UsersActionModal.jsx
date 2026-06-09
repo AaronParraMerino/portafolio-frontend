@@ -7,6 +7,7 @@ import {
   getUserStatusMeta,
 } from '../services/usersService';
 import CachedUserAvatar from './CachedUserAvatar';
+import UsersSessionsMenu from './UsersSessionsMenu';
 import { useLanguage } from '../../../../core/i18n';
 
 function CloseIcon() {
@@ -40,6 +41,7 @@ export default function UsersActionModal({
   actionSuccess,
   actionSubmitting,
   onOpenDirectNotice,
+  onSessionCountChange,
   onClose,
   onSelectAction,
   onCancelAction,
@@ -54,7 +56,6 @@ export default function UsersActionModal({
   const statusMeta = getUserStatusMeta(user.estado);
   const roleMeta = getUserRoleMeta(user);
   const roleValue = getUserRoleValue(user);
-  const sessions = Array.isArray(user.sessions) ? user.sessions : [];
   const selectedAccountAction = USER_DETAIL_ACTIONS.find((action) => action.id === pendingActionId) || null;
   const selectedRoleAction = USER_ROLE_ACTIONS.find((action) => action.id === pendingActionId) || null;
   const sessionCount = getUserSessionCount(user);
@@ -78,7 +79,7 @@ export default function UsersActionModal({
     || (isRoleAction && canManageSelectedRole && actionMessage.trim().length >= 10);
 
   return (
-    <div className="usr-modal-backdrop" onClick={onClose} aria-hidden="true">
+    <div className="usr-modal-backdrop" onClick={onClose}>
       <div
         className="usr-modal"
         role="dialog"
@@ -353,26 +354,15 @@ export default function UsersActionModal({
               <p>{supportsSessions ? t('admin.users.actionModal.sessions.descriptionReady', { count: sessionCount }) : t('admin.users.actionModal.sessions.descriptionPending')}</p>
             </div>
 
-            {supportsSessions && sessions.length > 0 ? (
-              <div className="usr-sessions-list">
-                {sessions.map((session) => (
-                  <article key={session.id} className="usr-session-card">
-                    <div>
-                      <strong>{session.label || t('admin.users.actionModal.device')}</strong>
-                      <span>{session.loc || t('admin.users.actionModal.locationUnavailable')}</span>
-                    </div>
-                    <div className="usr-session-meta">
-                      <span>{session.ip || t('admin.users.actionModal.noIp')}</span>
-                      <span>{session.time || t('admin.users.actionModal.noRecord')}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
+            {supportsSessions ? (
+              <UsersSessionsMenu
+                key={`${user.id}:${user.estado}:${sessionCount}`}
+                user={user}
+                onCountChange={onSessionCountChange}
+              />
             ) : (
               <div className="usr-session-empty">
-                {supportsSessions
-                  ? t('admin.users.actionModal.sessions.empty')
-                  : t('admin.users.actionModal.sessions.hint')}
+                {t('admin.users.actionModal.sessions.hint')}
               </div>
             )}
           </section>
