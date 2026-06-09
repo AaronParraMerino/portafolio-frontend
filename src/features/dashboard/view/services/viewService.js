@@ -90,10 +90,20 @@ function configStorageKey(userId) {
   return `${CONFIG_STORAGE_PREFIX}:${userId}`;
 }
 
-function dataCacheKey(userId) {
-  return `${DATA_CACHE_PREFIX}:${userId}`;
+function normalizeLanguage(language = 'es') {
+  return ['es', 'en', 'pt'].includes(language) ? language : 'es';
 }
 
+function dataCacheKey(userId, language = 'es') {
+  return `${DATA_CACHE_PREFIX}:${userId}:${normalizeLanguage(language)}`;
+}
+
+function withLanguage(endpoint, language = 'es') {
+  const lang = normalizeLanguage(language);
+  const separator = endpoint.includes('?') ? '&' : '?';
+
+  return `${endpoint}${separator}lang=${encodeURIComponent(lang)}`;
+}
 function readStoredConfig(userId) {
   const raw = localStorage.getItem(configStorageKey(userId));
   const parsed = parseJsonStorage(raw, {});
@@ -106,14 +116,21 @@ function readStoredConfig(userId) {
   };
 }
 
-export function loadCachedPortfolioViewData(userId = getSession().userId) {
-  const cached = parseJsonStorage(sessionStorage.getItem(dataCacheKey(userId)), null);
+export function loadCachedPortfolioViewData(
+  userId = getSession().userId,
+  language = 'es'
+) {
+  const cached = parseJsonStorage(
+    sessionStorage.getItem(dataCacheKey(userId, language)),
+    null
+  );
+
   return cached?.data ? cached.data : null;
 }
 
-function saveCachedPortfolioViewData(userId, data) {
+function saveCachedPortfolioViewData(userId, data, language = 'es') {
   try {
-    sessionStorage.setItem(dataCacheKey(userId), JSON.stringify({
+    sessionStorage.setItem(dataCacheKey(userId, language), JSON.stringify({
       cachedAt: Date.now(),
       data,
     }));
@@ -845,9 +862,13 @@ function buildRuntimeVisibility({ perfilRaw, redes, stats, habilidades, experien
   });
 }
 
-export async function getPerfil({ force = false } = {}) {
+export async function getPerfil({ force = false, language = 'es' } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/profile/${userId}`, { force });
+
+  return apiFetch(
+    withLanguage(`/profile/${userId}`, language),
+    { force }
+  );
 }
 
 export async function getRedes({ force = false } = {}) {
@@ -855,31 +876,46 @@ export async function getRedes({ force = false } = {}) {
   return apiFetch(`/enlaces/${userId}`, { force });
 }
 
-export async function getExperiencias({ force = false } = {}) {
+export async function getExperiencias({ force = false, language = 'es' } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/experiencias/usuario/${userId}`, { force });
+
+  return apiFetch(
+    withLanguage(`/experiencias/usuario/${userId}`, language),
+    { force }
+  );
 }
 
-export async function getHabilidades({ force = false } = {}) {
+export async function getHabilidades({ force = false, language = 'es' } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/habilidades/usuario/${userId}`, { force });
+
+  return apiFetch(
+    withLanguage(`/habilidades/usuario/${userId}`, language),
+    { force }
+  );
 }
 
-export async function getProyectosPublicos({ force = false } = {}) {
+export async function getProyectosPublicos({ force = false, language = 'es' } = {}) {
   const { userId } = getSession();
-  return apiFetch(`/projects/usuario/${userId}`, { force });
+
+  return apiFetch(
+    withLanguage(`/projects/usuario/${userId}`, language),
+    { force }
+  );
 }
 
-export async function getPortfolioViewData({ force = false } = {}) {
+export async function getPortfolioViewData({force = false,language = 'es',} = {}) {
   const { userId } = getSession();
   const stored = readStoredConfig(userId);
   const storedConfig = stored.config;
+
+  const lang = normalizeLanguage(language);
+
   const entries = await Promise.allSettled([
-    getPerfil({ force }),
+    getPerfil({ force, language }),
     getRedes({ force }),
-    getExperiencias({ force }),
-    getHabilidades({ force }),
-    getProyectosPublicos({ force }),
+    getExperiencias({ force, language }),
+    getHabilidades({ force, language }),
+    getProyectosPublicos({ force, language }),
     getConfig({ force }),
   ]);
 
@@ -944,7 +980,7 @@ export async function getPortfolioViewData({ force = false } = {}) {
     }),
   };
 
-  saveCachedPortfolioViewData(userId, data);
+  saveCachedPortfolioViewData(userId, data, lang);
 
   return {
     data: {
