@@ -17,6 +17,8 @@ import { linksTranslations } from './links';
 import { adminEventsTranslations } from './adminEvents';
 import { adminUsersTranslations } from './adminUsers';
 import { adminAuditTranslations } from './adminAudit';
+import { adminReportsTranslations } from './adminReports';
+import { adminBackupsTranslations } from './adminBackups';
 import { publicHomeContentTranslations } from './publicHomeContent';
 import { cookiesTranslations } from './cookies';
 
@@ -48,6 +50,8 @@ const translationModules = [
   adminEventsTranslations,
   adminUsersTranslations,
   adminAuditTranslations,
+  adminReportsTranslations,
+  adminBackupsTranslations,
   publicHomeContentTranslations,
   cookiesTranslations,
 ];
