@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { HOME_EVENTS_INVALIDATED_EVENT } from '../services/homeEventsCache';
 import {
   HOME_EVENTS_PAGE_SIZE,
   getCachedHomeEvents,
@@ -51,79 +52,91 @@ export default function useHomeEvents() {
   const [registeringId, setRegisteringId] = useState(null);
   const [authAvailable, setAuthAvailable] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadEvents() {
-      let cached = null;
-      let authenticated = true;
-
-      try {
-        getCurrentEventsUser();
-      } catch {
-        authenticated = false;
-      }
-
-      try {
-        cached = authenticated ? getCachedHomeEvents({
-          allowStale: true,
-          page: 1,
-          perPage: HOME_EVENTS_PAGE_SIZE,
-          scope: 'home',
-        }) : getCachedPublicHomeEvents({
-          allowStale: true,
-          page: 1,
-          perPage: HOME_EVENTS_PAGE_SIZE,
-          scope: 'home-public',
-        });
-
-        if (cached?.value && mounted) {
-          setData({ ...initialState, ...cached.value });
-          setLoading(false);
-        }
-
-        const result = authenticated ? await getHomeEvents({
-          force: false,
-          page: 1,
-          perPage: HOME_EVENTS_PAGE_SIZE,
-          scope: 'home',
-        }) : await getPublicHomeEvents({
-          force: false,
-          page: 1,
-          perPage: HOME_EVENTS_PAGE_SIZE,
-          scope: 'home-public',
-        });
-
-        if (mounted) {
-          setData({ ...initialState, ...result });
-          setError('');
-          setAuthAvailable(authenticated);
-        }
-      } catch (err) {
-        if (!mounted) return;
-
-        const message = err?.message || 'No se pudieron cargar los eventos.';
-        const isAuthError = message.toLowerCase().includes('sesion')
-          || message.toLowerCase().includes('autentic')
-          || message.toLowerCase().includes('no autorizado');
-
-        setAuthAvailable(!isAuthError && authenticated);
-        if (!cached?.value && !isAuthError) {
-          setError(message);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
+  const loadEvents = useCallback(async ({ force = false, showLoading = false } = {}) => {
+    if (showLoading) {
+      setLoading(true);
     }
 
-    loadEvents();
+    let cached = null;
+    let authenticated = true;
+
+    try {
+      getCurrentEventsUser();
+    } catch {
+      authenticated = false;
+    }
+
+    try {
+      cached = authenticated ? getCachedHomeEvents({
+        allowStale: true,
+        page: 1,
+        perPage: HOME_EVENTS_PAGE_SIZE,
+        scope: 'home',
+      }) : getCachedPublicHomeEvents({
+        allowStale: true,
+        page: 1,
+        perPage: HOME_EVENTS_PAGE_SIZE,
+        scope: 'home-public',
+      });
+
+      if (cached?.value) {
+        setData({ ...initialState, ...cached.value });
+        setLoading(false);
+      }
+
+      const result = authenticated ? await getHomeEvents({
+        force,
+        page: 1,
+        perPage: HOME_EVENTS_PAGE_SIZE,
+        scope: 'home',
+      }) : await getPublicHomeEvents({
+        force,
+        page: 1,
+        perPage: HOME_EVENTS_PAGE_SIZE,
+        scope: 'home-public',
+      });
+
+      setData({ ...initialState, ...result });
+      setError('');
+      setAuthAvailable(authenticated);
+    } catch (err) {
+      const message = err?.message || 'No se pudieron cargar los eventos.';
+      const isAuthError = message.toLowerCase().includes('sesion')
+        || message.toLowerCase().includes('autentic')
+        || message.toLowerCase().includes('no autorizado');
+
+      setAuthAvailable(!isAuthError && authenticated);
+      if (!cached?.value && !isAuthError) {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEvents({ force: true });
+
+    const refreshEvents = () => {
+      loadEvents({ force: true });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshEvents();
+      }
+    };
+
+    window.addEventListener(HOME_EVENTS_INVALIDATED_EVENT, refreshEvents);
+    window.addEventListener('focus', refreshEvents);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      mounted = false;
+      window.removeEventListener(HOME_EVENTS_INVALIDATED_EVENT, refreshEvents);
+      window.removeEventListener('focus', refreshEvents);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [loadEvents]);
 
   const groups = useMemo(() => splitHomeEvents(data.events), [data.events]);
 

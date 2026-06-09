@@ -329,6 +329,16 @@
 .cal-event-actions button { border: 1px solid var(--cal-border); background: var(--cal-white); border-radius: 7px; padding: 6px 9px; font-size: 11px; font-weight: 700; cursor: pointer; }
 .cal-event-actions .edit:hover { border-color: var(--cal-amber); color: var(--cal-amber); background: rgba(245,158,11,.08); }
 .cal-event-actions .delete:hover { border-color: var(--cal-red-soft); color: var(--cal-red); background: var(--cal-red-bg); }
+.cal-event-actions .details {
+  border-color: var(--cal-blue-mid);
+  color: var(--cal-blue);
+  background: var(--cal-blue-light);
+}
+.cal-event-actions .details:hover {
+  border-color: var(--cal-blue);
+  color: var(--cal-white);
+  background: var(--cal-blue);
+}
 .cal-empty-state { border: 1px dashed var(--cal-border); border-radius: 12px; padding: 18px; text-align: center; color: var(--cal-muted); font-size: 12px; background: #fbfdff; }
 
 
@@ -496,6 +506,16 @@
 .cal-event-card.subscribed .cal-event-location {
   color: #047857;
   font-weight: 900;
+}
+
+.cal-event-public-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 7px;
+  color: #047857;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 /* Fila superior del evento */

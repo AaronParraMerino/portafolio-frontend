@@ -2,17 +2,21 @@ import { useLanguage } from '../../../core/i18n';
 
 const TYPE_CLASS = {
   Personal: 'personal',
-  Académico: 'academic',
+  Academico: 'academic',
+  'Académico': 'academic',
   Trabajo: 'work',
-  Reunión: 'meeting',
+  Reunion: 'meeting',
+  'Reunión': 'meeting',
   Entrega: 'delivery',
 };
 
 const TYPE_LABEL_KEY = {
   Personal: 'calendar.type.personal',
-  Académico: 'calendar.type.academic',
+  Academico: 'calendar.type.academic',
+  'Académico': 'calendar.type.academic',
   Trabajo: 'calendar.type.work',
-  Reunión: 'calendar.type.meeting',
+  Reunion: 'calendar.type.meeting',
+  'Reunión': 'calendar.type.meeting',
   Entrega: 'calendar.type.delivery',
 };
 
@@ -20,30 +24,70 @@ export default function CalendarEventCard({
   event,
   onEdit,
   onDelete,
+  onUnsubscribe,
+  onViewDetails,
   canManage = true,
 }) {
   const { t } = useLanguage();
-  const typeClass = TYPE_CLASS[event.tipo] || 'other';
-  const typeLabel = t(TYPE_LABEL_KEY[event.tipo] || 'calendar.type.other');
+  const isSubscribed = event.origen === 'inscrito';
+  const typeClass = isSubscribed ? 'subscribed' : (TYPE_CLASS[event.tipo] || 'other');
+  const typeLabel = isSubscribed
+    ? (event.tipoOriginal || t('calendar.type.subscribed'))
+    : t(TYPE_LABEL_KEY[event.tipo] || 'calendar.type.other');
+  const capacityLabel = event.cupo > 0
+    ? `${event.inscritos}/${event.cupo}`
+    : String(event.inscritos || 0);
 
   return (
     <article className={`cal-event-card ${typeClass}${canManage ? '' : ' locked'}`}>
-      <strong>{event.titulo}</strong>
+      <div className="cal-event-title-row">
+        <strong>{event.titulo}</strong>
+        {isSubscribed && (
+          <span className="cal-event-badge subscribed">
+            {t('calendar.subscribed.badge')}
+          </span>
+        )}
+      </div>
 
       <span className="cal-event-time">
-        {event.hora} · {typeLabel}
+        {event.hora}{event.horaFin ? ` - ${event.horaFin}` : ''} · {typeLabel}
       </span>
 
       {event.descripcion && <p className="cal-event-desc">{event.descripcion}</p>}
 
-      {canManage && (
+      {isSubscribed && (
+        <div className="cal-event-public-meta">
+          {event.ubicacion && (
+            <span className="cal-event-location">
+              {t('calendar.event.location', { location: event.ubicacion })}
+            </span>
+          )}
+          <span>{t('calendar.event.capacity', { count: capacityLabel })}</span>
+          {event.autorNombre && <span>{t('calendar.event.publisher', { publisher: event.autorNombre })}</span>}
+        </div>
+      )}
+
+      {(canManage || isSubscribed) && (
         <div className="cal-event-actions">
-          <button type="button" className="edit" onClick={() => onEdit(event)}>
-            {t('calendar.actions.edit')}
-          </button>
-          <button type="button" className="delete" onClick={() => onDelete(event)}>
-            {t('calendar.actions.delete')}
-          </button>
+          {isSubscribed ? (
+            <>
+              <button type="button" className="details" onClick={() => onViewDetails?.(event)}>
+                {t('calendar.actions.viewDetails')}
+              </button>
+              <button type="button" className="unsubscribe" onClick={() => onUnsubscribe?.(event)}>
+                {t('calendar.actions.unsubscribe')}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="edit" onClick={() => onEdit?.(event)}>
+                {t('calendar.actions.edit')}
+              </button>
+              <button type="button" className="delete" onClick={() => onDelete?.(event)}>
+                {t('calendar.actions.delete')}
+              </button>
+            </>
+          )}
         </div>
       )}
     </article>

@@ -11,6 +11,11 @@ import {
   unsubscribeCalendarEvent,
   updateCalendarEvent,
 } from '../services/calendarService';
+import {
+  CALENDAR_EVENTS_INVALIDATED_EVENT,
+  readCalendarEventsCache,
+  writeCalendarEventsCache,
+} from '../services/calendarCache';
 
 const OLD_STORAGE_KEY = 'creafolio_calendar_events_v1';
 const FORM_DRAFT_STORAGE_KEY = 'creafolio_calendar_event_form_draft_v2';
@@ -114,7 +119,7 @@ export default function useCalendarEvents() {
   const initialDraftDate = initialFormDraft?.values?.fecha || today;
   const [draftRestorePending, setDraftRestorePending] = useState(() => !!initialFormDraft);
   const [open, setOpen] = useState(() => !!initialFormDraft);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(() => readCalendarEventsCache()?.events || []);
   const [selectedDate, setSelectedDate] = useState(initialDraftDate);
   const [currentMonth, setCurrentMonth] = useState(() => getMonthDateFromISO(initialDraftDate));
   const [formOpen, setFormOpen] = useState(() => !!initialFormDraft);
@@ -137,6 +142,11 @@ export default function useCalendarEvents() {
   const loadEvents = useCallback(async ({ silent = false } = {}) => {
     if (!open) return;
 
+    const cached = readCalendarEventsCache();
+    if (cached?.events) {
+      setEvents(cached.events);
+    }
+
     if (!silent) {
       setLoading(true);
     }
@@ -147,10 +157,13 @@ export default function useCalendarEvents() {
         getSubscribedCalendarEvents(),
       ]);
 
-      setEvents([
+      const nextEvents = [
         ...personalEvents.map((event) => ({ ...event, origen: event.origen || ORIGIN_PERSONAL })),
         ...subscribedEvents,
-      ]);
+      ];
+
+      setEvents(nextEvents);
+      writeCalendarEventsCache(nextEvents);
     } catch (error) {
       showFeedback(getCalendarErrorKey(error));
       // No limpiamos events para evitar que la lista desaparezca si el backend falla un momento.
@@ -199,6 +212,28 @@ export default function useCalendarEvents() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  useEffect(() => {
+    const refreshEvents = () => {
+      if (open) loadEvents({ silent: true });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshEvents();
+      }
+    };
+
+    window.addEventListener(CALENDAR_EVENTS_INVALIDATED_EVENT, refreshEvents);
+    window.addEventListener('focus', refreshEvents);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener(CALENDAR_EVENTS_INVALIDATED_EVENT, refreshEvents);
+      window.removeEventListener('focus', refreshEvents);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loadEvents, open]);
 
   const eventDateMeta = useMemo(() => {
     const map = new Map();

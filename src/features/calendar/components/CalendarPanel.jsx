@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { useLanguage } from '../../../core/i18n';
+import { EventDetailModal } from '../../public/home/components/events';
+import { normalizeHomeEvent } from '../../public/home/services/homeEventsService';
 import CalendarEventForm from './CalendarEventForm';
 import CalendarEventList from './CalendarEventList';
 import CalendarMonth from './CalendarMonth';
@@ -13,6 +15,7 @@ export default function CalendarPanel({ enabled = true }) {
   const formRef = useRef(null);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [eventToUnsubscribe, setEventToUnsubscribe] = useState(null);
+  const [eventToView, setEventToView] = useState(null);
   const [deleteDayRequest, setDeleteDayRequest] = useState(null);
 
   const {
@@ -81,10 +84,19 @@ export default function CalendarPanel({ enabled = true }) {
     setEventToUnsubscribe(event);
   };
 
-  const handleConfirmUnsubscribe = () => {
+  const handleConfirmUnsubscribe = async () => {
     if (!eventToUnsubscribe) return;
-    unsubscribeEvent(eventToUnsubscribe);
+    const unsubscribedEvent = eventToUnsubscribe;
+    const success = await unsubscribeEvent(unsubscribedEvent);
+    if (success && eventToView?.id === unsubscribedEvent.eventoId) {
+      setEventToView(null);
+    }
     setEventToUnsubscribe(null);
+  };
+
+  const handleViewDetails = (event) => {
+    if (!event?.raw) return;
+    setEventToView(normalizeHomeEvent(event.raw));
   };
 
   const handleAskDeleteDay = () => {
@@ -168,6 +180,7 @@ export default function CalendarPanel({ enabled = true }) {
             onDelete={handleAskDelete}
             onDeleteAll={handleAskDeleteDay}
             onUnsubscribe={handleAskUnsubscribe}
+            onViewDetails={handleViewDetails}
           />
         </div>
       </aside>
@@ -206,6 +219,11 @@ export default function CalendarPanel({ enabled = true }) {
         icon="warning"
         onConfirm={handleConfirmDeleteDay}
         onClose={() => setDeleteDayRequest(null)}
+      />
+
+      <EventDetailModal
+        event={eventToView}
+        onClose={() => setEventToView(null)}
       />
     </>
   );

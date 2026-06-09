@@ -1,5 +1,7 @@
 import BASE_URL from '../../../services/http/const';
 import { getStoredUser } from '../../../shared/utils/authStorage';
+import { invalidateHomeEventsForUser } from '../../public/home/services/homeEventsCache';
+import { invalidateCalendarEventsForUser } from './calendarCache';
 
 const getToken = () => (
   localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT') || ''
@@ -146,6 +148,10 @@ const mapSubscribedEventToFront = (item = {}) => {
     tipo: 'Inscrito',
     tipoOriginal: item.tipo ?? item.type ?? '',
     ubicacion: item.ubicacion ?? item.location ?? item.lugar ?? '',
+    cupo: Number(item.cupo ?? item.capacity ?? 0),
+    inscritos: Number(item.inscritos ?? item.registered ?? 0),
+    cupoDisponible: item.cupo_disponible ?? item.availableSlots ?? null,
+    autorNombre: item.autor_nombre ?? item.creador?.nombre ?? '',
     origen: 'inscrito',
     editable: false,
     desinscribible: true,
@@ -206,6 +212,7 @@ export const createCalendarEvent = async (event) => {
   });
 
   const data = await parseJson(res);
+  invalidateCalendarEventsForUser();
   return mapEventToFront(data.data || data.evento || data);
 };
 
@@ -217,6 +224,7 @@ export const updateCalendarEvent = async (id, event) => {
   });
 
   const data = await parseJson(res);
+  invalidateCalendarEventsForUser();
   return mapEventToFront(data.data || data.evento || data);
 };
 
@@ -226,7 +234,9 @@ export const deleteCalendarEvent = async (id) => {
     headers: buildHeaders(),
   });
 
-  return parseJson(res);
+  const data = await parseJson(res);
+  invalidateCalendarEventsForUser();
+  return data;
 };
 
 export const deleteCalendarEventsByDate = async (date) => {
@@ -235,7 +245,9 @@ export const deleteCalendarEventsByDate = async (date) => {
     headers: buildHeaders(),
   });
 
-  return parseJson(res);
+  const data = await parseJson(res);
+  invalidateCalendarEventsForUser();
+  return data;
 };
 
 export const unsubscribeCalendarEvent = async (eventoId) => {
@@ -250,5 +262,8 @@ export const unsubscribeCalendarEvent = async (eventoId) => {
     headers: buildHeaders(),
   });
 
-  return parseJson(res);
+  const data = await parseJson(res);
+  invalidateHomeEventsForUser(userId);
+  invalidateCalendarEventsForUser(userId);
+  return data;
 };
