@@ -173,6 +173,7 @@ export default function UsersPage() {
         supportsBlocking={supportsBlocking}
         supportsRoleManagement={supportsRoleManagement}
         onOpenDirectNotice={onOpenDirectNoticeModal}
+        onSessionCountChange={onSessionCountChange}
         onClose={onCloseUser}
         onSelectAction={onSelectAction}
         onCancelAction={onCancelAction}

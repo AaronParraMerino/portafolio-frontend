@@ -35,9 +35,9 @@ test('renderiza tarjetas y desplaza el carrusel con sus controles', () => {
 
   expect(screen.getAllByRole('heading', { name: /Proyecto/ })).toHaveLength(4);
   expect(screen.getAllByText('React')).toHaveLength(4);
-  expect(screen.getByRole('link', { name: 'Ver todos' })).toHaveAttribute('href', '/proyectos');
+  expect(screen.getByRole('link', { name: 'home.projects.all' })).toHaveAttribute('href', '/proyectos');
 
-  fireEvent.click(screen.getByRole('button', { name: 'Ver mas proyectos' }));
+  fireEvent.click(screen.getByRole('button', { name: 'home.projects.nextList' }));
   expect(scrollBy).toHaveBeenCalled();
 });
 

@@ -69,7 +69,7 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
   return (
     <div className="pdm-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="pdm-modal" role="dialog" aria-modal="true" aria-labelledby="pdm-title" onMouseDown={(event) => event.stopPropagation()}>
-        <button type="button" className="pdm-close" onClick={onClose} aria-label="Cerrar detalle"><BsX /></button>
+        <button type="button" className="pdm-close" onClick={onClose} aria-label={t('home.projects.detail.close')}><BsX /></button>
 
         <header className="pdm-header">
           <span>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
@@ -80,16 +80,16 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
         <div className="pdm-gallery">
           <div className="pdm-gallery-main">
             {currentMedia?.mediaType === 'video' && currentMedia.embedUrl ? (
-              <iframe src={currentMedia.embedUrl} title={currentMedia.titulo || 'Video del proyecto'} allowFullScreen />
+              <iframe src={currentMedia.embedUrl} title={currentMedia.titulo || t('home.projects.detail.videoTitle')} allowFullScreen />
             ) : currentMedia?.mediaUrl ? (
               <img src={currentMedia.mediaUrl} alt={currentMedia.titulo || project.titulo || project.title} />
             ) : (
-              <div className="pdm-gallery-empty"><BsCodeSlash /><span>Sin galeria disponible</span></div>
+              <div className="pdm-gallery-empty"><BsCodeSlash /><span>{t('home.projects.detail.noGallery')}</span></div>
             )}
             {media.length > 1 && (
               <>
-                <button type="button" className="pdm-gallery-nav pdm-gallery-prev" onClick={() => move(-1)} aria-label="Medio anterior"><BsChevronLeft /></button>
-                <button type="button" className="pdm-gallery-nav pdm-gallery-next" onClick={() => move(1)} aria-label="Siguiente medio"><BsChevronRight /></button>
+                <button type="button" className="pdm-gallery-nav pdm-gallery-prev" onClick={() => move(-1)} aria-label={t('home.projects.detail.previousMedia')}><BsChevronLeft /></button>
+                <button type="button" className="pdm-gallery-nav pdm-gallery-next" onClick={() => move(1)} aria-label={t('home.projects.detail.nextMedia')}><BsChevronRight /></button>
               </>
             )}
           </div>
@@ -97,37 +97,37 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
             <div className="pdm-thumbnails">
               {media.map((item, index) => (
                 <button key={item.id_evidencia || `${item.url}-${index}`} type="button" className={index === activeMedia ? 'active' : ''} onClick={() => setActiveMedia(index)}>
-                  {item.mediaType === 'image' || item.thumbnailUrl ? <img src={item.thumbnailUrl || item.mediaUrl} alt="" /> : <span>Video</span>}
+                  {item.mediaType === 'image' || item.thumbnailUrl ? <img src={item.thumbnailUrl || item.mediaUrl} alt="" /> : <span>{t('home.projects.detail.video')}</span>}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {loading && <div className="pdm-notice is-loading" role="status"><span className="pdm-loading-dot" />Los espacios se estan cargando...</div>}
+        {loading && <div className="pdm-notice is-loading" role="status"><span className="pdm-loading-dot" />{t('home.projects.detail.loading')}</div>}
         {error && <div className="pdm-notice is-error">{error}</div>}
 
         <div className="pdm-content">
           <section className="pdm-panel">
-            <h3>Informacion del proyecto</h3>
+            <h3>{t('home.projects.detail.information')}</h3>
             <div className="pdm-facts">
-              <span><strong>Tipo</strong>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
-              <span><strong>Construido para</strong>{getProjectPlatformLabel(project.desarrollado_para || project.platform, t)}</span>
-              <span><strong>Estado</strong>{getProjectStatusLabel(project.estado_desarrollo, t)}</span>
-              <span><strong>Origen</strong>{project.origen || 'manual'}</span>
-              <span><strong>Inicio</strong>{project.fecha_inicio || 'Sin definir'}</span>
-              <span><strong>Fin</strong>{project.fecha_fin || 'En curso'}</span>
+              <span><strong>{t('home.projects.detail.type')}</strong>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
+              <span><strong>{t('home.projects.detail.platform')}</strong>{getProjectPlatformLabel(project.desarrollado_para || project.platform, t)}</span>
+              <span><strong>{t('home.projects.detail.status')}</strong>{getProjectStatusLabel(project.estado_desarrollo, t)}</span>
+              <span><strong>{t('home.projects.detail.origin')}</strong>{project.origen || t('home.projects.detail.manual')}</span>
+              <span><strong>{t('home.projects.detail.start')}</strong>{project.fecha_inicio || t('home.projects.detail.undefined')}</span>
+              <span><strong>{t('home.projects.detail.end')}</strong>{project.fecha_fin || t('home.projects.detail.inProgress')}</span>
             </div>
           </section>
 
           {(project.tecnologias || project.technologies)?.length > 0 && (
             <section className="pdm-panel">
-              <h3>Tecnologias</h3>
+              <h3>{t('home.projects.detail.technologies')}</h3>
               <div className="pdm-technologies">
                 {(project.tecnologias || project.technologies).map((tech, index) => (
                   <span key={`technology-${tech.id_tecnologia || tech.nombre || index}-${index}`}>
                     {tech.icono_url ? <img src={tech.icono_url} alt="" /> : <b>{String(tech.nombre || '?')[0]}</b>}
-                    <span><strong>{tech.nombre}</strong>{tech.version_usada && <small>Version {tech.version_usada}</small>}</span>
+                    <span><strong>{tech.nombre}</strong>{tech.version_usada && <small>{t('home.projects.detail.version', { version: tech.version_usada })}</small>}</span>
                     {tech.porcentaje_uso !== null && tech.porcentaje_uso !== undefined && <em>{tech.porcentaje_uso}%</em>}
                   </span>
                 ))}
@@ -137,18 +137,18 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
 
           {(project.repositorios || []).length > 0 && (
             <section className="pdm-panel">
-              <h3>Repositorios</h3>
+              <h3>{t('home.projects.detail.repositories')}</h3>
               <div className="pdm-repositories">
                 {project.repositorios.map((repo, index) => (
                   <article key={`repository-${repo.id_proyecto_repositorio || repo.url_repositorio || index}-${index}`}>
-                    <div><BsGithub /><strong>{repo.nombre || repo.github_repo_name || 'Repositorio'}</strong><span>{repo.proveedor}</span></div>
-                    <p>{repo.descripcion || repo.github_description || repo.readme_resumen || 'Sin descripcion.'}</p>
+                    <div><BsGithub /><strong>{repo.nombre || repo.github_repo_name || t('home.projects.detail.repository')}</strong><span>{repo.proveedor}</span></div>
+                    <p>{repo.descripcion || repo.github_description || repo.readme_resumen || t('home.projects.detail.noDescription')}</p>
                     <div className="pdm-repo-stats">
                       <span><BsStar /> {repo.stars_count || 0}</span>
-                      <span>{repo.commits_count || 0} commits</span>
-                      <span>{repo.contributors_count || 0} contribuidores</span>
+                      <span>{t('home.projects.detail.commits', { count: repo.commits_count || 0 })}</span>
+                      <span>{t('home.projects.detail.contributors', { count: repo.contributors_count || 0 })}</span>
                     </div>
-                    {repo.url_repositorio && <a href={repo.url_repositorio} target="_blank" rel="noreferrer">Abrir repositorio <BsBoxArrowUpRight /></a>}
+                    {repo.url_repositorio && <a href={repo.url_repositorio} target="_blank" rel="noreferrer">{t('home.projects.detail.openRepository')} <BsBoxArrowUpRight /></a>}
                   </article>
                 ))}
               </div>
@@ -157,7 +157,7 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
 
           {links.length > 0 && (
             <section className="pdm-panel">
-              <h3>Enlaces y evidencias</h3>
+              <h3>{t('home.projects.detail.links')}</h3>
               <div className="pdm-links">
                 {links.map((item, index) => <a key={`link-${item.id_evidencia || item.url || index}-${index}`} href={item.url} target="_blank" rel="noreferrer">{item.titulo || item.tipo}<BsBoxArrowUpRight /></a>)}
               </div>
@@ -166,19 +166,19 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
 
           {(project.participantes || []).length > 0 && (
             <section className="pdm-panel">
-              <h3><BsPeople /> Participantes ({project.participantes_count || project.participantes.length})</h3>
+              <h3><BsPeople /> {t('home.projects.detail.participants', { count: project.participantes_count || project.participantes.length })}</h3>
               <div className="pdm-participants">
                 {project.participantes.map((participant, index) => (
                   <Link
                     key={`participant-${participant.id_participacion || participant.id_usuario || index}-${index}`}
                     className={participant.vinculado_repositorio || participant.es_propietario_repositorio ? 'is-repository-linked' : ''}
                     to={participant.ruta_portafolio || `/portafolio/${participant.id_usuario}`}
-                    aria-label={`Ver portafolio de ${participant.nombre}`}
+                    aria-label={t('home.projects.detail.viewPortfolio', { name: participant.nombre })}
                   >
                     {participant.avatar_thumb_url || participant.avatar_url ? <img src={participant.avatar_thumb_url || participant.avatar_url} alt="" /> : <span>{String(participant.nombre || '?')[0]}</span>}
                     <div>
                       <strong>{participant.nombre}</strong>
-                      <small>{participant.es_propietario_repositorio ? 'Propietario de repositorio' : participant.vinculado_repositorio ? 'Vinculado al repositorio' : participant.es_propietario ? 'Propietario' : participant.rol || 'Participante'}</small>
+                      <small>{participant.es_propietario_repositorio ? t('home.projects.detail.repositoryOwner') : participant.vinculado_repositorio ? t('home.projects.detail.repositoryLinked') : participant.es_propietario ? t('home.projects.detail.owner') : participant.rol || t('home.projects.detail.participant')}</small>
                       <p>{participant.descripcion_aporte}</p>
                     </div>
                     <BsBoxArrowUpRight className="pdm-participant-link-icon" />

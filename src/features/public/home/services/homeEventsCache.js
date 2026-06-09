@@ -1,4 +1,5 @@
 const HOME_EVENTS_CACHE_PREFIX = 'home-events-cache:v1';
+export const HOME_EVENTS_INVALIDATED_EVENT = 'creafolio:home-events-invalidated';
 
 export const HOME_EVENTS_TTL_MS = 10 * 60 * 1000;
 export const EVENTS_PAGE_TTL_MS = 5 * 60 * 1000;
@@ -152,6 +153,16 @@ export function clearHomeEventsCacheForUser(userId) {
     }
   } catch {
     // no-op
+  }
+}
+
+export function invalidateHomeEventsForUser(userId) {
+  clearHomeEventsCacheForUser(userId);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(HOME_EVENTS_INVALIDATED_EVENT, {
+      detail: { userId: String(userId || '') },
+    }));
   }
 }
 

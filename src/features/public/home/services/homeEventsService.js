@@ -9,6 +9,7 @@ import {
   writeHomeEventsCache,
 } from './homeEventsCache';
 import { scheduleRequest } from '../../../../shared/services/requestScheduler';
+import { invalidateCalendarEventsForUser } from '../../../calendar/services/calendarCache';
 
 export const HOME_EVENTS_PAGE_SIZE = 20;
 export const EVENTS_LIST_PAGE_SIZE = 12;
@@ -328,6 +329,7 @@ export async function registerHomeEvent(eventId, options = {}) {
   });
 
   clearHomeEventsCacheForUser(userId);
+  invalidateCalendarEventsForUser(userId);
 
   if (options.refresh !== false) {
     const refreshed = await refreshHomeEvents({

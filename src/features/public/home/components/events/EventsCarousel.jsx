@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../../../../core/i18n';
 import EventCard from './EventCard';
 import './eventsHome.css';
 
@@ -11,6 +12,7 @@ export default function EventsCarousel({
   onViewDetails,
   registeringId = null,
 }) {
+  const { t } = useLanguage();
   const trackRef = useRef(null);
 
   if (!events.length) return null;
@@ -28,14 +30,14 @@ export default function EventsCarousel({
   return (
     <div className="evh-carousel">
       <div className="evh-carousel-head">
-        <h3>Mas eventos</h3>
+        <h3>{t('home.events.more')}</h3>
         <div className="evh-carousel-head-actions">
-          {showAllPath && <Link to={showAllPath}>Ver todos</Link>}
+          {showAllPath && <Link to={showAllPath}>{t('home.events.all')}</Link>}
           <div className="evh-carousel-controls">
-            <button type="button" onClick={() => scrollBy(-1)} aria-label="Ver eventos anteriores">
+            <button type="button" onClick={() => scrollBy(-1)} aria-label={t('home.events.previousList')}>
               <BsChevronLeft />
             </button>
-            <button type="button" onClick={() => scrollBy(1)} aria-label="Ver mas eventos">
+            <button type="button" onClick={() => scrollBy(1)} aria-label={t('home.events.nextList')}>
               <BsChevronRight />
             </button>
           </div>

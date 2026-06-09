@@ -17,6 +17,7 @@ export default function CalendarEventList({
   onDelete,
   onDeleteAll,
   onUnsubscribe,
+  onViewDetails,
 }) {
   const { t, language } = useLanguage();
   const title = formatSelectedDate(selectedDate, language);
@@ -65,6 +66,7 @@ export default function CalendarEventList({
             onEdit={onEdit}
             onDelete={onDelete}
             onUnsubscribe={onUnsubscribe}
+            onViewDetails={onViewDetails}
           />
 
           <EventGroup
@@ -76,6 +78,7 @@ export default function CalendarEventList({
             onEdit={onEdit}
             onDelete={onDelete}
             onUnsubscribe={onUnsubscribe}
+            onViewDetails={onViewDetails}
           />
         </div>
       ) : (
@@ -106,6 +109,7 @@ function EventGroup({
   onEdit,
   onDelete,
   onUnsubscribe,
+  onViewDetails,
 }) {
   return (
     <div className="cal-event-group">
@@ -122,6 +126,7 @@ function EventGroup({
             onEdit={onEdit}
             onDelete={onDelete}
             onUnsubscribe={onUnsubscribe}
+            onViewDetails={onViewDetails}
           />
         ))
       ) : (

@@ -13,6 +13,8 @@ import AdminDashboardPage from '../../features/admin/dashboard/AdminDashboardPag
 import UsersPage from '../../features/admin/users/pages/UsersPage';
 import EventsPage from '../../features/admin/events/pages/EventsPage';
 import AuditPage from '../../features/admin/audit/pages/AuditPage';
+import ReportsPage from '../../features/admin/reports/pages/ReportsPage';
+import BackupsPage from '../../features/admin/backups/pages/BackupsPage';
 import DashboardEventsPage from '../../features/dashboard/events/pages/EventsPage';
 import ProfilePage from '../../features/dashboard/profile/pages/ProfilePage';
 import ExperiencePage from '../../features/dashboard/experience/pages/ExperiencePage';
@@ -88,9 +90,9 @@ export default function AppRouter({ isBackendAvailable = true }) {
             <Route index element={<AdminDashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="events" element={<EventsPage />} />
-            <Route path="reports" element={<AdminDashboardPage section="reports" />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="audit" element={<AuditPage />} />
-            <Route path="backups" element={<AdminDashboardPage section="backups" />} />
+            <Route path="backups" element={<BackupsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

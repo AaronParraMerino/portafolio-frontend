@@ -22,7 +22,7 @@ function colorWithAlpha(color, alphaHex) {
 
 function formatPublishedDate(value, language) {
   const date = new Date(value || '');
-  if (Number.isNaN(date.getTime())) return 'Publicacion reciente';
+  if (Number.isNaN(date.getTime())) return '';
 
   return new Intl.DateTimeFormat(
     language === 'en' ? 'en-US' : language === 'pt' ? 'pt-BR' : 'es-BO',
@@ -53,9 +53,9 @@ export default function RecentProjectCard({ project, onViewDetails }) {
       <div className="prc-body">
         <span className="prc-platform">{getProjectPlatformLabel(project.platform, t)}</span>
         <h3>{project.title}</h3>
-        <p>{project.description || 'Proyecto publicado recientemente en Creafolio.'}</p>
+        <p>{project.description || t('home.projects.recentDescription')}</p>
 
-        <div className="prc-technologies" aria-label="Tecnologias del proyecto">
+        <div className="prc-technologies" aria-label={t('home.projects.technologiesAria')}>
           {technologies.slice(0, VISIBLE_TECHNOLOGIES).map((technology) => (
             <span
               key={technology.id_tecnologia || technology.nombre}
@@ -81,8 +81,8 @@ export default function RecentProjectCard({ project, onViewDetails }) {
         </div>
 
         <div className="prc-card-foot">
-          <span className="prc-date">Publicado el {formatPublishedDate(project.publishedAt, language)}</span>
-          <button type="button" onClick={() => onViewDetails?.(project)}>Ver detalle</button>
+          <span className="prc-date">{t('home.projects.publishedOn', { date: formatPublishedDate(project.publishedAt, language) || t('home.projects.publishedRecently') })}</span>
+          <button type="button" onClick={() => onViewDetails?.(project)}>{t('home.projects.details')}</button>
         </div>
       </div>
     </article>

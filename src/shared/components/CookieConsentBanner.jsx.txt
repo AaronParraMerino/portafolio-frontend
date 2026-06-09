@@ -220,4 +220,4 @@ const styles = {
   },
 };
 
-#eliminar
+#elimina
