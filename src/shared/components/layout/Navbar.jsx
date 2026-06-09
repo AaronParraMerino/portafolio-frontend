@@ -48,7 +48,7 @@ const NAV_LINKS = [
   },
   {
     labelKey: 'nav.howItWorks',
-    href: '#como-funciona',
+    href: '/eventos',
   },
   {
     labelKey: 'nav.projects',
@@ -75,7 +75,7 @@ const NAV_LINKS = [
 ];
 
 function getNavIcon(href) {
-  if (href === '#como-funciona') {
+  if (href === '/eventos') {
     return (
       <>
         <circle cx="6" cy="7" r="3" />

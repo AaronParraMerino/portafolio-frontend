@@ -1,7 +1,7 @@
 export const navTranslations = {
   es: {
     "nav.home": "Inicio",
-    "nav.howItWorks": "Como funciona",
+    "nav.howItWorks": "Eventos",
     "nav.projects": "Proyectos",
     "nav.developers": "Desarrolladores",
     "nav.notifications": "Notificaciones",
@@ -74,7 +74,7 @@ export const navTranslations = {
   },
   en: {
     "nav.home": "Home",
-    "nav.howItWorks": "How it works",
+    "nav.howItWorks": "Events",
     "nav.projects": "Projects",
     "nav.developers": "Developers",
     "nav.notifications": "Notifications",
@@ -147,7 +147,7 @@ export const navTranslations = {
   },
   pt: {
     "nav.home": "Inicio",
-    "nav.howItWorks": "Como funciona",
+    "nav.howItWorks": "Eventos",
     "nav.projects": "Projetos",
     "nav.developers": "Desenvolvedores",
     "nav.notifications": "Notificacoes",
