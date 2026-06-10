@@ -501,17 +501,14 @@ export default function Footer({ isBackendAvailable = true }) {
           {/* BRAND */}
           <div className="spk-footer-brand-col">
             <div className="spk-footer-logo-row">
-              <div className="spk-footer-logo-mark">
-                <svg viewBox="0 0 14 14">
-                  <polygon points="7,1 9.3,5.3 14,6 10.5,9.3 11.4,14 7,11.6 2.6,14 3.5,9.3 0,6 4.7,5.3" />
-                </svg>
-              </div>
-              <div>
-                <div className="spk-footer-logo-name">
-                  Crea<span>Folio</span>
-                </div>
-                <div className="spk-footer-logo-sub">by S.P.A.R.K.Y Hub</div>
-              </div>
+              <a href="/" className="spk-footer-logo-link" aria-label="CreaFolio">
+                <img
+                  src="/img/logoFooterCreaFolio.png"
+                  width="140" height="30"
+                  alt="CreaFolio"
+                  className="spk-footer-logo-img"
+                />
+              </a>
             </div>
 
             <div className="spk-footer-umss">

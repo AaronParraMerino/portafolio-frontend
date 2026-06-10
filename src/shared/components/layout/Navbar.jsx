@@ -649,7 +649,9 @@ export default function Navbar() {
 
         <div className="spk-nav-sep" />
 
-        <span className="spk-nav-tagline">CreaFolio</span>
+        <a href="/" className="spk-nav-tagline">
+          <img src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
+        </a>
 
         <ul className="spk-nav-links">
           {NAV_LINKS.map(({ labelKey, href, icon }) => (
