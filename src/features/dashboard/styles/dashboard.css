@@ -38,20 +38,35 @@
   text-transform: uppercase;
 }
 
-.dsh-layout--paused .dsh-main button,
-.dsh-layout--paused .dsh-main input,
-.dsh-layout--paused .dsh-main textarea,
-.dsh-layout--paused .dsh-main select {
+.dsh-layout--paused .dsh-paused-content button,
+.dsh-layout--paused .dsh-paused-content input,
+.dsh-layout--paused .dsh-paused-content textarea,
+.dsh-layout--paused .dsh-paused-content select,
+.dsh-layout--paused .dsh-paused-content [role="button"],
+.dsh-layout--paused .dsh-paused-content [role="switch"],
+.dsh-layout--paused .dsh-paused-content [role="checkbox"],
+.dsh-layout--paused .dsh-paused-content [tabindex="0"],
+.dsh-layout--paused .dsh-paused-content [contenteditable="true"] {
   cursor: not-allowed !important;
   filter: grayscale(1);
   opacity: .58;
   pointer-events: none;
 }
 
+.dsh-layout--paused .dsh-paused-content form,
 .dsh-layout--paused .dash-module-header-action,
 .dsh-layout--paused .dash-edit-modal,
-.dsh-layout--paused .edit-panel {
+.dsh-layout--paused .edit-panel,
+.dsh-layout--paused .prj-card-add {
   filter: grayscale(1);
+  opacity: .64;
+}
+
+.dsh-layout--paused .dsh-paused-content a[href],
+.dsh-layout--paused .dsh-paused-content [data-paused-allow="true"] {
+  filter: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Shared dashboard loading state */
