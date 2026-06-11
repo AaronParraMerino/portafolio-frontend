@@ -11,6 +11,7 @@ import {
 } from "../services/skillService";
 import ExperienceToast from "../../experience/components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 import Header from "../../layout/Header";
 import {
   getSkillLevelColor,
@@ -56,6 +57,8 @@ export default function SkillsPage() {
   const [modalMode, setModalMode] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [toast, setToast] = useState(null);
+  const [savingCount, setSavingCount] = useState(0);
+  const saving = savingCount > 0;
 
   const [confirmConfig, setConfirmConfig] = useState({
     open: false,
@@ -92,71 +95,104 @@ export default function SkillsPage() {
     loadSkills();
   }, [loadSkills]);
 
-  const handleSaveRequest = async (formData) => {
-    try {
-      let skillIdFromCatalog = formData.catalogo_habilidad_id;
+  const runInBackground = (task) => {
+    setSavingCount((count) => count + 1);
+    Promise.resolve()
+      .then(task)
+      .catch((error) => {
+        showToast(error.message || t("skills.catalog.error.create"), "error");
+      })
+      .finally(() => setSavingCount((count) => Math.max(0, count - 1)));
+  };
 
-      if (!skillIdFromCatalog) {
-        const newCatalogSkill = await createCatalogSkill(
-          formData.nombre_habilidad,
-          formData.tipo,
-          formData.descripcion_nueva || ""
-        );
+  const handleSaveRequest = (formData) => {
+    const mode = modalMode;
+    const skillToEdit = selectedSkill;
+    const isEdit = mode === "edit" && skillToEdit;
+    const skillName = formData.nombre_habilidad || getSkillName(skillToEdit) || t("skills.delete.fallback");
 
-        skillIdFromCatalog = newCatalogSkill.id;
-      }
+    setConfirmConfig({
+      open: true,
+      variant: isEdit ? "blue" : "green",
+      icon: "check",
+      title: isEdit ? t("skills.save.editTitle") : t("skills.save.addTitle"),
+      subtitle: t("skills.save.subtitle"),
+      message: isEdit
+        ? t("skills.save.editMessage", { name: skillName })
+        : t("skills.save.addMessage", { name: skillName }),
+      confirmLabel: isEdit ? t("skills.save.editConfirm") : t("skills.save.addConfirm"),
+      cancelLabel: t("skills.common.cancel"),
+      onConfirm: () => {
+        setConfirmConfig((prev) => ({ ...prev, open: false }));
+        setModalMode(null);
+        setSelectedSkill(null);
 
-      if (modalMode !== "edit") {
-        const duplicateOwned = skills.some(
-          (skill) =>
-            normalizeSkillName(getSkillName(skill)) ===
-            normalizeSkillName(formData.nombre_habilidad)
-        );
+        runInBackground(async () => {
+          try {
+            let skillIdFromCatalog = formData.catalogo_habilidad_id;
 
-        if (duplicateOwned) {
-          showToast(
-            t("skills.toast.duplicateOwned", { name: formData.nombre_habilidad }),
-            "error"
-          );
-          return;
-        }
-      }
+            if (!skillIdFromCatalog) {
+              const newCatalogSkill = await createCatalogSkill(
+                formData.nombre_habilidad,
+                formData.tipo,
+                formData.descripcion_nueva || ""
+              );
 
-      if (modalMode === "edit") {
-        const updated = await updateUserSkill(selectedSkill.id, formData.nivel);
+              skillIdFromCatalog = newCatalogSkill.id;
+            }
 
-        setSkills((prev) => {
-          const selectedId = Number(selectedSkill.id);
-          const updatedId = Number(updated?.id);
+            if (mode !== "edit") {
+              const duplicateOwned = skills.some(
+                (skill) =>
+                  normalizeSkillName(getSkillName(skill)) ===
+                  normalizeSkillName(formData.nombre_habilidad)
+              );
 
-          if (updatedId && updatedId === selectedId) {
-            return prev.map((s) =>
-              Number(s.id) === selectedId ? updated : s
-            );
+              if (duplicateOwned) {
+                showToast(
+                  t("skills.toast.duplicateOwned", { name: formData.nombre_habilidad }),
+                  "error"
+                );
+                return;
+              }
+            }
+
+            if (mode === "edit" && skillToEdit) {
+              const updated = await updateUserSkill(skillToEdit.id, formData.nivel);
+
+              setSkills((prev) => {
+                const selectedId = Number(skillToEdit.id);
+                const updatedId = Number(updated?.id);
+
+                if (updatedId && updatedId === selectedId) {
+                  return prev.map((s) =>
+                    Number(s.id) === selectedId ? updated : s
+                  );
+                }
+
+                return prev.map((s) => {
+                  if (Number(s.id) !== selectedId) return s;
+
+                  return {
+                    ...s,
+                    nivel: formData.nivel,
+                  };
+                });
+              });
+
+              showToast(t("skills.toast.updated"), "ok");
+            } else {
+              const created = await addUserSkill(skillIdFromCatalog, formData.nivel);
+
+              setSkills((prev) => [created, ...prev]);
+              showToast(t("skills.toast.added"), "ok");
+            }
+          } catch (err) {
+            showToast(err.message, "error");
           }
-
-          return prev.map((s) => {
-            if (Number(s.id) !== selectedId) return s;
-
-            return {
-              ...s,
-              nivel: formData.nivel,
-            };
-          });
         });
-
-        showToast(t("skills.toast.updated"), "ok");
-      } else {
-        const created = await addUserSkill(skillIdFromCatalog, formData.nivel);
-
-        setSkills((prev) => [created, ...prev]);
-        showToast(t("skills.toast.added"), "ok");
-      }
-
-      setModalMode(null);
-    } catch (err) {
-      showToast(err.message, "error");
-    }
+      },
+    });
   };
 
   const handleDeleteRequest = (id) => {
@@ -173,7 +209,9 @@ export default function SkillsPage() {
       cancelLabel: t("skills.common.cancel"),
       variant: "red",
       icon: "warning",
-      onConfirm: async () => {
+      onConfirm: () => {
+        setConfirmConfig((prev) => ({ ...prev, open: false }));
+        runInBackground(async () => {
         try {
           await deleteUserSkill(id);
 
@@ -185,8 +223,7 @@ export default function SkillsPage() {
         } catch (err) {
           showToast(t("skills.toast.deleteError"), "error");
         }
-
-        setConfirmConfig((prev) => ({ ...prev, open: false }));
+        });
       },
     });
   };
@@ -598,10 +635,12 @@ export default function SkillsPage() {
           onCancel={() => setModalMode(null)}
           editData={selectedSkill}
           userSkills={skills}
+          onBackgroundActivity={runInBackground}
         />
       )}
 
       <ExperienceToast toast={toast} />
+      <BackgroundSaveIndicator active={saving} label={t("skills.form.saving")} />
     </>
   );
 }

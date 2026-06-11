@@ -6,7 +6,7 @@ import { useLanguage } from '../../../../core/i18n';
 /* ══════════════════════════════════════════════
    MODAL: Subir imagen (banner o avatar)
 ══════════════════════════════════════════════ */
-function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
+function UploadImageModal({ tipo, onConfirm, onClose }) {
   const { t } = useLanguage();
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -60,7 +60,7 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
                 {t('profile.image.uploadInfo')}
               </div>
             </div>
-            <button className="prf-modal-close" onClick={onClose} disabled={cargando}>
+            <button className="prf-modal-close" onClick={onClose}>
               <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
             </button>
           </div>
@@ -102,7 +102,7 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
 
             {preview && (
               <button className="prf-btn-outline" style={{ marginTop: 12, fontSize: 12 }}
-                onClick={() => inputRef.current?.click()} disabled={cargando}>
+                onClick={() => inputRef.current?.click()}>
                 <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
                 {t('profile.image.chooseAnother')}
               </button>
@@ -110,12 +110,9 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
           </div>
 
           <div className="prf-modal-foot">
-            <button className="prf-btn-cancel" onClick={onClose} disabled={cargando}>{t('profile.action.cancel')}</button>
-            <button className="prf-btn-save" onClick={handleGuardarClick} disabled={!archivo || cargando}>
-              {cargando
-                ? <><div className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> {t('profile.image.uploading')}</>
-                : <><svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" stroke="currentColor" fill="none" strokeWidth="2"/></svg>{t('profile.image.saveLabel', { label })}</>
-              }
+            <button className="prf-btn-cancel" onClick={onClose}>{t('profile.action.cancel')}</button>
+            <button className="prf-btn-save" onClick={handleGuardarClick} disabled={!archivo}>
+              <svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" stroke="currentColor" fill="none" strokeWidth="2"/></svg>{t('profile.image.saveLabel', { label })}
             </button>
           </div>
         </div>
@@ -129,9 +126,8 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
         confirmLabel={t('profile.image.confirmSave')}
         variant="blue"
         icon="check"
-        loading={cargando}
         onConfirm={handleConfirmarSubida}
-        onClose={() => !cargando && setConfirmando(false)}
+        onClose={() => setConfirmando(false)}
       />
     </>
   );
@@ -140,7 +136,7 @@ function UploadImageModal({ tipo, onConfirm, onClose, cargando }) {
 /* ══════════════════════════════════════════════
    MODAL: Confirmar eliminación (sin cambios)
 ══════════════════════════════════════════════ */
-function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
+function ConfirmDeleteModal({ tipo, onConfirm, onClose }) {
   const { t } = useLanguage();
   return (
     <div className="prf-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -159,7 +155,7 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
               <div className="prf-modal-sub">{t('profile.image.deleteSubtitle')}</div>
             </div>
           </div>
-          <button className="prf-modal-close" onClick={onClose} disabled={cargando}>
+          <button className="prf-modal-close" onClick={onClose}>
             <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
           </button>
         </div>
@@ -169,12 +165,9 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose, cargando }) {
           </p>
         </div>
         <div className="prf-modal-foot">
-          <button className="prf-btn-cancel" onClick={onClose} disabled={cargando}>{t('profile.action.cancel')}</button>
-          <button className="prf-btn-save" style={{ background: 'var(--rojo-soft)' }} onClick={onConfirm} disabled={cargando}>
-            {cargando
-              ? <><div className="prf-spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> {t('profile.image.deleting')}</>
-              : <><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1,3 11,3"/><path d="M4.5 3V1.5h3V3M2 3v7a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0010 10V3"/><line x1="4.5" y1="5.5" x2="4.5" y2="9"/><line x1="7.5" y1="5.5" x2="7.5" y2="9"/></svg>{t('profile.image.confirmDelete')}</>
-            }
+          <button className="prf-btn-cancel" onClick={onClose}>{t('profile.action.cancel')}</button>
+          <button className="prf-btn-save" style={{ background: 'var(--rojo-soft)' }} onClick={onConfirm}>
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1,3 11,3"/><path d="M4.5 3V1.5h3V3M2 3v7a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0010 10V3"/><line x1="4.5" y1="5.5" x2="4.5" y2="9"/><line x1="7.5" y1="5.5" x2="7.5" y2="9"/></svg>{t('profile.image.confirmDelete')}
           </button>
         </div>
       </div>
@@ -189,7 +182,6 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
   const { t } = useLanguage();
   const iniciales = perfil.nombre.split(' ').slice(0, 2).map(n => n[0]).join('');
   const [modal,    setModal]    = useState(null);
-  const [cargando, setCargando] = useState(false);
   const [bannerUrl, setBannerUrl] = useState(perfil.bannerUrl);
 
   useEffect(() => {
@@ -205,20 +197,18 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
     };
   }, [perfil.bannerUrl, perfil.bannerOriginalUrl]);
 
-  const handleSubir = async (tipo, archivo) => {
+  const handleSubir = (tipo, archivo) => {
     const fn = tipo === 'banner' ? onSubirBanner : onSubirAvatar;
     if (!fn) return;
-    setCargando(true);
-    try { await fn(archivo); setModal(null); }
-    finally { setCargando(false); }
+    setModal(null);
+    fn(archivo).catch(() => {});
   };
 
-  const handleEliminar = async (tipo) => {
+  const handleEliminar = (tipo) => {
     const fn = tipo === 'banner' ? onEliminarBanner : onEliminarAvatar;
     if (!fn) return;
-    setCargando(true);
-    try { await fn(); setModal(null); }
-    finally { setCargando(false); }
+    setModal(null);
+    fn().catch(() => {});
   };
 
   return (
@@ -283,24 +273,24 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
       </div>
 
       {modal?.tipo === 'upload-banner' && (
-        <UploadImageModal tipo="banner" cargando={cargando}
+        <UploadImageModal tipo="banner"
           onConfirm={(a) => handleSubir('banner', a)}
-          onClose={() => !cargando && setModal(null)} />
+          onClose={() => setModal(null)} />
       )}
       {modal?.tipo === 'upload-avatar' && (
-        <UploadImageModal tipo="avatar" cargando={cargando}
+        <UploadImageModal tipo="avatar"
           onConfirm={(a) => handleSubir('avatar', a)}
-          onClose={() => !cargando && setModal(null)} />
+          onClose={() => setModal(null)} />
       )}
       {modal?.tipo === 'delete-banner' && (
-        <ConfirmDeleteModal tipo="banner" cargando={cargando}
+        <ConfirmDeleteModal tipo="banner"
           onConfirm={() => handleEliminar('banner')}
-          onClose={() => !cargando && setModal(null)} />
+          onClose={() => setModal(null)} />
       )}
       {modal?.tipo === 'delete-avatar' && (
-        <ConfirmDeleteModal tipo="avatar" cargando={cargando}
+        <ConfirmDeleteModal tipo="avatar"
           onConfirm={() => handleEliminar('avatar')}
-          onClose={() => !cargando && setModal(null)} />
+          onClose={() => setModal(null)} />
       )}
     </>
   );

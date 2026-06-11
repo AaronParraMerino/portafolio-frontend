@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "../../../../core/i18n";
-import { getCatalogSkills, getCachedCatalogSkills } from "../services/skillService";
+import { createCatalogSkill, getCatalogSkills, getCachedCatalogSkills } from "../services/skillService";
 import SkillCatalogModal from "./SkillCatalogModal";
 import DashboardEdit, {
   DashboardEditBody,
   DashboardEditFieldError,
   DashboardEditFooter,
   DashboardEditSection,
-  DashboardEditSpinner,
 } from "../../layout/DashboardEdit";
 
 const normalizeSkillName = (value = "") =>
@@ -59,7 +58,7 @@ const getInitialCatalog = () => {
   }
 };
 
-export default function SkillForm({ onSave, onCancel, editData, userSkills = [] }) {
+export default function SkillForm({ onSave, onCancel, editData, userSkills = [], onBackgroundActivity }) {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
     tipo: "",
@@ -71,7 +70,6 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
   const [catalog, setCatalog] = useState(getInitialCatalog);
   const [suggestions, setSuggestions] = useState([]);
   const [showCatalogModal, setShowCatalogModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -263,9 +261,17 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
     setShowCatalogModal(true);
   };
 
-  const handleCreatedInCatalog = (newSkill) => {
+  const handleCreatedInCatalog = (newSkillData) => {
+    setShowCatalogModal(false);
+
+    const createTask = async () => {
+      const newSkill = await createCatalogSkill(
+        newSkillData.nombre,
+        newSkillData.tipo,
+        newSkillData.descripcion || ""
+      );
+
     if (userAlreadyHasSkill(newSkill)) {
-      setShowCatalogModal(false);
       setErrors({ habilidad: t("skills.toast.duplicateOwned", { name: getSkillName(newSkill) }) });
       return;
     }
@@ -276,10 +282,18 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
       return exists ? prev : [...prev, newSkill];
     });
     selectSkill(newSkill);
-    setShowCatalogModal(false);
+    };
+
+    if (typeof onBackgroundActivity === "function") {
+      onBackgroundActivity(createTask);
+    } else {
+      createTask().catch((error) => {
+        setErrors({ habilidad: error.message || t("skills.catalog.error.create") });
+      });
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     const nextErrors = {};
@@ -314,12 +328,7 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      await onSave(formData);
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSave(formData);
   };
 
   return (
@@ -328,7 +337,6 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
         title={editData ? t("skills.form.title.edit") : t("skills.form.title.create")}
         subtitle={t("skills.form.subtitle")}
         onClose={onCancel}
-        closeDisabled={isSubmitting}
         ariaLabel={editData ? t("skills.form.title.edit") : t("skills.form.title.create")}
         size="sm"
       >
@@ -429,21 +437,14 @@ export default function SkillForm({ onSave, onCancel, editData, userSkills = [] 
               type="button"
               className="dash-edit-btn dash-edit-btn--secondary"
               onClick={onCancel}
-              disabled={isSubmitting}
             >
               {t("skills.common.cancel")}
             </button>
             <button
               type="submit"
               className="dash-edit-btn dash-edit-btn--primary"
-              disabled={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <DashboardEditSpinner />
-                  {t("skills.form.saving")}
-                </>
-              ) : editData ? (
+              {editData ? (
                 t("skills.form.saveChanges")
               ) : (
                 t("skills.form.saveSkill")

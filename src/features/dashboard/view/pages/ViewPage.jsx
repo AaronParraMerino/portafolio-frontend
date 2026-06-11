@@ -5,6 +5,7 @@ import { FiCheck, FiDownload, FiEyeOff, FiSettings } from 'react-icons/fi';
 import '../styles/view.css';
 
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import Header from '../../layout/Header';
 
 import { useView } from '../hooks/useView';
@@ -55,9 +56,15 @@ export default function ViewPage() {
   const visibilidad = config?.visibilidad || {};
   const isPublished = Boolean(config?.publicado);
 
-  const handlePublish = async () => {
-    await publicar(publishTarget !== false);
+  const handlePublish = () => {
+    const shouldPublish = publishTarget !== false;
     setPublishTarget(null);
+    publicar(shouldPublish).catch(() => {});
+  };
+
+  const handleSaveConfig = (draftConfig) => {
+    setConfigOpen(false);
+    saveCurrentConfig(draftConfig).catch(() => {});
   };
 
   const handleExport = async (format) => {
@@ -168,6 +175,7 @@ export default function ViewPage() {
             title: t('view.action.customizeTitle'),
             icon: <FiSettings />,
             variant: 'secondary',
+            disabled: guardando,
             onClick: () => setConfigOpen(true),
           },
           {
@@ -175,7 +183,8 @@ export default function ViewPage() {
             loadingLabel: isPublished ? t('view.action.hiding') : t('view.action.publishing'),
             title: isPublished ? t('view.action.hideTitle') : t('view.action.publishTitle'),
             icon: isPublished ? <FiEyeOff /> : <FiCheck />,
-            loading: guardando,
+            loading: false,
+            disabled: guardando,
             variant: isPublished ? 'secondary' : undefined,
             onClick: () => setPublishTarget(!isPublished),
           },
@@ -236,8 +245,8 @@ export default function ViewPage() {
           experiencias,
           proyectos,
         }}
-        onSave={saveCurrentConfig}
-        saving={guardando}
+        onSave={handleSaveConfig}
+        saving={false}
         onClose={() => setConfigOpen(false)}
       />
 
@@ -254,7 +263,7 @@ export default function ViewPage() {
         }
         confirmLabel={publishTarget === false ? t('view.publish.confirmHide') : t('view.publish.confirmPublish')}
         cancelLabel={t('actions.cancel')}
-        loading={guardando}
+        loading={false}
         onConfirm={handlePublish}
         onClose={() => setPublishTarget(null)}
       />
@@ -272,6 +281,7 @@ export default function ViewPage() {
       />
 
       <ViewToast toast={toast} />
+      <BackgroundSaveIndicator active={guardando} label={t('actions.saving')} />
     </div>
   );
 }

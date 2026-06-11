@@ -18,6 +18,7 @@ export default function ProjectsDotsMenu({
   onDesvincular,
   onConfigurar,
   onEstadoProyecto,
+  disabled = false,
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -52,6 +53,8 @@ export default function ProjectsDotsMenu({
   }, []);
 
   const action = (fn) => () => {
+    if (disabled) return;
+
     setOpen(false);
 
     if (typeof fn === 'function') {
@@ -72,6 +75,7 @@ export default function ProjectsDotsMenu({
         aria-label={t('projects.menu.optionsProject')}
         aria-haspopup="menu"
         aria-expanded={open}
+        disabled={disabled}
         onClick={() => setOpen(v => !v)}
       >
         <svg viewBox="0 0 4 16" fill="rgba(255,255,255,.85)" stroke="none">
