@@ -628,6 +628,7 @@ export default function ExperiencePage() {
           onSave={handleSaveRequest}
           onCancel={() => setModalMode(null)}
           editData={selectedExp}
+          existingExperiences={experiencias}
         />
       )}
 
