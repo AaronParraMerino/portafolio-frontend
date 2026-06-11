@@ -200,6 +200,8 @@ export function useProfile() {
 
     const method = yaExiste ? 'update' : 'create';
 
+    setGuardando(true);
+
     try {
       const resultado = await uploadImage(tipo, archivo, method);
       const payload   = resultado?.data || resultado || {};
@@ -248,11 +250,15 @@ export function useProfile() {
       console.error('[useProfile] Error subiendo imagen:', error.message);
       mostrarToast(t('profile.toast.uploadError'), 'error');
       throw error;
+    } finally {
+      setGuardando(false);
     }
   };
 
   // ── Eliminar imagen ──
   const eliminarImagen = async (tipo) => {
+    setGuardando(true);
+
     try {
       await deleteImage(tipo);
       setPerfil(prev => {
@@ -271,6 +277,8 @@ export function useProfile() {
       console.error('[useProfile] Error eliminando imagen:', err.message);
       mostrarToast(t('profile.toast.deleteError'), 'error');
       throw new Error('delete-failed');
+    } finally {
+      setGuardando(false);
     }
   };
 

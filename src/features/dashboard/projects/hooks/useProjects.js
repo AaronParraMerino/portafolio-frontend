@@ -319,8 +319,26 @@ export function useProjects() {
   );
 
   const [loading, setLoading] = useState(!cache && serviceCache.length === 0);
-  const [guardando, setGuardando] = useState(false);
+  const [savingCount, setSavingCount] = useState(0);
+  const [savingProjectIds, setSavingProjectIds] = useState([]);
   const [toast, setToast] = useState(null);
+  const guardando = savingCount > 0;
+
+  const beginSaving = useCallback((id = null) => {
+    setSavingCount((count) => count + 1);
+    if (!id) return;
+
+    setSavingProjectIds((current) => (
+      current.includes(String(id)) ? current : [...current, String(id)]
+    ));
+  }, []);
+
+  const endSaving = useCallback((id = null) => {
+    setSavingCount((count) => Math.max(0, count - 1));
+    if (!id) return;
+
+    setSavingProjectIds((current) => current.filter((item) => item !== String(id)));
+  }, []);
 
   const mostrarToast = useCallback((msg, tipo = 'ok') => {
     setToast({ msg, tipo });
@@ -364,7 +382,7 @@ export function useProjects() {
     documentosNuevos = [],
     _documentosAEliminar = []
   ) => {
-    setGuardando(true);
+    beginSaving();
 
     try {
       // 1. Crear proyecto sin archivos.
@@ -405,9 +423,11 @@ export function useProjects() {
       // 4. Vincular repos detectados (cuenta GitHub vinculada) a proyecto/participación.
       await attachDetectedReposByProvider(proyectoId, datos);
 
-      const actualizados = [mapeado, ...proyectos];
-      setProyectos(actualizados);
-      guardarEnCache(actualizados);
+      setProyectos((current) => {
+        const actualizados = [mapeado, ...current];
+        guardarEnCache(actualizados);
+        return actualizados;
+      });
       mostrarToast(t('projects.toast.created'));
 
       return mapeado;
@@ -417,7 +437,7 @@ export function useProjects() {
       mostrarToast(err.message || t('projects.toast.createError'), 'error');
       throw err;
     } finally {
-      setGuardando(false);
+      endSaving();
     }
   };
 
@@ -435,7 +455,7 @@ export function useProjects() {
     documentosNuevos = [],
     documentosAEliminar = []
   ) => {
-    setGuardando(true);
+    beginSaving(id);
 
     try {
       const proyectoActual = proyectos.find(p => p.id === id || p.id_proyecto === id);
@@ -503,14 +523,15 @@ export function useProjects() {
 
       await attachDetectedReposByProvider(proyectoId, datos);
 
-      const actualizados = proyectos.map(p =>
-        p.id === proyectoId || p.id_proyecto === proyectoId
-          ? mapeado
-          : p
-      );
-
-      setProyectos(actualizados);
-      guardarEnCache(actualizados);
+      setProyectos((current) => {
+        const actualizados = current.map(p =>
+          p.id === proyectoId || p.id_proyecto === proyectoId
+            ? mapeado
+            : p
+        );
+        guardarEnCache(actualizados);
+        return actualizados;
+      });
       mostrarToast(t('projects.toast.updated'));
 
       return mapeado;
@@ -520,7 +541,7 @@ export function useProjects() {
       mostrarToast(err.message || t('projects.toast.updateError'), 'error');
       throw err;
     } finally {
-      setGuardando(false);
+      endSaving(id);
     }
   };
 
@@ -573,36 +594,37 @@ export function useProjects() {
   // REFRESCAR MANUALMENTE
   // ════════════════════════════════════════
   const actualizarConfiguracion = async (id, configuracion) => {
-    setGuardando(true);
+    beginSaving(id);
 
     try {
       const data = await actualizarProyectoConfiguracion(id, configuracion);
-      const actualizados = proyectos.map(p => {
-        if (p.id !== id && p.id_proyecto !== id) return p;
+      setProyectos((current) => {
+        const actualizados = current.map(p => {
+          if (p.id !== id && p.id_proyecto !== id) return p;
 
-        return mapearProyecto({
-          ...p,
-          configuracion: data.configuracion || configuracion,
-          permisos: data.permisos || p.permisos,
-          puede_editar: data.permisos?.puede_editar ?? p.puede_editar,
-          puede_eliminar: data.permisos?.puede_eliminar ?? p.puede_eliminar,
-          puede_configurar: data.permisos?.puede_configurar ?? p.puede_configurar,
-          puede_desvincular_participacion: data.permisos?.puede_desvincular_participacion ?? p.puede_desvincular_participacion,
-          puede_remover_participantes_sin_validacion: data.permisos?.puede_remover_participantes_sin_validacion ?? p.puede_remover_participantes_sin_validacion,
+          return mapearProyecto({
+            ...p,
+            configuracion: data.configuracion || configuracion,
+            permisos: data.permisos || p.permisos,
+            puede_editar: data.permisos?.puede_editar ?? p.puede_editar,
+            puede_eliminar: data.permisos?.puede_eliminar ?? p.puede_eliminar,
+            puede_configurar: data.permisos?.puede_configurar ?? p.puede_configurar,
+            puede_desvincular_participacion: data.permisos?.puede_desvincular_participacion ?? p.puede_desvincular_participacion,
+            puede_remover_participantes_sin_validacion: data.permisos?.puede_remover_participantes_sin_validacion ?? p.puede_remover_participantes_sin_validacion,
+          });
         });
+        guardarEnCache(actualizados);
+        return actualizados;
       });
-
-      setProyectos(actualizados);
-      guardarEnCache(actualizados);
       mostrarToast(t('projects.toast.configUpdated'));
 
-      return actualizados.find(p => p.id === id || p.id_proyecto === id);
+      return data;
     } catch (err) {
       console.error('[useProjects] Error actualizando configuracion:', err.message);
       mostrarToast(err.message || t('projects.toast.configUpdateError'), 'error');
       throw err;
     } finally {
-      setGuardando(false);
+      endSaving(id);
     }
   };
 
@@ -639,6 +661,7 @@ export function useProjects() {
     proyectos,
     loading,
     guardando,
+    savingProjectIds,
     toast,
 
     crearNuevo,

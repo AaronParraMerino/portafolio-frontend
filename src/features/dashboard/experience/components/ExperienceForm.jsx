@@ -6,7 +6,6 @@ import DashboardEdit, {
   DashboardEditFieldError,
   DashboardEditFooter,
   DashboardEditSection,
-  DashboardEditSpinner,
 } from "../../layout/DashboardEdit";
 
 const WORK_TYPE = "Laboral";
@@ -76,7 +75,6 @@ export default function ExperienceForm({
   });
 
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeSuggest, setActiveSuggest] = useState(null);
   const [catalog, setCatalog] = useState({
     empresas: { laboral: [], academica: [] },
@@ -205,18 +203,12 @@ export default function ExperienceForm({
     e.preventDefault();
     if (!validate()) return;
 
-    setIsSubmitting(true);
-    try {
-      await onSave({
-        ...formData,
-        empresa: findExactOption(companyOptions, formData.empresa) || formatExperienceText(formData.empresa),
-        puesto: findExactOption(positionOptions, formData.puesto) || formatExperienceText(formData.puesto),
-        descripcion: cleanText(formData.descripcion),
-      });
-    } catch (error) {
-      console.error("Error al guardar:", error);
-      setIsSubmitting(false);
-    }
+    onSave({
+      ...formData,
+      empresa: findExactOption(companyOptions, formData.empresa) || formatExperienceText(formData.empresa),
+      puesto: findExactOption(positionOptions, formData.puesto) || formatExperienceText(formData.puesto),
+      descripcion: cleanText(formData.descripcion),
+    });
   };
 
   const patchForm = (patch) => {
@@ -238,7 +230,6 @@ export default function ExperienceForm({
       title={editData ? t("experience.form.title.edit") : t("experience.form.title.add")}
       subtitle={t("experience.form.subtitle")}
       onClose={onCancel}
-      closeDisabled={isSubmitting}
       ariaLabel={editData ? t("experience.form.title.edit") : t("experience.form.title.add")}
     >
       <form onSubmit={handleSubmit} style={{ display: "contents" }}>
@@ -452,21 +443,14 @@ export default function ExperienceForm({
             type="button"
             className="dash-edit-btn dash-edit-btn--secondary"
             onClick={onCancel}
-            disabled={isSubmitting}
           >
             {t("experience.actions.cancel")}
           </button>
           <button
             type="submit"
             className="dash-edit-btn dash-edit-btn--primary"
-            disabled={isSubmitting}
           >
-            {isSubmitting ? (
-              <>
-                <DashboardEditSpinner />
-                {t("experience.actions.processing")}
-              </>
-            ) : editData ? t("experience.actions.updateRecord") : t("experience.actions.saveExperience")}
+            {editData ? t("experience.actions.updateRecord") : t("experience.actions.saveExperience")}
           </button>
         </DashboardEditFooter>
       </form>

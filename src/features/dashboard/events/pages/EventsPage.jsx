@@ -11,6 +11,7 @@ import Header from '../../layout/Header';
 import { useLanguage } from '../../../../core/i18n';
 import { getStoredUser, isPublisherUser } from '../../../../shared/utils/authStorage';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import EventFormModal from '../../../admin/events/components/EventFormModal';
 import EventsCalendar from '../../../admin/events/components/EventsCalendar';
 import EventsFilters from '../../../admin/events/components/EventsFilters';
@@ -76,8 +77,10 @@ export default function DashboardEventsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [profileTargets, setProfileTargets] = useState(null);
   const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
-  const [eventSaving, setEventSaving] = useState(false);
+  const [eventSavingCount, setEventSavingCount] = useState(0);
+  const [savingEventIds, setSavingEventIds] = useState([]);
   const [pendingEventSave, setPendingEventSave] = useState(null);
+  const eventSaving = eventSavingCount > 0;
 
   const loadEvents = useCallback(async () => {
     if (!canPublish) return;
@@ -293,7 +296,12 @@ export default function DashboardEventsPage() {
 
     setPendingEventSave(null);
     setEventModal(null);
-    setEventSaving(true);
+    setEventSavingCount((count) => count + 1);
+    if (saveContext.eventId) {
+      setSavingEventIds((current) => (
+        current.includes(String(saveContext.eventId)) ? current : [...current, String(saveContext.eventId)]
+      ));
+    }
 
     try {
       if (saveContext.mode === 'edit' && saveContext.eventId) {
@@ -309,19 +317,26 @@ export default function DashboardEventsPage() {
     } catch (error) {
       setNotice(error.message || t('adminEvents.form.validation.saveError'));
     } finally {
-      setEventSaving(false);
+      setEventSavingCount((count) => Math.max(0, count - 1));
+      if (saveContext.eventId) {
+        setSavingEventIds((current) => current.filter((id) => id !== String(saveContext.eventId)));
+      }
     }
   };
 
   const handlePublisherStatusAction = async (event, action) => {
     if (action?.id === 'editar') {
+      if (savingEventIds.includes(String(event?.id))) return;
       setEventModal({ mode: 'edit', event });
       return;
     }
 
     if (!event?.id || !action?.status) return;
 
-    setEventSaving(true);
+    setEventSavingCount((count) => count + 1);
+    setSavingEventIds((current) => (
+      current.includes(String(event.id)) ? current : [...current, String(event.id)]
+    ));
 
     try {
       await updatePublisherEvent(event.id, buildPublisherStatusPayload(event, action.status));
@@ -330,7 +345,8 @@ export default function DashboardEventsPage() {
     } catch (error) {
       setNotice(error.message || t('adminEvents.dashboard.statusUpdateError'));
     } finally {
-      setEventSaving(false);
+      setEventSavingCount((count) => Math.max(0, count - 1));
+      setSavingEventIds((current) => current.filter((id) => id !== String(event.id)));
     }
   };
 
@@ -536,12 +552,7 @@ export default function DashboardEventsPage() {
         onClose={handleCancelConfirmSave}
       />
 
-      {eventSaving ? (
-        <div className="dbe-save-toast" role="status" aria-live="polite">
-          <span className="dbe-save-spinner" />
-          <strong>{t('adminEvents.dashboard.savingEvent')}</strong>
-        </div>
-      ) : null}
+      <BackgroundSaveIndicator active={eventSaving} label={t('adminEvents.dashboard.savingEvent')} />
     </div>
   );
 }

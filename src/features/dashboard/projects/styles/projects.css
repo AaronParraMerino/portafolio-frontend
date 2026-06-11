@@ -593,6 +593,11 @@
   margin-bottom: 6px; line-height: 1.3;
   letter-spacing: -.01em;
 }
+
+.prj-dots-btn:disabled {
+  cursor: not-allowed;
+}
+
 .prj-card-desc {
   font-size: 11.5px; color: var(--gris-texto);
   line-height: 1.65; flex: 1; margin-bottom: 10px;
