@@ -27,6 +27,39 @@ const translate = (key, params = {}) => {
 };
 
 const EXPERIENCE_TYPE_WORK = 'Laboral';
+const COMPANY_MAX_LENGTH = 60;
+const POSITION_MAX_LENGTH = 80;
+const DESCRIPTION_MAX_LENGTH = 200;
+const TEXT_PATTERN = /^[\p{L}0-9][\p{L}0-9\s.,&/#+()-]*$/u;
+
+const cleanText = (value = '') => String(value || '').trim().replace(/\s+/g, ' ');
+
+export const normalizeExperienceText = (value = '') => (
+  cleanText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+);
+
+export const formatExperienceText = (value = '') => {
+  const cleaned = cleanText(value);
+  if (!cleaned) return '';
+
+  const lowerWords = ['de', 'del', 'la', 'las', 'el', 'los', 'en', 'y', 'con', 'para', 'por', 'a'];
+
+  return cleaned
+    .toLowerCase()
+    .split(' ')
+    .map((word, index) => {
+      if (!word) return word;
+      if (index > 0 && lowerWords.includes(word)) return word;
+      if (/^(qa|ui|ux|rrhh|ti|it|ceo|cto|cfo|coo|umss|uagrm|emi|aws|api)$/i.test(word)) {
+        return word.toUpperCase();
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+};
 const EXPERIENCE_TYPE_ACADEMIC = 'Académica';
 
 const isAcademicType = (value = '') => (
@@ -36,6 +69,8 @@ const isAcademicType = (value = '') => (
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '') === 'academica'
 );
+
+const isAcademicTypeSafe = (value = '') => normalizeExperienceText(value) === 'academica' || isAcademicType(value);
 
 const getAuthData = () => {
   const token = localStorage.getItem('tokenPORT');
@@ -55,8 +90,18 @@ const buildHeaders = (token) => ({
 const parseJson = async (res) => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const details = data?.errors ? ` ${JSON.stringify(data.errors)}` : '';
-    throw new Error(`${data?.message || translate('experience.service.error.request')}${details}`);
+    const validationError = data?.errors && Object.values(data.errors).flat()?.[0];
+    const rawMessage = validationError || data?.message || translate('experience.service.error.request');
+    const normalizedMessage = normalizeExperienceText(rawMessage);
+
+    if (
+      normalizedMessage.includes('misma empresa') ||
+      normalizedMessage.includes('same company')
+    ) {
+      throw new Error(translate('experience.service.error.duplicate'));
+    }
+
+    throw new Error(rawMessage);
   }
   return data;
 };
@@ -72,6 +117,7 @@ const toBoolean = (value) => {
 const normalizeDate = (value) => (value ? String(value).slice(0, 10) : '');
 
 const experienciasEndpoint = (userId) => `/experiencias/usuario/${userId}`;
+const catalogEndpoint = '/experiencias/catalogo';
 
 const unwrapList = (data) => (Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []));
 
@@ -87,6 +133,21 @@ const writeExperienciasCache = (userId, items = []) => {
   invalidateDashboardDerivedCaches(userId);
 };
 
+const normalizeCatalog = (data = {}) => ({
+  empresas: {
+    laboral: Array.isArray(data.empresas?.laboral)
+      ? data.empresas.laboral.map(formatExperienceText).filter(Boolean)
+      : (Array.isArray(data.empresas) ? data.empresas.map(formatExperienceText).filter(Boolean) : []),
+    academica: Array.isArray(data.empresas?.academica)
+      ? data.empresas.academica.map(formatExperienceText).filter(Boolean)
+      : [],
+  },
+  puestos: {
+    laboral: Array.isArray(data.puestos?.laboral) ? data.puestos.laboral.map(formatExperienceText).filter(Boolean) : [],
+    academica: Array.isArray(data.puestos?.academica) ? data.puestos.academica.map(formatExperienceText).filter(Boolean) : [],
+  },
+});
+
 // Traducción: Lo que viene de Laravel hacia React
 const toFrontModel = (exp) => ({
   id: exp.id_experiencia ?? exp.id,
@@ -101,14 +162,54 @@ const toFrontModel = (exp) => ({
 });
 
 // Traducción: De React hacia Laravel
+const validateText = (value, maxLength) => {
+  const cleaned = cleanText(value);
+
+  if (!cleaned) throw new Error(translate('experience.validation.required'));
+  if (cleaned.length < 2) throw new Error(translate('experience.validation.minLength'));
+  if (cleaned.length > maxLength) {
+    throw new Error(translate('experience.validation.maxLength', { max: maxLength }));
+  }
+  if (!TEXT_PATTERN.test(cleaned)) {
+    throw new Error(translate('experience.validation.textPattern'));
+  }
+
+  return formatExperienceText(cleaned);
+};
+
+const validateExperiencePayload = (formData) => {
+  const institucion = validateText(formData.empresa, COMPANY_MAX_LENGTH);
+  const cargo = validateText(formData.puesto, POSITION_MAX_LENGTH);
+  const descripcion = cleanText(formData.descripcion);
+
+  if (descripcion.length > DESCRIPTION_MAX_LENGTH) {
+    throw new Error(translate('experience.validation.descriptionMax', { max: DESCRIPTION_MAX_LENGTH }));
+  }
+
+  if (!formData.fecha_inicio) throw new Error(translate('experience.validation.startRequired'));
+
+  if (!toBoolean(formData.actual)) {
+    if (!formData.fecha_fin) throw new Error(translate('experience.validation.endRequired'));
+    if (formData.fecha_inicio > formData.fecha_fin) {
+      throw new Error(translate('experience.validation.startAfterEnd'));
+    }
+    if (formData.fecha_inicio === formData.fecha_fin) {
+      throw new Error(translate('experience.validation.sameDates'));
+    }
+  }
+
+  return { institucion, cargo, descripcion };
+};
+
 const toBackModel = (formData) => {
   const isActual = toBoolean(formData.actual);
+  const validated = validateExperiencePayload(formData);
 
   return {
-    tipo: isAcademicType(formData.tipo_experiencia) ? 'academica' : 'laboral',
-    institucion: formData.empresa.trim(),
-    cargo: formData.puesto.trim(),
-    descripcion: formData.descripcion?.trim() || null,
+    tipo: isAcademicTypeSafe(formData.tipo_experiencia) ? 'academica' : 'laboral',
+    institucion: validated.institucion,
+    cargo: validated.cargo,
+    descripcion: validated.descripcion || null,
     fecha_inicio: formData.fecha_inicio || null,
     fecha_fin: isActual ? null : (formData.fecha_fin || null),
     es_actual: isActual,
@@ -138,6 +239,25 @@ export const getExperiencias = async ({ force = false } = {}) => {
   );
   const lista = unwrapList(data);
   return lista.map(toFrontModel);
+};
+
+export const getExperienceCatalog = async ({ force = false } = {}) => {
+  const { token, userId } = getAuthData();
+
+  const data = await getCachedDashboardEndpoint(
+    catalogEndpoint,
+    async () => {
+      const res = await fetch(`${BASE_URL}${catalogEndpoint}`, {
+        method: 'GET',
+        headers: buildHeaders(token),
+      });
+
+      return parseJson(res);
+    },
+    { force, userId },
+  );
+
+  return normalizeCatalog(data);
 };
 
 export const createExperiencia = async (formData) => {

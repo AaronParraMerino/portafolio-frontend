@@ -7,6 +7,25 @@ import { getStoredUser } from '../../../shared/utils/authStorage';
 import { useLanguage } from '../../../core/i18n';
 import '../styles/dashboard.css';
 
+function isPausedAllowedTarget(target) {
+  return target instanceof Element
+    && !!target.closest('a[href], [data-paused-allow="true"]');
+}
+
+function blockPausedInteraction(event) {
+  if (isPausedAllowedTarget(event.target)) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function blockPausedKeyboardInteraction(event) {
+  if (!['Enter', ' '].includes(event.key) || isPausedAllowedTarget(event.target)) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 export default function DashboardLayout() {
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
@@ -72,7 +91,15 @@ export default function DashboardLayout() {
             </span>
           </aside>
         ) : null}
-        <Outlet />
+        <div
+          className="dsh-paused-content"
+          aria-disabled={paused || undefined}
+          onClickCapture={paused ? blockPausedInteraction : undefined}
+          onSubmitCapture={paused ? blockPausedInteraction : undefined}
+          onKeyDownCapture={paused ? blockPausedKeyboardInteraction : undefined}
+        >
+          <Outlet />
+        </div>
       </main>
     </div>
   );
