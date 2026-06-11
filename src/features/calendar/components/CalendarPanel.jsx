@@ -8,10 +8,12 @@ import CalendarEventList from './CalendarEventList';
 import CalendarMonth from './CalendarMonth';
 import CalendarToggle from './CalendarToggle';
 import useCalendarEvents from '../hooks/useCalendarEvents';
+import usePausedAccount from '../../../shared/hooks/usePausedAccount';
 import '../styles/calendar.css';
 
 export default function CalendarPanel({ enabled = true }) {
   const { t } = useLanguage();
+  const paused = usePausedAccount();
   const formRef = useRef(null);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [eventToUnsubscribe, setEventToUnsubscribe] = useState(null);
@@ -57,6 +59,7 @@ export default function CalendarPanel({ enabled = true }) {
   const handleToggle = () => setOpen((value) => !value);
 
   const handleNewEvent = () => {
+    if (paused) return;
     if (openCreate(selectedDate)) scrollToForm();
   };
 
@@ -65,11 +68,12 @@ export default function CalendarPanel({ enabled = true }) {
   };
 
   const handleEdit = (event) => {
+    if (paused) return;
     if (openEdit(event)) scrollToForm();
   };
 
   const handleAskDelete = (event) => {
-    if (event.fecha < today || event.origen === 'inscrito') return;
+    if (paused || event.fecha < today || event.origen === 'inscrito') return;
     setEventToDelete(event);
   };
 
@@ -80,7 +84,7 @@ export default function CalendarPanel({ enabled = true }) {
   };
 
   const handleAskUnsubscribe = (event) => {
-    if (!event || event.origen !== 'inscrito') return;
+    if (paused || !event || event.origen !== 'inscrito') return;
     setEventToUnsubscribe(event);
   };
 
@@ -100,7 +104,7 @@ export default function CalendarPanel({ enabled = true }) {
   };
 
   const handleAskDeleteDay = () => {
-    if (!selectedPersonalEvents.length || selectedDateIsPast) return;
+    if (paused || !selectedPersonalEvents.length || selectedDateIsPast) return;
     setDeleteDayRequest({ date: selectedDate, count: selectedPersonalEvents.length });
   };
 
@@ -153,7 +157,7 @@ export default function CalendarPanel({ enabled = true }) {
                 {t('calendar.history.note')}
               </div>
             ) : (
-              <button type="button" className="cal-btn cal-btn-primary" onClick={handleNewEvent}>
+              <button type="button" className="cal-btn cal-btn-primary" onClick={handleNewEvent} disabled={paused}>
                 {t('calendar.actions.newEvent')}
               </button>
             )}
@@ -161,7 +165,7 @@ export default function CalendarPanel({ enabled = true }) {
 
           <div ref={formRef}>
             <CalendarEventForm
-              open={formOpen}
+              open={formOpen && !paused}
               mode={formMode}
               selectedDate={selectedDate}
               today={today}
@@ -181,6 +185,7 @@ export default function CalendarPanel({ enabled = true }) {
             onDeleteAll={handleAskDeleteDay}
             onUnsubscribe={handleAskUnsubscribe}
             onViewDetails={handleViewDetails}
+            paused={paused}
           />
         </div>
       </aside>

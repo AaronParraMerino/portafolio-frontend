@@ -27,6 +27,7 @@ export default function CalendarEventCard({
   onUnsubscribe,
   onViewDetails,
   canManage = true,
+  paused = false,
 }) {
   const { t } = useLanguage();
   const isSubscribed = event.origen === 'inscrito';
@@ -39,7 +40,7 @@ export default function CalendarEventCard({
     : String(event.inscritos || 0);
 
   return (
-    <article className={`cal-event-card ${typeClass}${canManage ? '' : ' locked'}`}>
+    <article className={`cal-event-card ${typeClass}${canManage && !paused ? '' : ' locked'}`}>
       <div className="cal-event-title-row">
         <strong>{event.titulo}</strong>
         {isSubscribed && (
@@ -74,16 +75,16 @@ export default function CalendarEventCard({
               <button type="button" className="details" onClick={() => onViewDetails?.(event)}>
                 {t('calendar.actions.viewDetails')}
               </button>
-              <button type="button" className="unsubscribe" onClick={() => onUnsubscribe?.(event)}>
+              <button type="button" className="unsubscribe" onClick={() => onUnsubscribe?.(event)} disabled={paused}>
                 {t('calendar.actions.unsubscribe')}
               </button>
             </>
           ) : (
             <>
-              <button type="button" className="edit" onClick={() => onEdit?.(event)}>
+              <button type="button" className="edit" onClick={() => onEdit?.(event)} disabled={paused}>
                 {t('calendar.actions.edit')}
               </button>
-              <button type="button" className="delete" onClick={() => onDelete?.(event)}>
+              <button type="button" className="delete" onClick={() => onDelete?.(event)} disabled={paused}>
                 {t('calendar.actions.delete')}
               </button>
             </>
