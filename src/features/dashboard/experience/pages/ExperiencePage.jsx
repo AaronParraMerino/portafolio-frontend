@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import ExperienceForm from "../components/ExperienceForm";
 import ExperienceToast from "../components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
+import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 import Header from "../../layout/Header";
 import { useLanguage } from "../../../../core/i18n";
 import {
@@ -36,6 +37,8 @@ export default function ExperiencePage() {
   const [selectedExp, setSelectedExp] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(() => getInitialExperiencias().length === 0);
+  const [savingCount, setSavingCount] = useState(0);
+  const saving = savingCount > 0;
 
   const [confirmData, setConfirmData] = useState({
     isOpen: false,
@@ -79,13 +82,20 @@ export default function ExperiencePage() {
     loadExperiencias();
   }, [loadExperiencias]);
 
-  const executeSave = async (data) => {
+  const runInBackground = (task) => {
+    setSavingCount((count) => count + 1);
+    Promise.resolve()
+      .then(task)
+      .finally(() => setSavingCount((count) => Math.max(0, count - 1)));
+  };
+
+  const executeSave = async (data, mode, expToEdit) => {
     try {
-      if (modalMode === "edit" && selectedExp) {
-        const updated = await updateExperiencia(selectedExp.id, data);
+      if (mode === "edit" && expToEdit) {
+        const updated = await updateExperiencia(expToEdit.id, data);
         setExperiencias((prev) =>
           prev.map((exp) =>
-            exp.id === selectedExp.id ? { ...exp, ...updated } : exp
+            exp.id === expToEdit.id ? { ...exp, ...updated } : exp
           )
         );
         showToast(t("experience.toast.updated"));
@@ -94,9 +104,6 @@ export default function ExperiencePage() {
         setExperiencias((prev) => [created, ...prev]);
         showToast(t("experience.toast.created"));
       }
-
-      setModalMode(null);
-      setSelectedExp(null);
     } catch (error) {
       const errorMsg =
         error.response?.data?.message ||
@@ -118,7 +125,9 @@ export default function ExperiencePage() {
   };
 
   const handleSaveRequest = (data) => {
-    const isEdit = !!selectedExp;
+    const mode = modalMode;
+    const expToEdit = selectedExp;
+    const isEdit = !!expToEdit;
 
     setConfirmData({
       isOpen: true,
@@ -133,8 +142,10 @@ export default function ExperiencePage() {
         : t("experience.confirm.saveMessage", { position: data.puesto }),
       confirmLabel: isEdit ? t("experience.confirm.updateConfirm") : t("experience.confirm.saveConfirm"),
       onConfirm: () => {
-        executeSave(data);
         closeConfirm();
+        setModalMode(null);
+        setSelectedExp(null);
+        runInBackground(() => executeSave(data, mode, expToEdit));
       },
     });
   };
@@ -151,8 +162,8 @@ export default function ExperiencePage() {
       message: t("experience.confirm.deleteMessage", { position: exp?.puesto || t("experience.empty.record") }),
       confirmLabel: t("experience.confirm.deleteConfirm"),
       onConfirm: () => {
-        executeDelete(id);
         closeConfirm();
+        runInBackground(() => executeDelete(id));
       },
     });
   };
@@ -633,6 +644,7 @@ export default function ExperiencePage() {
       )}
 
       <ExperienceToast toast={toast} />
+      <BackgroundSaveIndicator active={saving} label={t("experience.actions.processing")} />
     </>
   );
 }

@@ -6,6 +6,7 @@ import ProfileEdit            from '../components/ProfileEdit';
 import ProfileCompletitud     from '../components/ProfileCompletitud';
 import ProfileToast           from '../components/ProfileToast';
 import Header                 from '../../layout/Header';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import '../styles/profile.css';
 import { useLanguage } from '../../../../core/i18n';
 
@@ -49,7 +50,9 @@ export default function ProfilePage() {
       {/* ── Header: banner + avatar + stats strip ── */}
       <ProfileHeader
         perfil={perfil}
-        onEditar={() => setEditando(true)}
+        onEditar={() => {
+          if (!guardando) setEditando(true);
+        }}
         onVistaPublica={() => window.open(`/u/${perfil.id}`, '_blank')}
         onSubirAvatar={(archivo) => subirImagen('avatar', archivo)}
         onEliminarAvatar={() => eliminarImagen('avatar')}
@@ -62,7 +65,9 @@ export default function ProfilePage() {
            fuera del grid para que ocupe todo el ancho */}
       <ProfileDataCard
         perfil={perfil}
-        onEditar={() => setEditando(true)}
+        onEditar={() => {
+          if (!guardando) setEditando(true);
+        }}
       />
 
       {/* ── Grid principal ── */}
@@ -87,14 +92,18 @@ export default function ProfilePage() {
       {editando && (
         <ProfileEdit
           perfil={perfil}
-          onGuardar={(data) => guardarPerfil(data)}
+          onGuardar={(data) => {
+            setEditando(false);
+            guardarPerfil(data);
+          }}
           onCancelar={() => setEditando(false)}
-          guardando={guardando}
+          guardando={false}
         />
       )}
 
       {/* ── Toast ── */}
       <ProfileToast toast={toast} />
+      <BackgroundSaveIndicator active={guardando} label={t('profile.action.saving')} />
 
       </div>
     </>

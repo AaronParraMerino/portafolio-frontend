@@ -5,10 +5,8 @@ import DashboardEdit, {
   DashboardEditFieldError,
   DashboardEditFooter,
   DashboardEditSection,
-  DashboardEditSpinner,
 } from "../../layout/DashboardEdit";
 import {
-  createCatalogSkill,
   formatSkillDisplayName,
   normalizeSkillText,
 } from "../services/skillService";
@@ -52,7 +50,6 @@ export default function SkillCatalogModal({
   );
   const [desc, setDesc] = useState("");
   const [confirmar, setConfirmar] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const findDuplicate = (value) => {
@@ -126,7 +123,7 @@ export default function SkillCatalogModal({
     setConfirmar(true);
   };
 
-  const handleFinalConfirm = async () => {
+  const handleFinalConfirm = () => {
     const validation = validateName(nombre);
 
     if (!validation.ok) {
@@ -135,36 +132,12 @@ export default function SkillCatalogModal({
       return;
     }
 
-    try {
-      setLoading(true);
-      setError("");
-
-      const nuevaHabilidad = await createCatalogSkill(
-        formatSkillDisplayName(validation.cleanName),
-        tipo,
-        desc.trim()
-      );
-
-      onSave(nuevaHabilidad);
-    } catch (err) {
-      const message = String(err?.message || "");
-
-      if (
-        message.toLowerCase().includes("existe") ||
-        message.toLowerCase().includes("duplic") ||
-        message.toLowerCase().includes("unique")
-      ) {
-        setError(
-          t("skills.catalog.error.exists", { name: validation.cleanName })
-        );
-      } else {
-        setError(message || t("skills.catalog.error.create"));
-      }
-
-      setConfirmar(false);
-    } finally {
-      setLoading(false);
-    }
+    setError("");
+    onSave({
+      nombre: formatSkillDisplayName(validation.cleanName),
+      tipo,
+      descripcion: desc.trim(),
+    });
   };
 
   return (
@@ -172,8 +145,6 @@ export default function SkillCatalogModal({
       title={t("skills.catalog.title", { type: typeLabel(tipo, t) })}
       subtitle={t("skills.catalog.subtitle")}
       onClose={onCancel}
-      closeDisabled={loading}
-      closeOnOverlay={!loading}
       size="sm"
       className="dash-edit-modal--stacked"
       ariaLabel={t("skills.catalog.aria")}
@@ -215,7 +186,6 @@ export default function SkillCatalogModal({
                   }}
                   required
                   maxLength="40"
-                  disabled={loading}
                 />
                 <span
                   className="dash-edit-char-count"
@@ -242,7 +212,6 @@ export default function SkillCatalogModal({
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder={t("skills.catalog.placeholder.description")}
-                  disabled={loading}
                 />
               </div>
 
@@ -255,14 +224,12 @@ export default function SkillCatalogModal({
               type="button"
               className="dash-edit-btn dash-edit-btn--secondary"
               onClick={onCancel}
-              disabled={loading}
             >
               {t("skills.common.cancel")}
             </button>
             <button
               type="submit"
               className="dash-edit-btn dash-edit-btn--primary"
-              disabled={loading}
             >
               {t("skills.catalog.create")}
             </button>
@@ -284,7 +251,6 @@ export default function SkillCatalogModal({
               type="button"
               className="dash-edit-btn dash-edit-btn--secondary"
               onClick={() => setConfirmar(false)}
-              disabled={loading}
             >
               {t("skills.common.back")}
             </button>
@@ -292,16 +258,8 @@ export default function SkillCatalogModal({
               type="button"
               className="dash-edit-btn dash-edit-btn--primary"
               onClick={handleFinalConfirm}
-              disabled={loading}
             >
-              {loading ? (
-                <>
-                  <DashboardEditSpinner />
-                  {t("skills.catalog.creating")}
-                </>
-              ) : (
-                t("skills.catalog.confirm")
-              )}
+              {t("skills.catalog.confirm")}
             </button>
           </DashboardEditFooter>
         </>

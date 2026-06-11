@@ -9,34 +9,10 @@ import ModalEditar from './ModalEditar';
 import Toggle from './Toggle';
 import { useEnlace } from '../hooks/useEnlace';
 import { useLanguage } from '../../../../core/i18n';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 
 const POR_PAG = 4;
-
-function ModalConfirmar({ nombre, onCancel, onConfirm }) {
-  const { t } = useLanguage();
-  return (
-    <>
-      <div onClick={onCancel} style={{ position:"fixed",inset:0,background:"rgba(17,24,39,.55)",zIndex:50,backdropFilter:"blur(2px)",animation:"fi .18s ease" }} />
-      <div style={{ position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"min(380px,92vw)",background:"#fff",borderRadius:14,boxShadow:"0 20px 50px rgba(0,0,0,.2)",zIndex:51,padding:"28px 28px 24px",animation:"su .22s cubic-bezier(.34,1.56,.64,1) both" }}>
-        <div style={{ width:52,height:52,borderRadius:"50%",background:"#fef2f2",border:"2px solid #fecaca",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px" }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 9v4M12 17h.01" stroke="#e85555" strokeWidth="2.2" strokeLinecap="round"/>
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="#e85555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          </svg>
-        </div>
-        <p style={{ margin:"0 0 8px",textAlign:"center",fontWeight:700,fontSize:16,color:"#0f172a" }}>{t('links.confirm.title')}</p>
-        <p style={{ margin:"0 0 6px",textAlign:"center",fontSize:13,color:"#6b7280" }}>{t('links.confirm.message')}</p>
-        <p style={{ margin:"0 0 20px",textAlign:"center",fontWeight:700,fontSize:14,color:"#e85555" }}>"{nombre}"</p>
-        <p style={{ margin:"0 0 22px",textAlign:"center",fontSize:12,color:"#9ca3af",background:"#f9fafb",borderRadius:7,padding:"8px 12px" }}>{t('links.confirm.warning')}</p>
-        <div style={{ display:"flex",gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1,padding:"10px 0",borderRadius:8,border:"1.5px solid #d1d5db",background:"#fff",color:"#374151",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit" }}>{t('links.action.cancel')}</button>
-          <button onClick={onConfirm} style={{ flex:1,padding:"10px 0",borderRadius:8,border:"none",background:"#e85555",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit" }}>{t('links.confirm.confirm')}</button>
-        </div>
-      </div>
-      <style>{`@keyframes fi{from{opacity:0}to{opacity:1}} @keyframes su{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}`}</style>
-    </>
-  );
-}
 
 export default function RedesSociales() {
 
@@ -50,9 +26,19 @@ export default function RedesSociales() {
   const [modal,            setModal]            = useState(false);
   // ── redEditar ahora guarda { red, isKnownPlatform } ──────────────────
   const [redEditar,        setRedEditar]        = useState(null);
+  const [pendingSave,      setPendingSave]      = useState(null);
   const [confirmarId,      setConfirmarId]      = useState(null);
   const [pgA,              setPgA]              = useState(1);
   const [pgO,              setPgO]              = useState(1);
+  const [savingCount,      setSavingCount]      = useState(0);
+  const saving = savingCount > 0;
+
+  const runInBackground = (task) => {
+    setSavingCount((count) => count + 1);
+    Promise.resolve()
+      .then(task)
+      .finally(() => setSavingCount((count) => Math.max(0, count - 1)));
+  };
 
   const activas = redes.filter(r =>  r.visible);
   const ocultas = redes.filter(r => !r.visible);
@@ -61,16 +47,9 @@ export default function RedesSociales() {
 
   const handleToggle  = (id)  => { toggleVisible(id); setPgA(1); setPgO(1); };
 
-  const handleAdd     = async (n) => {
-    await agregar(n);
-    setPgA(1);
-    setModal(false);
-  };
+  const handleAdd     = (n) => setPendingSave({ mode: 'add', payload: n });
 
-  const handleSave    = async (upd) => {
-    await editar(upd);
-    setRedEditar(null);
-  };
+  const handleSave    = (upd) => setPendingSave({ mode: 'edit', payload: upd });
 
   // ── Recibe (red, isKnownPlatform) desde Card ─────────────────────────
   const handleEdit = (red, isKnownPlatform) => {
@@ -79,13 +58,37 @@ export default function RedesSociales() {
 
   const pedirEliminar   = (id) => setConfirmarId(id);
   const cancelarBorrar  = ()   => setConfirmarId(null);
-  const confirmarBorrar = async () => {
-    await eliminar(confirmarId);
+  const cancelarGuardar = ()   => setPendingSave(null);
+  const confirmarGuardar = () => {
+    const save = pendingSave;
+    setPendingSave(null);
+    if (!save) return;
+
+    if (save.mode === 'add') setModal(false);
+    if (save.mode === 'edit') setRedEditar(null);
+
+    runInBackground(async () => {
+      if (save.mode === 'add') {
+        await agregar(save.payload);
+        setPgA(1);
+        return;
+      }
+
+      await editar(save.payload);
+    });
+  };
+
+  const confirmarBorrar = () => {
+    const id = confirmarId;
     setConfirmarId(null);
-    setPgA(1);
+    runInBackground(async () => {
+      await eliminar(id);
+      setPgA(1);
+    });
   };
 
   const redAEliminar = redes.find(r => r.id === confirmarId);
+  const saveName = pendingSave?.payload?.nombre || '';
 
   if (loading) return (
     <div style={{ fontFamily:"var(--font)" }}>
@@ -181,7 +184,35 @@ export default function RedesSociales() {
 
       {modal     && <Modal       onClose={() => setModal(false)}    onAdd={handleAdd}/>}
       {redEditar && <ModalEditar onClose={() => setRedEditar(null)} onSave={handleSave} red={redEditar.red} isKnownPlatform={redEditar.isKnownPlatform}/>}
-      {confirmarId && <ModalConfirmar nombre={redAEliminar?.nombre} onCancel={cancelarBorrar} onConfirm={confirmarBorrar}/>}
+      <ConfirmModal
+        open={!!pendingSave}
+        title={pendingSave?.mode === 'edit' ? t('links.save.editTitle') : t('links.save.addTitle')}
+        subtitle={saveName}
+        message={
+          pendingSave?.mode === 'edit'
+            ? t('links.save.editMessage', { name: saveName })
+            : t('links.save.addMessage', { name: saveName })
+        }
+        confirmLabel={pendingSave?.mode === 'edit' ? t('links.save.editConfirm') : t('links.save.addConfirm')}
+        cancelLabel={t('links.action.cancel')}
+        variant={pendingSave?.mode === 'edit' ? 'blue' : 'green'}
+        icon="check"
+        onConfirm={confirmarGuardar}
+        onClose={cancelarGuardar}
+      />
+      <ConfirmModal
+        open={!!confirmarId}
+        title={t('links.confirm.title')}
+        subtitle={redAEliminar?.nombre || ''}
+        message={`${t('links.confirm.message')} "${redAEliminar?.nombre || ''}". ${t('links.confirm.warning')}`}
+        confirmLabel={t('links.confirm.confirm')}
+        cancelLabel={t('links.action.cancel')}
+        variant="red"
+        icon="warning"
+        onConfirm={confirmarBorrar}
+        onClose={cancelarBorrar}
+      />
+      <BackgroundSaveIndicator active={saving} label={t('actions.saving')} />
     </div>
   );
 }

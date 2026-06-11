@@ -79,7 +79,6 @@ function ModalEditar({ onClose, onSave, red, isKnownPlatform }) {
   const submit = () => {
     if (!validate()) return;
     onSave({ ...red, nombre: titulo.trim(), descripcion: desc.trim() });
-    onClose();
   };
 
   // ── Estilo base input ────────────────────────────

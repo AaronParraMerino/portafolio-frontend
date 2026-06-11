@@ -10,6 +10,7 @@ import ProjectsEdit        from '../components/ProjectsEdit';
 import ProjectsConfigModal from '../components/ProjectsConfigModal';
 import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import { ESTADOS_PROYECTO, getProjectOptionLabel } from '../model/projectsModel';
 
 const ESTADO_DETALLE = {
@@ -57,21 +58,10 @@ function isEstadoEnDesarrollo(estado) {
    Toda la lógica de datos vive en useProjects.
    Toda la lógica de presentación vive en sus componentes.
 ════════════════════════════════════════ */
-function ProjectsBackgroundActivity({ active, label }) {
-  if (!active) return null;
-
-  return (
-    <div className="prj-bg-activity" role="status" aria-live="polite">
-      <span className="prj-bg-activity-spinner" />
-      <span>{label}</span>
-    </div>
-  );
-}
-
 export default function ProjectsPage() {
   const { t } = useLanguage();
   const {
-    proyectos, loading, guardando, toast,
+    proyectos, loading, guardando, savingProjectIds, toast,
     crearNuevo, editarExistente, eliminar, desvincularParticipacion, actualizarConfiguracion, refrescar,
   } = useProjects();
 
@@ -88,6 +78,7 @@ export default function ProjectsPage() {
   const [orden,      setOrden]      = useState('recientes');
   const [reposIniciales, setReposIniciales] = useState(null);
   const [cargaInicialTerminada, setCargaInicialTerminada] = useState(false);
+  const savingProjectIdSet = new Set((savingProjectIds || []).map(String));
 
   const headerActions = [
     {
@@ -136,6 +127,9 @@ export default function ProjectsPage() {
   };
 
   const handleEditar = (proyecto) => {
+    const id = proyecto?.id || proyecto?.id_proyecto;
+    if (id && savingProjectIdSet.has(String(id))) return;
+
     setReposIniciales(null);
     setEditando(proyecto);
   };
@@ -156,6 +150,9 @@ export default function ProjectsPage() {
   };
 
   const handleAbrirEstadoProyecto = (proyecto) => {
+    const id = proyecto?.id || proyecto?.id_proyecto;
+    if (id && savingProjectIdSet.has(String(id))) return;
+
     setEstadoProyecto(proyecto);
     setEstadoSeleccionado(normalizarEstadoSeleccionable(proyecto?.estado));
     setEstadoError('');
@@ -231,6 +228,12 @@ export default function ProjectsPage() {
   const estadoActualProyecto = normalizarEstadoSeleccionable(estadoProyecto?.estado);
   const hayCambioEstado = estadoSeleccionado !== estadoActualProyecto;
   const loadingInicial = loading && !cargaInicialTerminada && proyectos.length === 0;
+  const editandoId = editando && editando !== 'nuevo' ? (editando.id || editando.id_proyecto) : null;
+  const editandoGuardando = editandoId ? savingProjectIdSet.has(String(editandoId)) : false;
+  const configurandoId = configurando?.id || configurando?.id_proyecto;
+  const configurandoGuardando = configurandoId ? savingProjectIdSet.has(String(configurandoId)) : false;
+  const estadoProyectoId = estadoProyecto?.id || estadoProyecto?.id_proyecto;
+  const estadoProyectoGuardando = estadoProyectoId ? savingProjectIdSet.has(String(estadoProyectoId)) : false;
   const activityLabel = guardando
     ? t('projects.activity.saving')
     : loading
@@ -272,7 +275,11 @@ export default function ProjectsPage() {
           onEditar={handleEditar}
           onEliminar={(p)   => setConfirmDel(p)}
           onDesvincular={(p) => setConfirmDetach(p)}
-          onConfigurar={(p) => setConfigurando(p)}
+          onConfigurar={(p) => {
+            const id = p?.id || p?.id_proyecto;
+            if (id && savingProjectIdSet.has(String(id))) return;
+            setConfigurando(p);
+          }}
           onEstadoProyecto={handleAbrirEstadoProyecto}
           onAgregar={handleAgregarNuevo}
         />
@@ -287,16 +294,16 @@ export default function ProjectsPage() {
           initialGithubRepos={editando === 'nuevo' ? reposIniciales : null}
           onGuardar={handleGuardar}
           onCancelar={handleCancelarEdicion}
-          guardando={guardando}
+          guardando={editandoGuardando}
         />
       )}
 
       {configurando && (
         <ProjectsConfigModal
           proyecto={configurando}
-          guardando={guardando}
+          guardando={configurandoGuardando}
           onGuardar={handleGuardarConfiguracion}
-          onCancelar={() => !guardando && setConfigurando(null)}
+          onCancelar={() => !configurandoGuardando && setConfigurando(null)}
         />
       )}
 
@@ -334,7 +341,7 @@ export default function ProjectsPage() {
                               setEstadoSeleccionado(estado.value);
                               setEstadoError('');
                             }}
-                            disabled={guardando}
+                            disabled={estadoProyectoGuardando}
                           >
                             <span className={`prj-state-dot ${estado.value}`} />
                             <span className="prj-state-option-main">
@@ -390,7 +397,7 @@ export default function ProjectsPage() {
       />
 
       <ProjectsToast toast={toast} />
-      <ProjectsBackgroundActivity active={!!activityLabel} label={activityLabel} />
+      <BackgroundSaveIndicator active={!!activityLabel} label={activityLabel} />
 
     </div>
   );

@@ -122,7 +122,6 @@ function Modal({ onClose, onAdd }) {
       conectado:     status === "ok",
       visible:       true,
     });
-    onClose();
   };
 
   // ── Estilos de inputs ────────────────────────────────────────────────
