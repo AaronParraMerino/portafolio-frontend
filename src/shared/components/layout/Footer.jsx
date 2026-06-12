@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaDiscord, FaEnvelope, FaGitlab, FaGithub } from 'react-icons/fa';
+import { FaDiscord, FaLinkedin, FaGitlab, FaGithub } from 'react-icons/fa';
 import { useLanguage } from '../../../core/i18n';
 import PoliticaCookies from '../../../features/auth/components/PoliticasC';
 import PoliticaPrivacidad from '../../../features/auth/components/PoliticasP';
@@ -39,13 +39,13 @@ const SOCIALS = [
     icon: <FaGithub size={16} />,
   },
   {
-    label: 'Gmail',
-    href: 'mailto:sparkyhub.team@gmail.com',
-    icon: <FaEnvelope size={15} />,
+    label: 'LinkedIn',
+    href: 'http://www.linkedin.com/in/sparky-hub2026',
+    icon: <FaLinkedin size={15} />,
   },
   {
     label: 'Discord',
-    href: '#',
+    href: 'https://discord.gg/WfFTeTcp7V',
     icon: <FaDiscord size={16} />,
   },
   {
@@ -166,21 +166,21 @@ export default function Footer({ isBackendAvailable = true }) {
           pointer-events: none; z-index: 0;
         }
         .spk-footer-blob-tl {
-          top: -100px; left: -80px;
-          width: 360px; height: 360px;
-          background: radial-gradient(circle, rgba(0,119,183,.12) 0%, transparent 65%);
+          top: -110px; left: -90px;
+          width: 320px; height: 320px;
+          background: radial-gradient(circle, rgba(0,119,183,.09) 0%, transparent 68%);
         }
         .spk-footer-blob-br {
-          bottom: -80px; right: -60px;
-          width: 300px; height: 300px;
-          background: radial-gradient(circle, rgba(232,85,85,.08) 0%, transparent 65%);
+          bottom: -90px; right: -70px;
+          width: 260px; height: 260px;
+          background: radial-gradient(circle, rgba(232,85,85,.06) 0%, transparent 68%);
         }
 
         /* ── CTA BAND ── */
         .spk-footer-cta {
           position: relative; z-index: 1;
           border-bottom: 1px solid rgba(255,255,255,.07);
-          padding: 40px 40px;
+          padding: 34px 40px 30px;
           max-width: 1100px;
           margin: 0 auto;
           display: flex;
@@ -205,7 +205,7 @@ export default function Footer({ isBackendAvailable = true }) {
           border-radius: 2px;
         }
         .spk-footer-cta-title {
-          font-size: 22px; font-weight: 700;
+          font-size: 21px; font-weight: 700;
           color: rgba(255,255,255,.92);
           letter-spacing: -.02em; line-height: 1.2;
         }
@@ -290,16 +290,20 @@ export default function Footer({ isBackendAvailable = true }) {
           position: relative; z-index: 1;
           max-width: 1100px;
           margin: 0 auto;
-          padding: 44px 40px 36px;
+          padding: 38px 40px 34px;
           display: grid;
-          grid-template-columns: 1.6fr repeat(3, 1fr);
-          gap: 48px;
+          grid-template-columns: minmax(250px, 1.45fr) repeat(3, minmax(140px, 1fr));
+          gap: 34px;
+          align-items: start;
         }
 
         /* BRAND COL */
+        .spk-footer-brand-col {
+          max-width: 270px;
+        }
         .spk-footer-logo-row {
           display: flex; align-items: center; gap: 10px;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
         .spk-footer-logo-mark {
           width: 32px; height: 32px; border-radius: 7px;
@@ -324,8 +328,8 @@ export default function Footer({ isBackendAvailable = true }) {
         .spk-footer-desc {
           font-size: 12.5px;
           color: rgba(255,255,255,.38);
-          line-height: 1.7; max-width: 220px;
-          margin-bottom: 22px;
+          line-height: 1.7; max-width: 250px;
+          margin-bottom: 20px;
         }
 
         /* BADGE UMSS */
@@ -335,7 +339,7 @@ export default function Footer({ isBackendAvailable = true }) {
           border: 1px solid rgba(0,119,183,.3);
           border-radius: 6px;
           padding: 5px 10px;
-          margin-bottom: 18px;
+          margin-bottom: 16px;
         }
         .spk-footer-umss-dot {
           width: 5px; height: 5px; border-radius: 50%;
@@ -355,10 +359,10 @@ export default function Footer({ isBackendAvailable = true }) {
 
         /* SOCIALES */
         .spk-footer-socials {
-          display: flex; gap: 7px;
+          display: flex; gap: 8px;
         }
         .spk-footer-social {
-          width: 32px; height: 32px; border-radius: 7px;
+          width: 34px; height: 34px; border-radius: 8px;
           border: 1px solid rgba(255,255,255,.1);
           background: rgba(255,255,255,.05);
           display: flex; align-items: center; justify-content: center;
@@ -378,11 +382,14 @@ export default function Footer({ isBackendAvailable = true }) {
         }
 
         /* LINK COLS */
+        .spk-footer-link-col {
+          min-width: 0;
+        }
         .spk-footer-col-title {
           font-size: 10px; font-weight: 700;
           color: rgba(255,255,255,.55);
           text-transform: uppercase; letter-spacing: .1em;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
           display: flex; align-items: center; gap: 7px;
         }
         .spk-footer-col-title::after {
@@ -391,15 +398,16 @@ export default function Footer({ isBackendAvailable = true }) {
           background: rgba(255,255,255,.07);
         }
         .spk-footer-col-links {
-          display: flex; flex-direction: column; gap: 2px;
+          display: flex; flex-direction: column; gap: 4px;
         }
         .spk-footer-col-links a,
         .spk-footer-col-links button {
           font-size: 12.5px;
           color: rgba(255,255,255,.38);
           text-decoration: none;
-          padding: 5px 8px;
-          border-radius: 5px;
+          width: 100%;
+          padding: 6px 8px;
+          border-radius: 6px;
           transition: all .12s;
           display: flex; align-items: center; gap: 6px;
           border: 0;
@@ -431,7 +439,8 @@ export default function Footer({ isBackendAvailable = true }) {
           position: relative; z-index: 1;
           height: 1px;
           background: rgba(255,255,255,.07);
-          margin: 0 40px;
+          max-width: 1020px;
+          margin: 0 auto;
         }
 
         /* ── BOTTOM BAR ── */
@@ -439,7 +448,7 @@ export default function Footer({ isBackendAvailable = true }) {
           position: relative; z-index: 1;
           max-width: 1100px;
           margin: 0 auto;
-          padding: 18px 40px;
+          padding: 16px 40px 18px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -508,10 +517,28 @@ export default function Footer({ isBackendAvailable = true }) {
         @media (max-width: 960px) {
           .spk-footer-cta { padding: 32px 24px; }
           .spk-footer-main {
-            grid-template-columns: 1fr 1fr;
-            gap: 32px; padding: 36px 24px 28px;
+            grid-template-columns: minmax(240px, 1fr) repeat(2, minmax(150px, 1fr));
+            gap: 28px; padding: 34px 24px 28px;
           }
-          .spk-footer-brand-col { grid-column: 1 / -1; }
+          .spk-footer-brand-col {
+            grid-column: 1 / -1;
+            max-width: none;
+            display: grid;
+            grid-template-columns: minmax(220px, .85fr) 1fr auto;
+            column-gap: 22px;
+            align-items: center;
+          }
+          .spk-footer-logo-row,
+          .spk-footer-umss,
+          .spk-footer-desc {
+            margin-bottom: 0;
+          }
+          .spk-footer-desc {
+            max-width: 360px;
+          }
+          .spk-footer-socials {
+            justify-content: flex-end;
+          }
           .spk-footer-stats { padding: 0 24px; }
           .spk-footer-divider { margin: 0 24px; }
           .spk-footer-bottom { padding: 16px 24px; }
@@ -520,12 +547,60 @@ export default function Footer({ isBackendAvailable = true }) {
         @media (max-width: 640px) {
           .spk-footer-cta {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            text-align: center;
             padding: 28px 20px;
+          }
+          .spk-footer-cta-label {
+            justify-content: center;
+          }
+          .spk-footer-cta-label::before {
+            display: none;
           }
           .spk-footer-main {
             grid-template-columns: 1fr;
-            padding: 28px 20px;
+            padding: 28px 20px 24px;
+            gap: 24px;
+            text-align: center;
+          }
+          .spk-footer-brand-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: none;
+          }
+          .spk-footer-logo-row {
+            justify-content: center;
+            margin-bottom: 12px;
+          }
+          .spk-footer-umss {
+            margin-bottom: 14px;
+          }
+          .spk-footer-desc {
+            max-width: 320px;
+            margin-bottom: 18px;
+          }
+          .spk-footer-socials {
+            justify-content: center;
+          }
+          .spk-footer-col-title {
+            justify-content: center;
+            margin-bottom: 10px;
+          }
+          .spk-footer-col-title::after {
+            display: none;
+          }
+          .spk-footer-col-links {
+            align-items: center;
+            gap: 6px;
+          }
+          .spk-footer-col-links a,
+          .spk-footer-col-links button {
+            width: auto;
+            min-width: 190px;
+            justify-content: center;
+            text-align: center;
+            padding: 7px 12px;
           }
           .spk-footer-stats { flex-wrap: wrap; padding: 0 20px; }
           .spk-footer-stat {
@@ -534,8 +609,17 @@ export default function Footer({ isBackendAvailable = true }) {
           }
           .spk-footer-divider { margin: 0 20px; }
           .spk-footer-bottom {
-            flex-direction: column; align-items: flex-start;
-            padding: 14px 20px; gap: 10px;
+            flex-direction: column; align-items: center;
+            padding: 16px 20px; gap: 10px;
+            text-align: center;
+          }
+          .spk-footer-bottom-left {
+            flex-direction: column;
+            gap: 8px;
+          }
+          .spk-footer-copy {
+            justify-content: center;
+            flex-wrap: wrap;
           }
           .spk-footer-cta-title { font-size: 18px; }
         }
@@ -600,7 +684,7 @@ export default function Footer({ isBackendAvailable = true }) {
 
           {/* LINK COLUMNS */}
           {footerLinks.map(({ titleKey, links }) => (
-            <div key={titleKey}>
+            <div key={titleKey} className="spk-footer-link-col">
               <div className="spk-footer-col-title">{t(titleKey)}</div>
               <div className="spk-footer-col-links">
                 {links.map((link) => (
