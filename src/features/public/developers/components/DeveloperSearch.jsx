@@ -19,7 +19,7 @@ export default function DeveloperSearch({
         <FiSearch aria-hidden="true" />
         <span className="dev-sr-only">Buscar desarrollador por nombre</span>
         <input
-          type="search"
+          type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Buscar por nombre..."
