@@ -1214,11 +1214,15 @@ function normalizeEstadoProyecto(value) {
 }
 
 function getEvidencias(project = {}) {
-  if (Array.isArray(project.evidencias)) return project.evidencias;
-  if (Array.isArray(project.proyecto_evidencias)) return project.proyecto_evidencias;
-  if (Array.isArray(project.proyectoEvidencias)) return project.proyectoEvidencias;
+  const evidencias = Array.isArray(project.evidencias)
+    ? project.evidencias
+    : Array.isArray(project.proyecto_evidencias)
+      ? project.proyecto_evidencias
+      : Array.isArray(project.proyectoEvidencias)
+        ? project.proyectoEvidencias
+        : [];
 
-  return [];
+  return evidencias.filter(ev => !ev?.deleted_at && !ev?.deletedAt);
 }
 
 function evidenciaUrl(ev = {}) {
@@ -1349,6 +1353,9 @@ export function normalizeProyectoFromApi(project = {}) {
   const imagenesDirectas = Array.isArray(project.imagenes)
     ? project.imagenes.map(formatUrl).filter(Boolean)
     : [];
+  const imagenesOriginalesDirectas = Array.isArray(project.imagenes_originales)
+    ? project.imagenes_originales.map(formatUrl).filter(Boolean)
+    : [];
 
   const imagenesDesdeEvidencias = getImagenesFromEvidencias(evidencias);
   const imagenesOriginalesDesdeEvidencias = getImagenesFromEvidencias(evidencias, 'original');
@@ -1363,8 +1370,8 @@ export function normalizeProyectoFromApi(project = {}) {
           ? [formatUrl(project.imagenUrl)]
           : [];
 
-  const imagenesOriginales = imagenesDirectas.length > 0
-    ? imagenesDirectas
+  const imagenesOriginales = imagenesOriginalesDirectas.length > 0
+    ? imagenesOriginalesDirectas
     : imagenesOriginalesDesdeEvidencias.length > 0
       ? imagenesOriginalesDesdeEvidencias
       : imagenes;
@@ -1805,6 +1812,16 @@ export async function eliminarImagenes(id, urls = []) {
       imagenes: urls,
     }),
   });
+}
+
+export async function repararVariantesImagen(id, originalUrl) {
+  const data = await apiFetch(`${API_URL}/projects/${id}/images/repair-variants`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ original_url: originalUrl }),
+  });
+
+  return data?.data || data;
 }
 
 export async function reordenarImagenes(id, urls = []) {

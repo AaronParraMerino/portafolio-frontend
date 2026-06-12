@@ -497,13 +497,13 @@ export default function ProjectCard({
                   <div key={`${item.tipo}-${i}`} className="prj-carousel-slide">
                     {item.tipo === 'imagen' ? (
                       <img
-                        src={item.url}
+                        src={mediaExpandida ? item.fallbackUrl : item.url}
                         alt={`${proyecto.titulo || t('projects.card.defaultTitle')} – ${t('projects.carousel.image')} ${i + 1}`}
                         className="prj-carousel-img"
                         loading={prioridadImagen && i === 0 ? 'eager' : 'lazy'}
                         draggable={false}
                         onError={(event) => {
-                          if (item.fallbackUrl && event.currentTarget.src !== item.fallbackUrl) {
+                          if (!mediaExpandida && item.fallbackUrl && event.currentTarget.src !== item.fallbackUrl) {
                             event.currentTarget.src = item.fallbackUrl;
                           }
                         }}

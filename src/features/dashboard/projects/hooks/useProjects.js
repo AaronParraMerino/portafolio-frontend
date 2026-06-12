@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../../core/i18n';
 import {
   getProyectos,
+  getProyecto,
   getCachedProyectos,
   setCachedProyectos,
   crearProyecto,
@@ -481,47 +482,26 @@ export function useProjects() {
 
       // 2. Eliminar imágenes quitadas.
       if (urlsImagenesAEliminar.length > 0) {
-        await eliminarImagenes(proyectoId, urlsImagenesAEliminar).catch(err =>
-          console.warn('[useProjects] Error eliminando imágenes:', err.message)
-        );
+        await eliminarImagenes(proyectoId, urlsImagenesAEliminar);
       }
 
       // 3. Eliminar documentos quitados.
       if (urlsDocumentosAEliminar.length > 0) {
-        await eliminarDocumentos(proyectoId, urlsDocumentosAEliminar).catch(err =>
-          console.warn('[useProjects] Error eliminando documentos:', err.message)
-        );
+        await eliminarDocumentos(proyectoId, urlsDocumentosAEliminar);
       }
 
-      // 4. Calcular imágenes finales.
-      let imagenesFinales = (mapeado.imagenes || [])
-        .filter(url => !urlsImagenesAEliminar.includes(url));
-
+      // 4. Subir imágenes nuevas.
       if (imagenesNuevas.length > 0) {
-        const resultado = await uploadImagenes(proyectoId, imagenesNuevas);
-        const nuevasUrls = normalizarResultadoImagenes(resultado);
-        imagenesFinales = [...imagenesFinales, ...nuevasUrls].slice(0, 5);
+        await uploadImagenes(proyectoId, imagenesNuevas);
       }
 
-      // 5. Calcular documentos finales.
-      let documentosFinales = (mapeado.documentos || [])
-        .filter(doc => !urlsDocumentosAEliminar.includes(getDocumentoUrl(doc)));
-
+      // 5. Subir documentos nuevos.
       if (documentosNuevos.length > 0) {
-        const resultadoDocs = await uploadDocumentos(proyectoId, documentosNuevos);
-        const nuevosDocs = normalizarResultadoDocumentos(resultadoDocs);
-        documentosFinales = [...documentosFinales, ...nuevosDocs].slice(0, 2);
+        await uploadDocumentos(proyectoId, documentosNuevos);
       }
-
-      mapeado = {
-        ...mapeado,
-        imagenes: imagenesFinales,
-        imagenUrl: imagenesFinales[0] || null,
-        imagen_portada: imagenesFinales[0] || null,
-        documentos: documentosFinales,
-      };
 
       await attachDetectedReposByProvider(proyectoId, datos);
+      mapeado = mapearProyecto(await getProyecto(proyectoId, { force: true }));
 
       setProyectos((current) => {
         const actualizados = current.map(p =>

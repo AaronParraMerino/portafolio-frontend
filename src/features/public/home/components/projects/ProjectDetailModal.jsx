@@ -34,7 +34,8 @@ function mediaFromProject(project = {}) {
     .map((item) => ({
       ...item,
       mediaType: String(item.tipo).toLowerCase() === 'video' ? 'video' : 'image',
-      mediaUrl: item.imagen_detail_url || item.url,
+      mediaUrl: item.url,
+      fallbackMediaUrl: item.imagen_detail_url || '',
       embedUrl: youtubeEmbed(item.url),
       thumbnailUrl: item.imagen_card_url || youtubeThumbnail(item.url),
     }));
@@ -82,7 +83,15 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
             {currentMedia?.mediaType === 'video' && currentMedia.embedUrl ? (
               <iframe src={currentMedia.embedUrl} title={currentMedia.titulo || t('home.projects.detail.videoTitle')} allowFullScreen />
             ) : currentMedia?.mediaUrl ? (
-              <img src={currentMedia.mediaUrl} alt={currentMedia.titulo || project.titulo || project.title} />
+              <img
+                src={currentMedia.mediaUrl}
+                alt={currentMedia.titulo || project.titulo || project.title}
+                onError={(event) => {
+                  if (currentMedia.fallbackMediaUrl && event.currentTarget.src !== currentMedia.fallbackMediaUrl) {
+                    event.currentTarget.src = currentMedia.fallbackMediaUrl;
+                  }
+                }}
+              />
             ) : (
               <div className="pdm-gallery-empty"><BsCodeSlash /><span>{t('home.projects.detail.noGallery')}</span></div>
             )}
