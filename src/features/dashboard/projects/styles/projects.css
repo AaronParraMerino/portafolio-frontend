@@ -2903,6 +2903,23 @@
   transform: none;
 }
 
+.prj-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.prj-detected-add-btn.danger {
+  border-color: rgba(201, 64, 64, .35);
+  color: var(--rojo-soft);
+}
+
+.prj-detected-add-btn.danger:hover:not(:disabled) {
+  background: var(--rojo-bg);
+  border-color: var(--rojo-soft);
+}
+
 /* ─── Participation block inside detected repos ─── */
 .prj-detected-participacion {
   background: var(--blanco);

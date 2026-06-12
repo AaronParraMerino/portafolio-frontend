@@ -12,6 +12,7 @@ import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import { ESTADOS_PROYECTO, getProjectOptionLabel } from '../model/projectsModel';
+import { getProyectoDeletionPreview } from '../services/projectsService';
 
 const ESTADO_DETALLE = {
   publicado: 'projects.statusDetail.publicado',
@@ -68,6 +69,9 @@ export default function ProjectsPage() {
   // ── Estado UI puro ──
   const [editando,   setEditando]   = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [confirmDelTitle, setConfirmDelTitle] = useState('');
+  const [confirmDelLoading, setConfirmDelLoading] = useState(false);
+  const [confirmDelError, setConfirmDelError] = useState('');
   const [confirmDetach, setConfirmDetach] = useState(null);
   const [configurando, setConfigurando] = useState(null);
   const [estadoProyecto, setEstadoProyecto] = useState(null);
@@ -132,6 +136,25 @@ export default function ProjectsPage() {
 
     setReposIniciales(null);
     setEditando(proyecto);
+  };
+
+  const handleAbrirEliminar = async (proyecto) => {
+    const id = proyecto?.id || proyecto?.id_proyecto;
+    if (!id || savingProjectIdSet.has(String(id))) return;
+
+    setConfirmDelTitle('');
+    setConfirmDelError('');
+    setConfirmDelLoading(true);
+    setConfirmDel({ ...proyecto, deletionPreview: null });
+
+    try {
+      const preview = await getProyectoDeletionPreview(id);
+      setConfirmDel((current) => current ? { ...current, deletionPreview: preview } : current);
+    } catch (error) {
+      setConfirmDelError(error.message || 'No se pudo comprobar el tipo de eliminacion.');
+    } finally {
+      setConfirmDelLoading(false);
+    }
   };
 
   const handleCancelarEdicion = () => {
@@ -234,6 +257,10 @@ export default function ProjectsPage() {
   const configurandoGuardando = configurandoId ? savingProjectIdSet.has(String(configurandoId)) : false;
   const estadoProyectoId = estadoProyecto?.id || estadoProyecto?.id_proyecto;
   const estadoProyectoGuardando = estadoProyectoId ? savingProjectIdSet.has(String(estadoProyectoId)) : false;
+  const confirmDelId = confirmDel?.id || confirmDel?.id_proyecto;
+  const confirmDelGuardando = confirmDelId ? savingProjectIdSet.has(String(confirmDelId)) : false;
+  const confirmDetachId = confirmDetach?.id || confirmDetach?.id_proyecto;
+  const confirmDetachGuardando = confirmDetachId ? savingProjectIdSet.has(String(confirmDetachId)) : false;
   const activityLabel = guardando
     ? t('projects.activity.saving')
     : loading
@@ -273,7 +300,7 @@ export default function ProjectsPage() {
           proyectos={proyectosFiltrados}
           busqueda={busqueda}
           onEditar={handleEditar}
-          onEliminar={(p)   => setConfirmDel(p)}
+          onEliminar={handleAbrirEliminar}
           onDesvincular={(p) => setConfirmDetach(p)}
           onConfigurar={(p) => {
             const id = p?.id || p?.id_proyecto;
@@ -377,12 +404,51 @@ export default function ProjectsPage() {
       <ConfirmModal
         open={!!confirmDel}
         title={t('projects.confirm.deleteTitle')}
-        message={t('projects.confirm.deleteMessage', { title: confirmDel?.titulo || t('projects.card.defaultTitle') })}
+        message={confirmDel?.deletionPreview?.es_permanente ? (
+          <div>
+            <p>Este proyecto no tiene repositorios vinculados. La eliminacion sera permanente.</p>
+            <label className="prj-label">
+              Escribe exactamente <strong>{confirmDel?.titulo}</strong> para confirmar:
+            </label>
+            <input
+              className="prj-input"
+              value={confirmDelTitle}
+              onChange={(event) => setConfirmDelTitle(event.target.value)}
+              disabled={confirmDelGuardando}
+              autoFocus
+            />
+            {confirmDelError && <div className="prj-detected-error">{confirmDelError}</div>}
+          </div>
+        ) : confirmDelLoading ? (
+          'Comprobando el tipo de eliminacion...'
+        ) : (
+          t('projects.confirm.deleteMessage', { title: confirmDel?.titulo || t('projects.card.defaultTitle') })
+        )}
         confirmLabel={t('projects.confirm.delete')}
         variant="red"
         icon="warning"
-        onConfirm={async () => { await eliminar(confirmDel.id); setConfirmDel(null); }}
-        onClose={() => setConfirmDel(null)}
+        loading={confirmDelGuardando || confirmDelLoading}
+        confirmDisabled={
+          Boolean(confirmDelError)
+          || !confirmDel?.deletionPreview
+          || (
+            confirmDel?.deletionPreview?.es_permanente
+            && confirmDelTitle.trim() !== String(confirmDel?.titulo || '').trim()
+          )
+        }
+        onConfirm={async () => {
+          try {
+            await eliminar(confirmDelId, confirmDelTitle);
+            setConfirmDel(null);
+            setConfirmDelTitle('');
+          } catch {}
+        }}
+        onClose={() => {
+          if (confirmDelGuardando || confirmDelLoading) return;
+          setConfirmDel(null);
+          setConfirmDelTitle('');
+          setConfirmDelError('');
+        }}
       />
 
       <ConfirmModal
@@ -392,8 +458,9 @@ export default function ProjectsPage() {
         confirmLabel={t('projects.confirm.unlink')}
         variant="blue"
         icon="warning"
-        onConfirm={async () => { await desvincularParticipacion(confirmDetach.id); setConfirmDetach(null); }}
-        onClose={() => setConfirmDetach(null)}
+        loading={confirmDetachGuardando}
+        onConfirm={async () => { await desvincularParticipacion(confirmDetachId); setConfirmDetach(null); }}
+        onClose={() => !confirmDetachGuardando && setConfirmDetach(null)}
       />
 
       <ProjectsToast toast={toast} />

@@ -1694,13 +1694,67 @@ export async function actualizarProyectoConfiguracion(id, configuracion) {
   return result;
 }
 
-export async function eliminarProyecto(id) {
+export async function getProyectoDeletionPreview(id) {
+  const data = await apiFetch(`${API_URL}/projects/${id}/deletion-preview`);
+  return data?.data || data;
+}
+
+export async function eliminarProyecto(id, confirmationTitle = '') {
   const result = await apiFetch(`${API_URL}/projects/${id}`, {
     method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmation_title: confirmationTitle || null }),
   });
 
   updateUserProjectsCache((items) => items.filter((item) => String(getCachedProjectId(item)) !== String(id)));
   removeCachedDashboardEndpoint(projectEndpoint(id));
+  return result;
+}
+
+function invalidateDetectedRepositoriesCache() {
+  const { userId } = getSession();
+
+  ['github', 'gitlab'].forEach((provider) => {
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected?refresh=true`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected/count`, { userId });
+    removeCachedDashboardEndpoint(`/auth/${provider}/repos/detected/count?refresh=true`, { userId });
+  });
+}
+
+export async function restaurarProyecto(id) {
+  const result = await apiFetch(`${API_URL}/projects/${id}/restore`, { method: 'POST' });
+  invalidateDetectedRepositoriesCache();
+  return result;
+}
+
+export async function solicitarRestauracionProyecto(id, message = '') {
+  const result = await apiFetch(`${API_URL}/projects/${id}/restore-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: message || null }),
+  });
+  invalidateDetectedRepositoriesCache();
+  return result;
+}
+
+export async function responderSolicitudRestauracion(id, notificationId, decision, response = '') {
+  const result = await apiFetch(`${API_URL}/projects/${id}/restore-request/${notificationId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision, response: response || null }),
+  });
+  invalidateDetectedRepositoriesCache();
+  return result;
+}
+
+export async function liberarRepositorioProyecto(id, repositoryId, confirmationTitle = '') {
+  const result = await apiFetch(`${API_URL}/projects/${id}/repositories/${repositoryId}/release`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmation_title: confirmationTitle || null }),
+  });
+  invalidateDetectedRepositoriesCache();
   return result;
 }
 

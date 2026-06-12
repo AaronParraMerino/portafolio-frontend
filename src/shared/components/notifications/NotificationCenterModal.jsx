@@ -13,6 +13,7 @@ import {
   markNotificationGroupAsRead,
   markNotificationModuleAsRead,
 } from '../../services/notificationService';
+import { responderSolicitudRestauracion } from '../../../features/dashboard/projects/services/projectsService';
 
 const READ_PAGE_SIZE = 20;
 const MODULE_TITLE_KEYS = {
@@ -469,6 +470,7 @@ export default function NotificationCenterModal({
   const [loading, setLoading] = useState(false);
   const [readLoading, setReadLoading] = useState(false);
   const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState('');
 
   const detailItems = Array.isArray(moduleDetail?.data) ? moduleDetail.data : [];
   const directMessages = moduleDetail?.tipo_vista === 'mensajes_directos';
@@ -876,6 +878,33 @@ export default function NotificationCenterModal({
     }
   };
 
+  const handleRestoreRequest = async (notification, decision) => {
+    const projectId = Number(notification?.metadata?.id_proyecto)
+      || Number(String(notification?.contexto_referencia || '').replace('proyecto_', ''));
+    if (!projectId) return;
+
+    let response = '';
+    if (decision === 'rechazar') {
+      response = window.prompt('Motivo del rechazo (opcional):') || '';
+    }
+
+    try {
+      setActionLoading(decision);
+      setError('');
+      await responderSolicitudRestauracion(
+        projectId,
+        notification.id_notificacion,
+        decision,
+        response
+      );
+      await afterMutation();
+    } catch (err) {
+      setError(err.message || 'No se pudo responder la solicitud.');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const renderDetail = (notification, isReadView = false) => {
     if (!notification) {
       return <EmptyState>{t('nav.selectNotification')}</EmptyState>;
@@ -899,9 +928,31 @@ export default function NotificationCenterModal({
           <DetailField label={t('nav.actor')} value={actorName} />
           <DetailField label={t('nav.createdAt')} value={formatDateTime(notification.created_at, language)} />
           <DetailField label={t('nav.readAt')} value={formatDateTime(notification.leido_en, language)} />
+          <DetailField label="Estado de solicitud" value={notification.accion_estado} />
+          <DetailField label="Respuesta" value={notification.accion_respuesta} />
         </div>
 
         <div className="ncm-detail-actions">
+          {notification.tipo === 'project_restore_request' && notification.accion_estado === 'pendiente' && (
+            <>
+              <button
+                className="ncm-primary"
+                type="button"
+                disabled={Boolean(actionLoading)}
+                onClick={() => handleRestoreRequest(notification, 'aprobar')}
+              >
+                {actionLoading === 'aprobar' ? 'Restableciendo...' : 'Aprobar y restablecer'}
+              </button>
+              <button
+                className="ncm-secondary"
+                type="button"
+                disabled={Boolean(actionLoading)}
+                onClick={() => handleRestoreRequest(notification, 'rechazar')}
+              >
+                {actionLoading === 'rechazar' ? 'Rechazando...' : 'Rechazar solicitud'}
+              </button>
+            </>
+          )}
           {isReadView ? (
             <button
               className="ncm-primary"
