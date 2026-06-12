@@ -143,8 +143,20 @@ function clearPortfolioCaches(userId) {
   if (!userId) return;
 
   try {
-    sessionStorage.removeItem(dataCacheKey(userId));
-    sessionStorage.removeItem(`${PUBLIC_CACHE_PREFIX}:${userId}`);
+    ['es', 'en', 'pt'].forEach((language) => {
+      sessionStorage.removeItem(dataCacheKey(userId, language));
+    });
+
+    const publicPrefix = `${PUBLIC_CACHE_PREFIX}:${userId}`;
+    sessionStorage.removeItem(publicPrefix);
+
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+
+      if (key?.startsWith(`${publicPrefix}:`)) {
+        sessionStorage.removeItem(key);
+      }
+    }
   } catch {
     // Cache cleanup should never block publishing changes.
   }
