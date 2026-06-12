@@ -72,7 +72,6 @@ export default function UsersNoticeModal({
   const [channels, setChannels] = useState(['inapp']);
   const [schedule, setSchedule] = useState('');
   const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!modal) return;
@@ -87,7 +86,6 @@ export default function UsersNoticeModal({
     setChannels(['inapp']);
     setSchedule(initialNotice.scheduledAt || '');
     setMessage('');
-    setSubmitting(false);
   }, [modal, t]);
 
   const audience = useMemo(() => {
@@ -123,6 +121,13 @@ export default function UsersNoticeModal({
 
   if (!modal) return null;
 
+  const submitInBackground = (payload) => {
+    onClose?.();
+    Promise.resolve()
+      .then(() => onSendNotice?.(payload))
+      .catch(() => {});
+  };
+
   const handleSubmit = async (intent) => {
     if (!title.trim() || !body.trim()) {
       setMessage(t('admin.users.noticeModal.titleRequired'));
@@ -135,11 +140,8 @@ export default function UsersNoticeModal({
     }
 
     if (isTemplate) {
-      setSubmitting(true);
       setMessage('');
-
-      try {
-        const response = await onSendNotice({
+      submitInBackground({
           templateId: modal.initialNotice?.id || modal.initialNotice?.id_plantilla || null,
           titulo: title.trim(),
           contenido: body.trim(),
@@ -147,12 +149,6 @@ export default function UsersNoticeModal({
           urgencia: urgency,
           isTemplate: true,
         });
-        setMessage(response?.message || t('admin.users.noticeModal.templateReusable'));
-      } catch (error) {
-        setMessage(error.message || t('admin.users.noticeModal.sendError'));
-      } finally {
-        setSubmitting(false);
-      }
       return;
     }
 
@@ -177,11 +173,8 @@ export default function UsersNoticeModal({
       segments,
     });
 
-    setSubmitting(true);
     setMessage('');
-
-    try {
-      const response = await onSendNotice({
+    submitInBackground({
         destinatarios,
         titulo: title.trim(),
         contenido: body.trim(),
@@ -193,13 +186,6 @@ export default function UsersNoticeModal({
         directUser: modal.directUser || null,
         forceUserNotice: !!modal.fromTemplate,
       });
-
-      setMessage(response?.message || (isGlobalNotice ? t('admin.users.noticeModal.globalCreated') : t('admin.users.noticeModal.sentCount', { count: destinatarios.length })));
-    } catch (error) {
-      setMessage(error.message || t('admin.users.noticeModal.sendError'));
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   return (
@@ -406,7 +392,6 @@ export default function UsersNoticeModal({
                 type="button"
                 className="usr-reason-btn usr-reason-btn--ghost"
                 onClick={() => handleSubmit('draft')}
-                disabled={submitting}
               >
                 {t('admin.users.noticeModal.saveDraft')}
               </button>
@@ -416,15 +401,12 @@ export default function UsersNoticeModal({
               type="button"
               className="usr-reason-btn usr-reason-btn--primary"
               onClick={() => handleSubmit(isTemplate ? 'template' : 'send')}
-              disabled={submitting}
             >
               {isTemplate
-                ? (submitting
-                  ? t('admin.users.noticeModal.sending')
-                  : modal.initialNotice
+                ? (modal.initialNotice
                     ? t('admin.users.noticeModal.updateTemplate')
                     : t('admin.users.noticeModal.saveTemplate'))
-                : submitting ? t('admin.users.noticeModal.sending') : t('admin.users.noticeModal.sendNow')}
+                : t('admin.users.noticeModal.sendNow')}
             </button>
           </div>
         </div>

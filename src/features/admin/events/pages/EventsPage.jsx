@@ -8,6 +8,7 @@ import AdminPublisherRequestsPanel from '../components/AdminPublisherRequestsPan
 import EventsHistoryPanel from '../components/EventsHistoryPanel';
 import EventsStats from '../components/EventsStats';
 import EventsWorkspaceTabs from '../components/EventsWorkspaceTabs';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import { useEventsWorkspace } from '../hooks/useEvents';
 import '../styles/events.css';
 
@@ -107,12 +108,7 @@ export default function EventsPage() {
         onConfirm={handleConfirmAction}
       />
 
-      {actionSaving ? (
-        <div className="evt-admin-save-toast" role="status" aria-live="polite">
-          <span className="evt-admin-save-spinner" />
-          {t('adminEvents.eventsPage.applyingAction')}
-        </div>
-      ) : null}
+      <BackgroundSaveIndicator active={actionSaving} label={t('adminEvents.eventsPage.applyingAction')} />
     </div>
   );
 }

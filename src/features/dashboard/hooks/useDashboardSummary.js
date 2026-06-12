@@ -4,11 +4,13 @@ import {
   getCachedDashboardSummary,
   getEmptyDashboardSummary,
 } from '../services/dashboardSummaryService';
+import { DASHBOARD_CACHE_INVALIDATED_EVENT } from '../services/dashboardCache';
 
 let summaryCache = getCachedDashboardSummary();
 let summaryRequest = null;
 
 function getInitialSummary() {
+  summaryCache = getCachedDashboardSummary();
   return summaryCache || getEmptyDashboardSummary();
 }
 
@@ -50,6 +52,17 @@ export function useDashboardSummary(reloadKey = '') {
   useEffect(() => {
     reload({ force: Boolean(summaryCache) });
   }, [reload, reloadKey]);
+
+  useEffect(() => {
+    const handleCacheInvalidated = () => {
+      summaryCache = null;
+      summaryRequest = null;
+      reload({ force: true });
+    };
+
+    window.addEventListener(DASHBOARD_CACHE_INVALIDATED_EVENT, handleCacheInvalidated);
+    return () => window.removeEventListener(DASHBOARD_CACHE_INVALIDATED_EVENT, handleCacheInvalidated);
+  }, [reload]);
 
   return {
     ...summary,
