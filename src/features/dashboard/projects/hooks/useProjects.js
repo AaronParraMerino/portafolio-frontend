@@ -548,7 +548,8 @@ export function useProjects() {
   // ════════════════════════════════════════
   // ELIMINAR PROYECTO
   // ════════════════════════════════════════
-  const eliminar = async (id) => {
+  const eliminar = async (id, confirmationTitle = '') => {
+    beginSaving(id);
     const previo = proyectos;
     const actualizados = proyectos.filter(p => p.id !== id && p.id_proyecto !== id);
 
@@ -556,7 +557,7 @@ export function useProjects() {
     guardarEnCache(actualizados);
 
     try {
-      await eliminarProyecto(id);
+      await eliminarProyecto(id, confirmationTitle);
 
       mostrarToast(t('projects.toast.deleted'));
 
@@ -565,11 +566,15 @@ export function useProjects() {
       guardarEnCache(previo);
 
       console.error('[useProjects] Error eliminando proyecto:', err.message);
-      mostrarToast(t('projects.toast.deleteError'), 'error');
+      mostrarToast(err.message || t('projects.toast.deleteError'), 'error');
+      throw err;
+    } finally {
+      endSaving(id);
     }
   };
 
   const desvincularParticipacion = async (id) => {
+    beginSaving(id);
     const previo = proyectos;
     const actualizados = proyectos.filter(p => p.id !== id && p.id_proyecto !== id);
 
@@ -587,6 +592,8 @@ export function useProjects() {
 
       console.error('[useProjects] Error desvinculando participacion:', err.message);
       mostrarToast(err.message || t('projects.toast.unlinkError'), 'error');
+    } finally {
+      endSaving(id);
     }
   };
 

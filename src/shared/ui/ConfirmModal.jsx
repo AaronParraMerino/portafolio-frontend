@@ -254,6 +254,7 @@ export default function ConfirmModal({
   variant      = 'blue',            /* 'blue' | 'red' | 'green' | 'yellow' | 'violet' */
   icon,                             /* 'check' | 'warning' | 'logout' | 'info' | 'star' */
   loading      = false,
+  confirmDisabled = false,
   onConfirm,
   onClose,
 }) {
@@ -338,7 +339,7 @@ export default function ConfirmModal({
               onMouseEnter={handleBtnEnter}
               onMouseLeave={handleBtnLeave}
               onClick={onConfirm}
-              disabled={loading}
+              disabled={loading || confirmDisabled}
             >
               {loading ? (
                 <><span className="cm-spinner" /> Cargando...</>

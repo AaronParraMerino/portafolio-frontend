@@ -1694,9 +1694,16 @@ export async function actualizarProyectoConfiguracion(id, configuracion) {
   return result;
 }
 
-export async function eliminarProyecto(id) {
+export async function getProyectoDeletionPreview(id) {
+  const data = await apiFetch(`${API_URL}/projects/${id}/deletion-preview`);
+  return data?.data || data;
+}
+
+export async function eliminarProyecto(id, confirmationTitle = '') {
   const result = await apiFetch(`${API_URL}/projects/${id}`, {
     method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmation_title: confirmationTitle || null }),
   });
 
   updateUserProjectsCache((items) => items.filter((item) => String(getCachedProjectId(item)) !== String(id)));
