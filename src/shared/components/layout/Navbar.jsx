@@ -212,7 +212,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 768) setMobileOpen(false);
+      if (window.innerWidth > 1100) setMobileOpen(false);
     };
 
     window.addEventListener('resize', onResize);
@@ -500,17 +500,22 @@ export default function Navbar() {
           position: fixed; top: 0; left: 0; right: 0;
           z-index: 200; height: var(--nav-height, 60px);
           display: flex; align-items: center;
-          padding: 0 40px; padding-bottom: 3px;
+          padding: 0 24px; padding-bottom: 3px;
           background: linear-gradient(90deg, var(--azul-deep, #004f7c) 0%, var(--azul, #0077b7) 100%);
           border-bottom: 3px solid rgba(255,255,255,.12);
           box-shadow: 0 2px 18px rgba(0,77,124,.25);
           transition: box-shadow .2s;
         }
         .spk-nav.scrolled { box-shadow: 0 4px 28px rgba(0,77,124,.38); }
-        .spk-nav-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
-        .spk-nav-logo img { height: 38px; width: auto; display: block; filter: brightness(0) invert(1); opacity: .92; }
+        .spk-nav-logo,
+        .spk-nav-tagline { display: flex; align-items: center; text-decoration: none; flex: 0 0 auto; min-width: max-content; }
+        .spk-nav-logo img,
+        .spk-nav-tagline img { display: block; object-fit: contain; flex: 0 0 auto; max-width: none; }
+        .spk-logo-umss-full { width: 130px; height: 38px; filter: brightness(0) invert(1); opacity: .92; }
+        .spk-logo-creafolio-full { width: 110px; height: 25px; }
+        .spk-logo-mobile-icon { display: none !important; width: 38px; height: 38px; object-fit: contain; }
+        .spk-logo-umss-icon { filter: brightness(0) invert(1); opacity: .92; }
         .spk-nav-sep { width: 1px; height: 22px; background: rgba(255,255,255,.15); margin: 0 18px 0 12px; flex-shrink: 0; }
-        .spk-nav-tagline { font-family: var(--mono, monospace); font-size: 10px; font-weight: 400; color: rgba(255,255,255,.35); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
         .spk-nav-links { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; margin-left: auto; }
         .spk-nav-links li { display: flex; align-items: center; }
         .spk-nav-links a { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65); text-decoration: none; padding: 6px 13px; border-radius: 5px; transition: color .15s, background .15s, transform .15s; white-space: nowrap; letter-spacing: .01em; display: inline-flex; align-items: center; gap: 7px; }
@@ -613,15 +618,25 @@ export default function Navbar() {
           justify-content: center;
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUpCentered { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 900px) {
-          .spk-nav { padding: 0 24px; padding-bottom: 3px; }
-          .spk-nav-tagline,
-          .spk-nav-sep {
-            display: none;
+        @media (max-width: 1100px) {
+          .spk-nav { padding: 0 16px; padding-bottom: 3px; }
+
+          .spk-logo-umss-full,
+          .spk-logo-creafolio-full {
+            display: none !important;
           }
-        }
-        @media (max-width: 768px) {
+
+          .spk-logo-mobile-icon {
+            display: block !important;
+          }
+
+          .spk-nav-sep {
+            height: 26px;
+            margin: 0 10px;
+          }
+
           .spk-nav-links {
             display: none;
           }
@@ -629,6 +644,7 @@ export default function Navbar() {
           .spk-nav-right {
             display: flex;
             margin-left: auto;
+            margin-right: 12px;
           }
 
           .spk-nav-right > :not(.spk-bell-wrap) {
@@ -639,18 +655,60 @@ export default function Navbar() {
             display: flex;
             margin-left: 0;
           }
+
+          .spk-notif-dropdown {
+            position: fixed;
+            left: 50vw;
+            right: auto;
+            top: calc(var(--nav-height, 60px) + 8px);
+            width: min(390px, calc(100vw - 24px));
+            max-width: calc(100vw - 24px);
+            transform: translateX(-50%);
+            animation: fadeUpCentered .18s ease both;
+          }
+
+          .spk-notif-header {
+            align-items: center;
+            flex-direction: row;
+          }
+
+          .spk-notif-actions {
+            justify-content: flex-end;
+            width: auto;
+          }
+
+          .spk-notif-panel {
+            max-height: min(420px, calc(100vh - 116px));
+          }
+        }
+
+        @media (max-width: 420px) {
+          .spk-nav { padding: 0 12px; padding-bottom: 3px; }
+          .spk-logo-mobile-icon { width: 34px; height: 34px; }
+          .spk-nav-sep { margin: 0 8px; }
+          .spk-nav-right { margin-right: 10px; }
+          .spk-notif-header {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+          .spk-notif-actions {
+            justify-content: space-between;
+            width: 100%;
+          }
         }
       `}</style>
 
       <nav className={`spk-nav${scrolled ? ' scrolled' : ''}`}>
         <a href="/" className="spk-nav-logo">
-          <img src="/img/logo.png" width="130" height="38" alt="CreaFolio" />
+          <img className="spk-logo-umss-full" src="/img/logo.png" width="130" height="38" alt="UMSS" />
+          <img className="spk-logo-mobile-icon spk-logo-umss-icon" src="/img/iconoUMSS.png" width="38" height="38" alt="UMSS" />
         </a>
 
         <div className="spk-nav-sep" />
 
         <a href="/" className="spk-nav-tagline">
-          <img src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
+          <img className="spk-logo-creafolio-full" src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
+          <img className="spk-logo-mobile-icon" src="/img/iconoCreaFolio.png" width="38" height="38" alt="CreaFolio" />
         </a>
 
         <ul className="spk-nav-links">

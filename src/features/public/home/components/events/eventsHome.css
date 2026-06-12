@@ -586,8 +586,10 @@
 .evh-carousel-head {
   align-items: center;
   display: flex;
+  gap: 18px;
   justify-content: space-between;
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .evh-carousel-head h3 {
@@ -595,16 +597,20 @@
   font-size: 18px;
   font-weight: 900;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .evh-carousel-controls {
   display: flex;
+  flex: 0 0 auto;
   gap: 8px;
 }
 
 .evh-carousel-head-actions {
   align-items: center;
   display: flex;
+  flex: 0 0 auto;
   gap: 10px;
 }
 
@@ -617,6 +623,7 @@
   padding: 9px 13px;
   text-decoration: none;
   transition: background .15s, border-color .15s, color .15s;
+  white-space: nowrap;
 }
 
 .evh-carousel-head-actions > a:hover {
@@ -817,6 +824,45 @@
     padding: 56px 18px;
   }
 
+  .evh-carousel-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .evh-carousel-head-actions {
+    display: grid;
+    gap: 9px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    width: 100%;
+  }
+
+  .evh-carousel-head-actions > a {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-width: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+    white-space: normal;
+  }
+
+  .evh-carousel-controls {
+    display: contents;
+  }
+
+  .evh-carousel-controls button {
+    height: 38px;
+    width: 38px;
+  }
+
+  .evh-carousel-track {
+    grid-auto-columns: minmax(270px, 330px);
+    margin-left: -2px;
+    margin-right: -2px;
+    max-width: 100%;
+  }
+
   .evh-section-message {
     align-items: flex-start;
     flex-direction: column;
@@ -979,6 +1025,19 @@
 @media (max-width: 520px) {
   .evh-modal-backdrop {
     padding: 12px;
+  }
+
+  .evh-carousel-head-actions {
+    grid-template-columns: minmax(0, 1fr) 36px 36px;
+  }
+
+  .evh-carousel-controls button {
+    height: 36px;
+    width: 36px;
+  }
+
+  .evh-carousel-track {
+    grid-auto-columns: minmax(270px, 330px);
   }
 
   .evh-modal-body {
