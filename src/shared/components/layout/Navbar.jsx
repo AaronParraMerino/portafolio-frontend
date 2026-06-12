@@ -11,6 +11,7 @@ import {
   getDashboardHomePath,
   getStoredUser,
   isAdminUser,
+  onStoredUserUpdated,
 } from '../../utils/authStorage';
 import {
   clearNotificationsCache,
@@ -23,6 +24,12 @@ import {
   markNotificationModuleAsRead,
   markNotificationAsRead,
 } from '../../services/notificationService';
+import {
+  getCachedProfileThumb,
+  getStoredProfileThumb,
+  onProfileThumbUpdated,
+  setStoredProfileThumb,
+} from '../../utils/profileThumbCache';
 
 const NOTIFICATIONS_REFRESH_MS = 30000;
 
@@ -132,6 +139,34 @@ function getNotificationTitle(notification) {
     || moduleFallbackTitle(notification?.modulo);
 }
 
+function resolveProfileImageUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const storageUrl = (process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage')
+    .replace(/\/+$/, '');
+
+  return `${storageUrl}/${String(path).replace(/^\/+/, '')}`;
+}
+
+function UserAvatar({ src, initials, className }) {
+  const sources = Array.isArray(src) ? src.filter(Boolean) : [src].filter(Boolean);
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const currentSource = sources[sourceIndex] || '';
+
+  useEffect(() => {
+    setSourceIndex(0);
+  }, [src]);
+
+  return (
+    <div className={`${className} notranslate`} translate="no">
+      {currentSource ? (
+        <img src={currentSource} alt="" onError={() => setSourceIndex(index => index + 1)} />
+      ) : initials}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const { t, language } = useLanguage();
   const BASE_URL = process.env.REACT_APP_API_URL;
@@ -141,7 +176,8 @@ export default function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getStoredUser());
+  const [profileAvatar, setProfileAvatar] = useState('');
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [notificationModules, setNotificationModules] = useState([]);
@@ -212,7 +248,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth > 1100) setMobileOpen(false);
+      if (window.innerWidth > 768) setMobileOpen(false);
     };
 
     window.addEventListener('resize', onResize);
@@ -240,7 +276,67 @@ export default function Navbar() {
     if (typeof window === 'undefined') return;
 
     setUser(getStoredUser());
+
+    return onStoredUserUpdated((event) => {
+      setUser(event?.detail || getStoredUser());
+    });
   }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      setProfileAvatar('');
+      return;
+    }
+
+    const storedThumb = getStoredProfileThumb(userId);
+    if (storedThumb) {
+      setProfileAvatar(storedThumb);
+      getCachedProfileThumb(storedThumb).then(setProfileAvatar);
+    }
+
+    const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+    if (!token) {
+      setProfileAvatar('');
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch(`${BASE_URL}/profile/${userId}`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((profile) => {
+        if (cancelled) return;
+
+        const thumbUrl = resolveProfileImageUrl(profile?.foto_perfil_thumb_url);
+        setStoredProfileThumb(userId, thumbUrl);
+        setProfileAvatar(thumbUrl);
+        if (thumbUrl) {
+          getCachedProfileThumb(thumbUrl).then(setProfileAvatar);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProfileAvatar('');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [BASE_URL, userId, user?.avatar_url]);
+
+  useEffect(() => onProfileThumbUpdated((event) => {
+    if (String(event?.detail?.userId) !== String(userId)) return;
+
+    const thumbUrl = event?.detail?.url || '';
+    setProfileAvatar(thumbUrl);
+    if (thumbUrl) {
+      getCachedProfileThumb(thumbUrl).then(setProfileAvatar);
+    }
+  }), [userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -283,6 +379,8 @@ export default function Navbar() {
 
   const handleNotificationToggle = () => {
     if (!notifOpen) loadNotifications({ silent: notificationModules.length > 0 });
+    setUserMenuOpen(false);
+    setMobileOpen(false);
     setNotifOpen((open) => !open);
   };
 
@@ -480,6 +578,7 @@ export default function Navbar() {
     : 'U';
 
   const userRole = user?.rol || user?.role || t('nav.user');
+  const userAvatar = profileAvatar;
   const notifLevelIndex = {
     modules: 0,
     detail: 1,
@@ -516,6 +615,8 @@ export default function Navbar() {
         .spk-logo-mobile-icon { display: none !important; width: 38px; height: 38px; object-fit: contain; }
         .spk-logo-umss-icon { filter: brightness(0) invert(1); opacity: .92; }
         .spk-nav-sep { width: 1px; height: 22px; background: rgba(255,255,255,.15); margin: 0 18px 0 12px; flex-shrink: 0; }
+        .spk-nav-tagline { display: flex; align-items: center; flex-shrink: 0; }
+        .spk-nav-tagline img { height: 25px; width: auto; display: block; }
         .spk-nav-links { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; margin-left: auto; }
         .spk-nav-links li { display: flex; align-items: center; }
         .spk-nav-links a { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65); text-decoration: none; padding: 6px 13px; border-radius: 5px; transition: color .15s, background .15s, transform .15s; white-space: nowrap; letter-spacing: .01em; display: inline-flex; align-items: center; gap: 7px; }
@@ -527,7 +628,8 @@ export default function Navbar() {
         .spk-user-toggle { all: unset; display: flex; align-items: center; gap: 9px; padding: 5px 10px 5px 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); cursor: pointer; transition: all .15s; user-select: none; box-sizing: border-box; }
         .spk-user-toggle:hover { background: rgba(255,255,255,.1); }
         .spk-nav-user.open .spk-user-toggle { background: rgba(255,255,255,.12); }
-        .spk-user-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #b8ddf0, #ffffff); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #004f7c; flex-shrink: 0; border: 1.5px solid rgba(255,255,255,.3); }
+        .spk-user-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #b8ddf0, #ffffff); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #004f7c; flex-shrink: 0; border: 1.5px solid rgba(255,255,255,.3); overflow: hidden; }
+        .spk-user-avatar img, .spk-dd-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
         .spk-user-info { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
         .spk-user-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; display: block; }
         .spk-user-role { font-size: 10px; color: rgba(255,255,255,.38); font-family: var(--mono, monospace); letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; display: block; }
@@ -535,7 +637,7 @@ export default function Navbar() {
         .spk-nav-user.open .spk-user-chevron { transform: rotate(180deg); }
         .spk-user-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 220px; background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 10px; box-shadow: 0 12px 36px rgba(0,0,0,.14); z-index: 350; animation: fadeUp .18s ease both; overflow: hidden; }
         .spk-dd-header { padding: 14px 16px 12px; border-bottom: 1px solid #f0ede8; display: flex; align-items: center; gap: 10px; }
-        .spk-dd-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #e8f4fb, #b8ddf0); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #004f7c; border: 2px solid #b8ddf0; flex-shrink: 0; }
+        .spk-dd-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #e8f4fb, #b8ddf0); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #004f7c; border: 2px solid #b8ddf0; flex-shrink: 0; overflow: hidden; }
         .spk-dd-name { font-size: 13px; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: block; }
         .spk-dd-email { font-size: 11px; color: #6b7280; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: block; }
         .spk-dd-status { font-size: 10px; color: #10b981; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
@@ -620,23 +722,37 @@ export default function Navbar() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeUpCentered { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes mobileNotifUp { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        @media (max-width: 1280px) {
+          .spk-nav { padding: 0 20px; padding-bottom: 3px; }
+          .spk-nav-sep { margin: 0 10px; }
+          .spk-nav-links a { padding: 6px 9px; gap: 5px; font-size: 12px; }
+          .spk-nav-right { gap: 6px; margin-left: 10px; }
+          .spk-user-toggle { gap: 6px; padding-right: 7px; }
+          .spk-user-name,
+          .spk-user-role { max-width: 80px; }
+          .spk-btn-login,
+          .spk-btn-register { padding: 7px 11px; font-size: 12px; }
+        }
         @media (max-width: 1100px) {
-          .spk-nav { padding: 0 16px; padding-bottom: 3px; }
-
-          .spk-logo-umss-full,
-          .spk-logo-creafolio-full {
-            display: none !important;
-          }
-
-          .spk-logo-mobile-icon {
-            display: block !important;
-          }
-
-          .spk-nav-sep {
-            height: 26px;
-            margin: 0 10px;
-          }
-
+          .spk-nav { padding: 0 14px; padding-bottom: 3px; }
+          .spk-nav-logo img { height: 34px; }
+          .spk-nav-tagline img { height: 23px; }
+          .spk-nav-sep { height: 20px; margin: 0 8px; }
+          .spk-nav-links { gap: 1px; }
+          .spk-nav-links a { padding: 7px 8px; }
+          .spk-nav-links a span { display: none; }
+          .spk-nav-link-icon { width: 17px; height: 17px; }
+          .spk-user-info { display: none; }
+          .spk-user-toggle { padding-right: 6px; }
+        }
+        @media (max-width: 900px) {
+          .spk-nav-tagline img { height: 25px; }
+          .spk-nav-sep { margin: 0 6px; }
+          .spk-nav-right { margin-left: 8px; }
+        }
+        @media (max-width: 768px) {
+          .spk-nav { padding: 0 12px; padding-bottom: 3px; }
           .spk-nav-links {
             display: none;
           }
@@ -647,53 +763,43 @@ export default function Navbar() {
             margin-right: 12px;
           }
 
-          .spk-nav-right > :not(.spk-bell-wrap) {
+          .spk-nav-right > :not(.spk-bell-wrap):not(.spk-nav-user) {
             display: none;
           }
+
+          .spk-user-toggle { padding: 3px; border-radius: 50%; }
+          .spk-user-chevron { display: none; }
+          .spk-user-dropdown { right: 0; }
 
           .spk-hamburger {
             display: flex;
             margin-left: 0;
           }
-
+        }
+        @media (max-width: 480px) {
+          .spk-nav { padding: 0 8px; padding-bottom: 3px; }
+          .spk-nav-logo img { height: 32px; }
+          .spk-nav-tagline img { height: 22px; }
+          .spk-nav-sep { height: 18px; margin: 0 5px; }
+          .spk-nav-right { gap: 5px; margin-left: auto; }
+          .spk-bell { width: 32px; height: 32px; }
+          .spk-user-avatar { width: 28px; height: 28px; }
+          .spk-hamburger { padding: 6px; }
+          .spk-user-dropdown {
+            position: fixed;
+            top: calc(var(--nav-height, 60px) - 3px);
+            right: 8px;
+            width: min(220px, calc(100vw - 16px));
+          }
           .spk-notif-dropdown {
             position: fixed;
-            left: 50vw;
+            top: calc(var(--nav-height, 60px) - 3px);
+            left: 50%;
             right: auto;
-            top: calc(var(--nav-height, 60px) + 8px);
-            width: min(390px, calc(100vw - 24px));
-            max-width: calc(100vw - 24px);
             transform: translateX(-50%);
-            animation: fadeUpCentered .18s ease both;
-          }
-
-          .spk-notif-header {
-            align-items: center;
-            flex-direction: row;
-          }
-
-          .spk-notif-actions {
-            justify-content: flex-end;
-            width: auto;
-          }
-
-          .spk-notif-panel {
-            max-height: min(420px, calc(100vh - 116px));
-          }
-        }
-
-        @media (max-width: 420px) {
-          .spk-nav { padding: 0 12px; padding-bottom: 3px; }
-          .spk-logo-mobile-icon { width: 34px; height: 34px; }
-          .spk-nav-sep { margin: 0 8px; }
-          .spk-nav-right { margin-right: 10px; }
-          .spk-notif-header {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-          .spk-notif-actions {
-            justify-content: space-between;
-            width: 100%;
+            width: calc(100vw - 16px);
+            max-width: 340px;
+            animation-name: mobileNotifUp;
           }
         }
       `}</style>
@@ -701,14 +807,15 @@ export default function Navbar() {
       <nav className={`spk-nav${scrolled ? ' scrolled' : ''}`}>
         <a href="/" className="spk-nav-logo">
           <img className="spk-logo-umss-full" src="/img/logo.png" width="130" height="38" alt="UMSS" />
-          <img className="spk-logo-mobile-icon spk-logo-umss-icon" src="/img/iconoUMSS.png" width="38" height="38" alt="UMSS" />
         </a>
 
         <div className="spk-nav-sep" />
 
         <a href="/" className="spk-nav-tagline">
-          <img className="spk-logo-creafolio-full" src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
-          <img className="spk-logo-mobile-icon" src="/img/iconoCreaFolio.png" width="38" height="38" alt="CreaFolio" />
+          <picture>
+            <source media="(max-width: 900px)" srcSet="/img/logoNavbarCreaFoliomb.png" />
+            <img src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
+          </picture>
         </a>
 
         <ul className="spk-nav-links">
@@ -1000,9 +1107,13 @@ export default function Navbar() {
               <button
                 className="spk-user-toggle"
                 type="button"
-                onClick={() => setUserMenuOpen((open) => !open)}
+                onClick={() => {
+                  setNotifOpen(false);
+                  setMobileOpen(false);
+                  setUserMenuOpen((open) => !open);
+                }}
               >
-                <div className="spk-user-avatar">{initials}</div>
+                <UserAvatar className="spk-user-avatar" src={userAvatar} initials={initials} />
 
                 <div className="spk-user-info">
                   <div className="spk-user-name">{userName}</div>
@@ -1017,7 +1128,7 @@ export default function Navbar() {
               {userMenuOpen && (
                 <div className="spk-user-dropdown" onClick={(event) => event.stopPropagation()}>
                   <div className="spk-dd-header">
-                    <div className="spk-dd-avatar">{initials}</div>
+                    <UserAvatar className="spk-dd-avatar" src={userAvatar} initials={initials} />
 
                     <div>
                       <div className="spk-dd-name">
@@ -1035,39 +1146,41 @@ export default function Navbar() {
                     </div>
                   </div>
 
-                  <div className="spk-dd-section">
-                    <div className="spk-dd-label">{t('nav.account')}</div>
+                  {!adminUser && (
+                    <div className="spk-dd-section">
+                      <div className="spk-dd-label">{t('nav.account')}</div>
 
-                    <button
-                      className="spk-dd-item"
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        window.location.href = adminUser ? '/admin/users' : '/dashboard/profile';
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24">
-                        <path d="M19 21a7 7 0 0 0-14 0" />
-                        <circle cx="12" cy="8" r="4" />
-                      </svg>
-                      {t('nav.viewProfile')}
-                    </button>
+                      <button
+                        className="spk-dd-item"
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          window.location.href = '/dashboard/profile';
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <path d="M19 21a7 7 0 0 0-14 0" />
+                          <circle cx="12" cy="8" r="4" />
+                        </svg>
+                        {t('nav.viewProfile')}
+                      </button>
 
-                    <button
-                      className="spk-dd-item"
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        window.location.href = adminUser ? '/admin' : '/dashboard/settings';
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24">
-                        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
-                        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
-                      </svg>
-                      {t('nav.settings')}
-                    </button>
-                  </div>
+                      <button
+                        className="spk-dd-item"
+                        type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          window.location.href = '/dashboard/settings';
+                        }}
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+                          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 0 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3h.1A1.7 1.7 0 0 0 10 3V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1A1.7 1.7 0 0 0 21 10h.1a2 2 0 0 1 0 4H21a1.7 1.7 0 0 0-1.6 1Z" />
+                        </svg>
+                        {t('nav.settings')}
+                      </button>
+                    </div>
+                  )}
 
                   <div className="spk-dd-section">
                     <div className="spk-dd-label">{t('nav.portfolio')}</div>
@@ -1136,7 +1249,11 @@ export default function Navbar() {
         <button
           className={`spk-hamburger${mobileOpen ? ' open' : ''}`}
           type="button"
-          onClick={() => setMobileOpen((open) => !open)}
+          onClick={() => {
+            setNotifOpen(false);
+            setUserMenuOpen(false);
+            setMobileOpen((open) => !open);
+          }}
           aria-label={t('nav.openMenu')}
         >
           <span />

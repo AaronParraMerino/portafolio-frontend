@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '../../../../core/i18n';
+import { getStoredUser, refreshStoredUser } from '../../../../shared/utils/authStorage';
+import { setStoredProfileThumb } from '../../../../shared/utils/profileThumbCache';
 import {
   getProfile,
   updateProfile,
@@ -246,6 +248,17 @@ export function useProfile() {
       }
 
       mostrarToast(tipo === 'avatar' ? t('profile.toast.avatarUpdated') : t('profile.toast.bannerUpdated'));
+      if (tipo === 'avatar') {
+        const thumbUrl = payload.foto_perfil_thumb_url || '';
+        const resolvedThumbUrl = thumbUrl && !thumbUrl.startsWith('http')
+          ? `${BASE_URL_STORAGE}${thumbUrl}`
+          : thumbUrl;
+        setStoredProfileThumb(
+          getStoredUser()?.id_usuario || getStoredUser()?.id || getStoredUser()?.idUsuario,
+          resolvedThumbUrl
+        );
+        refreshStoredUser().catch(() => {});
+      }
     } catch (error) {
       console.error('[useProfile] Error subiendo imagen:', error.message);
       mostrarToast(t('profile.toast.uploadError'), 'error');
@@ -273,6 +286,13 @@ export function useProfile() {
         return nuevo;
       });
       mostrarToast(tipo === 'avatar' ? t('profile.toast.avatarDeleted') : t('profile.toast.bannerDeleted'));
+      if (tipo === 'avatar') {
+        setStoredProfileThumb(
+          getStoredUser()?.id_usuario || getStoredUser()?.id || getStoredUser()?.idUsuario,
+          ''
+        );
+        refreshStoredUser().catch(() => {});
+      }
     } catch (err) {
       console.error('[useProfile] Error eliminando imagen:', err.message);
       mostrarToast(t('profile.toast.deleteError'), 'error');

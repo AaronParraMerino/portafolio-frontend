@@ -15,6 +15,7 @@ import {
   getTecnologiasCatalogoCache,
   getTecnologiasCatalogo,
   refreshTecnologiasCatalogoCache,
+  repararVariantesImagen,
   isGithubLinked,
   syncGithubRepos,
 } from '../services/projectsService';
@@ -275,16 +276,21 @@ function isDocumentoPermitido(file) {
 ════════════════════════════════════════ */
 function MultiImageUpload({
   imagenesExistentes,
+  imagenesOriginales,
   nuevasImagenes,
   onAgregar,
   onQuitarExistente,
   onQuitarNueva,
+  onRepararExistente,
   cargando,
 }) {
   const { t } = useLanguage();
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState('');
+  const [imagenesConFallo, setImagenesConFallo] = useState({});
+  const [versionesReparadas, setVersionesReparadas] = useState({});
+  const [reparando, setReparando] = useState(null);
 
   const total = imagenesExistentes.length + nuevasImagenes.length;
   const disponibles = MAX_IMAGENES - total;
@@ -320,7 +326,44 @@ function MultiImageUpload({
           {imagenesExistentes.map((url, i) => (
             <div key={`ex-${i}`} className="prj-img-thumb">
               {i === 0 && <span className="prj-img-portada-badge">{t('projects.upload.cover')}</span>}
-              <img src={url} alt={`Imagen ${i + 1}`} />
+              <img
+                src={versionesReparadas[i] ? `${url}${url.includes('?') ? '&' : '?'}v=${versionesReparadas[i]}` : url}
+                alt={`Imagen ${i + 1}`}
+                onError={(event) => {
+                  const originalUrl = imagenesOriginales[i];
+                  setImagenesConFallo(prev => ({ ...prev, [i]: true }));
+                  if (originalUrl && event.currentTarget.src !== originalUrl) {
+                    event.currentTarget.src = originalUrl;
+                  }
+                }}
+              />
+
+              {imagenesConFallo[i] && (
+                <div className="prj-img-repair">
+                  <span>{t('projects.upload.usingOriginal')}</span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        setReparando(i);
+                        setError('');
+                        const result = await onRepararExistente(i);
+                        if (result?.status === 'repaired') {
+                          setImagenesConFallo(prev => ({ ...prev, [i]: false }));
+                          setVersionesReparadas(prev => ({ ...prev, [i]: Date.now() }));
+                        }
+                      } catch (repairError) {
+                        setError(repairError.message || t('projects.upload.repairError'));
+                      } finally {
+                        setReparando(null);
+                      }
+                    }}
+                    disabled={cargando || reparando !== null}
+                  >
+                    {reparando === i ? t('projects.upload.repairing') : t('projects.upload.generateVariants')}
+                  </button>
+                </div>
+              )}
 
               <button
                 type="button"
@@ -1053,6 +1096,13 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     const url = proyecto?.imagenUrl || proyecto?.imagen_portada || null;
     return url ? [url] : [];
   });
+  const [imagenesOriginalesExistentes, setImagenesOriginalesExistentes] = useState(() => {
+    if (Array.isArray(proyecto?.imagenes_originales) && proyecto.imagenes_originales.length > 0) {
+      return proyecto.imagenes_originales;
+    }
+
+    return Array.isArray(proyecto?.imagenes) ? proyecto.imagenes : [];
+  });
 
   const [nuevasImagenes, setNuevasImagenes] = useState([]);
   const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
@@ -1259,9 +1309,34 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   }, []);
 
   const handleQuitarExistente = useCallback((idx) => {
-    setImagenesAEliminar(prev => [...prev, idx]);
+    const originalUrl = imagenesOriginalesExistentes[idx] || imagenesExistentes[idx];
+
+    if (originalUrl) {
+      setImagenesAEliminar(prev => (
+        prev.includes(originalUrl) ? prev : [...prev, originalUrl]
+      ));
+    }
+
     setImagenesExistentes(prev => prev.filter((_, i) => i !== idx));
-  }, []);
+    setImagenesOriginalesExistentes(prev => prev.filter((_, i) => i !== idx));
+  }, [imagenesExistentes, imagenesOriginalesExistentes]);
+
+  const handleRepararExistente = useCallback(async (idx) => {
+    const proyectoId = proyecto?.id || proyecto?.id_proyecto;
+    const originalUrl = imagenesOriginalesExistentes[idx];
+
+    if (!proyectoId || !originalUrl) {
+      throw new Error(t('projects.upload.originalMissing'));
+    }
+
+    const result = await repararVariantesImagen(proyectoId, originalUrl);
+    if (result?.status === 'original_missing') {
+      setImagenesExistentes(prev => prev.filter((_, i) => i !== idx));
+      setImagenesOriginalesExistentes(prev => prev.filter((_, i) => i !== idx));
+    }
+
+    return result;
+  }, [imagenesOriginalesExistentes, proyecto, t]);
 
   const handleQuitarNueva = useCallback((idx) => {
     setNuevasImagenes(prev => {
@@ -1282,9 +1357,14 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   }, []);
 
   const handleQuitarDocumentoExistente = useCallback((idx) => {
-    setDocumentosAEliminar(prev => [...prev, idx]);
+    const documento = documentosExistentes[idx];
+
+    if (documento) {
+      setDocumentosAEliminar(prev => [...prev, documento]);
+    }
+
     setDocumentosExistentes(prev => prev.filter((_, i) => i !== idx));
-  }, []);
+  }, [documentosExistentes]);
 
   const handleQuitarDocumentoNuevo = useCallback((idx) => {
     setNuevosDocumentos(prev => prev.filter((_, i) => i !== idx));
@@ -1457,10 +1537,8 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
     const boot = async () => {
       try {
-        const [github, gitlab] = await Promise.all([
-          isGithubLinked({ provider: 'github' }),
-          isGithubLinked({ provider: 'gitlab' }),
-        ]);
+        const github = await isGithubLinked({ provider: 'github', force: true });
+        const gitlab = await isGithubLinked({ provider: 'gitlab' });
         if (!mounted) return;
 
         setGithubLinked(github);
@@ -1673,10 +1751,12 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                 <MultiImageUpload
                   imagenesExistentes={imagenesExistentes}
+                  imagenesOriginales={imagenesOriginalesExistentes}
                   nuevasImagenes={nuevasImagenes}
                   onAgregar={handleAgregarImagenes}
                   onQuitarExistente={handleQuitarExistente}
                   onQuitarNueva={handleQuitarNueva}
+                  onRepararExistente={handleRepararExistente}
                   cargando={guardando}
                 />
               </div>

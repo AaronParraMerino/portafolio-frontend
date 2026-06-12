@@ -1366,6 +1366,32 @@
 .prj-img-remove:hover { background: var(--rojo-soft); }
 .prj-img-remove svg { width: 9px; height: 9px; stroke: #fff; fill: none; stroke-width: 2.2; }
 
+.prj-img-repair {
+  position: absolute;
+  inset: auto 4px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, .88);
+  color: #fff;
+  font-size: 9px;
+  line-height: 1.25;
+  z-index: 2;
+}
+.prj-img-repair button {
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: var(--amarillo);
+  color: #3f2d00;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.prj-img-repair button:disabled { opacity: .65; cursor: wait; }
+
 /* ── Slot "+" para agregar más imágenes ── */
 .prj-img-add-slot {
   aspect-ratio: 1;

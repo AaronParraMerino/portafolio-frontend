@@ -34,7 +34,8 @@ function mediaFromProject(project = {}) {
     .map((item) => ({
       ...item,
       mediaType: String(item.tipo).toLowerCase() === 'video' ? 'video' : 'image',
-      mediaUrl: item.imagen_detail_url || item.url,
+      mediaUrl: item.url,
+      fallbackMediaUrl: item.imagen_detail_url || '',
       embedUrl: youtubeEmbed(item.url),
       thumbnailUrl: item.imagen_card_url || youtubeThumbnail(item.url),
     }));
@@ -74,7 +75,6 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
         <header className="pdm-header">
           <span>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
           <h2 id="pdm-title">{project.titulo || project.title}</h2>
-          <p>{project.descripcion || project.description}</p>
         </header>
 
         <div className="pdm-gallery">
@@ -82,7 +82,15 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
             {currentMedia?.mediaType === 'video' && currentMedia.embedUrl ? (
               <iframe src={currentMedia.embedUrl} title={currentMedia.titulo || t('home.projects.detail.videoTitle')} allowFullScreen />
             ) : currentMedia?.mediaUrl ? (
-              <img src={currentMedia.mediaUrl} alt={currentMedia.titulo || project.titulo || project.title} />
+              <img
+                src={currentMedia.mediaUrl}
+                alt={currentMedia.titulo || project.titulo || project.title}
+                onError={(event) => {
+                  if (currentMedia.fallbackMediaUrl && event.currentTarget.src !== currentMedia.fallbackMediaUrl) {
+                    event.currentTarget.src = currentMedia.fallbackMediaUrl;
+                  }
+                }}
+              />
             ) : (
               <div className="pdm-gallery-empty"><BsCodeSlash /><span>{t('home.projects.detail.noGallery')}</span></div>
             )}
@@ -108,20 +116,13 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
         {error && <div className="pdm-notice is-error">{error}</div>}
 
         <div className="pdm-content">
-          <section className="pdm-panel">
-            <h3>{t('home.projects.detail.information')}</h3>
-            <div className="pdm-facts">
-              <span><strong>{t('home.projects.detail.type')}</strong>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
-              <span><strong>{t('home.projects.detail.platform')}</strong>{getProjectPlatformLabel(project.desarrollado_para || project.platform, t)}</span>
-              <span><strong>{t('home.projects.detail.status')}</strong>{getProjectStatusLabel(project.estado_desarrollo, t)}</span>
-              <span><strong>{t('home.projects.detail.origin')}</strong>{project.origen || t('home.projects.detail.manual')}</span>
-              <span><strong>{t('home.projects.detail.start')}</strong>{project.fecha_inicio || t('home.projects.detail.undefined')}</span>
-              <span><strong>{t('home.projects.detail.end')}</strong>{project.fecha_fin || t('home.projects.detail.inProgress')}</span>
-            </div>
+          <section className="pdm-panel pdm-description-panel">
+            <h3>{t('home.projects.detail.description')}</h3>
+            <p>{project.descripcion || project.description || t('home.projects.detail.noDescription')}</p>
           </section>
 
           {(project.tecnologias || project.technologies)?.length > 0 && (
-            <section className="pdm-panel">
+            <section className="pdm-panel pdm-technologies-panel">
               <h3>{t('home.projects.detail.technologies')}</h3>
               <div className="pdm-technologies">
                 {(project.tecnologias || project.technologies).map((tech, index) => (
@@ -135,37 +136,20 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
             </section>
           )}
 
-          {(project.repositorios || []).length > 0 && (
-            <section className="pdm-panel">
-              <h3>{t('home.projects.detail.repositories')}</h3>
-              <div className="pdm-repositories">
-                {project.repositorios.map((repo, index) => (
-                  <article key={`repository-${repo.id_proyecto_repositorio || repo.url_repositorio || index}-${index}`}>
-                    <div><BsGithub /><strong>{repo.nombre || repo.github_repo_name || t('home.projects.detail.repository')}</strong><span>{repo.proveedor}</span></div>
-                    <p>{repo.descripcion || repo.github_description || repo.readme_resumen || t('home.projects.detail.noDescription')}</p>
-                    <div className="pdm-repo-stats">
-                      <span><BsStar /> {repo.stars_count || 0}</span>
-                      <span>{t('home.projects.detail.commits', { count: repo.commits_count || 0 })}</span>
-                      <span>{t('home.projects.detail.contributors', { count: repo.contributors_count || 0 })}</span>
-                    </div>
-                    {repo.url_repositorio && <a href={repo.url_repositorio} target="_blank" rel="noreferrer">{t('home.projects.detail.openRepository')} <BsBoxArrowUpRight /></a>}
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {links.length > 0 && (
-            <section className="pdm-panel">
-              <h3>{t('home.projects.detail.links')}</h3>
-              <div className="pdm-links">
-                {links.map((item, index) => <a key={`link-${item.id_evidencia || item.url || index}-${index}`} href={item.url} target="_blank" rel="noreferrer">{item.titulo || item.tipo}<BsBoxArrowUpRight /></a>)}
-              </div>
-            </section>
-          )}
+          <section className="pdm-panel pdm-information-panel">
+            <h3>{t('home.projects.detail.information')}</h3>
+            <div className="pdm-facts">
+              <span><strong>{t('home.projects.detail.type')}</strong>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
+              <span><strong>{t('home.projects.detail.platform')}</strong>{getProjectPlatformLabel(project.desarrollado_para || project.platform, t)}</span>
+              <span><strong>{t('home.projects.detail.status')}</strong>{getProjectStatusLabel(project.estado_desarrollo, t)}</span>
+              <span><strong>{t('home.projects.detail.origin')}</strong>{project.origen || t('home.projects.detail.manual')}</span>
+              <span><strong>{t('home.projects.detail.start')}</strong>{project.fecha_inicio || t('home.projects.detail.undefined')}</span>
+              <span><strong>{t('home.projects.detail.end')}</strong>{project.fecha_fin || t('home.projects.detail.inProgress')}</span>
+            </div>
+          </section>
 
           {(project.participantes || []).length > 0 && (
-            <section className="pdm-panel">
+            <section className="pdm-panel pdm-participants-panel">
               <h3><BsPeople /> {t('home.projects.detail.participants', { count: project.participantes_count || project.participantes.length })}</h3>
               <div className="pdm-participants">
                 {project.participantes.map((participant, index) => (
@@ -187,6 +171,36 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
               </div>
             </section>
           )}
+
+          {(project.repositorios || []).length > 0 && (
+            <section className="pdm-panel pdm-repositories-panel">
+              <h3>{t('home.projects.detail.repositories')}</h3>
+              <div className="pdm-repositories">
+                {project.repositorios.map((repo, index) => (
+                  <article key={`repository-${repo.id_proyecto_repositorio || repo.url_repositorio || index}-${index}`}>
+                    <div><BsGithub /><strong>{repo.nombre || repo.github_repo_name || t('home.projects.detail.repository')}</strong><span>{repo.proveedor}</span></div>
+                    <p>{repo.descripcion || repo.github_description || repo.readme_resumen || t('home.projects.detail.noDescription')}</p>
+                    <div className="pdm-repo-stats">
+                      <span><BsStar /> {repo.stars_count || 0}</span>
+                      <span>{t('home.projects.detail.commits', { count: repo.commits_count || 0 })}</span>
+                      <span>{t('home.projects.detail.contributors', { count: repo.contributors_count || 0 })}</span>
+                    </div>
+                    {repo.url_repositorio && <a href={repo.url_repositorio} target="_blank" rel="noreferrer">{t('home.projects.detail.openRepository')} <BsBoxArrowUpRight /></a>}
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {links.length > 0 && (
+            <section className="pdm-panel pdm-links-panel">
+              <h3>{t('home.projects.detail.links')}</h3>
+              <div className="pdm-links">
+                {links.map((item, index) => <a key={`link-${item.id_evidencia || item.url || index}-${index}`} href={item.url} target="_blank" rel="noreferrer">{item.titulo || item.tipo}<BsBoxArrowUpRight /></a>)}
+              </div>
+            </section>
+          )}
+
         </div>
       </section>
     </div>
