@@ -61,6 +61,7 @@ export default function FeaturedPortfolios() {
         .spk-featured-portfolios {
           background: var(--blanco);
           border-top: 1px solid rgba(209,213,219,.8);
+          overflow-x: hidden;
           padding: 74px 24px 82px;
         }
         .spk-featured-inner { max-width: 1180px; margin: 0 auto; }
@@ -88,9 +89,11 @@ export default function FeaturedPortfolios() {
         .spk-featured-link:hover { background: var(--azul-light); border-color: var(--azul); color: var(--azul); }
         .spk-featured-search {
           display: flex; align-items: center; gap: 10px; margin: 0 0 22px;
+          width: 100%;
         }
         .spk-featured-search-input {
-          flex: 1; min-width: 0; height: 44px; border: 1.5px solid var(--gris-borde);
+          box-sizing: border-box; flex: 1 1 auto; min-width: 0; max-width: 100%;
+          width: 100%; height: 44px; border: 1.5px solid var(--gris-borde);
           border-radius: 8px; background: var(--blanco); color: var(--negro-texto);
           font-family: var(--font); font-size: 14px; outline: none; padding: 0 14px;
           transition: border-color .15s, box-shadow .15s;
@@ -122,10 +125,12 @@ export default function FeaturedPortfolios() {
         .spk-featured-tab {
           border: 1.5px solid var(--gris-borde); background: #f9fbfc; border-radius: 8px;
           padding: 13px 14px; text-align: left; color: var(--gris-oscuro); cursor: pointer;
+          min-width: 0;
           transition: border-color .15s, background .15s, box-shadow .15s;
         }
         .spk-featured-tab strong {
           display: block; font-size: 13px; color: var(--negro-texto); margin-bottom: 4px;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .spk-featured-tab span {
           display: block; font-size: 11px; line-height: 1.45; color: var(--gris-texto);
@@ -145,6 +150,7 @@ export default function FeaturedPortfolios() {
         }
         .spk-portfolio-card {
           padding: 18px; display: flex; min-height: 235px; flex-direction: column;
+          min-width: 0; overflow: hidden;
           justify-content: space-between; transition: transform .15s, box-shadow .15s, border-color .15s;
         }
         .spk-portfolio-card:hover {
@@ -161,16 +167,19 @@ export default function FeaturedPortfolios() {
           background: linear-gradient(135deg, var(--azul-light), var(--blanco));
           color: var(--azul-deep); font-size: 15px; font-weight: 800;
         }
-        .spk-portfolio-main { min-width: 0; }
+        .spk-portfolio-main { min-width: 0; overflow: hidden; }
         .spk-portfolio-main h3 {
           color: var(--negro-texto); font-size: 16px; font-weight: 800; margin: 0 0 3px;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .spk-portfolio-main p,
         .spk-portfolio-location {
           color: var(--gris-texto); font-size: 12px; line-height: 1.45; margin: 0;
+          overflow: hidden; text-overflow: ellipsis;
         }
-        .spk-portfolio-location { margin-top: 12px; }
+        .spk-portfolio-main p,
+        .spk-portfolio-location { white-space: nowrap; }
+        .spk-portfolio-location { margin-top: 12px; max-width: 100%; }
         .spk-portfolio-skills { display: flex; flex-wrap: wrap; gap: 7px; margin: 16px 0; }
         .spk-portfolio-skills span {
           background: var(--azul-light); border: 1px solid var(--azul-mid); border-radius: 999px;
@@ -180,9 +189,12 @@ export default function FeaturedPortfolios() {
         .spk-portfolio-card-foot {
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
           border-top: 1px solid #eef2f6; padding-top: 14px;
+          min-width: 0;
         }
+        .spk-portfolio-counter { min-width: 0; }
         .spk-portfolio-counter strong {
           display: block; color: var(--azul); font-size: 18px; font-weight: 800; line-height: 1;
+          max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .spk-portfolio-counter.wide strong { font-size: 12px; line-height: 1.35; }
         .spk-portfolio-counter span {
@@ -192,7 +204,8 @@ export default function FeaturedPortfolios() {
         .spk-portfolio-cta {
           background: var(--azul); border: 1px solid var(--azul); border-radius: 6px;
           color: var(--blanco); font-size: 12px; font-weight: 700; padding: 8px 11px;
-          text-decoration: none; white-space: nowrap; transition: background .15s, border-color .15s;
+          flex: 0 0 auto; max-width: 48%; overflow: hidden; text-align: center; text-decoration: none;
+          text-overflow: ellipsis; white-space: nowrap; transition: background .15s, border-color .15s;
         }
         .spk-portfolio-cta:hover {
           background: var(--azul-hover); border-color: var(--azul-hover); color: var(--blanco);
@@ -212,13 +225,27 @@ export default function FeaturedPortfolios() {
         }
         @media (max-width: 620px) {
           .spk-featured-portfolios { padding: 56px 18px 64px; }
+          .spk-featured-header { gap: 18px; }
+          .spk-featured-link { width: fit-content; max-width: 100%; }
           .spk-featured-search { align-items: stretch; flex-direction: column; }
+          .spk-featured-search-input { flex: 0 0 auto; width: 100%; }
           .spk-featured-search-btn,
           .spk-featured-clear-btn { width: 100%; }
           .spk-featured-search-state { align-items: flex-start; flex-direction: column; }
           .spk-featured-tabs,
           .spk-portfolio-grid { grid-template-columns: 1fr; }
           .spk-featured-tab { padding: 12px; }
+          .spk-portfolio-card { padding: 14px; min-height: 220px; }
+          .spk-portfolio-card-head { align-items: flex-start; }
+          .spk-portfolio-avatar { width: 48px; height: 48px; }
+          .spk-portfolio-card-foot { align-items: stretch; flex-direction: column; gap: 10px; }
+          .spk-portfolio-cta { max-width: none; width: 100%; }
+        }
+        @media (max-width: 380px) {
+          .spk-featured-portfolios { padding-left: 14px; padding-right: 14px; }
+          .spk-featured-title { font-size: 28px; }
+          .spk-portfolio-main h3 { font-size: 15px; }
+          .spk-portfolio-skills span { max-width: calc(100vw - 64px); }
         }
       `}</style>
 
@@ -240,7 +267,7 @@ export default function FeaturedPortfolios() {
           <form className="spk-featured-search" onSubmit={handleSearchSubmit}>
             <input
               className="spk-featured-search-input"
-              type="search"
+              type="text"
               value={draftSearch}
               onChange={(event) => setDraftSearch(event.target.value)}
               placeholder={t('featured.search.placeholder')}
