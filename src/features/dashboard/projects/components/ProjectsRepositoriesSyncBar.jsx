@@ -8,6 +8,7 @@ import {
   syncGithubRepos,
 } from '../services/projectsService';
 import RepositoryProviderIcon from './RepositoryProviderIcon';
+import ProjectRecoveryActions from './ProjectRecoveryActions';
 import '../styles/projects.css';
 
 const MAX_SELECTED_REPOS = 3;
@@ -419,6 +420,7 @@ export default function ProjectsRepositoriesSyncBar({
                   const key = `${provider}:${normalizeUrl(repo.url_repositorio)}`;
                   const selected = selectedKeys.has(key);
                   const enUso = repo.estado_vinculacion === 'en_uso';
+                  const proyectoEliminado = repo.estado_vinculacion === 'proyecto_eliminado';
                   const limitReached = selectedRepos.length >= MAX_SELECTED_REPOS && !selected;
 
                   return (
@@ -432,7 +434,7 @@ export default function ProjectsRepositoriesSyncBar({
                           {getRepoTitle(repo)}
                         </div>
                         <div className="prj-detected-url">{repo.url_repositorio}</div>
-                        {enUso && repo.proyecto?.titulo && (
+                        {(enUso || proyectoEliminado) && repo.proyecto?.titulo && (
                           <div className="prj-detected-url">{t('projects.github.project')}: {repo.proyecto.titulo}</div>
                         )}
                       </div>
@@ -443,10 +445,21 @@ export default function ProjectsRepositoriesSyncBar({
                           {PROVIDER_NAMES[provider]}
                         </span>
                         {repo.repo_github?.is_private && <span className="prj-detected-pill warn">privado</span>}
-                        <span className={`prj-detected-pill ${enUso ? 'warn' : repo.validacion?.validado ? 'ok' : 'warn'}`}>
-                          {enUso ? 'en uso' : repo.validacion?.validado ? 'validado' : 'sin validar'}
+                        <span className={`prj-detected-pill ${(enUso || proyectoEliminado) ? 'warn' : repo.validacion?.validado ? 'ok' : 'warn'}`}>
+                          {proyectoEliminado ? 'proyecto eliminado' : enUso ? 'en uso' : repo.validacion?.validado ? 'validado' : 'sin validar'}
                         </span>
-                        {enUso ? (
+                        {proyectoEliminado ? (
+                          <ProjectRecoveryActions
+                            repo={repo}
+                            disabled={joinLoading}
+                            onNotice={setNotice}
+                            onError={setError}
+                            onChanged={async () => {
+                              await loadDetectedRepos();
+                              if (typeof onReposChanged === 'function') await onReposChanged();
+                            }}
+                          />
+                        ) : enUso ? (
                           <button
                             type="button"
                             className="prj-detected-add-btn"

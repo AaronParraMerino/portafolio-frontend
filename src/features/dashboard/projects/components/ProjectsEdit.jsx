@@ -4,6 +4,7 @@ import '../styles/projects.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import ProjectsTechPicker from './ProjectsTechPicker';
 import RepositoryProviderIcon from './RepositoryProviderIcon';
+import ProjectRecoveryActions from './ProjectRecoveryActions';
 import { ESTADOS_PROYECTO, TIPOS_PROYECTO, DESARROLLADO_PARA, getProjectOptionLabel } from '../model/projectsModel';
 import {
   attachDetectedReposToProject,
@@ -1088,6 +1089,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
   const [detectingRepoUrl, setDetectingRepoUrl] = useState('');
   const [mostrarDetectedRepos, setMostrarDetectedRepos] = useState(false);
   const [detectedReposError, setDetectedReposError] = useState('');
+  const [detectedReposNotice, setDetectedReposNotice] = useState('');
   const [joinRepoPending, setJoinRepoPending] = useState(null);
   const [joiningRepo, setJoiningRepo] = useState(false);
   const initialReposTechDetectionKeyRef = useRef('');
@@ -1878,6 +1880,9 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                         {detectedReposError && (
                           <div className="prj-detected-error">{detectedReposError}</div>
                         )}
+                        {detectedReposNotice && (
+                          <div className="prj-detected-notice">{detectedReposNotice}</div>
+                        )}
 
                         {checkingGithubLinked && (
                           <div className="prj-detected-muted">{t('projects.github.preparing')}</div>
@@ -1924,6 +1929,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                   const url = repo?.url_repositorio || '';
                                   const yaAgregado = form.url_repositorios.includes(url);
                                   const enUso = repo?.estado_vinculacion === 'en_uso';
+                                  const proyectoEliminado = repo?.estado_vinculacion === 'proyecto_eliminado';
 
                                   return (
                                     <div key={repo.id_proyecto_repositorio || url} className="prj-detected-item">
@@ -1934,7 +1940,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                                         <div className="prj-detected-url">{url}</div>
 
-                                        {enUso && repo?.proyecto?.titulo && (
+                                        {(enUso || proyectoEliminado) && repo?.proyecto?.titulo && (
                                           <div className="prj-detected-url">
                                             {t('projects.github.project')}: {repo.proyecto.titulo}
                                           </div>
@@ -1947,15 +1953,25 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                                           {repo?.proveedor === 'gitlab' ? 'GitLab' : 'GitHub'}
                                         </span>
 
-                                        <span className={`prj-detected-pill ${enUso ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
-                                          {enUso
+                                        <span className={`prj-detected-pill ${(enUso || proyectoEliminado) ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
+                                          {proyectoEliminado
+                                            ? 'proyecto eliminado'
+                                            : enUso
                                             ? t('projects.github.inUse')
                                             : repo?.validacion?.validado
                                               ? (repo?.validacion?.relacion_github || t('projects.github.validated'))
                                               : t('projects.github.unvalidated')}
                                         </span>
 
-                                        {enUso ? (
+                                        {proyectoEliminado ? (
+                                          <ProjectRecoveryActions
+                                            repo={repo}
+                                            disabled={guardando || joiningRepo}
+                                            onNotice={setDetectedReposNotice}
+                                            onError={setDetectedReposError}
+                                            onChanged={() => loadDetectedRepos(false)}
+                                          />
+                                        ) : enUso ? (
                                           <button
                                             type="button"
                                             className="prj-detected-add-btn"
