@@ -782,7 +782,7 @@ export default function Navbar() {
 
       <nav className={`spk-nav${scrolled ? ' scrolled' : ''}`}>
         <a href="/" className="spk-nav-logo">
-          <img src="/img/logo.png" width="130" height="38" alt="UMSS" />
+          <img className="spk-logo-umss-full" src="/img/logo.png" width="130" height="38" alt="UMSS" />
         </a>
 
         <div className="spk-nav-sep" />
