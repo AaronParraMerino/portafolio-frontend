@@ -42,6 +42,7 @@ export default function UsersActionModal({
   actionSubmitting,
   onOpenDirectNotice,
   onSessionCountChange,
+  onRunInBackground,
   onClose,
   onSelectAction,
   onCancelAction,
@@ -359,6 +360,8 @@ export default function UsersActionModal({
                 key={`${user.id}:${user.estado}:${sessionCount}`}
                 user={user}
                 onCountChange={onSessionCountChange}
+                onRequestClose={onClose}
+                onRunInBackground={onRunInBackground}
               />
             ) : (
               <div className="usr-session-empty">

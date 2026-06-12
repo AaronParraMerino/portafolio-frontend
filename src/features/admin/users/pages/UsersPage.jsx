@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BsMegaphone } from 'react-icons/bs';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
@@ -11,11 +12,13 @@ import UsersNoticeModal from '../components/UsersNoticeModal';
 import UsersStats from '../components/UsersStats';
 import UsersTable from '../components/UsersTable';
 import UsersTemplatesPanel from '../components/UsersTemplatesPanel';
+import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import '../styles/users.css';
 import { useLanguage } from '../../../../core/i18n';
 
 export default function UsersPage() {
   const { t } = useLanguage();
+  const [backgroundSavingCount, setBackgroundSavingCount] = useState(0);
   const headerConfig = getAdminSectionConfig('users');
   const {
     sourceReady,
@@ -85,6 +88,21 @@ export default function UsersPage() {
     },
   ];
 
+  const runUserChangeInBackground = (task) => {
+    setBackgroundSavingCount((count) => count + 1);
+    return Promise.resolve()
+      .then(task)
+      .finally(() => setBackgroundSavingCount((count) => Math.max(0, count - 1)));
+  };
+
+  const handleSendNoticeInBackground = (payload) => (
+    runUserChangeInBackground(() => onSendNotice(payload))
+  );
+
+  const handleDeleteTemplateInBackground = (templateId) => (
+    runUserChangeInBackground(() => onDeleteTemplate(templateId))
+  );
+
   return (
     <div className="usr-page">
       <AdminHeader
@@ -96,6 +114,12 @@ export default function UsersPage() {
       <div className="usr-content">
         {loadError ? (
           <p className="usr-load-error" role="alert">{loadError}</p>
+        ) : null}
+        {!activeUser && actionError ? (
+          <p className="usr-load-error" role="alert">{actionError}</p>
+        ) : null}
+        {!activeUser && actionSuccess ? (
+          <p className="usr-action-feedback usr-action-feedback--success">{actionSuccess}</p>
         ) : null}
         <UsersStats metrics={metrics} sourceReady={sourceReady} />
 
@@ -154,7 +178,7 @@ export default function UsersPage() {
               templates={templates}
               onCreateTemplate={onOpenTemplateModal}
               onEditTemplate={onOpenTemplateModal}
-              onDeleteTemplate={onDeleteTemplate}
+              onDeleteTemplate={handleDeleteTemplateInBackground}
               onUseTemplate={onUseTemplate}
             />
           ) : null}
@@ -174,6 +198,7 @@ export default function UsersPage() {
         supportsRoleManagement={supportsRoleManagement}
         onOpenDirectNotice={onOpenDirectNoticeModal}
         onSessionCountChange={onSessionCountChange}
+        onRunInBackground={runUserChangeInBackground}
         onClose={onCloseUser}
         onSelectAction={onSelectAction}
         onCancelAction={onCancelAction}
@@ -191,8 +216,13 @@ export default function UsersPage() {
         metrics={metrics}
         supportsMutations={supportsMutations}
         supportsCommunications={supportsCommunications}
-        onSendNotice={onSendNotice}
+        onSendNotice={handleSendNoticeInBackground}
         onClose={onCloseNoticeModal}
+      />
+
+      <BackgroundSaveIndicator
+        active={actionSubmitting || backgroundSavingCount > 0}
+        label={t('admin.users.background.processing')}
       />
     </div>
   );

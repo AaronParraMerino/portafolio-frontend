@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BsBell,
   BsClock,
@@ -19,11 +19,13 @@ import {
 } from '../services/usersService';
 import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
 import { useLanguage } from '../../../../core/i18n';
+import AdminPagination, { getAdminPageSlice } from '../../shared/AdminPagination';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
 };
+const COMMUNICATIONS_PAGE_SIZE = 6;
 
 function normalizeNotice(item = {}) {
   const channels = item.channels || item.canales || [];
@@ -71,6 +73,7 @@ export default function UsersCommunicationsPanel({
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const notices = useMemo(
     () => communications.map(normalizeNotice),
@@ -81,6 +84,23 @@ export default function UsersCommunicationsPanel({
     () => notices.filter((notice) => matchesNoticeFilters(notice, query, typeFilter, statusFilter)),
     [notices, query, statusFilter, typeFilter],
   );
+  const {
+    currentPage: safeCurrentPage,
+    pageItems: pagedNotices,
+    totalPages,
+    paginationItems,
+  } = getAdminPageSlice(visibleNotices, currentPage, COMMUNICATIONS_PAGE_SIZE);
+  const pageSummary = sourceReady && visibleNotices.length
+    ? t('admin.users.pagination.communicationsRange', {
+      start: (safeCurrentPage - 1) * COMMUNICATIONS_PAGE_SIZE + 1,
+      end: Math.min(safeCurrentPage * COMMUNICATIONS_PAGE_SIZE, visibleNotices.length),
+      total: visibleNotices.length,
+    })
+    : sourceReady ? t('admin.users.pagination.noResults') : t('admin.users.pagination.pending');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter, typeFilter]);
 
   return (
     <div className="usr-view-body">
@@ -160,7 +180,7 @@ export default function UsersCommunicationsPanel({
 
         {sourceReady && visibleNotices.length > 0 ? (
           <div className="usr-notice-grid">
-            {visibleNotices.map((notice) => {
+            {pagedNotices.map((notice) => {
               const typeMeta = getUserNoticeTypeMeta(notice.type);
               const statusMeta = getUserNoticeStatusMeta(notice.status);
 
@@ -246,6 +266,17 @@ export default function UsersCommunicationsPanel({
             hint={t('admin.users.communications.emptyHint')}
           />
         )}
+
+        <AdminPagination
+          summary={pageSummary}
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          paginationItems={paginationItems}
+          previousLabel={t('admin.users.table.previous')}
+          nextLabel={t('admin.users.table.next')}
+          disabled={!sourceReady}
+          onPageChange={setCurrentPage}
+        />
       </section>
     </div>
   );

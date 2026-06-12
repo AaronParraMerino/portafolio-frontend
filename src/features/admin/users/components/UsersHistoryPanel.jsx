@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BsBell,
   BsClockHistory,
@@ -15,11 +15,13 @@ import {
   getUserNoticeTypeMeta,
 } from '../services/usersService';
 import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
+import AdminPagination, { getAdminPageSlice } from '../../shared/AdminPagination';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
 };
+const HISTORY_PAGE_SIZE = 8;
 
 function normalizeHistoryItem(item = {}) {
   const channels = item.channels || item.canales || [];
@@ -62,6 +64,7 @@ export default function UsersHistoryPanel({
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const normalizedHistory = useMemo(
     () => historyItems.map(normalizeHistoryItem),
@@ -72,6 +75,23 @@ export default function UsersHistoryPanel({
     () => normalizedHistory.filter((item) => matchesHistoryFilters(item, query, typeFilter, statusFilter)),
     [normalizedHistory, query, statusFilter, typeFilter],
   );
+  const {
+    currentPage: safeCurrentPage,
+    pageItems: pagedHistory,
+    totalPages,
+    paginationItems,
+  } = getAdminPageSlice(visibleHistory, currentPage, HISTORY_PAGE_SIZE);
+  const pageSummary = sourceReady && visibleHistory.length
+    ? t('admin.users.pagination.historyRange', {
+      start: (safeCurrentPage - 1) * HISTORY_PAGE_SIZE + 1,
+      end: Math.min(safeCurrentPage * HISTORY_PAGE_SIZE, visibleHistory.length),
+      total: visibleHistory.length,
+    })
+    : sourceReady ? t('admin.users.pagination.noResults') : t('admin.users.pagination.pending');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter, typeFilter]);
 
   return (
     <div className="usr-view-body">
@@ -104,7 +124,7 @@ export default function UsersHistoryPanel({
               className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
               onClick={() => setTypeFilter('todos')}
             >
-              Todos
+              {t('admin.users.communications.all')}
             </button>
             {USER_NOTICE_TYPES.map((type) => (
               <button
@@ -146,7 +166,7 @@ export default function UsersHistoryPanel({
                 </tr>
               </thead>
               <tbody>
-                {visibleHistory.map((item) => {
+                {pagedHistory.map((item) => {
                   const typeMeta = getUserNoticeTypeMeta(item.type);
                   const statusMeta = getUserNoticeStatusMeta(item.status);
 
@@ -207,6 +227,17 @@ export default function UsersHistoryPanel({
             hint={t('admin.users.history.emptyHint')}
           />
         )}
+
+        <AdminPagination
+          summary={pageSummary}
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          paginationItems={paginationItems}
+          previousLabel={t('admin.users.table.previous')}
+          nextLabel={t('admin.users.table.next')}
+          disabled={!sourceReady}
+          onPageChange={setCurrentPage}
+        />
       </section>
 
     </div>

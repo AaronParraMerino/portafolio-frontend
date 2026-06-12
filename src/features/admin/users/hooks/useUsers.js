@@ -229,45 +229,52 @@ export function useUsersDirectory() {
   const handleConfirmAction = async () => {
     if (!activeUser || !['activar', 'pausar', 'bloquear', 'inactivar', 'asignar_publicante', 'quitar_publicante'].includes(pendingActionId)) return;
 
+    const userContext = activeUser;
+    const actionContext = pendingActionId;
+    const messageContext = actionMessage.trim();
+    const channelsContext = actionChannels;
+    const isActivation = actionContext === 'activar';
+    const isPausing = actionContext === 'pausar';
+    const isBlocking = actionContext === 'bloquear';
+    const isRoleAssign = actionContext === 'asignar_publicante';
+    const isRoleRemove = actionContext === 'quitar_publicante';
+    const isRoleAction = isRoleAssign || isRoleRemove;
+
+    if (isRoleAction && messageContext.length < 10) {
+      setActionError(t('admin.users.actionModal.reasonRequired'));
+      return;
+    }
+
     setActionSubmitting(true);
     setActionError('');
     setActionSuccess('');
+    setActiveUserId(null);
+    setPendingActionId('');
+    setActionMessage('');
+    setActionChannels(['inapp', 'email']);
 
     try {
-      const isActivation = pendingActionId === 'activar';
-      const isPausing = pendingActionId === 'pausar';
-      const isBlocking = pendingActionId === 'bloquear';
-      const isRoleAssign = pendingActionId === 'asignar_publicante';
-      const isRoleRemove = pendingActionId === 'quitar_publicante';
-      const isRoleAction = isRoleAssign || isRoleRemove;
-
-      if (isRoleAction && actionMessage.trim().length < 10) {
-        setActionError(t('admin.users.actionModal.reasonRequired'));
-        setActionSubmitting(false);
-        return;
-      }
-
       const actionPayload = {
-        razon: actionMessage.trim() || null,
-        ...(isPausing || isBlocking ? {} : { canales: actionChannels }),
+        razon: messageContext || null,
+        ...(isPausing || isBlocking ? {} : { canales: channelsContext }),
       };
 
       const nextRole = isRoleAssign ? 'publicante' : 'usuario';
       const response = isRoleAction
         ? (supportsRoleManagement
-          ? await updateUserRole(activeUser.id, { rol: nextRole, razon: actionMessage.trim(), canales: actionChannels })
+          ? await updateUserRole(userContext.id, { rol: nextRole, razon: messageContext, canales: channelsContext })
           : { message: t('admin.users.actionModal.frontendReady') })
         : (isActivation
-          ? await activateUserAccount(activeUser.id, actionPayload)
+          ? await activateUserAccount(userContext.id, actionPayload)
           : (isPausing
-            ? await pauseUserAccount(activeUser.id, actionPayload)
+            ? await pauseUserAccount(userContext.id, actionPayload)
             : isBlocking
-            ? await blockUserAccount(activeUser.id, actionPayload)
-            : await inactivateUserAccount(activeUser.id, actionPayload)));
+            ? await blockUserAccount(userContext.id, actionPayload)
+            : await inactivateUserAccount(userContext.id, actionPayload)));
       setDirectory((current) => ({
         ...current,
         items: current.items.map((user) => (
-          String(user.id) === String(activeUser.id)
+          String(user.id) === String(userContext.id)
             ? {
               ...user,
               ...(isRoleAction
@@ -287,17 +294,14 @@ export function useUsersDirectory() {
         : (isPausing
           ? t('admin.users.action.pausar.label')
           : (isBlocking ? t('admin.users.action.bloquear.label') : t('admin.users.action.inactivar.label'))))));
-      setPendingActionId('');
-      setActionMessage('');
-      setActionChannels(['inapp', 'email']);
     } catch (error) {
-      setActionError(error.message || (pendingActionId === 'activar'
+      setActionError(error.message || (actionContext === 'activar'
         ? t('admin.users.action.activar.description')
-        : (pendingActionId === 'pausar'
+        : (actionContext === 'pausar'
           ? t('admin.users.action.pausar.description')
-          : pendingActionId === 'bloquear'
+          : actionContext === 'bloquear'
           ? t('admin.users.action.bloquear.description')
-          : pendingActionId === 'asignar_publicante' || pendingActionId === 'quitar_publicante'
+          : actionContext === 'asignar_publicante' || actionContext === 'quitar_publicante'
           ? t('admin.users.noticeModal.sendError')
           : t('admin.users.action.inactivar.description'))));
     } finally {
