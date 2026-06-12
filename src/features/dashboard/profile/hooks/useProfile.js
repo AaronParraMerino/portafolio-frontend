@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '../../../../core/i18n';
+import { refreshStoredUser } from '../../../../shared/utils/authStorage';
 import {
   getProfile,
   updateProfile,
@@ -246,6 +247,9 @@ export function useProfile() {
       }
 
       mostrarToast(tipo === 'avatar' ? t('profile.toast.avatarUpdated') : t('profile.toast.bannerUpdated'));
+      if (tipo === 'avatar') {
+        refreshStoredUser().catch(() => {});
+      }
     } catch (error) {
       console.error('[useProfile] Error subiendo imagen:', error.message);
       mostrarToast(t('profile.toast.uploadError'), 'error');
@@ -273,6 +277,9 @@ export function useProfile() {
         return nuevo;
       });
       mostrarToast(tipo === 'avatar' ? t('profile.toast.avatarDeleted') : t('profile.toast.bannerDeleted'));
+      if (tipo === 'avatar') {
+        refreshStoredUser().catch(() => {});
+      }
     } catch (err) {
       console.error('[useProfile] Error eliminando imagen:', err.message);
       mostrarToast(t('profile.toast.deleteError'), 'error');
