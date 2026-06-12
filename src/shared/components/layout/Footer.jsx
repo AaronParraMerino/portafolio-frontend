@@ -1,31 +1,33 @@
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaDiscord, FaEnvelope, FaGitlab, FaGithub } from 'react-icons/fa';
 import { useLanguage } from '../../../core/i18n';
+import PoliticaCookies from '../../../features/auth/components/PoliticasC';
+import PoliticaPrivacidad from '../../../features/auth/components/PoliticasP';
+import { getStoredUser, isAdminUser } from '../../utils/authStorage';
 
 const FOOTER_LINKS = [
   {
     titleKey: 'footer.platform.title',
     links: [
-      { labelKey: 'footer.platform.exploreDevelopers', href: '#' },
-      { labelKey: 'footer.platform.trendingProjects', href: '#' },
-      { labelKey: 'footer.platform.howItWorks', href: '#' },
-      { labelKey: 'footer.platform.companies', href: '#' },
+      { labelKey: 'footer.platform.exploreDevelopers', href: '/desarrolladores' },
+      { labelKey: 'footer.platform.exploreProjects', href: '/proyectos' },
+      { labelKey: 'footer.platform.exploreEvents', href: '/eventos' },
     ],
   },
   {
     titleKey: 'footer.developers.title',
     links: [
-      { labelKey: 'footer.developers.createPortfolio', href: '#' },
-      { labelKey: 'footer.developers.myProfile', href: '#' },
-      { labelKey: 'footer.developers.myProjects', href: '#' },
-      { labelKey: 'footer.developers.publicView', href: '#' },
+      { labelKey: 'footer.developers.createPortfolio', href: '/dashboard', protected: true },
+      { labelKey: 'footer.developers.myProfile', href: '/dashboard/profile', protected: true },
+      { labelKey: 'footer.developers.myProjects', href: '/dashboard/projects', protected: true },
     ],
   },
   {
     titleKey: 'footer.legal.title',
     links: [
-      { labelKey: 'footer.legal.about', href: '#' },
-      { labelKey: 'footer.legal.terms', href: '#' },
-      { labelKey: 'footer.legal.privacy', href: '#' },
-      { labelKey: 'footer.legal.contact', href: '#' },
+      { labelKey: 'footer.legal.terms', action: 'terms' },
+      { labelKey: 'footer.legal.privacy', action: 'privacy' },
     ],
   },
 ];
@@ -33,36 +35,84 @@ const FOOTER_LINKS = [
 const SOCIALS = [
   {
     label: 'GitHub',
-    href: '#',
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
-      </svg>
-    ),
+    href: 'https://github.com/sparkyhubteam-dev',
+    icon: <FaGithub size={16} />,
   },
   {
-    label: 'LinkedIn',
-    href: '#',
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
-        <circle cx="4" cy="4" r="2" />
-      </svg>
-    ),
+    label: 'Gmail',
+    href: 'mailto:sparkyhub.team@gmail.com',
+    icon: <FaEnvelope size={15} />,
   },
   {
-    label: 'Twitter / X',
+    label: 'Discord',
     href: '#',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
-      </svg>
-    ),
+    icon: <FaDiscord size={16} />,
+  },
+  {
+    label: 'GitLab',
+    href: 'https://gitlab.com/sparkyhub.team',
+    icon: <FaGitlab size={16} />,
   },
 ];
 
 export default function Footer({ isBackendAvailable = true }) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [legalModal, setLegalModal] = useState(null);
+  const user = getStoredUser();
+  const isAdmin = isAdminUser(user);
+
+  const footerLinks = useMemo(() => ([
+    FOOTER_LINKS[0],
+    {
+      titleKey: isAdmin ? 'footer.admin.title' : 'footer.developers.title',
+      links: isAdmin
+        ? [
+          { labelKey: 'footer.admin.manageSystem', href: '/admin' },
+          { labelKey: 'footer.admin.manageUsers', href: '/admin/users' },
+          { labelKey: 'footer.admin.manageEvents', href: '/admin/events' },
+        ]
+        : FOOTER_LINKS[1].links,
+    },
+    FOOTER_LINKS[2],
+  ]), [isAdmin]);
+
+  const navigateFromFooter = (href) => {
+    navigate(href);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+  };
+
+  const goToProtected = (href) => {
+    if (user) {
+      navigateFromFooter(href);
+      return;
+    }
+
+    navigateFromFooter('/auth/login');
+  };
+
+  const handleFooterLink = (event, link) => {
+    event.preventDefault();
+
+    if (link.action === 'privacy') {
+      setLegalModal('privacy');
+      return;
+    }
+
+    if (link.action === 'terms') {
+      setLegalModal('terms');
+      return;
+    }
+
+    if (link.protected) {
+      goToProtected(link.href);
+      return;
+    }
+
+    navigateFromFooter(link.href);
+  };
 
   const platformStatusClass = isBackendAvailable
     ? 'spk-footer-active spk-footer-active-online'
@@ -316,6 +366,10 @@ export default function Footer({ isBackendAvailable = true }) {
           text-decoration: none;
           transition: all .15s;
         }
+        .spk-footer-social svg {
+          display: block;
+          flex-shrink: 0;
+        }
         .spk-footer-social:hover {
           border-color: var(--azul);
           background: rgba(0,119,183,.18);
@@ -339,7 +393,8 @@ export default function Footer({ isBackendAvailable = true }) {
         .spk-footer-col-links {
           display: flex; flex-direction: column; gap: 2px;
         }
-        .spk-footer-col-links a {
+        .spk-footer-col-links a,
+        .spk-footer-col-links button {
           font-size: 12.5px;
           color: rgba(255,255,255,.38);
           text-decoration: none;
@@ -347,19 +402,27 @@ export default function Footer({ isBackendAvailable = true }) {
           border-radius: 5px;
           transition: all .12s;
           display: flex; align-items: center; gap: 6px;
+          border: 0;
+          background: transparent;
+          font-family: var(--font);
+          cursor: pointer;
+          text-align: left;
         }
-        .spk-footer-col-links a::before {
+        .spk-footer-col-links a::before,
+        .spk-footer-col-links button::before {
           content: '';
           width: 3px; height: 3px; border-radius: 50%;
           background: rgba(255,255,255,.15);
           flex-shrink: 0;
           transition: background .12s;
         }
-        .spk-footer-col-links a:hover {
+        .spk-footer-col-links a:hover,
+        .spk-footer-col-links button:hover {
           color: rgba(255,255,255,.82);
           background: rgba(255,255,255,.05);
         }
-        .spk-footer-col-links a:hover::before {
+        .spk-footer-col-links a:hover::before,
+        .spk-footer-col-links button:hover::before {
           background: var(--azul);
         }
 
@@ -536,12 +599,18 @@ export default function Footer({ isBackendAvailable = true }) {
           </div>
 
           {/* LINK COLUMNS */}
-          {FOOTER_LINKS.map(({ titleKey, links }) => (
+          {footerLinks.map(({ titleKey, links }) => (
             <div key={titleKey}>
               <div className="spk-footer-col-title">{t(titleKey)}</div>
               <div className="spk-footer-col-links">
-                {links.map(({ labelKey, href }) => (
-                  <a key={labelKey} href={href}>{t(labelKey)}</a>
+                {links.map((link) => (
+                  <button
+                    key={link.labelKey}
+                    type="button"
+                    onClick={(event) => handleFooterLink(event, link)}
+                  >
+                    {t(link.labelKey)}
+                  </button>
                 ))}
               </div>
             </div>
@@ -568,6 +637,14 @@ export default function Footer({ isBackendAvailable = true }) {
           </div>
         </div>
       </footer>
+
+      {legalModal === 'privacy' && (
+        <PoliticaPrivacidad onClose={() => setLegalModal(null)} />
+      )}
+
+      {legalModal === 'terms' && (
+        <PoliticaCookies onClose={() => setLegalModal(null)} />
+      )}
     </>
   );
 }
