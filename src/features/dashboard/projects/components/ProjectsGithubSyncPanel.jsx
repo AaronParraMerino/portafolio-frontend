@@ -225,7 +225,7 @@ export default function ProjectsGithubSyncPanel({
     const boot = async () => {
       try {
         setCheckingLinked(true);
-        const linked = await isGithubLinked({ provider });
+        const linked = await isGithubLinked({ provider, force: true });
         if (!mounted) return;
 
         setGithubLinked(linked);

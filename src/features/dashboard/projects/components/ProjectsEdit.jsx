@@ -1457,10 +1457,8 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
     const boot = async () => {
       try {
-        const [github, gitlab] = await Promise.all([
-          isGithubLinked({ provider: 'github' }),
-          isGithubLinked({ provider: 'gitlab' }),
-        ]);
+        const github = await isGithubLinked({ provider: 'github', force: true });
+        const gitlab = await isGithubLinked({ provider: 'gitlab' });
         if (!mounted) return;
 
         setGithubLinked(github);

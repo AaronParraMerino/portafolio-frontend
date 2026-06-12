@@ -171,7 +171,12 @@ export default function ProjectsRepositoriesSyncBar({
   useEffect(() => {
     let mounted = true;
 
-    Promise.all(PROVIDERS.map(async (provider) => [provider, await isGithubLinked({ provider })]))
+    Promise.resolve()
+      .then(async () => {
+        const github = await isGithubLinked({ provider: 'github', force: true });
+        const gitlab = await isGithubLinked({ provider: 'gitlab' });
+        return [['github', github], ['gitlab', gitlab]];
+      })
       .then((entries) => {
         if (!mounted) return;
         setLinked(Object.fromEntries(entries));

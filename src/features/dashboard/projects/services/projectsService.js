@@ -218,7 +218,7 @@ export async function getGithubDetectedRepos({ refresh = false, provider = 'gith
   const data = await getCachedDashboardEndpoint(
     endpoint,
     () => apiFetch(`${API_URL}${endpoint}`),
-    { force: refresh, userId },
+    { force: refresh, userId, maxAgeMs: 30 * 1000 },
   );
 
   if (refresh) {
