@@ -24,6 +24,12 @@ import {
   markNotificationModuleAsRead,
   markNotificationAsRead,
 } from '../../services/notificationService';
+import {
+  getCachedProfileThumb,
+  getStoredProfileThumb,
+  onProfileThumbUpdated,
+  setStoredProfileThumb,
+} from '../../utils/profileThumbCache';
 
 const NOTIFICATIONS_REFRESH_MS = 30000;
 
@@ -144,16 +150,18 @@ function resolveProfileImageUrl(path) {
 }
 
 function UserAvatar({ src, initials, className }) {
-  const [imageFailed, setImageFailed] = useState(false);
+  const sources = Array.isArray(src) ? src.filter(Boolean) : [src].filter(Boolean);
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const currentSource = sources[sourceIndex] || '';
 
   useEffect(() => {
-    setImageFailed(false);
+    setSourceIndex(0);
   }, [src]);
 
   return (
     <div className={`${className} notranslate`} translate="no">
-      {src && !imageFailed ? (
-        <img src={src} alt="" onError={() => setImageFailed(true)} />
+      {currentSource ? (
+        <img src={currentSource} alt="" onError={() => setSourceIndex(index => index + 1)} />
       ) : initials}
     </div>
   );
@@ -168,7 +176,7 @@ export default function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getStoredUser());
   const [profileAvatar, setProfileAvatar] = useState('');
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -280,6 +288,12 @@ export default function Navbar() {
       return;
     }
 
+    const storedThumb = getStoredProfileThumb(userId);
+    if (storedThumb) {
+      setProfileAvatar(storedThumb);
+      getCachedProfileThumb(storedThumb).then(setProfileAvatar);
+    }
+
     const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
     if (!token) {
       setProfileAvatar('');
@@ -298,12 +312,12 @@ export default function Navbar() {
       .then((profile) => {
         if (cancelled) return;
 
-        const currentPhoto = profile?.foto_perfil_thumb_url
-          || profile?.foto_perfil_small_url
-          || profile?.foto_perfil
-          || '';
-
-        setProfileAvatar(resolveProfileImageUrl(currentPhoto));
+        const thumbUrl = resolveProfileImageUrl(profile?.foto_perfil_thumb_url);
+        setStoredProfileThumb(userId, thumbUrl);
+        setProfileAvatar(thumbUrl);
+        if (thumbUrl) {
+          getCachedProfileThumb(thumbUrl).then(setProfileAvatar);
+        }
       })
       .catch(() => {
         if (!cancelled) setProfileAvatar('');
@@ -313,6 +327,16 @@ export default function Navbar() {
       cancelled = true;
     };
   }, [BASE_URL, userId, user?.avatar_url]);
+
+  useEffect(() => onProfileThumbUpdated((event) => {
+    if (String(event?.detail?.userId) !== String(userId)) return;
+
+    const thumbUrl = event?.detail?.url || '';
+    setProfileAvatar(thumbUrl);
+    if (thumbUrl) {
+      getCachedProfileThumb(thumbUrl).then(setProfileAvatar);
+    }
+  }), [userId]);
 
   useEffect(() => {
     if (!userId) {
