@@ -1,7 +1,9 @@
 import BASE_URL from '../../services/http/const';
 
 const AUTH_EXPIRED_EVENT = 'auth:expired';
+const AUTH_USER_UPDATED_EVENT = 'auth:user-updated';
 let interceptorInstalled = false;
+let accountRefreshPromise = null;
 
 function hasBearerToken(init) {
   const h = init?.headers;
@@ -72,6 +74,65 @@ export function getStoredUser() {
   }
 }
 
+async function isPausedAccountResponse(response) {
+  if (response.status !== 423) return false;
+
+  try {
+    const data = await response.clone().json();
+    return data?.status === 'account_paused';
+  } catch {
+    return false;
+  }
+}
+
+export function setStoredUser(user) {
+  const useSessionStorage = !localStorage.getItem('tokenPORT') && !!sessionStorage.getItem('tokenPORT');
+  const storage = useSessionStorage ? sessionStorage : localStorage;
+
+  storage.setItem('usuario', JSON.stringify(user));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(AUTH_USER_UPDATED_EVENT, { detail: user }));
+  }
+}
+
+async function requestStoredUserRefresh() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+  if (!token) return null;
+
+  const response = await fetch(`${BASE_URL}/auth/me`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) return null;
+
+  const payload = await response.json();
+  if (!payload?.data) return null;
+
+  setStoredUser(payload.data);
+  return payload.data;
+}
+
+export function refreshStoredUser() {
+  if (!accountRefreshPromise) {
+    accountRefreshPromise = requestStoredUserRefresh()
+      .finally(() => {
+        accountRefreshPromise = null;
+      });
+  }
+
+  return accountRefreshPromise;
+}
+
+export function onStoredUserUpdated(handler) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener(AUTH_USER_UPDATED_EVENT, handler);
+  return () => window.removeEventListener(AUTH_USER_UPDATED_EVENT, handler);
+}
+
 export function normalizeUserRole(user = getStoredUser()) {
   const roleSource = user?.rol ?? user?.role ?? user?.tipo_rol ?? user?.tipoRol ?? '';
   const value = typeof roleSource === 'object'
@@ -128,6 +189,16 @@ export function installAuth401Interceptor() {
     ) {
       clearAuthStorage();
       emitAuthExpired();
+    }
+
+    if (
+      isBackendCall
+      && isProtectedCall
+      && await isPausedAccountResponse(res)
+    ) {
+      refreshStoredUser().catch(() => {
+        // The rejected write remains authoritative; a later refresh retries account sync.
+      });
     }
 
     return res;

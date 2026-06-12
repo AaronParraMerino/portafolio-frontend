@@ -18,6 +18,7 @@ export default function CalendarEventList({
   onDeleteAll,
   onUnsubscribe,
   onViewDetails,
+  paused = false,
 }) {
   const { t, language } = useLanguage();
   const title = formatSelectedDate(selectedDate, language);
@@ -50,7 +51,7 @@ export default function CalendarEventList({
       </div>
 
       {personalEvents.length >= 2 && canManage && (
-        <button type="button" className="cal-delete-day-btn" onClick={onDeleteAll}>
+        <button type="button" className="cal-delete-day-btn" onClick={onDeleteAll} disabled={paused}>
           {t('calendar.actions.deleteAll')}
         </button>
       )}
@@ -67,6 +68,7 @@ export default function CalendarEventList({
             onDelete={onDelete}
             onUnsubscribe={onUnsubscribe}
             onViewDetails={onViewDetails}
+            paused={paused}
           />
 
           <EventGroup
@@ -79,6 +81,7 @@ export default function CalendarEventList({
             onDelete={onDelete}
             onUnsubscribe={onUnsubscribe}
             onViewDetails={onViewDetails}
+            paused={paused}
           />
         </div>
       ) : (
@@ -87,7 +90,7 @@ export default function CalendarEventList({
           {canManage ? (
             <>
               <p>{t('calendar.empty.createHelp')}</p>
-              <button type="button" className="cal-empty-create" onClick={onCreate}>
+              <button type="button" className="cal-empty-create" onClick={onCreate} disabled={paused}>
                 {t('calendar.empty.createButton')}
               </button>
             </>
@@ -110,6 +113,7 @@ function EventGroup({
   onDelete,
   onUnsubscribe,
   onViewDetails,
+  paused,
 }) {
   return (
     <div className="cal-event-group">
@@ -127,6 +131,7 @@ function EventGroup({
             onDelete={onDelete}
             onUnsubscribe={onUnsubscribe}
             onViewDetails={onViewDetails}
+            paused={paused}
           />
         ))
       ) : (

@@ -186,11 +186,14 @@
 
 .evh-action-registered,
 .evh-action-soldout,
-.evh-action-loading {
+.evh-action-loading,
+.evh-action-paused {
   background: #f3f4f6;
   border-color: #d1d5db;
   color: #4b5563;
-  cursor: default;
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: .72;
 }
 
 .evh-secondary-action {

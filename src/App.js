@@ -10,12 +10,13 @@ import AppRouter from './core/router/AppRouter';
 import BannerCenter from './shared/components/BannerCenter';
 import { initSesionBase } from './features/auth/services/sessionService';
 import { subscribeToApiActivity } from './services/http/Service';
-import BASE_URL from './services/http/const';
 import {
-  clearAuthStorage,
   installAuth401Interceptor,
   onAuthExpired,
+  refreshStoredUser,
 } from './shared/utils/authStorage';
+
+const ACCOUNT_REFRESH_MS = 8 * 60 * 1000;
 
 export default function App() {
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
@@ -33,30 +34,30 @@ export default function App() {
     };
   }, []);
 
-  // Rehydrate usuario from backend if tokenPORT exists but sessionStorage lost the data
   useEffect(() => {
-    const token = localStorage.getItem('tokenPORT');
-    const usuario = localStorage.getItem('usuario');
-    if (!token || usuario) return;
+    let cancelled = false;
 
-    fetch(`${BASE_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-    })
-      .then(async (res) => {
-        if (res.status === 401) {
-          clearAuthStorage();
-          setSessionExpired(true);
-          return;
-        }
-        if (res.ok) {
-          const json = await res.json();
-          localStorage.setItem('usuario', JSON.stringify(json.data));
-        }
-      })
-      .catch(() => {/* red not available, will retry on focus */});
+    const refreshAccount = () => {
+      refreshStoredUser().catch(() => {
+        // Network errors are temporary; the next interval, focus, or refresh retries.
+      });
+    };
+
+    const refreshWhenVisible = () => {
+      if (!cancelled && document.visibilityState === 'visible') {
+        refreshAccount();
+      }
+    };
+
+    refreshAccount();
+    const intervalId = window.setInterval(refreshAccount, ACCOUNT_REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
   }, []);
 
   useEffect(() => {

@@ -262,6 +262,17 @@
 .cal-btn-primary { background: var(--cal-blue); color: var(--cal-white); }
 .cal-btn-primary:hover { background: var(--cal-blue-hover); }
 .cal-btn-secondary { background: var(--cal-blue-light); color: var(--cal-blue); border: 1px solid var(--cal-blue-mid); }
+.cal-btn:disabled,
+.cal-empty-create:disabled,
+.cal-delete-day-btn:disabled,
+.cal-event-actions button:disabled {
+  background: #e5e7eb !important;
+  border-color: #d1d5db !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(1);
+  opacity: .72;
+}
 
 .cal-history-note {
   border: 1px solid #fdba74;

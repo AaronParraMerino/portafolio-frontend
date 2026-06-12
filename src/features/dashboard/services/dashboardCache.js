@@ -1,7 +1,9 @@
 const DASHBOARD_CACHE_PREFIX = 'dashboard-cache:v1';
+export const DASHBOARD_CACHE_INVALIDATED_EVENT = 'dashboard-cache:invalidated';
 
 const memoryCache = new Map();
 const pendingRequests = new Map();
+const cacheVersions = new Map();
 
 function getStorage(type = 'session') {
   try {
@@ -59,6 +61,16 @@ function scopedKey(key, userId) {
   return `${DASHBOARD_CACHE_PREFIX}:${userId}:${key}`;
 }
 
+function getCacheVersion(fullKey) {
+  return cacheVersions.get(fullKey) || 0;
+}
+
+function bumpCacheVersion(fullKey) {
+  const nextVersion = getCacheVersion(fullKey) + 1;
+  cacheVersions.set(fullKey, nextVersion);
+  return nextVersion;
+}
+
 function resolveUserId(userId) {
   if (userId) return userId;
   return getCurrentDashboardSession({ requireToken: false }).userId;
@@ -102,6 +114,7 @@ export function readDashboardCache(key, options = {}) {
 export function writeDashboardCache(key, value, options = {}) {
   const storage = getStorage(options.storage || 'session');
   const fullKey = getDashboardCacheStorageKey(key, options);
+  bumpCacheVersion(fullKey);
   const entry = {
     cachedAt: Date.now(),
     value,
@@ -129,6 +142,7 @@ export function removeDashboardCache(key, options = {}) {
   const storage = getStorage(options.storage || 'session');
   const fullKey = getDashboardCacheStorageKey(key, options);
 
+  bumpCacheVersion(fullKey);
   memoryCache.delete(fullKey);
   pendingRequests.delete(fullKey);
 
@@ -146,12 +160,14 @@ export function clearDashboardCacheByPrefix(prefix, options = {}) {
 
   for (const key of Array.from(memoryCache.keys())) {
     if (key.startsWith(fullPrefix)) {
+      bumpCacheVersion(key);
       memoryCache.delete(key);
     }
   }
 
   for (const key of Array.from(pendingRequests.keys())) {
     if (key.startsWith(fullPrefix)) {
+      bumpCacheVersion(key);
       pendingRequests.delete(key);
     }
   }
@@ -162,6 +178,7 @@ export function clearDashboardCacheByPrefix(prefix, options = {}) {
         const key = storage.key(index);
 
         if (key?.startsWith(fullPrefix)) {
+          bumpCacheVersion(key);
           storage.removeItem(key);
         }
       }
@@ -179,19 +196,62 @@ export async function withDashboardCache(key, loader, options = {}) {
     if (cached !== null) return cached;
   }
 
-  if (pendingRequests.has(fullKey)) {
+  if (!options.force && pendingRequests.has(fullKey)) {
     return pendingRequests.get(fullKey);
   }
 
+  if (options.force) {
+    bumpCacheVersion(fullKey);
+  }
+
+  const requestVersion = getCacheVersion(fullKey);
   const request = Promise.resolve()
     .then(loader)
-    .then((value) => writeDashboardCache(key, value, options))
+    .then((value) => {
+      if (getCacheVersion(fullKey) !== requestVersion) {
+        const current = readDashboardCache(key, options);
+        return current !== null ? current : clone(value);
+      }
+
+      return writeDashboardCache(key, value, options);
+    })
     .finally(() => {
-      pendingRequests.delete(fullKey);
+      if (pendingRequests.get(fullKey) === request) {
+        pendingRequests.delete(fullKey);
+      }
     });
 
   pendingRequests.set(fullKey, request);
   return request;
+}
+
+function removeStoredKeyOrPrefix(storage, keyOrPrefix) {
+  if (!storage || !keyOrPrefix) return;
+
+  try {
+    storage.removeItem(keyOrPrefix);
+
+    const prefix = keyOrPrefix.endsWith(':') ? keyOrPrefix : `${keyOrPrefix}:`;
+    for (let index = storage.length - 1; index >= 0; index -= 1) {
+      const key = storage.key(index);
+
+      if (key?.startsWith(prefix)) {
+        storage.removeItem(key);
+      }
+    }
+  } catch {
+    // no-op
+  }
+}
+
+function notifyDashboardCacheInvalidated(detail = {}) {
+  try {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent(DASHBOARD_CACHE_INVALIDATED_EVENT, { detail }));
+    }
+  } catch {
+    // no-op
+  }
 }
 
 function endpointCacheKey(endpoint) {
@@ -231,10 +291,11 @@ export function invalidateDashboardDerivedCaches(userId) {
   ];
 
   keys.forEach((key) => {
-    try {
-      session?.removeItem(key);
-    } catch {
-      // no-op
-    }
+    removeStoredKeyOrPrefix(session, key);
+  });
+
+  notifyDashboardCacheInvalidated({
+    userId: resolvedUserId,
+    keys,
   });
 }
