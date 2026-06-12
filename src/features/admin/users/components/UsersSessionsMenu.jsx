@@ -29,7 +29,12 @@ function sessionLabel(session, t) {
   ].filter(Boolean).join(' - ');
 }
 
-export default function UsersSessionsMenu({ user, onCountChange }) {
+export default function UsersSessionsMenu({
+  user,
+  onCountChange,
+  onRequestClose,
+  onRunInBackground,
+}) {
   const { language, t } = useLanguage();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +64,16 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
   }, [onCountChange, t, user.id]);
 
   const handleCloseSession = async (sessionId) => {
+    if (onRunInBackground && onRequestClose) {
+      const nextCount = Math.max(0, sessions.length - 1);
+      onRequestClose();
+      onRunInBackground(async () => {
+        await closeUserSession(user.id, sessionId);
+        onCountChange(user.id, nextCount);
+      }).catch(() => {});
+      return;
+    }
+
     setBusyId(sessionId);
     setError('');
 
@@ -77,6 +92,15 @@ export default function UsersSessionsMenu({ user, onCountChange }) {
   };
 
   const handleCloseAll = async () => {
+    if (onRunInBackground && onRequestClose) {
+      onRequestClose();
+      onRunInBackground(async () => {
+        await closeAllUserSessions(user.id);
+        onCountChange(user.id, 0);
+      }).catch(() => {});
+      return;
+    }
+
     setClosingAll(true);
     setError('');
 

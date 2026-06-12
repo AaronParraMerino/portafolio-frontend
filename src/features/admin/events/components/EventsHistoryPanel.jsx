@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BsClockHistory,
   BsFileText,
@@ -13,6 +13,9 @@ import {
   getEventHistoryTypeMeta,
 } from '../services/eventsService';
 import EventsEmptyState from './EventsEmptyState';
+import AdminPagination, { getAdminPageSlice } from '../../shared/AdminPagination';
+
+const HISTORY_PAGE_SIZE = 8;
 
 function matchesHistoryFilters(item, query, typeFilter, statusFilter) {
   const normalizedQuery = query.trim().toLowerCase();
@@ -45,11 +48,29 @@ export default function EventsHistoryPanel({
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const visibleHistory = useMemo(
     () => historyItems.filter((item) => matchesHistoryFilters(item, query, typeFilter, statusFilter)),
     [historyItems, query, statusFilter, typeFilter],
   );
+  const {
+    currentPage: safeCurrentPage,
+    pageItems: pagedHistory,
+    totalPages,
+    paginationItems,
+  } = getAdminPageSlice(visibleHistory, currentPage, HISTORY_PAGE_SIZE);
+  const pageSummary = sourceReady && visibleHistory.length
+    ? t('adminEvents.pagination.showingHistory', {
+      start: (safeCurrentPage - 1) * HISTORY_PAGE_SIZE + 1,
+      end: Math.min(safeCurrentPage * HISTORY_PAGE_SIZE, visibleHistory.length),
+      count: visibleHistory.length,
+    })
+    : sourceReady ? t('adminEvents.pagination.noResults') : t('adminEvents.pagination.noRecords');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, statusFilter, typeFilter]);
 
   return (
     <div className="evt-view-body">
@@ -117,7 +138,7 @@ export default function EventsHistoryPanel({
                 </tr>
               </thead>
               <tbody>
-                {visibleHistory.map((item) => {
+                {pagedHistory.map((item) => {
                   const typeMeta = getEventHistoryTypeMeta(item.type);
                   const statusMeta = getEventHistoryStatusMeta(item.status);
 
@@ -175,6 +196,17 @@ export default function EventsHistoryPanel({
             hint={t('adminEvents.history.emptyHint')}
           />
         )}
+
+        <AdminPagination
+          summary={pageSummary}
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          paginationItems={paginationItems}
+          previousLabel={t('adminEvents.common.previous')}
+          nextLabel={t('adminEvents.common.next')}
+          disabled={!sourceReady}
+          onPageChange={setCurrentPage}
+        />
       </section>
 
       <section className="evt-sheet evt-sheet--subtle">

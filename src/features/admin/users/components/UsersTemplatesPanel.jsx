@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BsBell,
   BsEnvelope,
@@ -15,12 +15,15 @@ import {
   USER_NOTICE_TYPES,
   getUserNoticeTypeMeta,
 } from '../services/usersService';
+import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
+import AdminPagination, { getAdminPageSlice } from '../../shared/AdminPagination';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
   email: BsEnvelope,
 };
+const TEMPLATES_PAGE_SIZE = 6;
 
 function normalizeTemplate(template = {}) {
   const channels = template.channels || template.canales || [];
@@ -63,6 +66,8 @@ export default function UsersTemplatesPanel({
   const [typeFilter, setTypeFilter] = useState('todos');
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const normalizedTemplates = useMemo(
     () => templates.map(normalizeTemplate),
@@ -73,9 +78,28 @@ export default function UsersTemplatesPanel({
     () => normalizedTemplates.filter((template) => matchesTemplateFilters(template, query, typeFilter)),
     [normalizedTemplates, query, typeFilter],
   );
+  const {
+    currentPage: safeCurrentPage,
+    pageItems: pagedTemplates,
+    totalPages,
+    paginationItems,
+  } = getAdminPageSlice(visibleTemplates, currentPage, TEMPLATES_PAGE_SIZE);
+  const pageSummary = sourceReady && visibleTemplates.length
+    ? t('admin.users.pagination.templatesRange', {
+      start: (safeCurrentPage - 1) * TEMPLATES_PAGE_SIZE + 1,
+      end: Math.min(safeCurrentPage * TEMPLATES_PAGE_SIZE, visibleTemplates.length),
+      total: visibleTemplates.length,
+    })
+    : sourceReady ? t('admin.users.pagination.noResults') : t('admin.users.pagination.pending');
 
-  const handleDelete = async (template) => {
-    if (!window.confirm(t('admin.users.templates.deleteConfirm', { title: template.title }))) return;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, typeFilter]);
+
+  const handleDelete = async () => {
+    const template = deleteTarget;
+    setDeleteTarget(null);
+    if (!template) return;
 
     setBusyId(template.id);
     setMessage('');
@@ -166,7 +190,7 @@ export default function UsersTemplatesPanel({
               className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
               onClick={() => setTypeFilter('todos')}
             >
-              Todos
+              {t('admin.users.communications.all')}
             </button>
             {USER_NOTICE_TYPES.map((type) => (
               <button
@@ -185,7 +209,7 @@ export default function UsersTemplatesPanel({
 
         {sourceReady && visibleTemplates.length > 0 ? (
           <div className="usr-template-list">
-            {visibleTemplates.map((template) => {
+            {pagedTemplates.map((template) => {
               const typeMeta = getUserNoticeTypeMeta(template.type);
 
               return (
@@ -234,7 +258,7 @@ export default function UsersTemplatesPanel({
                       type="button"
                       className="usr-mini-action usr-mini-action--danger"
                       disabled={busyId === template.id}
-                      onClick={() => handleDelete(template)}
+                      onClick={() => setDeleteTarget(template)}
                     >
                       <BsTrash />
                       {t('admin.users.templates.delete')}
@@ -254,7 +278,33 @@ export default function UsersTemplatesPanel({
             hint={t('admin.users.templates.emptyHint')}
           />
         )}
+
+        <AdminPagination
+          summary={pageSummary}
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          paginationItems={paginationItems}
+          previousLabel={t('admin.users.table.previous')}
+          nextLabel={t('admin.users.table.next')}
+          disabled={!sourceReady}
+          onPageChange={setCurrentPage}
+        />
       </section>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title={t('admin.users.templates.delete')}
+        subtitle={deleteTarget?.title || t('admin.users.templates.unnamed')}
+        message={t('admin.users.templates.deleteConfirm', {
+          title: deleteTarget?.title || t('admin.users.templates.unnamed'),
+        })}
+        confirmLabel={t('admin.users.templates.delete')}
+        cancelLabel={t('admin.users.actionModal.cancel')}
+        variant="red"
+        icon="warning"
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

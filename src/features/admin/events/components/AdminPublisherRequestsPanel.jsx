@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   BsCheck2,
   BsEnvelope,
@@ -8,6 +9,9 @@ import {
 import { useLanguage } from '../../../../core/i18n';
 import CachedUserAvatar from '../../users/components/CachedUserAvatar';
 import EventsEmptyState from './EventsEmptyState';
+import AdminPagination, { getAdminPageSlice } from '../../shared/AdminPagination';
+
+const REQUESTS_PAGE_SIZE = 6;
 
 function getRequestReviewReason(request) {
   return request.revisionReason
@@ -23,6 +27,24 @@ export default function AdminPublisherRequestsPanel({
   onReviewRequest,
 }) {
   const { t } = useLanguage();
+  const [currentPage, setCurrentPage] = useState(1);
+  const {
+    currentPage: safeCurrentPage,
+    pageItems: pagedRequests,
+    totalPages,
+    paginationItems,
+  } = getAdminPageSlice(requests, currentPage, REQUESTS_PAGE_SIZE);
+  const pageSummary = sourceReady && requests.length
+    ? t('adminEvents.pagination.showingRequests', {
+      start: (safeCurrentPage - 1) * REQUESTS_PAGE_SIZE + 1,
+      end: Math.min(safeCurrentPage * REQUESTS_PAGE_SIZE, requests.length),
+      count: requests.length,
+    })
+    : sourceReady ? t('adminEvents.pagination.noResults') : t('adminEvents.pagination.noRecords');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [requests.length]);
 
   return (
     <div className="evt-view-body">
@@ -36,7 +58,7 @@ export default function AdminPublisherRequestsPanel({
 
         {sourceReady && requests.length > 0 ? (
           <div className="evt-admin-request-grid">
-            {requests.map((request) => {
+            {pagedRequests.map((request) => {
               const isPending = request.status === 'pendiente';
               const reviewReason = getRequestReviewReason(request);
 
@@ -108,6 +130,17 @@ export default function AdminPublisherRequestsPanel({
             hint={t('adminEvents.adminRequests.emptyHint')}
           />
         )}
+
+        <AdminPagination
+          summary={pageSummary}
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          paginationItems={paginationItems}
+          previousLabel={t('adminEvents.common.previous')}
+          nextLabel={t('adminEvents.common.next')}
+          disabled={!sourceReady}
+          onPageChange={setCurrentPage}
+        />
       </section>
     </div>
   );

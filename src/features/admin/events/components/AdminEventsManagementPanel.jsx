@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   BsEnvelope,
   BsPause,
@@ -12,6 +13,7 @@ import {
   getEventTypeMeta,
 } from '../services/eventsService';
 import EventsEmptyState from './EventsEmptyState';
+import AdminPagination, { getAdminPageSlice } from '../../shared/AdminPagination';
 
 const ACTIONS = [
   { id: 'activar', labelKey: 'adminEvents.action.activar', icon: BsPlay, variant: 'primary' },
@@ -19,6 +21,7 @@ const ACTIONS = [
   { id: 'suspender', labelKey: 'adminEvents.action.suspender', icon: BsSlashCircle, variant: 'ghost' },
   { id: 'eliminar', labelKey: 'adminEvents.action.eliminar', icon: BsTrash, variant: 'danger' },
 ];
+const EVENTS_PAGE_SIZE = 6;
 
 function getAvailableAdminActions(status) {
   if (status === 'eliminado') return [];
@@ -42,6 +45,24 @@ export default function AdminEventsManagementPanel({
   onReviewEvent,
 }) {
   const { t } = useLanguage();
+  const [currentPage, setCurrentPage] = useState(1);
+  const {
+    currentPage: safeCurrentPage,
+    pageItems: pagedEvents,
+    totalPages,
+    paginationItems,
+  } = getAdminPageSlice(events, currentPage, EVENTS_PAGE_SIZE);
+  const pageSummary = sourceReady && events.length
+    ? t('adminEvents.pagination.showingEvents', {
+      start: (safeCurrentPage - 1) * EVENTS_PAGE_SIZE + 1,
+      end: Math.min(safeCurrentPage * EVENTS_PAGE_SIZE, events.length),
+      count: events.length,
+    })
+    : sourceReady ? t('adminEvents.pagination.noResults') : t('adminEvents.pagination.noRecords');
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [events.length]);
 
   return (
     <div className="evt-view-body">
@@ -55,7 +76,7 @@ export default function AdminEventsManagementPanel({
 
         {sourceReady && events.length > 0 ? (
           <div className="evt-admin-event-list">
-            {events.map((event) => {
+            {pagedEvents.map((event) => {
               const statusMeta = getEventStatusMeta(event.status);
               const typeMeta = getEventTypeMeta(event.type);
               const availableActions = getAvailableAdminActions(event.status);
@@ -117,6 +138,17 @@ export default function AdminEventsManagementPanel({
             hint={t('adminEvents.management.emptyHint')}
           />
         )}
+
+        <AdminPagination
+          summary={pageSummary}
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          paginationItems={paginationItems}
+          previousLabel={t('adminEvents.common.previous')}
+          nextLabel={t('adminEvents.common.next')}
+          disabled={!sourceReady}
+          onPageChange={setCurrentPage}
+        />
       </section>
     </div>
   );
