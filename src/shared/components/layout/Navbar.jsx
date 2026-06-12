@@ -575,15 +575,21 @@ export default function Navbar() {
           position: fixed; top: 0; left: 0; right: 0;
           z-index: 200; height: var(--nav-height, 60px);
           display: flex; align-items: center;
-          padding: 0 40px; padding-bottom: 3px;
+          padding: 0 24px; padding-bottom: 3px;
           background: linear-gradient(90deg, var(--azul-deep, #004f7c) 0%, var(--azul, #0077b7) 100%);
           border-bottom: 3px solid rgba(255,255,255,.12);
           box-shadow: 0 2px 18px rgba(0,77,124,.25);
           transition: box-shadow .2s;
         }
         .spk-nav.scrolled { box-shadow: 0 4px 28px rgba(0,77,124,.38); }
-        .spk-nav-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
-        .spk-nav-logo img { height: 38px; width: auto; display: block; filter: brightness(0) invert(1); opacity: .92; }
+        .spk-nav-logo,
+        .spk-nav-tagline { display: flex; align-items: center; text-decoration: none; flex: 0 0 auto; min-width: max-content; }
+        .spk-nav-logo img,
+        .spk-nav-tagline img { display: block; object-fit: contain; flex: 0 0 auto; max-width: none; }
+        .spk-logo-umss-full { width: 130px; height: 38px; filter: brightness(0) invert(1); opacity: .92; }
+        .spk-logo-creafolio-full { width: 110px; height: 25px; }
+        .spk-logo-mobile-icon { display: none !important; width: 38px; height: 38px; object-fit: contain; }
+        .spk-logo-umss-icon { filter: brightness(0) invert(1); opacity: .92; }
         .spk-nav-sep { width: 1px; height: 22px; background: rgba(255,255,255,.15); margin: 0 18px 0 12px; flex-shrink: 0; }
         .spk-nav-tagline { display: flex; align-items: center; flex-shrink: 0; }
         .spk-nav-tagline img { height: 25px; width: auto; display: block; }
@@ -690,6 +696,7 @@ export default function Navbar() {
           justify-content: center;
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUpCentered { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes mobileNotifUp { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
         @media (max-width: 1280px) {
@@ -729,6 +736,7 @@ export default function Navbar() {
           .spk-nav-right {
             display: flex;
             margin-left: auto;
+            margin-right: 12px;
           }
 
           .spk-nav-right > :not(.spk-bell-wrap):not(.spk-nav-user) {
