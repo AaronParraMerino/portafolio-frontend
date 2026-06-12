@@ -164,8 +164,7 @@
 .evtpub-skeleton::before,
 .evtpub-skeleton span {
   animation: evtpubPulse 1.3s ease-in-out infinite;
-  background: linear-gradient(90deg, #eef2f7, #f8fafc, #eef2f7);
-  background-size: 200% 100%;
+  background: #eef2f7;
   border-radius: 8px;
   content: "";
 }
@@ -188,8 +187,8 @@
 }
 
 @keyframes evtpubPulse {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  0%, 100% { opacity: .48; }
+  50% { opacity: 1; }
 }
 
 .evtpub-state {

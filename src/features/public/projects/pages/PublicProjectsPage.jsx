@@ -82,7 +82,10 @@ export default function PublicProjectsPage() {
       <section className="prjpub-shell">
         <header className="prjpub-header">
           <div>
-            <span>{t('public.projects.kicker')}</span>
+            <div className="prjpub-kicker">
+              <BsCodeSlash aria-hidden="true" />
+              {t('public.projects.kicker')}
+            </div>
             <h1>{t('public.projects.title')}</h1>
             <p>{t('public.projects.description')}</p>
           </div>
