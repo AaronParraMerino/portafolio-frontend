@@ -15,6 +15,9 @@ export const SEARCH_AUTH_REQUIRED_MESSAGE = 'Debes iniciar sesión para buscar p
 const SEARCH_RESULTS_TTL_MS = 2 * 60 * 1000;
 const SEARCH_CATALOGS_TTL_MS = 15 * 60 * 1000;
 const SEARCH_CATALOG_PATHS = [
+  'nombres-usuarios',
+  'ciudades',
+  'paises',
   'profesiones',
   'habilidades-blandas',
   'habilidades-tecnicas',
@@ -22,7 +25,7 @@ const SEARCH_CATALOG_PATHS = [
   'tecnologias-proyecto',
   'tipos-proyecto',
 ];
-const SEARCH_CATALOGS_CACHE_KEY = publicCacheKey('portfolio-search:catalogs', 'all');
+const SEARCH_CATALOGS_CACHE_KEY = publicCacheKey('portfolio-search:catalogs', SEARCH_CATALOG_PATHS);
 
 const readStorageItem = (storage, key) => {
   try {
@@ -275,13 +278,13 @@ export const getSearchCatalogs = async ({ force = false } = {}) => {
   return withPublicCache(
     SEARCH_CATALOGS_CACHE_KEY,
     async () => {
-      const [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto] = await Promise.allSettled(
+      const [nombresUsuarios, ciudades, paises, profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto] = await Promise.allSettled(
         SEARCH_CATALOG_PATHS.map((path) => getSearchCatalog(path, { force }))
       );
 
       const valueOf = (result) => (result.status === 'fulfilled' ? result.value : []);
 
-      const rejected = [profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto]
+      const rejected = [nombresUsuarios, ciudades, paises, profesiones, habilidadesBlandas, habilidadesTecnicas, cargos, tecnologias, tiposProyecto]
         .find((result) => result.status === 'rejected');
 
       if (rejected?.reason?.message === SEARCH_AUTH_REQUIRED_MESSAGE) {
@@ -289,6 +292,9 @@ export const getSearchCatalogs = async ({ force = false } = {}) => {
       }
 
       return {
+        nombresUsuarios: valueOf(nombresUsuarios),
+        ciudades: valueOf(ciudades),
+        paises: valueOf(paises),
         profesiones: valueOf(profesiones),
         habilidadesBlandas: valueOf(habilidadesBlandas),
         habilidadesTecnicas: valueOf(habilidadesTecnicas),

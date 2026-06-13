@@ -1,11 +1,15 @@
 // src/shared/components/layout/Navbar.jsx
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import ConfirmModal from '../../ui/ConfirmModal';
 import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
 import LanguageSelector from '../language/LanguageSelector';
+import NavCatalogSearch from './NavCatalogSearch';
 import NotificationCenterModal from '../notifications/NotificationCenterModal';
 import { useLanguage } from '../../../core/i18n';
+import { getCachedSearchCatalogs } from '../../../features/public/portfolio-search/services/portfolioSearchService';
+import { storeNavSearchSelection } from '../../../features/public/portfolio-search/services/navSearchTransfer';
 import {
   clearAuthStorage,
   getDashboardHomePath,
@@ -169,7 +173,9 @@ function UserAvatar({ src, initials, className }) {
 
 export default function Navbar() {
   const { t, language } = useLanguage();
+  const { pathname } = useLocation();
   const BASE_URL = process.env.REACT_APP_API_URL;
+  const hideNavSearch = pathname.replace(/\/+$/, '') === '/portafolios';
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -191,6 +197,7 @@ export default function Navbar() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [navSearchTerm, setNavSearchTerm] = useState('');
   const [navSearchOpen, setNavSearchOpen] = useState(false);
+  const [navSearchCatalogs] = useState(() => getCachedSearchCatalogs() || {});
 
   const notifRef = useRef(null);
   const userRef = useRef(null);
@@ -264,6 +271,10 @@ export default function Navbar() {
     if (!navSearchOpen) return;
     window.setTimeout(() => searchInputRef.current?.focus(), 30);
   }, [navSearchOpen]);
+
+  useEffect(() => {
+    if (hideNavSearch) setNavSearchOpen(false);
+  }, [hideNavSearch]);
 
   useEffect(() => {
     const onClick = (event) => {
@@ -589,6 +600,11 @@ export default function Navbar() {
       : '/portafolios';
   };
 
+  const handleNavSuggestionSelect = (selection) => {
+    storeNavSearchSelection(selection);
+    window.location.href = '/portafolios?from=nav';
+  };
+
   const openNavSearch = () => {
     setMobileOpen(false);
     setNotifOpen(false);
@@ -696,6 +712,18 @@ export default function Navbar() {
           outline: 0;
         }
         .spk-nav-search-input::placeholder { color: var(--gris-texto, #6b7280); font-weight: 400; }
+        .spk-nav-catalog-search { position: relative; flex: 1; min-width: 0; }
+        .spk-nav-search-suggestions,
+        .spk-nav-search-qualifier {
+          position: absolute; top: calc(100% + 10px); left: -34px; right: -12px; z-index: 260;
+          background: #fff; border: 1px solid #d1d5db; border-radius: 9px; box-shadow: 0 10px 26px rgba(0,0,0,.18);
+          overflow: hidden;
+        }
+        .spk-nav-search-suggestions button { width: 100%; display: flex; justify-content: space-between; gap: 10px; border: 0; padding: 8px 10px; background: #fff; cursor: pointer; text-align: left; }
+        .spk-nav-search-suggestions button:hover { background: #eaf6fc; }
+        .spk-nav-search-suggestions strong { margin-left: auto; color: #9ca3af; font-size: 9px; text-transform: uppercase; }
+        .spk-nav-search-qualifier { display: flex; gap: 4px; padding: 7px; overflow-x: auto; }
+        .spk-nav-search-qualifier button { border: 1px solid #b8ddf0; border-radius: 6px; padding: 5px 7px; background: #eaf6fc; color: #004f7c; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
         .spk-nav-search-submit {
           align-items: center;
           background: var(--azul, #0077b7);
@@ -733,6 +761,7 @@ export default function Navbar() {
         .spk-search-toggle svg,
         .spk-search-close svg { height: 17px; width: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .spk-search-toggle-inline { margin-left: auto; }
+        .spk-nav.search-hidden .spk-nav-links { margin-left: auto; }
         .spk-nav-search-expanded {
           align-items: center;
           display: none;
@@ -889,6 +918,9 @@ export default function Navbar() {
         }
         @media (max-width: 768px) {
           .spk-nav { padding: 0 12px; padding-bottom: 3px; }
+          .spk-nav.search-hidden .spk-nav-right {
+            margin-left: auto;
+          }
           .spk-nav-links {
             display: none;
           }
@@ -939,21 +971,20 @@ export default function Navbar() {
         }
       `}</style>
 
-      <nav className={`spk-nav${scrolled ? ' scrolled' : ''}${navSearchOpen ? ' search-open' : ''}`}>
-        <form className="spk-nav-search-expanded" onSubmit={handleNavSearchSubmit}>
+      <nav className={`spk-nav${scrolled ? ' scrolled' : ''}${navSearchOpen && !hideNavSearch ? ' search-open' : ''}${hideNavSearch ? ' search-hidden' : ''}`}>
+        {!hideNavSearch && <form className="spk-nav-search-expanded" onSubmit={handleNavSearchSubmit}>
           <div className="spk-nav-search-box">
             <svg className="spk-nav-search-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.8-3.8" />
             </svg>
-            <input
-              ref={searchInputRef}
-              className="spk-nav-search-input"
-              type="text"
+            <NavCatalogSearch
+              inputRef={searchInputRef}
               value={navSearchTerm}
-              onChange={(event) => setNavSearchTerm(event.target.value)}
+              onChange={setNavSearchTerm}
+              onSelect={handleNavSuggestionSelect}
+              catalogs={navSearchCatalogs}
               placeholder={t('portfolioSearch.search.placeholder')}
-              aria-label={t('portfolioSearch.search.submit')}
             />
           </div>
 
@@ -963,7 +994,7 @@ export default function Navbar() {
               <path d="m6 6 12 12" />
             </svg>
           </button>
-        </form>
+        </form>}
 
         <a href="/" className="spk-nav-logo">
           <img className="spk-logo-umss-full" src="/img/logo.png" width="130" height="38" alt="UMSS" />
@@ -977,27 +1008,26 @@ export default function Navbar() {
           <img className="spk-logo-mobile-icon spk-logo-creafolio-icon" src="/img/iconoCreaFolio.png" width="46" height="46" alt="CreaFolio" />
         </a>
 
-        <form className="spk-nav-search-desktop spk-nav-search-box" onSubmit={handleNavSearchSubmit}>
+        {!hideNavSearch && <form className="spk-nav-search-desktop spk-nav-search-box" onSubmit={handleNavSearchSubmit}>
           <svg className="spk-nav-search-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.8-3.8" />
           </svg>
-          <input
-            className="spk-nav-search-input"
-            type="text"
+          <NavCatalogSearch
             value={navSearchTerm}
-            onChange={(event) => setNavSearchTerm(event.target.value)}
+            onChange={setNavSearchTerm}
+            onSelect={handleNavSuggestionSelect}
+            catalogs={navSearchCatalogs}
             placeholder={t('portfolioSearch.search.placeholder')}
-            aria-label={t('portfolioSearch.search.submit')}
           />
-        </form>
+        </form>}
 
-        <button className="spk-search-toggle spk-search-toggle-inline" type="button" onClick={openNavSearch} aria-label={t('portfolioSearch.search.submit')}>
+        {!hideNavSearch && <button className="spk-search-toggle spk-search-toggle-inline" type="button" onClick={openNavSearch} aria-label={t('portfolioSearch.search.submit')}>
           <svg viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.8-3.8" />
           </svg>
-        </button>
+        </button>}
 
         <ul className="spk-nav-links">
           {NAV_LINKS.map(({ labelKey, href, icon }) => (

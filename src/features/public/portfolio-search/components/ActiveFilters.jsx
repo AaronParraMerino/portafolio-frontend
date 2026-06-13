@@ -1,12 +1,12 @@
 import { useLanguage } from '../../../../core/i18n';
 
-const ActiveFilters = ({ chips = [], onClear }) => {
+const ActiveFilters = ({ chips = [], onClear, className = '' }) => {
   const { t } = useLanguage();
 
   if (!chips.length) return null;
 
   return (
-    <div className="ps-active-wrap">
+    <div className={`ps-active-wrap ${className}`.trim()}>
       <div className="ps-active-filters">
         {chips.map((chip) => (
           <span className={`ps-active-chip ${chip.className || ''}`} key={chip.id}>
