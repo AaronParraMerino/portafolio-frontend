@@ -673,14 +673,32 @@
   border-top: 1px solid var(--gris-borde);
   margin-top: auto; gap: 8px;
 }
-.prj-proj-links { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+.prj-proj-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
 .prj-proj-link {
   font-family: var(--font); font-size: 10.5px; font-weight: 600;
   color: var(--gris-texto); background: var(--fondo);
   border: 1.5px solid var(--gris-borde); border-radius: 7px;
   padding: 4px 10px; cursor: pointer; transition: all .15s;
   display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%;
+  min-width: 0;
   text-decoration: none;
+}
+.prj-proj-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prj-proj-link svg,
+.prj-proj-link .prj-repo-provider-icon {
+  flex: 0 0 auto;
 }
 .prj-proj-link:hover {
   border-color: var(--azul); color: var(--azul);
@@ -702,6 +720,33 @@
   color: var(--gris-texto); white-space: nowrap; flex-shrink: 0;
   padding: 2px 8px; border-radius: 20px;
   background: var(--fondo); border: 1px solid var(--gris-borde);
+}
+
+@media (max-width: 680px) {
+  .prj-card-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .prj-proj-links {
+    width: 100%;
+  }
+
+  .prj-proj-link {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+    min-width: 112px;
+  }
+
+  .prj-year-pill {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .prj-proj-link {
+    flex-basis: 100%;
+  }
 }
 
 /* Participantes del proyecto */
@@ -2602,9 +2647,11 @@
 
 .prj-repositories-toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  justify-content: flex-start;
+  min-width: 0;
 }
 
 .prj-provider-actions,
@@ -2612,13 +2659,33 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.prj-repositories-controls {
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.prj-repositories-controls .prj-detected-sync-btn,
+.prj-repositories-controls .prj-github-create-btn {
+  justify-content: center;
+  width: 100%;
+}
+
+.prj-repositories-controls .prj-github-create-btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prj-provider-action {
-  width: 44px;
-  height: 40px;
+  width: 55px;
+  height: 50px;
   border: 1.5px solid var(--azul-mid);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--blanco);
   color: #24292f;
   display: inline-flex;
@@ -2630,8 +2697,8 @@
 }
 
 .prj-provider-action .prj-repo-provider-icon {
-  width: 21px;
-  height: 21px;
+  width: 24px;
+  height: 24px;
 }
 
 .prj-provider-action.gitlab {
@@ -2656,11 +2723,18 @@
 
 .prj-repositories-caption {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 14px;
   color: var(--gris-texto);
   font-size: 12px;
-  padding: 9px 0 4px;
+  line-height: 1.5;
+  padding: 12px 0 8px;
+  min-width: 0;
+}
+
+.prj-repositories-caption span {
+  min-width: 0;
 }
 
 .prj-repositories-selected {
@@ -2717,11 +2791,20 @@
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  min-width: 0;
 }
 
-.prj-github-selected-chip span {
+.prj-github-selected-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prj-github-selected-chip > span:last-child {
   font-family: var(--mono);
   color: var(--rojo-soft);
+  flex: 0 0 auto;
 }
 
 .prj-repo-provider-icon {
@@ -2737,7 +2820,7 @@
 .prj-github-create-btn {
   padding: 7px 12px;
   font-size: 12px;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .prj-github-create-btn:disabled {
@@ -2821,6 +2904,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .prj-detected-item {
@@ -2832,7 +2916,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   transition: border-color .15s, background .15s, box-shadow .15s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .prj-detected-item:hover {
@@ -2847,33 +2934,51 @@
 }
 
 .prj-detected-main {
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .prj-detected-title {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
   color: var(--negro-texto);
+  min-width: 0;
+}
+
+.prj-detected-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prj-detected-url {
+  display: block;
   font-family: var(--mono);
   font-size: 10.5px;
   color: var(--gris-texto);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 360px;
+  width: 100%;
+  max-width: min(100%, 520px);
 }
 
 .prj-detected-side {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   flex-shrink: 0;
+  max-width: 44%;
+  min-width: 0;
 }
 
 .prj-detected-pill {
@@ -2914,6 +3019,7 @@
   cursor: pointer;
   transition: background .15s, color .15s, border-color .15s, transform .15s;
   white-space: nowrap;
+  min-height: 34px;
 }
 
 .prj-detected-add-btn:hover:not(:disabled) {
@@ -3035,24 +3141,34 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 520px) {
-  .prj-repositories-toolbar,
-  .prj-repositories-caption {
+@media (max-width: 760px) {
+  .prj-detected-item {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .prj-repositories-controls {
+  .prj-detected-side {
+    justify-content: flex-start;
+    max-width: none;
     width: 100%;
-    flex-direction: column;
   }
 
-  .prj-repositories-controls .prj-detected-sync-btn,
-  .prj-repositories-controls .prj-github-create-btn {
+  .prj-detected-main {
     width: 100%;
+  }
+
+  .prj-detected-add-btn {
+    flex: 0 1 auto;
     justify-content: center;
   }
 
+  .prj-recovery-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
   .prj-detected-repos-head {
     align-items: flex-start;
     flex-direction: column;
@@ -3073,11 +3189,22 @@
 
   .prj-detected-side {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .prj-detected-url {
     max-width: 100%;
+  }
+
+  .prj-detected-add-btn,
+  .prj-recovery-actions .prj-detected-add-btn {
+    width: 100%;
+  }
+
+  .prj-detected-pill {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .prj-github-selected-strip {
@@ -3085,11 +3212,10 @@
     flex-direction: column;
   }
 
-  .prj-github-create-btn {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
+  .prj-github-selected-chip {
+    max-width: 100%;
   }
+
 }
 
 .prj-config-modal {

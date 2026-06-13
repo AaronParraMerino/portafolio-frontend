@@ -370,7 +370,7 @@ export default function ProjectsRepositoriesSyncBar({
                 title={t('projects.config.remove')}
               >
                 <RepositoryProviderIcon provider={repo.provider} />
-                {repo.nombre}
+                <span className="prj-github-selected-name">{repo.nombre}</span>
                 <span>x</span>
               </button>
             ))}
@@ -391,7 +391,7 @@ export default function ProjectsRepositoriesSyncBar({
             {detectedRepos.length > 0 && (
               <div className="prj-detected-search-wrap">
                 <input
-                  type="search"
+                  type="text"
                   className="prj-input prj-detected-search-input"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -436,7 +436,7 @@ export default function ProjectsRepositoriesSyncBar({
                       <div className="prj-detected-main">
                         <div className="prj-detected-title">
                           <RepositoryProviderIcon provider={provider} />
-                          {getRepoTitle(repo)}
+                          <span className="prj-detected-name">{getRepoTitle(repo)}</span>
                         </div>
                         <div className="prj-detected-url">{repo.url_repositorio}</div>
                         {(enUso || proyectoEliminado) && repo.proyecto?.titulo && (
