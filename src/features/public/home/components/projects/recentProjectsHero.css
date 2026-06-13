@@ -38,6 +38,11 @@
   touch-action: pan-y;
 }
 
+.prh-hero:focus-visible {
+  outline: 3px solid rgba(0, 119, 183, .55);
+  outline-offset: 4px;
+}
+
 .prh-content {
   backdrop-filter: blur(18px) saturate(1.1);
   background: linear-gradient(90deg, rgba(15, 23, 42, .58), rgba(15, 23, 42, .34));

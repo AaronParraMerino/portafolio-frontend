@@ -246,6 +246,11 @@
   touch-action: pan-y;
 }
 
+.evh-hero:focus-visible {
+  outline: 3px solid rgba(0, 119, 183, .55);
+  outline-offset: 4px;
+}
+
 .evh-mobile-navigation {
   display: none;
 }
