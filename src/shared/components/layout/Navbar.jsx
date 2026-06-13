@@ -712,7 +712,8 @@ export default function Navbar() {
           outline: 0;
         }
         .spk-nav-search-input::placeholder { color: var(--gris-texto, #6b7280); font-weight: 400; }
-        .spk-nav-catalog-search { position: relative; flex: 1; min-width: 0; }
+        .spk-nav-catalog-search { position: relative; flex: 1 1 auto; min-width: 0; width: 100%; }
+        .spk-nav-catalog-search .spk-nav-search-input { display: block; width: 100%; }
         .spk-nav-search-suggestions,
         .spk-nav-search-qualifier {
           position: absolute; top: calc(100% + 10px); left: -34px; right: -12px; z-index: 260;
