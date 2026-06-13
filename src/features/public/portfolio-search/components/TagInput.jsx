@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react';
 import { useLanguage } from '../../../../core/i18n';
 
 const normalizeTag = (value) => String(value || '').trim();
+const normalizeSearchText = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 
 const TagInput = ({
   label,
@@ -15,13 +19,14 @@ const TagInput = ({
   const [focused, setFocused] = useState(false);
 
   const filteredSuggestions = useMemo(() => {
-    const query = inputValue.trim().toLowerCase();
+    const query = normalizeSearchText(inputValue.trim());
     if (!query) return [];
 
     return suggestions
       .filter((item) => {
         const text = String(item || '');
-        return text.toLowerCase().includes(query) && !values.some((value) => value.toLowerCase() === text.toLowerCase());
+        return normalizeSearchText(text).includes(query)
+          && !values.some((value) => normalizeSearchText(value) === normalizeSearchText(text));
       })
       .slice(0, 6);
   }, [inputValue, suggestions, values]);

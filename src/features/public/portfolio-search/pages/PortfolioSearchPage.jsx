@@ -4,10 +4,12 @@ import { useLanguage } from '../../../../core/i18n';
 import ActiveFilters from '../components/ActiveFilters';
 import ExperienceTagInput from '../components/ExperienceTagInput';
 import FilterSection from '../components/FilterSection';
+import GlobalSearchInput from '../components/GlobalSearchInput';
 import PortfolioResultCard from '../components/PortfolioResultCard';
 import SearchEmptyState from '../components/SearchEmptyState';
 import SkillLevelTagInput from '../components/SkillLevelTagInput';
 import TagInput from '../components/TagInput';
+import TextSuggestionInput from '../components/TextSuggestionInput';
 import {
   SEARCH_AUTH_REQUIRED_MESSAGE,
   getCachedSearchCatalogs,
@@ -15,6 +17,8 @@ import {
   getSearchCatalogs,
   searchPortfolios,
 } from '../services/portfolioSearchService';
+import { applyGlobalSuggestion } from '../services/globalSuggestionFilters';
+import { consumeNavSearchSelection } from '../services/navSearchTransfer';
 import '../styles/portfolio-search.css';
 
 const BASE_FILTERS = {
@@ -49,8 +53,12 @@ const PRIORITY_VALUES = ['', 'proyectos', 'experiencia', 'habilidades'];
 const TYPE_VALUES = ['laboral', 'academica'];*/
 
 const cloneFilters = (filters) => JSON.parse(JSON.stringify(filters));
+const FILTER_ACCORDION_QUERY = '(max-width: 1020px)';
 
 const emptyCatalogs = () => ({
+  nombresUsuarios: [],
+  ciudades: [],
+  paises: [],
   profesiones: [],
   habilidadesBlandas: [],
   habilidadesTecnicas: [],
@@ -77,6 +85,17 @@ const PortfolioSearchPage = () => {
   const [error, setError] = useState('');
   const [authRequired, setAuthRequired] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [filterAccordion, setFilterAccordion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(FILTER_ACCORDION_QUERY).matches
+  );
+  const [openFilterSection, setOpenFilterSection] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(FILTER_ACCORDION_QUERY).matches
+      ? null
+      : 'user'
+  );
+  const [filtersVisible, setFiltersVisible] = useState(
+    () => typeof window === 'undefined' || !window.matchMedia(FILTER_ACCORDION_QUERY).matches
+  );
 
   const levelLabel = (value) => t(`portfolioSearch.level.${value}`);
   const typeLabel = (value) => t(`portfolioSearch.experience.${value}`);
@@ -130,6 +149,28 @@ const PortfolioSearchPage = () => {
   }, [t]);
 
   useEffect(() => {
+    const media = window.matchMedia(FILTER_ACCORDION_QUERY);
+    const update = (event) => {
+      setFilterAccordion(event.matches);
+      setFiltersVisible(!event.matches);
+      if (event.matches) setOpenFilterSection(null);
+    };
+
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    const navSelection = consumeNavSearchSelection();
+    if (!navSelection) return;
+
+    const nextFilters = applyGlobalSuggestion(cloneFilters(BASE_FILTERS), navSelection);
+    setFilters(nextFilters);
+    executeSearch(1, nextFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (!queryFromUrl.trim()) return;
 
     const nextFilters = {
@@ -178,6 +219,10 @@ const PortfolioSearchPage = () => {
         },
       };
     });
+  };
+
+  const selectGlobalSuggestion = (suggestion) => {
+    setFilters((current) => applyGlobalSuggestion(current, suggestion));
   };
 
   const executeSearch = async (page = 1, nextFilters = filters) => {
@@ -337,10 +382,30 @@ const PortfolioSearchPage = () => {
   const currentPage = Number(meta?.current_page || 1);
   const lastPage = Number(meta?.last_page || 1);
   const total = Number(meta?.total ?? results.length);
+  const showFilterSections = !filterAccordion || filtersVisible;
+  const resultsSummary = (compact = false) => (
+    <div>
+      <span className="ps-results-count">
+        {loading
+          ? t('portfolioSearch.results.loading')
+          : hasSearched
+            ? t('portfolioSearch.results.count', { shown: results.length, total })
+            : t('portfolioSearch.results.ready')}
+      </span>
+      {!compact && (
+        <small>
+          {hasSearched
+            ? t('portfolioSearch.results.direction', { direction: filters.orden.direccion.toUpperCase() })
+            : t('portfolioSearch.results.helper')}
+        </small>
+      )}
+    </div>
+  );
 
   return (
     <main className="ps-page">
       <section className="ps-shell">
+        <ActiveFilters chips={activeChips} onClear={resetFilters} className="ps-active-mobile" />
         <form
           className="ps-searchbar"
           onSubmit={(event) => {
@@ -348,11 +413,11 @@ const PortfolioSearchPage = () => {
             executeSearch(1);
           }}
         >
-          <input
-            type="search"
-            className="ps-search-input"
+          <GlobalSearchInput
             value={filters.query}
-            onChange={(event) => setRoot('query', event.target.value)}
+            onChange={(value) => setRoot('query', value)}
+            onSelect={selectGlobalSuggestion}
+            catalogs={catalogs}
             placeholder={t('portfolioSearch.search.placeholder')}
           />
           <button type="submit" className="ps-btn-primary" disabled={loading || catalogLoading}>
@@ -363,26 +428,57 @@ const PortfolioSearchPage = () => {
           </button>
         </form>
 
-        <ActiveFilters chips={activeChips} onClear={resetFilters} />
+        <div className={`ps-filter-controls ${!showFilterSections ? 'is-collapsed' : ''}`}>
+          <ActiveFilters chips={activeChips} onClear={resetFilters} className="ps-active-desktop" />
+          {!showFilterSections && (
+            <div className="ps-results-head ps-results-head-inline">
+              {resultsSummary(true)}
+            </div>
+          )}
+          <button
+            type="button"
+            className="ps-filter-visibility-toggle"
+            onClick={() => {
+              if (showFilterSections) {
+                setOpenFilterSection(null);
+                setFiltersVisible(false);
+                return;
+              }
+
+              setFiltersVisible(true);
+            }}
+            aria-expanded={showFilterSections}
+          >
+            {showFilterSections
+              ? t('portfolioSearch.filters.hide')
+              : t('portfolioSearch.filters.show')}
+          </button>
+        </div>
 
         <div className="ps-layout">
-          <aside className="ps-filters" aria-label={t('portfolioSearch.filters.aria')}>
-            <FilterSection title={t('portfolioSearch.sections.user')} icon="US" defaultOpen>
-              <div className="ps-field">
-                <label className="ps-label">{t('portfolioSearch.user.name')}</label>
-                <input
-                  type="text"
-                  className="ps-input"
-                  value={filters.usuario.nombre}
-                  onChange={(event) => setSectionValue('usuario', 'nombre', event.target.value)}
-                  placeholder={t('portfolioSearch.user.namePlaceholder')}
-                />
-              </div>
+          {showFilterSections && <aside className="ps-filters" aria-label={t('portfolioSearch.filters.aria')}>
+            <FilterSection
+              title={t('portfolioSearch.sections.user')}
+              icon="US"
+              sectionId="user"
+              defaultOpen
+              accordion={filterAccordion}
+              openSectionId={openFilterSection}
+              onAccordionToggle={setOpenFilterSection}
+            >
+              <TextSuggestionInput
+                label={t('portfolioSearch.user.name')}
+                placeholder={t('portfolioSearch.user.namePlaceholder')}
+                value={filters.usuario.nombre}
+                suggestions={catalogs.nombresUsuarios}
+                onChange={(value) => setSectionValue('usuario', 'nombre', value)}
+              />
 
               <TagInput
                 label={t('portfolioSearch.user.city')}
                 placeholder={t('portfolioSearch.user.cityPlaceholder')}
                 values={filters.usuario.ciudad}
+                suggestions={catalogs.ciudades}
                 onChange={(values) => setSectionValue('usuario', 'ciudad', values)}
               />
 
@@ -390,6 +486,7 @@ const PortfolioSearchPage = () => {
                 label={t('portfolioSearch.user.country')}
                 placeholder={t('portfolioSearch.user.countryPlaceholder')}
                 values={filters.usuario.pais}
+                suggestions={catalogs.paises}
                 onChange={(values) => setSectionValue('usuario', 'pais', values)}
               />
 
@@ -402,7 +499,15 @@ const PortfolioSearchPage = () => {
               />
             </FilterSection>
 
-            <FilterSection title={t('portfolioSearch.sections.skills')} icon="HB" defaultOpen>
+            <FilterSection
+              title={t('portfolioSearch.sections.skills')}
+              icon="HB"
+              sectionId="skills"
+              defaultOpen
+              accordion={filterAccordion}
+              openSectionId={openFilterSection}
+              onAccordionToggle={setOpenFilterSection}
+            >
               <SkillLevelTagInput
                 label={t('portfolioSearch.skills.technical')}
                 placeholder={t('portfolioSearch.skills.technicalPlaceholder')}
@@ -420,7 +525,14 @@ const PortfolioSearchPage = () => {
               />
             </FilterSection>
 
-            <FilterSection title={t('portfolioSearch.sections.experience')} icon="EX">
+            <FilterSection
+              title={t('portfolioSearch.sections.experience')}
+              icon="EX"
+              sectionId="experience"
+              accordion={filterAccordion}
+              openSectionId={openFilterSection}
+              onAccordionToggle={setOpenFilterSection}
+            >
               <ExperienceTagInput
                 label={t('portfolioSearch.experience.position')}
                 placeholder={t('portfolioSearch.experience.positionPlaceholder')}
@@ -430,7 +542,14 @@ const PortfolioSearchPage = () => {
               />
             </FilterSection>
 
-            <FilterSection title={t('portfolioSearch.sections.projects')} icon="PR">
+            <FilterSection
+              title={t('portfolioSearch.sections.projects')}
+              icon="PR"
+              sectionId="projects"
+              accordion={filterAccordion}
+              openSectionId={openFilterSection}
+              onAccordionToggle={setOpenFilterSection}
+            >
               <TagInput
                 label={t('portfolioSearch.projects.technologies')}
                 placeholder={t('portfolioSearch.projects.technologiesPlaceholder')}
@@ -464,7 +583,14 @@ const PortfolioSearchPage = () => {
               </div>
             </FilterSection>
 
-            <FilterSection title={t('portfolioSearch.sections.order')} icon="OR">
+            <FilterSection
+              title={t('portfolioSearch.sections.order')}
+              icon="OR"
+              sectionId="order"
+              accordion={filterAccordion}
+              openSectionId={openFilterSection}
+              onAccordionToggle={setOpenFilterSection}
+            >
               <div className="ps-field">
                 <span className="ps-label">{t('portfolioSearch.order.direction')}</span>
                 <div className="ps-chip-group two-cols">
@@ -513,25 +639,10 @@ const PortfolioSearchPage = () => {
                 </div>
               </div>
             </FilterSection>
-          </aside>
+          </aside>}
 
           <section className="ps-results" aria-live="polite">
-            <div className="ps-results-head">
-              <div>
-                <span className="ps-results-count">
-                  {loading
-                    ? t('portfolioSearch.results.loading')
-                    : hasSearched
-                      ? t('portfolioSearch.results.count', { shown: results.length, total })
-                      : t('portfolioSearch.results.ready')}
-                </span>
-                <small>
-                  {hasSearched
-                    ? t('portfolioSearch.results.direction', { direction: filters.orden.direccion.toUpperCase() })
-                    : t('portfolioSearch.results.helper')}
-                </small>
-              </div>
-            </div>
+            {showFilterSections && <div className="ps-results-head">{resultsSummary()}</div>}
 
             {error && <div className="ps-error-box">{error}</div>}
 
