@@ -4,6 +4,7 @@ const WHEEL_LOCK_MS = 320;
 const INTERACTIVE_SELECTOR = 'a, button, input, select, textarea, [contenteditable="true"]';
 
 export default function useHeroInputNavigation({ enabled, onMove }) {
+  const elementRef = useRef(null);
   const wheelLocked = useRef(false);
   const wheelTimer = useRef(null);
 
@@ -19,7 +20,7 @@ export default function useHeroInputNavigation({ enabled, onMove }) {
     onMove(event.key === 'ArrowLeft' ? -1 : 1);
   }, [enabled, onMove]);
 
-  const onWheel = useCallback((event) => {
+  const handleWheel = useCallback((event) => {
     if (!enabled || !event.shiftKey || wheelLocked.current) return;
 
     const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
@@ -38,9 +39,17 @@ export default function useHeroInputNavigation({ enabled, onMove }) {
     }, WHEEL_LOCK_MS);
   }, [enabled, onMove]);
 
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element || !enabled) return undefined;
+
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    return () => element.removeEventListener('wheel', handleWheel);
+  }, [enabled, handleWheel]);
+
   return {
+    ref: elementRef,
     onKeyDown,
-    onWheel,
     tabIndex: enabled ? 0 : undefined,
   };
 }
