@@ -10,7 +10,12 @@
 }
 
 .pdm-modal {
-  background: var(--fondo, #f7fafc);
+  background-color: var(--azul-deep, #004f7c);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(0, 79, 124, .98), rgba(0, 119, 183, .84));
+  background-size: 34px 34px, 34px 34px, 100% 100%;
   border: 1px solid var(--gris-borde, #dbe4eb);
   border-radius: 18px;
   box-shadow: 0 28px 80px rgba(15, 41, 64, .24);
@@ -48,13 +53,18 @@
 }
 
 .pdm-header {
-  background: var(--blanco, #fff);
-  border-bottom: 1px solid var(--gris-borde, #dbe4eb);
+  background-color: var(--azul-deep, #004f7c);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(0, 79, 124, .98), rgba(0, 119, 183, .84));
+  background-size: 34px 34px, 34px 34px, 100% 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, .2);
   padding: 28px 76px 24px 30px;
 }
 
 .pdm-header > span {
-  color: var(--azul, #0077b7);
+  color: rgba(255, 255, 255, .72);
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 800;
@@ -63,15 +73,43 @@
 }
 
 .pdm-header h2 {
-  color: var(--negro-texto, #172433);
+  color: #fff;
   font-size: clamp(28px, 4vw, 44px);
   font-weight: 850;
   margin: 6px 0 0;
 }
 
+.pdm-header-demo {
+  align-items: center;
+  background: linear-gradient(145deg, rgba(69, 10, 10, .99), rgba(127, 29, 29, .94));
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 9px;
+  color: #fff;
+  display: flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 7px;
+  padding: 11px 14px;
+  position: absolute;
+  right: 78px;
+  text-decoration: none;
+  top: 24px;
+}
+
+.pdm-header-demo:hover {
+  background: linear-gradient(145deg, rgba(90, 15, 15, .99), rgba(153, 27, 27, .95));
+  border-color: rgba(255, 255, 255, .55);
+  color: #fff;
+}
+
 .pdm-gallery {
-  background: #edf4f8;
-  border-bottom: 1px solid var(--gris-borde, #dbe4eb);
+  background-color: #450a0a;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(69, 10, 10, .99), rgba(127, 29, 29, .92));
+  background-size: 34px 34px, 34px 34px, 100% 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, .2);
   padding: 16px;
 }
 
@@ -211,6 +249,17 @@
   padding: 20px;
 }
 
+.pdm-panel {
+  background-color: #450a0a;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(69, 10, 10, .99), rgba(127, 29, 29, .92));
+  background-size: 28px 28px, 28px 28px, 100% 100%;
+  border-color: rgba(255, 255, 255, .18);
+  box-shadow: 0 12px 30px rgba(69, 10, 10, .32);
+}
+
 .pdm-panel h3 {
   align-items: center;
   color: var(--negro-texto, #172433);
@@ -229,8 +278,16 @@
   margin-left: 5px;
 }
 
+.pdm-panel h3 {
+  color: #fff;
+}
+
+.pdm-panel h3::after {
+  background: rgba(255, 255, 255, .34);
+}
+
 .pdm-description-panel p {
-  color: var(--gris-texto, #667789);
+  color: rgba(255, 255, 255, .9);
   line-height: 1.75;
   margin: 0;
   white-space: pre-line;
@@ -259,10 +316,20 @@
   padding: 11px;
 }
 
+.pdm-information-panel .pdm-facts span {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .22);
+  color: rgba(255, 255, 255, .9);
+}
+
 .pdm-facts strong {
   color: var(--azul, #0077b7);
   font-size: 10px;
   text-transform: uppercase;
+}
+
+.pdm-information-panel .pdm-facts strong {
+  color: #fff;
 }
 
 .pdm-technologies {
@@ -280,6 +347,12 @@
   gap: 10px;
   min-height: 56px;
   padding: 9px;
+}
+
+.pdm-technologies-panel .pdm-technologies > span {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .22);
+  color: #fff;
 }
 
 .pdm-technologies img,
@@ -300,6 +373,14 @@
 .pdm-technologies small { color: var(--gris-texto, #667789); }
 .pdm-technologies em { color: var(--azul, #0077b7); font-style: normal; font-weight: 900; }
 
+.pdm-technologies-panel .pdm-technologies small {
+  color: rgba(255, 255, 255, .7);
+}
+
+.pdm-technologies-panel .pdm-technologies em {
+  color: #fff;
+}
+
 .pdm-repositories,
 .pdm-participants {
   display: grid;
@@ -309,9 +390,10 @@
 
 .pdm-repositories article,
 .pdm-participants a {
-  background: #f7fafc;
-  border: 1px solid #e2ebf0;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .22);
   border-radius: 9px;
+  color: #fff;
   padding: 15px;
 }
 
@@ -321,13 +403,13 @@
   gap: 8px;
 }
 
-.pdm-repositories article > div:first-child svg { color: var(--azul-deep, #0f4164); }
-.pdm-repositories article > div:first-child span { color: var(--azul, #0077b7); margin-left: auto; }
-.pdm-repositories p { color: var(--gris-texto, #667789); font-size: 12px; line-height: 1.6; }
-.pdm-repositories a, .pdm-links a { color: var(--azul, #0077b7); font-weight: 700; text-decoration: none; }
+.pdm-repositories article > div:first-child svg { color: #fff; }
+.pdm-repositories article > div:first-child span { color: rgba(255, 255, 255, .72); margin-left: auto; }
+.pdm-repositories p { color: rgba(255, 255, 255, .76); font-size: 12px; line-height: 1.6; }
+.pdm-repositories a, .pdm-links a { color: #fff; font-weight: 700; text-decoration: none; }
 
 .pdm-repo-stats {
-  color: var(--gris-oscuro, #425466);
+  color: rgba(255, 255, 255, .82);
   display: flex;
   flex-wrap: wrap;
   font-size: 11px;
@@ -337,8 +419,8 @@
 
 .pdm-links { display: flex; flex-wrap: wrap; gap: 9px; }
 .pdm-links a {
-  background: var(--azul-light, #e5f4fb);
-  border: 1px solid var(--azul-mid, #86c8e8);
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .22);
   border-radius: 7px;
   padding: 10px 12px;
 }
@@ -355,18 +437,19 @@
 }
 
 .pdm-participants a:hover {
-  border-color: var(--azul, #0077b7);
+  background: rgba(255, 255, 255, .16);
+  border-color: rgba(255, 255, 255, .5);
   transform: translateY(-2px);
 }
 
 .pdm-participants a.is-repository-linked {
-  background: #eefaf3;
-  border-color: #8dd5aa;
+  background: rgba(255, 255, 255, .14);
+  border-color: rgba(255, 255, 255, .34);
 }
 
 .pdm-participants a.is-repository-linked small,
 .pdm-participants a.is-repository-linked .pdm-participant-link-icon {
-  color: #278a50;
+  color: rgba(255, 255, 255, .74);
 }
 
 .pdm-participants a > img,
@@ -384,8 +467,8 @@
 }
 
 .pdm-participants a div { display: flex; flex-direction: column; padding-right: 22px; }
-.pdm-participants small { color: var(--azul, #0077b7); }
-.pdm-participants p { color: var(--gris-texto, #667789); font-size: 12px; margin: 6px 0 0; }
+.pdm-participants small { color: rgba(255, 255, 255, .72); }
+.pdm-participants p { color: rgba(255, 255, 255, .76); font-size: 12px; margin: 6px 0 0; }
 .pdm-participant-link-icon { color: var(--azul, #0077b7); position: absolute; right: 12px; top: 12px; }
 
 @media (max-width: 800px) {
@@ -393,6 +476,7 @@
   .pdm-modal { border-radius: 0; min-height: 100vh; }
   .pdm-gallery-main { height: 330px; }
   .pdm-content { grid-template-columns: 1fr; padding: 18px 14px 24px; }
+  .pdm-header-demo { margin-top: 16px; position: static; width: fit-content; }
   .pdm-repositories-panel, .pdm-links-panel { grid-column: auto; }
   .pdm-facts, .pdm-technologies, .pdm-repositories { grid-template-columns: 1fr; }
 }

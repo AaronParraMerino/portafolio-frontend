@@ -690,7 +690,12 @@
 }
 
 .evh-modal {
-  background: #fff;
+  background-color: var(--azul-deep, #004f7c);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(0, 79, 124, .99), rgba(0, 119, 183, .88));
+  background-size: 34px 34px, 34px 34px, 100% 100%;
   border-radius: 8px;
   box-shadow: 0 28px 70px rgba(15, 23, 42, .32);
   max-height: min(860px, calc(100vh - 44px));
@@ -774,6 +779,7 @@
 }
 
 .evh-modal-body {
+  background: transparent;
   padding: 24px;
 }
 
@@ -785,7 +791,7 @@
 }
 
 .evh-modal-head h2 {
-  color: var(--negro-texto);
+  color: #fff;
   font-size: clamp(26px, 4vw, 42px);
   font-weight: 900;
   letter-spacing: 0;
@@ -794,13 +800,13 @@
 }
 
 .evh-modal-head p {
-  color: var(--gris-texto);
+  color: rgba(255, 255, 255, .72);
   font-size: 13px;
   margin: 9px 0 0;
 }
 
 .evh-modal-description {
-  color: var(--gris-oscuro);
+  color: rgba(255, 255, 255, .9);
   font-size: 15px;
   line-height: 1.75;
   margin: 20px 0 0;
@@ -808,32 +814,62 @@
 
 .evh-modal-facts {
   display: grid;
-  gap: 10px;
+  gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 22px;
+  margin-top: 26px;
 }
 
 .evh-modal-facts span {
   align-items: center;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  color: var(--gris-oscuro);
+  background-color: #450a0a;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .1) 1px, transparent 1px),
+    linear-gradient(145deg, #450a0a, #7f1d1d);
+  background-size: 24px 24px, 24px 24px, 100% 100%;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, .9);
   display: flex;
-  font-size: 13px;
-  gap: 9px;
-  min-height: 46px;
-  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  gap: 13px;
+  min-height: 72px;
+  padding: 15px 17px;
+}
+
+.evh-modal-facts span > svg {
+  background: #fff;
+  border-radius: 9px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .2);
+  box-sizing: content-box;
+  color: var(--azul, #0077b7);
+  flex: 0 0 auto;
+  height: 21px;
+  padding: 9px;
+  width: 21px;
+}
+
+.evh-modal-facts span:nth-child(2) > svg {
+  color: var(--verde-hover, #28b882);
+}
+
+.evh-modal-facts span:nth-child(3) > svg {
+  color: var(--amarillo-hover, #e0a813);
+}
+
+.evh-modal-facts span:nth-child(4) > svg {
+  color: var(--rojo-mid, #c94040);
 }
 
 .evh-modal-channels {
-  border-top: 1px solid #eef2f6;
+  border-top: 1px solid rgba(255, 255, 255, .22);
   margin-top: 22px;
   padding-top: 18px;
 }
 
 .evh-modal-channels strong {
-  color: var(--negro-texto);
+  color: #fff;
   display: block;
   font-size: 13px;
   margin-bottom: 10px;
@@ -846,10 +882,10 @@
 }
 
 .evh-modal-channels span {
-  background: var(--azul-light);
-  border: 1px solid var(--azul-mid);
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .24);
   border-radius: 999px;
-  color: var(--azul-deep);
+  color: #fff;
   font-size: 12px;
   font-weight: 800;
   padding: 7px 10px;

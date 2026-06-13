@@ -49,10 +49,22 @@ function linkEvidences(project = {}) {
   ));
 }
 
+function demoFromProject(project = {}) {
+  if (!project) return null;
+
+  const directUrl = project.url_demo || project.url_sitio_web || project.url_sitioweb;
+  if (directUrl) return { url: directUrl, titulo: 'Demo' };
+
+  return (project?.evidencias || []).find((item) => (
+    ['demo', 'sitio', 'sitio_web', 'web'].includes(String(item.tipo || '').toLowerCase()) && item.url
+  )) || null;
+}
+
 export default function ProjectDetailModal({ project, loading, error, onClose }) {
   const { t } = useLanguage();
   const media = useMemo(() => mediaFromProject(project), [project]);
-  const links = useMemo(() => linkEvidences(project), [project]);
+  const demo = useMemo(() => demoFromProject(project), [project]);
+  const links = useMemo(() => linkEvidences(project).filter((item) => item !== demo), [demo, project]);
   const [activeMedia, setActiveMedia] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
   const currentMedia = media[activeMedia];
@@ -85,6 +97,11 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
         <header className="pdm-header">
           <span>{getProjectTypeLabel(project.tipo || project.type, t)}</span>
           <h2 id="pdm-title">{project.titulo || project.title}</h2>
+          {demo?.url && (
+            <a className="pdm-header-demo" href={demo.url} target="_blank" rel="noreferrer">
+              {demo.titulo || 'Demo'} <BsBoxArrowUpRight />
+            </a>
+          )}
         </header>
 
         <div className="pdm-gallery">

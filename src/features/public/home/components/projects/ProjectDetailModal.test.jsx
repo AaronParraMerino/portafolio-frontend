@@ -66,3 +66,20 @@ test('amplia una imagen sin cerrar el detalle', () => {
   expect(screen.queryByRole('dialog', { name: 'Imagen ampliada: Captura' })).not.toBeInTheDocument();
   expect(onClose).not.toHaveBeenCalled();
 });
+
+test('muestra el demo junto al titulo solo cuando existe y no lo repite abajo', () => {
+  const projectWithDemo = {
+    ...project,
+    evidencias: [
+      ...project.evidencias,
+      { id_evidencia: 3, titulo: 'Demo', tipo: 'demo', url: 'https://example.com/demo' },
+    ],
+  };
+
+  const { rerender } = render(<ProjectDetailModal project={projectWithDemo} onClose={jest.fn()} />);
+  expect(screen.getByRole('link', { name: 'Demo' })).toHaveAttribute('href', 'https://example.com/demo');
+  expect(screen.queryByText('home.projects.detail.links')).not.toBeInTheDocument();
+
+  rerender(<ProjectDetailModal project={project} onClose={jest.fn()} />);
+  expect(screen.queryByRole('link', { name: 'Demo' })).not.toBeInTheDocument();
+});
