@@ -1685,6 +1685,26 @@
   max-width: 680px;
 }
 
+.evt-dashboard-edit-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.evt-dashboard-edit-footer {
+  background: #fbfcfd;
+  justify-content: space-between;
+}
+
+.evt-dashboard-edit-footer-note {
+  color: var(--gris-texto, #6b7280);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-right: auto;
+}
+
 .evt-modal-backdrop {
   align-items: center;
   background: rgba(15, 23, 42, .48);
@@ -2512,6 +2532,15 @@
   .evt-pagination-actions,
   .evt-modal-actions {
     width: 100%;
+  }
+
+  .evt-dashboard-edit-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .evt-dashboard-edit-footer-note {
+    margin-right: 0;
   }
 
   .evt-page-btn,

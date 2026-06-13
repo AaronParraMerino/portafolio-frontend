@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BsChevronLeft, BsChevronRight, BsCodeSlash } from 'react-icons/bs';
 import { useLanguage } from '../../../../../core/i18n';
+import useHeroInputNavigation from '../../hooks/useHeroInputNavigation';
 import {
   getProjectPlatformLabel,
   getProjectTypeLabel,
@@ -40,6 +41,15 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
   const touchStartX = useRef(null);
   const project = visibleProjects[activeIndex] || visibleProjects[0];
 
+  const move = useCallback((step) => {
+    setActiveIndex((index) => (index + step + visibleProjects.length) % visibleProjects.length);
+  }, [visibleProjects.length]);
+
+  const heroInputNavigation = useHeroInputNavigation({
+    enabled: visibleProjects.length > 1,
+    onMove: move,
+  });
+
   useEffect(() => {
     if (activeIndex >= visibleProjects.length) setActiveIndex(0);
   }, [activeIndex, visibleProjects.length]);
@@ -53,13 +63,6 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
 
     return () => window.clearInterval(timer);
   }, [paused, visibleProjects.length]);
-
-  if (!project) return null;
-
-  const technologies = project.technologies || [];
-  const move = (step) => {
-    setActiveIndex((index) => (index + step + visibleProjects.length) % visibleProjects.length);
-  };
 
   const handleTouchStart = (event) => {
     touchStartX.current = event.touches?.[0]?.clientX ?? null;
@@ -78,6 +81,10 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
     setPaused(false);
   };
 
+  if (!project) return null;
+
+  const technologies = project.technologies || [];
+
   return (
     <section className="prh-section" id="proyectos">
       <div className="prh-inner">
@@ -86,6 +93,7 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
         </div>
         <article
           className={`prh-hero${project.imageUrl ? ' has-image' : ''}`}
+          {...heroInputNavigation}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
           onFocus={() => setPaused(true)}

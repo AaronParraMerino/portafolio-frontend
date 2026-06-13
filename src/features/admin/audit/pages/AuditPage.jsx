@@ -28,7 +28,7 @@ export default function AuditPage() {
   } = useAuditLogs();
 
   return (
-    <div className="aud-page">
+    <div className="aud-page adm-page-shell">
       <AdminHeader
         eyebrow={t(headerConfig.eyebrowKey || headerConfig.eyebrow)}
         title={t(headerConfig.titleKey || headerConfig.title)}

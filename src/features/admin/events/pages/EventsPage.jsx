@@ -52,7 +52,7 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="evt-page">
+    <div className="evt-page adm-page-shell">
       <AdminHeader
         eyebrow={t(headerConfig.eyebrowKey || headerConfig.eyebrow)}
         title={t(headerConfig.titleKey || headerConfig.title)}

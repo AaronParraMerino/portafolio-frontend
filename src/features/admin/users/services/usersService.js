@@ -218,6 +218,22 @@ export function getUserNoticeStatusMeta(status) {
   return USER_NOTICE_STATUSES.find((item) => item.id === status) || USER_NOTICE_STATUSES[1];
 }
 
+export function normalizeNoticeUrgency(value) {
+  const normalized = String(value || '').toLowerCase();
+
+  if (normalized === 'normal') return 'media';
+  if (normalized === 'critica') return 'alta';
+  if (['baja', 'media', 'alta'].includes(normalized)) return normalized;
+
+  return 'baja';
+}
+
+export function toAdminNoticePriority(value) {
+  const normalized = normalizeNoticeUrgency(value);
+
+  return normalized === 'media' ? 'normal' : normalized;
+}
+
 export function estimateUsersAudience({
   users = [],
   segments = [],
@@ -419,6 +435,19 @@ export async function createGlobalAdminNotice(payload) {
   });
 
   return parseAdminResponse(response, 'No se pudo crear el aviso global.');
+}
+
+export async function updateGlobalAdminNotice(noticeId, payload) {
+  const response = await fetch(`${BASE_URL}/admin/avisos/${noticeId}`, {
+    method: 'PUT',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return parseAdminResponse(response, 'No se pudo actualizar el aviso global.');
 }
 
 export async function createAdminNoticeTemplate(payload) {

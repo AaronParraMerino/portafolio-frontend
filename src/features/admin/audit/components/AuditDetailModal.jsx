@@ -4,9 +4,9 @@ import {
   BsFileEarmarkText,
   BsPersonCircle,
   BsShieldCheck,
-  BsX,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
+import AdminEdit, { AdminEditBody, AdminEditFooter, AdminEditSection } from '../../layout/AdminEdit';
 
 export default function AuditDetailModal({ item, onClose }) {
   const { t } = useLanguage();
@@ -14,37 +14,18 @@ export default function AuditDetailModal({ item, onClose }) {
   if (!item) return null;
 
   return (
-    <div className="aud-modal-backdrop" onClick={onClose} aria-hidden="true">
-      <div
-        className="aud-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('adminAudit.detail.title')}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="aud-modal-head">
-          <span className="aud-modal-icon">
-            <BsShieldCheck />
-          </span>
-          <div className="aud-modal-copy">
-            <strong>{item.actionLabel}</strong>
-            <span>{item.moduleLabel} {item.recordId ? `#${item.recordId}` : ''}</span>
-          </div>
-          <button
-            type="button"
-            className="aud-modal-close"
-            onClick={onClose}
-            aria-label={t('actions.close')}
-          >
-            <BsX />
-          </button>
-        </div>
-
-        <div className="aud-modal-body">
-          <section className="aud-modal-section aud-modal-section--summary">
-            <span className="aud-modal-section-kicker">{t('adminAudit.detail.description')}</span>
+    <AdminEdit
+      title={item.actionLabel}
+      subtitle={`${item.moduleLabel} ${item.recordId ? `#${item.recordId}` : ''}`}
+      icon={<BsShieldCheck />}
+      onClose={onClose}
+      ariaLabel={t('adminAudit.detail.title')}
+      size="lg"
+    >
+        <AdminEditBody>
+          <AdminEditSection label={t('adminAudit.detail.description')} className="aud-modal-section--summary">
             <p>{item.description || t('adminAudit.table.noDescription')}</p>
-          </section>
+          </AdminEditSection>
 
           <div className="aud-detail-card-grid">
             <DetailCard
@@ -73,7 +54,7 @@ export default function AuditDetailModal({ item, onClose }) {
             />
           </div>
 
-          <section className="aud-modal-section">
+          <AdminEditSection>
             <div className="aud-modal-section-head">
               <span className="aud-modal-section-kicker">{t('adminAudit.table.device')}</span>
               <h3>{item.ipAddress || t('adminAudit.table.noIp')}</h3>
@@ -82,17 +63,16 @@ export default function AuditDetailModal({ item, onClose }) {
               <BsDisplay />
               <span>{item.userAgent || t('adminAudit.detail.noUserAgent')}</span>
             </div>
-          </section>
-        </div>
+          </AdminEditSection>
+        </AdminEditBody>
 
-        <div className="aud-modal-foot">
+        <AdminEditFooter>
           <span>{t('adminAudit.detail.footer')}</span>
           <button type="button" className="aud-reason-btn aud-reason-btn--primary" onClick={onClose}>
             {t('adminAudit.detail.understood')}
           </button>
-        </div>
-      </div>
-    </div>
+        </AdminEditFooter>
+    </AdminEdit>
   );
 }
 

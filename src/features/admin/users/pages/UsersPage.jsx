@@ -104,7 +104,7 @@ export default function UsersPage() {
   );
 
   return (
-    <div className="usr-page">
+    <div className="usr-page adm-page-shell">
       <AdminHeader
         eyebrow={t(headerConfig.eyebrowKey || 'admin.layout.eyebrow.management')}
         title={t(headerConfig.titleKey || 'admin.layout.section.users.title')}

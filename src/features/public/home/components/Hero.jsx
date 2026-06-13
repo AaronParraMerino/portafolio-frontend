@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BsChevronLeft, BsChevronRight } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import { getHomeStats } from '../services/homePortfolioService';
+import useHeroInputNavigation from '../hooks/useHeroInputNavigation';
 import { EventDetailModal, EventHeroBanner } from './events';
 
 /* ── Datos ── */
@@ -62,6 +63,15 @@ export default function Hero({ eventsState }) {
   const highlighted = eventsState?.highlighted || [];
   const slideCount = highlighted.length + 1;
 
+  const moveSlide = useCallback((step) => {
+    setActiveSlide((index) => (index + step + slideCount) % slideCount);
+  }, [slideCount]);
+
+  const heroInputNavigation = useHeroInputNavigation({
+    enabled: slideCount > 1,
+    onMove: moveSlide,
+  });
+
   useEffect(() => {
     let active = true;
 
@@ -93,10 +103,6 @@ export default function Hero({ eventsState }) {
       setActiveSlide(0);
     }
   }, [activeSlide, slideCount]);
-
-  const moveSlide = (step) => {
-    setActiveSlide((index) => (index + step + slideCount) % slideCount);
-  };
 
   const handleRegister = async (event) => {
     if (event?.requiresLogin) {
@@ -746,8 +752,11 @@ export default function Hero({ eventsState }) {
         {/* Contenido principal y eventos destacados */}
         <div
           className="spk-hero-showcase"
+          {...heroInputNavigation}
           onMouseEnter={() => setCarouselPaused(true)}
           onMouseLeave={() => setCarouselPaused(false)}
+          onFocus={() => setCarouselPaused(true)}
+          onBlur={() => setCarouselPaused(false)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >

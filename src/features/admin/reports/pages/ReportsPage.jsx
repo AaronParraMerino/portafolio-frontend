@@ -1,4 +1,10 @@
 import { useEffect, useState } from 'react';
+import {
+  BsActivity,
+  BsFolder2Open,
+  BsPeople,
+  BsPersonCheck,
+} from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
@@ -6,10 +12,10 @@ import { fetchAdminReport } from '../services/reportsService';
 import '../styles/reports.css';
 
 const REPORT_SECTIONS = [
-  { key: 'users', titleKey: 'adminReports.sections.users.title', totalKey: 'adminReports.sections.users.total' },
-  { key: 'projects', titleKey: 'adminReports.sections.projects.title', totalKey: 'adminReports.sections.projects.total' },
-  { key: 'participations', titleKey: 'adminReports.sections.participations.title', totalKey: 'adminReports.sections.participations.total' },
-  { key: 'audit', titleKey: 'adminReports.sections.audit.title', totalKey: 'adminReports.sections.audit.total' },
+  { key: 'users', titleKey: 'adminReports.sections.users.title', totalKey: 'adminReports.sections.users.total', icon: BsPeople },
+  { key: 'projects', titleKey: 'adminReports.sections.projects.title', totalKey: 'adminReports.sections.projects.total', icon: BsFolder2Open },
+  { key: 'participations', titleKey: 'adminReports.sections.participations.title', totalKey: 'adminReports.sections.participations.total', icon: BsPersonCheck },
+  { key: 'audit', titleKey: 'adminReports.sections.audit.title', totalKey: 'adminReports.sections.audit.total', icon: BsActivity },
 ];
 
 function dateInputValue(date) {
@@ -114,7 +120,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="rpt-page">
+    <div className="rpt-page adm-page-shell">
       <AdminHeader
         eyebrow={t(headerConfig.eyebrowKey || headerConfig.eyebrow)}
         title={t(headerConfig.titleKey || headerConfig.title)}
@@ -159,14 +165,17 @@ export default function ReportsPage() {
         {error ? <div className="rpt-error" role="alert">{error}</div> : null}
 
         <div className="rpt-grid">
-          {REPORT_SECTIONS.map(({ key, titleKey, totalKey }) => {
+          {REPORT_SECTIONS.map(({ key, titleKey, totalKey, icon: Icon }) => {
             const section = report?.[key] || {};
             return (
               <section className="rpt-card" key={key}>
                 <div className="rpt-card-head">
+                  <span className="rpt-stat-icon">
+                    <Icon aria-hidden="true" />
+                  </span>
                   <div>
-                    <span>{t(titleKey)}</span>
                     <strong>{loading ? '--' : section.total || 0}</strong>
+                    <span>{t(titleKey)}</span>
                     <small>{t(totalKey)}</small>
                   </div>
                 </div>

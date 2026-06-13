@@ -48,8 +48,8 @@ export default function AuditFilters({
         ) : null}
       </div>
 
-      <div className="aud-filter-row">
-        <label>
+      <div className="adm-filter-row">
+        <label className="adm-filter-field">
           <span>{t('adminAudit.filters.module')}</span>
           <select
             value={filters.module}
@@ -63,7 +63,21 @@ export default function AuditFilters({
           </select>
         </label>
 
-        <label>
+        <label className="adm-filter-field">
+          <span>{t('adminAudit.filters.actionGroupAria')}</span>
+          <select
+            value={filters.actionGroup}
+            onChange={(event) => onFilterChange('actionGroup', event.target.value)}
+          >
+            {AUDIT_ACTION_GROUPS.map((group) => (
+              <option key={group.id} value={group.id}>
+                {t(group.labelKey)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="adm-filter-field adm-filter-field--date">
           <span>{t('adminAudit.filters.from')}</span>
           <input
             type="date"
@@ -72,7 +86,7 @@ export default function AuditFilters({
           />
         </label>
 
-        <label>
+        <label className="adm-filter-field adm-filter-field--date">
           <span>{t('adminAudit.filters.to')}</span>
           <input
             type="date"
@@ -80,19 +94,6 @@ export default function AuditFilters({
             onChange={(event) => onFilterChange('to', event.target.value)}
           />
         </label>
-      </div>
-
-      <div className="aud-chip-row" aria-label={t('adminAudit.filters.actionGroupAria')}>
-        {AUDIT_ACTION_GROUPS.map((group) => (
-          <button
-            key={group.id}
-            type="button"
-            className={`aud-filter-chip${filters.actionGroup === group.id ? ' active' : ''}`}
-            onClick={() => onFilterChange('actionGroup', group.id)}
-          >
-            {t(group.labelKey)}
-          </button>
-        ))}
       </div>
     </section>
   );

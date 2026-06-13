@@ -93,24 +93,46 @@ export default function AuditTable({
   const { t } = useLanguage();
   const currentPage = meta.currentPage || 1;
   const lastPage = meta.lastPage || 1;
+  const pagination = (
+    <AdminPagination
+      summary={t('adminAudit.pagination.summary', {
+        from: meta.from || 0,
+        to: meta.to || 0,
+        total: meta.total || 0,
+      })}
+      currentPage={currentPage}
+      totalPages={lastPage}
+      paginationItems={buildAdminPaginationItems(currentPage, lastPage)}
+      previousLabel={t('adminAudit.pagination.previous')}
+      nextLabel={t('adminAudit.pagination.next')}
+      disabled={loading}
+      onPageChange={onPageChange}
+    />
+  );
 
   if (loading) {
     return (
-      <div className="aud-empty-state">
-        <BsClockHistory />
-        <strong>{t('adminAudit.loading.title')}</strong>
-        <p>{t('adminAudit.loading.description')}</p>
-      </div>
+      <>
+        <div className="aud-empty-state">
+          <BsClockHistory />
+          <strong>{t('adminAudit.loading.title')}</strong>
+          <p>{t('adminAudit.loading.description')}</p>
+        </div>
+        {pagination}
+      </>
     );
   }
 
   if (!items.length) {
     return (
-      <div className="aud-empty-state">
-        <BsClockHistory />
-        <strong>{t('adminAudit.empty.title')}</strong>
-        <p>{t('adminAudit.empty.description')}</p>
-      </div>
+      <>
+        <div className="aud-empty-state">
+          <BsClockHistory />
+          <strong>{t('adminAudit.empty.title')}</strong>
+          <p>{t('adminAudit.empty.description')}</p>
+        </div>
+        {pagination}
+      </>
     );
   }
 
@@ -193,19 +215,7 @@ export default function AuditTable({
         </table>
       </div>
 
-      <AdminPagination
-        summary={t('adminAudit.pagination.summary', {
-          from: meta.from || 0,
-          to: meta.to || 0,
-          total: meta.total || 0,
-        })}
-        currentPage={currentPage}
-        totalPages={lastPage}
-        paginationItems={buildAdminPaginationItems(currentPage, lastPage)}
-        previousLabel={t('adminAudit.pagination.previous')}
-        nextLabel={t('adminAudit.pagination.next')}
-        onPageChange={onPageChange}
-      />
+      {pagination}
     </>
   );
 }

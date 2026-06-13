@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import {
   BsCheck2,
   BsShieldExclamation,
-  BsX,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
+import AdminEdit, { AdminEditBody, AdminEditFieldError, AdminEditFooter } from '../../layout/AdminEdit';
 
 export default function AdminEventActionModal({
   action,
@@ -44,22 +44,17 @@ export default function AdminEventActionModal({
   };
 
   return (
-    <div className="evt-modal-backdrop" role="presentation">
-      <form className="evt-modal evt-admin-action-modal" onSubmit={handleSubmit}>
-        <div className="evt-modal-head">
-          <span className="evt-modal-icon">
-            <BsShieldExclamation />
-          </span>
-          <div className="evt-modal-copy">
-            <strong>{label}</strong>
-            <span>{targetName}</span>
-          </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
-            <BsX />
-          </button>
-        </div>
-
-        <div className="evt-modal-body">
+    <AdminEdit
+      as="form"
+      title={label}
+      subtitle={targetName}
+      icon={<BsShieldExclamation />}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      size="sm"
+      ariaLabel={label}
+    >
+        <AdminEditBody>
           <label className="evt-field evt-field--full">
             <span>{t('adminEvents.action.reasonLabel')}</span>
             <textarea
@@ -72,10 +67,10 @@ export default function AdminEventActionModal({
               placeholder={t('adminEvents.action.reasonPlaceholder')}
             />
           </label>
-          {message ? <div className="evt-modal-message">{message}</div> : null}
-        </div>
+          <AdminEditFieldError msg={message} />
+        </AdminEditBody>
 
-        <div className="evt-modal-foot">
+        <AdminEditFooter>
           <span>{t('adminEvents.action.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
@@ -86,8 +81,7 @@ export default function AdminEventActionModal({
               {t('adminEvents.common.confirm')}
             </button>
           </div>
-        </div>
-      </form>
-    </div>
+        </AdminEditFooter>
+    </AdminEdit>
   );
 }

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BsCalendarEvent, BsChevronLeft, BsChevronRight, BsGeoAlt } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../../../core/i18n';
+import useHeroInputNavigation from '../../hooks/useHeroInputNavigation';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
@@ -31,6 +32,18 @@ export default function EventHeroBanner({
   const touchStartX = useRef(null);
   const activeEvent = visibleEvents[activeIndex] || visibleEvents[0];
 
+  const move = useCallback((step) => {
+    setActiveIndex((index) => (
+      (index + step + visibleEvents.length) % visibleEvents.length
+    ));
+    setInteractionKey((key) => key + 1);
+  }, [visibleEvents.length]);
+
+  const heroInputNavigation = useHeroInputNavigation({
+    enabled: visibleEvents.length > 1,
+    onMove: move,
+  });
+
   useEffect(() => {
     if (activeIndex > visibleEvents.length - 1) {
       setActiveIndex(0);
@@ -46,15 +59,6 @@ export default function EventHeroBanner({
 
     return () => window.clearInterval(timer);
   }, [autoAdvanceMs, interactionKey, paused, visibleEvents.length]);
-
-  if (!activeEvent) return null;
-
-  const move = (step) => {
-    setActiveIndex((index) => (
-      (index + step + visibleEvents.length) % visibleEvents.length
-    ));
-    setInteractionKey((key) => key + 1);
-  };
 
   const handleTouchStart = (event) => {
     if (!window.matchMedia('(max-width: 760px)').matches) return;
@@ -86,9 +90,12 @@ export default function EventHeroBanner({
     }
   };
 
+  if (!activeEvent) return null;
+
   return (
     <section
       className="evh-hero"
+      {...heroInputNavigation}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}

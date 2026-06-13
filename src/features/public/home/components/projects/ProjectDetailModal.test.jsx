@@ -54,3 +54,32 @@ test('muestra miniatura de YouTube y el estado de carga', () => {
   expect(screen.getByRole('status')).toHaveTextContent('home.projects.detail.loading');
   expect(container.querySelector('img[src="https://i.ytimg.com/vi/abc123/mqdefault.jpg"]')).toBeInTheDocument();
 });
+
+test('amplia una imagen sin cerrar el detalle', () => {
+  const onClose = jest.fn();
+  render(<ProjectDetailModal project={project} onClose={onClose} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ampliar imagen del proyecto' }));
+  expect(screen.getByRole('dialog', { name: 'Imagen ampliada: Captura' })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar imagen ampliada' }));
+  expect(screen.queryByRole('dialog', { name: 'Imagen ampliada: Captura' })).not.toBeInTheDocument();
+  expect(onClose).not.toHaveBeenCalled();
+});
+
+test('muestra el demo junto al titulo solo cuando existe y no lo repite abajo', () => {
+  const projectWithDemo = {
+    ...project,
+    evidencias: [
+      ...project.evidencias,
+      { id_evidencia: 3, titulo: 'Demo', tipo: 'demo', url: 'https://example.com/demo' },
+    ],
+  };
+
+  const { rerender } = render(<ProjectDetailModal project={projectWithDemo} onClose={jest.fn()} />);
+  expect(screen.getByRole('link', { name: 'Demo' })).toHaveAttribute('href', 'https://example.com/demo');
+  expect(screen.queryByText('home.projects.detail.links')).not.toBeInTheDocument();
+
+  rerender(<ProjectDetailModal project={project} onClose={jest.fn()} />);
+  expect(screen.queryByRole('link', { name: 'Demo' })).not.toBeInTheDocument();
+});

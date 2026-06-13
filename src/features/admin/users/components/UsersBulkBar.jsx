@@ -25,7 +25,7 @@ export default function UsersBulkBar({
           type="button"
           className={`usr-bulk-action usr-bulk-action--${action.tone}`}
           disabled={!supportsMutations}
-          title={supportsMutations ? t(`admin.users.bulk.action.${action.id}`) : t('admin.users.bulk.integrationPending')}
+          title={t(`admin.users.bulk.action.${action.id}`)}
         >
           {t(`admin.users.bulk.action.${action.id}`)}
         </button>

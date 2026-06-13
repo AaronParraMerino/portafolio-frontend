@@ -14,6 +14,12 @@ import {
   BsX,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
+import DashboardEdit, {
+  DashboardEditBody,
+  DashboardEditFieldError,
+  DashboardEditFooter,
+  DashboardEditSection,
+} from '../../../dashboard/layout/DashboardEdit';
 import {
   EVENT_PROFILE_TARGET_GROUPS,
   EVENT_STATUS_FILTERS,
@@ -262,7 +268,7 @@ export default function EventFormModal({
         groupId,
         value,
         label: value,
-        groupLabel: group ? t(`adminEvents.profileTarget.${group.id}.label`) : 'Segmento',
+        groupLabel: group ? t(`adminEvents.profileTarget.${group.id}.label`) : t('adminEvents.form.segmentFallback'),
       };
     }));
   const minDateTime = getDateTimeLocalNow();
@@ -448,22 +454,15 @@ export default function EventFormModal({
   };
 
   return (
-    <div className="evt-modal-backdrop" role="presentation">
-      <form className="evt-modal" onSubmit={handleSubmit} aria-label={isEditing ? t('adminEvents.form.editTitle') : t('adminEvents.form.createTitle')}>
-        <div className="evt-modal-head">
-          <span className="evt-modal-icon">
-            <BsCalendar2Plus />
-          </span>
-          <div className="evt-modal-copy">
-            <strong>{isEditing ? t('adminEvents.form.editTitle') : t('adminEvents.form.createTitle')}</strong>
-            <span>{isEditing ? t('adminEvents.form.editSubtitle') : t('adminEvents.form.createSubtitle')}</span>
-          </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
-            <BsX />
-          </button>
-        </div>
-
-        <div className="evt-modal-body">
+    <DashboardEdit
+      title={isEditing ? t('adminEvents.form.editTitle') : t('adminEvents.form.createTitle')}
+      subtitle={isEditing ? t('adminEvents.form.editSubtitle') : t('adminEvents.form.createSubtitle')}
+      onClose={onClose}
+      size="xl"
+      ariaLabel={isEditing ? t('adminEvents.form.editTitle') : t('adminEvents.form.createTitle')}
+    >
+      <form className="evt-dashboard-edit-form" onSubmit={handleSubmit}>
+        <DashboardEditBody>
           <div className="evt-form-grid">
             <label className="evt-field evt-field--full">
               <span>{t('adminEvents.form.title')}</span>
@@ -569,8 +568,7 @@ export default function EventFormModal({
             </label>
           </div>
 
-          <div className="evt-modal-section">
-            <span className="evt-modal-section-label">{t('adminEvents.form.publishSection')}</span>
+          <DashboardEditSection label={t('adminEvents.form.publishSection')}>
             <div className="evt-target-mode-grid">
               <button
                 type="button"
@@ -619,10 +617,9 @@ export default function EventFormModal({
                 />
               </label>
             ) : null}
-          </div>
+          </DashboardEditSection>
 
-          <div className="evt-modal-section">
-            <span className="evt-modal-section-label">{t('adminEvents.form.targetSection')}</span>
+          <DashboardEditSection label={t('adminEvents.form.targetSection')}>
             <div className="evt-target-mode-grid">
               {EVENT_TARGET_MODES.map((mode) => {
                 const Icon = TARGET_ICONS[mode.id] || BsPeople;
@@ -648,10 +645,10 @@ export default function EventFormModal({
                 );
               })}
             </div>
-          </div>
+          </DashboardEditSection>
 
           {form.targetMode === 'segmented' ? (
-            <div className="evt-modal-section">
+            <DashboardEditSection>
               <div className="evt-section-headline">
                 <span className="evt-modal-section-label">{t('adminEvents.form.portfolioSegmentation')}</span>
                 <strong>{t('adminEvents.common.selected', { count: selectedTargetsCount })}</strong>
@@ -735,7 +732,7 @@ export default function EventFormModal({
               <p className="evt-section-note">
                 {t('adminEvents.form.audienceHelp')}
               </p>
-            </div>
+            </DashboardEditSection>
           ) : (
             <div className="evt-audience-preview">
               <strong>{t('adminEvents.form.allAudience')}</strong>
@@ -744,11 +741,11 @@ export default function EventFormModal({
             </div>
           )}
 
-          {message ? <div className="evt-modal-message">{message}</div> : null}
-        </div>
+          <DashboardEditFieldError msg={message} />
+        </DashboardEditBody>
 
-        <div className="evt-modal-foot">
-          <span>{t('adminEvents.form.footer')}</span>
+        <DashboardEditFooter className="evt-dashboard-edit-footer">
+          <span className="evt-dashboard-edit-footer-note">{t('adminEvents.form.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
               {t('adminEvents.common.cancel')}
@@ -758,8 +755,8 @@ export default function EventFormModal({
               {t('adminEvents.form.saveEvent')}
             </button>
           </div>
-        </div>
+        </DashboardEditFooter>
       </form>
-    </div>
+    </DashboardEdit>
   );
 }

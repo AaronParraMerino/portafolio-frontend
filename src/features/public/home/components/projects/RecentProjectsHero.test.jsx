@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import RecentProjectsHero from './RecentProjectsHero';
 
 jest.mock('../../../../../core/i18n', () => ({
@@ -60,4 +60,20 @@ test('muestra el logo de la tecnologia y admite hasta seis proyectos', () => {
   expect(container.querySelector('.prh-tech-icon img')).toHaveAttribute('src', 'https://example.com/react.svg');
   expect(screen.getAllByRole('button', { name: 'home.projects.showAria' })).toHaveLength(6);
   expect(screen.queryByRole('heading', { name: 'Proyectos recientes' })).not.toBeInTheDocument();
+});
+
+test('navega con flechas y con shift mas rueda', () => {
+  jest.useFakeTimers();
+  const { container } = render(<RecentProjectsHero projects={projects} />);
+  const hero = container.querySelector('.prh-hero');
+
+  fireEvent.keyDown(hero, { key: 'ArrowRight' });
+  expect(screen.getByRole('heading', { name: 'Proyecto dos' })).toBeInTheDocument();
+
+  fireEvent.wheel(hero, { deltaY: -100, shiftKey: true });
+  expect(screen.getByRole('heading', { name: 'Proyecto uno' })).toBeInTheDocument();
+
+  fireEvent.wheel(hero, { deltaY: 100 });
+  expect(screen.getByRole('heading', { name: 'Proyecto uno' })).toBeInTheDocument();
+  jest.useRealTimers();
 });

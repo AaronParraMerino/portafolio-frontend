@@ -5,17 +5,19 @@ import {
   BsEnvelope,
   BsMegaphone,
   BsPeople,
-  BsXLg,
 } from 'react-icons/bs';
 import {
   USER_COMMUNICATION_CHANNELS,
   USER_COMMUNICATION_SEGMENTS,
-  USER_GLOBAL_NOTICE_TYPES,
+  USER_ALL_NOTICE_TYPES,
   USER_NOTICE_TYPES,
   USER_NOTICE_URGENCY,
   estimateUsersAudience,
+  normalizeNoticeUrgency,
+  toAdminNoticePriority,
 } from '../services/usersService';
 import { useLanguage } from '../../../../core/i18n';
+import AdminEdit, { AdminEditBody, AdminEditFieldError, AdminEditFooter, AdminEditSection } from '../../layout/AdminEdit';
 
 const CHANNEL_ICONS = {
   inapp: BsBell,
@@ -70,7 +72,6 @@ export default function UsersNoticeModal({
   const [urgency, setUrgency] = useState('baja');
   const [segments, setSegments] = useState(['todos']);
   const [channels, setChannels] = useState(['inapp']);
-  const [schedule, setSchedule] = useState('');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -81,10 +82,9 @@ export default function UsersNoticeModal({
     setTitle(initialNotice.title || initialNotice.titulo || (modal.directUser ? t('admin.users.noticeModal.directTitle', { name: modal.directUser.nombre || t('admin.users.table.unknownUser') }) : ''));
     setBody(initialNotice.body || initialNotice.preview || initialNotice.cuerpo || '');
     setType(initialNotice.type || initialNotice.tipo || USER_NOTICE_TYPES[0]?.id || '');
-    setUrgency(initialNotice.urgency || initialNotice.urgencia || 'baja');
+    setUrgency(normalizeNoticeUrgency(initialNotice.urgency || initialNotice.urgencia || initialNotice.prioridad));
     setSegments(initialNotice.segments || initialNotice.segmentos || modal.initialSegments || ['todos']);
     setChannels(['inapp']);
-    setSchedule(initialNotice.scheduledAt || '');
     setMessage('');
   }, [modal, t]);
 
@@ -98,8 +98,7 @@ export default function UsersNoticeModal({
   }, [modal, segments, users]);
 
   const isTemplate = modal?.mode === 'template';
-  const isGlobalNotice = !modal?.fromTemplate && !modal?.directUser && segments.length === 1 && segments[0] === 'todos';
-  const availableTypes = isGlobalNotice && !isTemplate ? USER_GLOBAL_NOTICE_TYPES : USER_NOTICE_TYPES;
+  const availableTypes = isTemplate ? USER_NOTICE_TYPES : USER_ALL_NOTICE_TYPES;
   const modalTitle = isTemplate
     ? (modal?.initialNotice
       ? t('admin.users.noticeModal.editTemplateTitle')
@@ -152,16 +151,6 @@ export default function UsersNoticeModal({
       return;
     }
 
-    if (intent === 'draft') {
-      setMessage(t('admin.users.noticeModal.draftsSoon'));
-      return;
-    }
-
-    if (schedule) {
-      setMessage(t('admin.users.noticeModal.scheduleSoon'));
-      return;
-    }
-
     if (!supportsCommunications) {
       setMessage(t('admin.users.noticeModal.inappUnavailable'));
       return;
@@ -175,12 +164,15 @@ export default function UsersNoticeModal({
 
     setMessage('');
     submitInBackground({
+        noticeId: !modal.fromTemplate
+          ? (modal.initialNotice?.id || modal.initialNotice?.id_aviso || modal.initialNotice?.id_comunicacion || null)
+          : null,
         destinatarios,
         titulo: title.trim(),
         contenido: body.trim(),
         tipo: type,
         urgencia: urgency,
-        prioridad: selectedType?.priority || (urgency === 'media' ? 'normal' : urgency),
+        prioridad: toAdminNoticePriority(urgency),
         canales: ['inapp'],
         segmentos: segments,
         directUser: modal.directUser || null,
@@ -189,36 +181,15 @@ export default function UsersNoticeModal({
   };
 
   return (
-    <div className="usr-notice-modal-backdrop" onClick={onClose} aria-hidden="true">
-      <div
-        className="usr-notice-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={modalTitle}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="usr-notice-modal-head">
-          <div className="usr-notice-modal-icon">
-            <BsMegaphone />
-          </div>
-
-          <div className="usr-notice-modal-copy">
-            <strong>{modalTitle}</strong>
-            <span>{modalSubtitle}</span>
-          </div>
-
-          <button
-            type="button"
-            className="usr-modal-close"
-            onClick={onClose}
-            title={t('admin.users.actionModal.close')}
-            aria-label={t('admin.users.actionModal.close')}
-          >
-            <BsXLg />
-          </button>
-        </div>
-
-        <div className="usr-notice-modal-body">
+    <AdminEdit
+      title={modalTitle}
+      subtitle={modalSubtitle}
+      icon={<BsMegaphone />}
+      onClose={onClose}
+      size="lg"
+      ariaLabel={modalTitle}
+    >
+        <AdminEditBody>
           {modal.directUser ? (
             <div className="usr-direct-user">
               <span>{t('admin.users.noticeModal.directUser')}</span>
@@ -264,23 +235,9 @@ export default function UsersNoticeModal({
                 ))}
               </select>
             </label>
-
-            {!isTemplate ? (
-              <label className="usr-field">
-                <span className="usr-field-label">{t('admin.users.noticeModal.scheduleLabel')}</span>
-                <input
-                  type="datetime-local"
-                  className="usr-field-input"
-                  value={schedule}
-                  onChange={(event) => setSchedule(event.target.value)}
-                />
-                <small>{t('admin.users.noticeModal.scheduleSoonShort')}</small>
-              </label>
-            ) : null}
           </div>
 
-          <section className="usr-notice-modal-section">
-            <span className="usr-field-label">{t('admin.users.noticeModal.urgencyLabel')}</span>
+          <AdminEditSection label={t('admin.users.noticeModal.urgencyLabel')}>
             <div className="usr-urgency-grid">
               {USER_NOTICE_URGENCY.map((item) => (
                 <button
@@ -295,11 +252,10 @@ export default function UsersNoticeModal({
                 </button>
               ))}
             </div>
-          </section>
+          </AdminEditSection>
 
           {!modal.directUser ? (
-            <section className="usr-notice-modal-section">
-              <span className="usr-field-label">{t('admin.users.noticeModal.segmentationLabel')}</span>
+            <AdminEditSection label={t('admin.users.noticeModal.segmentationLabel')}>
               <div className="usr-segment-grid">
                 {USER_COMMUNICATION_SEGMENTS.map((segment) => {
                   const selected = segments.includes(segment.id);
@@ -328,13 +284,12 @@ export default function UsersNoticeModal({
                   );
                 })}
               </div>
-            </section>
+            </AdminEditSection>
           ) : null}
 
-          <section className="usr-notice-modal-section">
-            <span className="usr-field-label">{t('admin.users.noticeModal.channelsLabel')}</span>
+          <AdminEditSection label={t('admin.users.noticeModal.channelsLabel')}>
             <div className="usr-segment-grid usr-segment-grid--channels">
-              {USER_COMMUNICATION_CHANNELS.map((channel) => {
+              {USER_COMMUNICATION_CHANNELS.filter((channel) => channel.id === 'inapp').map((channel) => {
                 const selected = channels.includes(channel.id);
                 const Icon = CHANNEL_ICONS[channel.id] || BsBell;
 
@@ -351,7 +306,7 @@ export default function UsersNoticeModal({
                     </span>
                     <span>
                       <strong>{t(`admin.users.channel.${channel.id}`)}</strong>
-                      <small>{channel.id === 'inapp' ? t('admin.users.noticeModal.included') : t('admin.users.noticeModal.soon')}</small>
+                      <small>{t('admin.users.noticeModal.included')}</small>
                     </span>
                     <span className="usr-segment-check">
                       {selected ? <BsCheckLg /> : null}
@@ -360,7 +315,7 @@ export default function UsersNoticeModal({
                 );
               })}
             </div>
-          </section>
+          </AdminEditSection>
 
           {!isTemplate ? (
             <div className="usr-audience-preview">
@@ -370,33 +325,17 @@ export default function UsersNoticeModal({
             </div>
           ) : null}
 
-          {message ? (
-            <div className="usr-notice-message" role="status">
-              {message}
-            </div>
-          ) : null}
-        </div>
+          <AdminEditFieldError msg={message} />
+        </AdminEditBody>
 
-        <div className="usr-notice-modal-foot">
+        <AdminEditFooter>
           <span>
             {isTemplate
               ? t('admin.users.noticeModal.templateReusable')
-              : schedule
-                ? t('admin.users.noticeModal.scheduledFoot')
-                : t('admin.users.noticeModal.previewFallback')}
+              : t('admin.users.noticeModal.previewFallback')}
           </span>
 
           <div className="usr-notice-foot-actions">
-            {!isTemplate ? (
-              <button
-                type="button"
-                className="usr-reason-btn usr-reason-btn--ghost"
-                onClick={() => handleSubmit('draft')}
-              >
-                {t('admin.users.noticeModal.saveDraft')}
-              </button>
-            ) : null}
-
             <button
               type="button"
               className="usr-reason-btn usr-reason-btn--primary"
@@ -409,8 +348,7 @@ export default function UsersNoticeModal({
                 : t('admin.users.noticeModal.sendNow')}
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+        </AdminEditFooter>
+    </AdminEdit>
   );
 }
