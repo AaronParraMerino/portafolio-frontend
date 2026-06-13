@@ -54,3 +54,15 @@ test('muestra miniatura de YouTube y el estado de carga', () => {
   expect(screen.getByRole('status')).toHaveTextContent('home.projects.detail.loading');
   expect(container.querySelector('img[src="https://i.ytimg.com/vi/abc123/mqdefault.jpg"]')).toBeInTheDocument();
 });
+
+test('amplia una imagen sin cerrar el detalle', () => {
+  const onClose = jest.fn();
+  render(<ProjectDetailModal project={project} onClose={onClose} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ampliar imagen del proyecto' }));
+  expect(screen.getByRole('dialog', { name: 'Imagen ampliada: Captura' })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Cerrar imagen ampliada' }));
+  expect(screen.queryByRole('dialog', { name: 'Imagen ampliada: Captura' })).not.toBeInTheDocument();
+  expect(onClose).not.toHaveBeenCalled();
+});

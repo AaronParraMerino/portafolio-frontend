@@ -9,8 +9,10 @@ import {
   BsPeople,
   BsStar,
   BsX,
+  BsZoomIn,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../../core/i18n';
+import ImageZoomOverlay from '../ImageZoomOverlay';
 import {
   getProjectPlatformLabel,
   getProjectStatusLabel,
@@ -52,16 +54,24 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
   const media = useMemo(() => mediaFromProject(project), [project]);
   const links = useMemo(() => linkEvidences(project), [project]);
   const [activeMedia, setActiveMedia] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const currentMedia = media[activeMedia];
 
-  useEffect(() => setActiveMedia(0), [project?.id, media.length]);
+  useEffect(() => {
+    setActiveMedia(0);
+    setZoomOpen(false);
+  }, [project?.id, media.length]);
 
   useEffect(() => {
     if (!project) return undefined;
-    const onKeyDown = (event) => event.key === 'Escape' && onClose?.();
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      if (zoomOpen) setZoomOpen(false);
+      else onClose?.();
+    };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, project]);
+  }, [onClose, project, zoomOpen]);
 
   if (!project) return null;
 
@@ -82,15 +92,20 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
             {currentMedia?.mediaType === 'video' && currentMedia.embedUrl ? (
               <iframe src={currentMedia.embedUrl} title={currentMedia.titulo || t('home.projects.detail.videoTitle')} allowFullScreen />
             ) : currentMedia?.mediaUrl ? (
-              <img
-                src={currentMedia.mediaUrl}
-                alt={currentMedia.titulo || project.titulo || project.title}
-                onError={(event) => {
-                  if (currentMedia.fallbackMediaUrl && event.currentTarget.src !== currentMedia.fallbackMediaUrl) {
-                    event.currentTarget.src = currentMedia.fallbackMediaUrl;
-                  }
-                }}
-              />
+              <>
+                <img
+                  src={currentMedia.mediaUrl}
+                  alt={currentMedia.titulo || project.titulo || project.title}
+                  onError={(event) => {
+                    if (currentMedia.fallbackMediaUrl && event.currentTarget.src !== currentMedia.fallbackMediaUrl) {
+                      event.currentTarget.src = currentMedia.fallbackMediaUrl;
+                    }
+                  }}
+                />
+                <button type="button" className="pdm-gallery-zoom" onClick={() => setZoomOpen(true)} aria-label="Ampliar imagen del proyecto">
+                  <BsZoomIn />
+                </button>
+              </>
             ) : (
               <div className="pdm-gallery-empty"><BsCodeSlash /><span>{t('home.projects.detail.noGallery')}</span></div>
             )}
@@ -203,6 +218,11 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
 
         </div>
       </section>
+      <ImageZoomOverlay
+        src={zoomOpen && currentMedia?.mediaType === 'image' ? currentMedia.mediaUrl : ''}
+        alt={currentMedia?.titulo || project.titulo || project.title}
+        onClose={() => setZoomOpen(false)}
+      />
     </div>
   );
 }

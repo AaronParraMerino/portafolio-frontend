@@ -750,6 +750,29 @@
   z-index: 2;
 }
 
+.evh-modal-zoom {
+  align-items: center;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 50%;
+  color: #102336;
+  cursor: pointer;
+  display: flex;
+  font-size: 20px;
+  height: 42px;
+  justify-content: center;
+  position: absolute;
+  right: 18px;
+  top: 66px;
+  width: 42px;
+  z-index: 3;
+}
+
+.evh-modal-zoom:hover {
+  background: var(--azul);
+  color: #fff;
+}
+
 .evh-modal-body {
   padding: 24px;
 }

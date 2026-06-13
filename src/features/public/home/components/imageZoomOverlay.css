@@ -1,0 +1,122 @@
+.izo-backdrop {
+  align-items: center;
+  background: rgba(3, 12, 20, .94);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 1600;
+}
+
+.izo-dialog {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  max-height: 100%;
+  max-width: 100%;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  width: 100%;
+}
+
+.izo-dialog.is-zoomed {
+  cursor: grab;
+}
+
+.izo-dialog.is-zoomed:active {
+  cursor: grabbing;
+}
+
+.izo-dialog img {
+  border-radius: 8px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .55);
+  max-height: calc(100vh - 48px);
+  max-width: calc(100vw - 48px);
+  object-fit: contain;
+  transform-origin: center;
+  transition: transform .08s ease-out;
+  will-change: transform;
+}
+
+.izo-controls {
+  align-items: center;
+  background: rgba(16, 35, 54, .9);
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  bottom: 20px;
+  color: #fff;
+  display: flex;
+  gap: 5px;
+  left: 50%;
+  padding: 5px;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.izo-controls button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-size: 19px;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.izo-controls button:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+.izo-controls span {
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 48px;
+  text-align: center;
+}
+
+.izo-close {
+  align-items: center;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 50%;
+  color: #102336;
+  cursor: pointer;
+  display: flex;
+  font-size: 26px;
+  height: 44px;
+  justify-content: center;
+  position: fixed;
+  right: 22px;
+  top: 22px;
+  width: 44px;
+  z-index: 1;
+}
+
+.izo-close:hover {
+  background: #0077b7;
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .izo-backdrop {
+    padding: 10px;
+  }
+
+  .izo-dialog img {
+    max-height: calc(100vh - 20px);
+    max-width: calc(100vw - 20px);
+  }
+
+  .izo-close {
+    right: 12px;
+    top: 12px;
+  }
+}

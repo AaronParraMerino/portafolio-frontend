@@ -124,6 +124,28 @@
 .pdm-gallery-prev { left: 12px; }
 .pdm-gallery-next { right: 12px; }
 
+.pdm-gallery-zoom {
+  align-items: center;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid rgba(255, 255, 255, .85);
+  border-radius: 50%;
+  color: var(--azul-deep, #0f4164);
+  cursor: pointer;
+  display: flex;
+  font-size: 21px;
+  height: 44px;
+  justify-content: center;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 44px;
+}
+
+.pdm-gallery-zoom:hover {
+  background: var(--azul, #0077b7);
+  color: #fff;
+}
+
 .pdm-thumbnails {
   display: grid;
   gap: 9px;

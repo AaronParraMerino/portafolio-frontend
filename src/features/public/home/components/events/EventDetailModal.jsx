@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
-import { BsCalendarEvent, BsGeoAlt, BsPeople, BsX } from 'react-icons/bs';
+import { useEffect, useState } from 'react';
+import { BsCalendarEvent, BsGeoAlt, BsPeople, BsX, BsZoomIn } from 'react-icons/bs';
 import { useLanguage } from '../../../../../core/i18n';
+import ImageZoomOverlay from '../ImageZoomOverlay';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
@@ -19,19 +20,23 @@ export default function EventDetailModal({
   registering = false,
 }) {
   const { language, t } = useLanguage();
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     if (!event) return undefined;
 
     const handleKeyDown = (keyboardEvent) => {
       if (keyboardEvent.key === 'Escape') {
-        onClose?.();
+        if (zoomOpen) setZoomOpen(false);
+        else onClose?.();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [event, onClose]);
+  }, [event, onClose, zoomOpen]);
+
+  useEffect(() => setZoomOpen(false), [event?.id]);
 
   if (!event || !hasEventDetails(event)) return null;
 
@@ -50,6 +55,11 @@ export default function EventDetailModal({
 
         <EventMedia event={event} className="evh-modal-media" containImage>
           <span className="evh-badge">{getEventTypeLabel(event, t)}</span>
+          {event.imageUrl && (
+            <button type="button" className="evh-modal-zoom" onClick={() => setZoomOpen(true)} aria-label="Ampliar imagen del evento">
+              <BsZoomIn />
+            </button>
+          )}
         </EventMedia>
 
         <div className="evh-modal-body">
@@ -101,6 +111,7 @@ export default function EventDetailModal({
           )}
         </div>
       </div>
+      <ImageZoomOverlay src={zoomOpen ? event.imageUrl : ''} alt={event.title} onClose={() => setZoomOpen(false)} />
     </div>
   );
 }
