@@ -697,7 +697,7 @@ export default function ProjectCard({
                   title={repo.url}
                 >
                   <RepositoryProviderIcon provider={repo.provider} />
-                  {repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} {repositorios.length > 1 ? i + 1 : ''}
+                  <span>{repo.provider === 'gitlab' ? 'GitLab' : 'GitHub'} {repositorios.length > 1 ? i + 1 : ''}</span>
                 </a>
               ))}
 
@@ -708,7 +708,7 @@ export default function ProjectCard({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <IconSite /> {t('projects.card.demoSite')}
+                  <IconSite /> <span>{t('projects.card.demoSite')}</span>
                 </a>
               )}
 
@@ -721,7 +721,7 @@ export default function ProjectCard({
                   rel="noreferrer"
                   title={url}
                 >
-                  <IconYouTube /> {t('projects.carousel.video')} {videosYoutube.length > 1 ? i + 1 : ''}
+                  <IconYouTube /> <span>{t('projects.carousel.video')} {videosYoutube.length > 1 ? i + 1 : ''}</span>
                 </a>
               ))}
 
@@ -738,7 +738,7 @@ export default function ProjectCard({
                     rel="noreferrer"
                     title={nombre}
                   >
-                    <IconDocument /> Doc {documentos.length > 1 ? i + 1 : ''}
+                    <IconDocument /> <span>Doc {documentos.length > 1 ? i + 1 : ''}</span>
                   </a>
                 );
               })}

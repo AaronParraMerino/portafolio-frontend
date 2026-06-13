@@ -189,9 +189,12 @@ export default function Navbar() {
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [navSearchTerm, setNavSearchTerm] = useState('');
+  const [navSearchOpen, setNavSearchOpen] = useState(false);
 
   const notifRef = useRef(null);
   const userRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const userId = user?.id_usuario || user?.id || user?.idUsuario;
   const dashboardHomePath = getDashboardHomePath();
@@ -249,12 +252,18 @@ export default function Navbar() {
   useEffect(() => {
     const onResize = () => {
       if (window.innerWidth > 768) setMobileOpen(false);
+      if (window.innerWidth > 1100) setNavSearchOpen(false);
     };
 
     window.addEventListener('resize', onResize);
 
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    if (!navSearchOpen) return;
+    window.setTimeout(() => searchInputRef.current?.focus(), 30);
+  }, [navSearchOpen]);
 
   useEffect(() => {
     const onClick = (event) => {
@@ -566,6 +575,31 @@ export default function Navbar() {
     setLogoutModal(true);
   };
 
+  const handleNavSearchSubmit = (event) => {
+    event.preventDefault();
+
+    const cleanTerm = navSearchTerm.trim();
+    setNavSearchOpen(false);
+    setMobileOpen(false);
+    setNotifOpen(false);
+    setUserMenuOpen(false);
+
+    window.location.href = cleanTerm
+      ? `/portafolios?q=${encodeURIComponent(cleanTerm)}`
+      : '/portafolios';
+  };
+
+  const openNavSearch = () => {
+    setMobileOpen(false);
+    setNotifOpen(false);
+    setUserMenuOpen(false);
+    setNavSearchOpen(true);
+  };
+
+  const closeNavSearch = () => {
+    setNavSearchOpen(false);
+  };
+
   const userName = user
     ? `${user.nombre || user.name || t('nav.user')} ${user.apellido || ''}`.trim()
     : '';
@@ -612,18 +646,115 @@ export default function Navbar() {
         .spk-nav-tagline img { display: block; object-fit: contain; flex: 0 0 auto; max-width: none; }
         .spk-logo-umss-full { width: 130px; height: 38px; filter: brightness(0) invert(1); opacity: .92; }
         .spk-logo-creafolio-full { width: 110px; height: 25px; }
-        .spk-logo-mobile-icon { display: none !important; width: 38px; height: 38px; object-fit: contain; }
+        .spk-logo-mobile-icon { display: none !important; width: 42px; height: 42px; object-fit: contain; }
+        .spk-logo-creafolio-icon { width: 52px; height: 52px; }
         .spk-logo-umss-icon { filter: brightness(0) invert(1); opacity: .92; }
         .spk-nav-sep { width: 1px; height: 22px; background: rgba(255,255,255,.15); margin: 0 18px 0 12px; flex-shrink: 0; }
         .spk-nav-tagline { display: flex; align-items: center; flex-shrink: 0; }
-        .spk-nav-tagline img { height: 25px; width: auto; display: block; }
-        .spk-nav-links { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0; padding: 0; margin-left: auto; }
+        .spk-nav-tagline .spk-logo-creafolio-full { height: 25px; width: auto; display: block; }
+        .spk-nav-links { display: flex; align-items: center; gap: 2px; list-style: none; margin: 0 0 0 18px; padding: 0; }
         .spk-nav-links li { display: flex; align-items: center; }
         .spk-nav-links a { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65); text-decoration: none; padding: 6px 13px; border-radius: 5px; transition: color .15s, background .15s, transform .15s; white-space: nowrap; letter-spacing: .01em; display: inline-flex; align-items: center; gap: 7px; }
         .spk-nav-links a:hover { color: rgba(255,255,255,.97); background: rgba(255,255,255,.1); transform: translateY(-1px); }
         .spk-nav-link-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: .82; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s, opacity .15s; }
         .spk-nav-links a:hover .spk-nav-link-icon { opacity: 1; transform: translateY(-1px); }
-        .spk-nav-right { display: flex; align-items: center; gap: 8px; margin-left: 20px; }
+        .spk-nav-search-box {
+          align-items: center;
+          background: #ffffff;
+          border: 1.5px solid rgba(255,255,255,.9);
+          border-radius: 9px;
+          box-shadow: inset 0 0 0 1px rgba(0,79,124,.05), 0 5px 18px rgba(0,35,58,.16);
+          display: flex;
+          flex: 1 1 280px;
+          gap: 9px;
+          height: 40px;
+          margin-left: 14px;
+          min-width: 220px;
+          padding: 0 12px;
+        }
+        .spk-nav-search-desktop { display: flex; }
+        .spk-nav-search-icon {
+          color: var(--azul, #0077b7);
+          flex: 0 0 auto;
+          fill: none;
+          height: 18px;
+          stroke: currentColor;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-width: 2.1;
+          width: 18px;
+        }
+        .spk-nav-search-input {
+          background: transparent;
+          border: 0;
+          color: var(--negro-texto, #111827);
+          flex: 1;
+          font-family: var(--font);
+          font-size: 13px;
+          font-weight: 500;
+          min-width: 0;
+          outline: 0;
+        }
+        .spk-nav-search-input::placeholder { color: var(--gris-texto, #6b7280); font-weight: 400; }
+        .spk-nav-search-submit {
+          align-items: center;
+          background: var(--azul, #0077b7);
+          border: 1px solid var(--azul, #0077b7);
+          border-radius: 7px;
+          color: #ffffff;
+          cursor: pointer;
+          display: inline-flex;
+          font-family: var(--font);
+          font-size: 12px;
+          font-weight: 800;
+          height: 30px;
+          justify-content: center;
+          padding: 0 12px;
+          white-space: nowrap;
+        }
+        .spk-nav-search-submit:hover { background: var(--azul-hover, #005f95); border-color: var(--azul-hover, #005f95); }
+        .spk-search-toggle,
+        .spk-search-close {
+          align-items: center;
+          background: rgba(255,255,255,.08);
+          border: 1px solid rgba(255,255,255,.16);
+          border-radius: 7px;
+          color: rgba(255,255,255,.9);
+          cursor: pointer;
+          display: none;
+          flex: 0 0 auto;
+          height: 34px;
+          justify-content: center;
+          transition: background .15s, border-color .15s;
+          width: 34px;
+        }
+        .spk-search-toggle:hover,
+        .spk-search-close:hover { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.34); }
+        .spk-search-toggle svg,
+        .spk-search-close svg { height: 17px; width: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .spk-search-toggle-inline { margin-left: auto; }
+        .spk-nav-search-expanded {
+          align-items: center;
+          display: none;
+          gap: 9px;
+          width: 100%;
+        }
+        .spk-nav-search-expanded .spk-nav-search-box {
+          flex: 1;
+          margin-left: 0;
+          min-width: 0;
+        }
+        .spk-nav.search-open .spk-nav-search-expanded { display: flex; }
+        .spk-nav.search-open .spk-search-close { display: inline-flex; }
+        .spk-nav.search-open .spk-nav-logo,
+        .spk-nav.search-open .spk-nav-sep,
+        .spk-nav.search-open .spk-nav-tagline,
+        .spk-nav.search-open .spk-nav-links,
+        .spk-nav.search-open .spk-nav-search-desktop,
+        .spk-nav.search-open .spk-search-toggle-inline,
+        .spk-nav.search-open .spk-nav-right,
+        .spk-nav.search-open .spk-hamburger { display: none !important; }
+        .spk-nav-right { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
         .spk-nav-user { position: relative; }
         .spk-user-toggle { all: unset; display: flex; align-items: center; gap: 9px; padding: 5px 10px 5px 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); cursor: pointer; transition: all .15s; user-select: none; box-sizing: border-box; }
         .spk-user-toggle:hover { background: rgba(255,255,255,.1); }
@@ -727,6 +858,7 @@ export default function Navbar() {
           .spk-nav { padding: 0 20px; padding-bottom: 3px; }
           .spk-nav-sep { margin: 0 10px; }
           .spk-nav-links a { padding: 6px 9px; gap: 5px; font-size: 12px; }
+          .spk-nav-search-desktop { min-width: 190px; }
           .spk-nav-right { gap: 6px; margin-left: 10px; }
           .spk-user-toggle { gap: 6px; padding-right: 7px; }
           .spk-user-name,
@@ -736,18 +868,22 @@ export default function Navbar() {
         }
         @media (max-width: 1100px) {
           .spk-nav { padding: 0 14px; padding-bottom: 3px; }
-          .spk-nav-logo img { height: 34px; }
-          .spk-nav-tagline img { height: 23px; }
+          .spk-logo-umss-full,
+          .spk-logo-creafolio-full { display: none !important; }
+          .spk-logo-mobile-icon { display: block !important; }
+          .spk-logo-creafolio-icon { width: 44px; height: 44px; }
           .spk-nav-sep { height: 20px; margin: 0 8px; }
-          .spk-nav-links { gap: 1px; }
+          .spk-nav-links { gap: 1px; margin-left: 6px; }
           .spk-nav-links a { padding: 7px 8px; }
           .spk-nav-links a span { display: none; }
           .spk-nav-link-icon { width: 17px; height: 17px; }
+          .spk-nav-search-desktop { display: none; }
+          .spk-search-toggle { display: inline-flex; }
           .spk-user-info { display: none; }
           .spk-user-toggle { padding-right: 6px; }
         }
         @media (max-width: 900px) {
-          .spk-nav-tagline img { height: 25px; }
+          .spk-logo-creafolio-full { height: 25px; }
           .spk-nav-sep { margin: 0 6px; }
           .spk-nav-right { margin-left: 8px; }
         }
@@ -759,17 +895,17 @@ export default function Navbar() {
 
           .spk-nav-right {
             display: flex;
-            margin-left: auto;
+            margin-left: 8px;
             margin-right: 12px;
           }
 
-          .spk-nav-right > :not(.spk-bell-wrap):not(.spk-nav-user) {
+          .spk-nav-right > :not(.spk-bell-wrap) {
             display: none;
           }
 
-          .spk-user-toggle { padding: 3px; border-radius: 50%; }
-          .spk-user-chevron { display: none; }
-          .spk-user-dropdown { right: 0; }
+          .spk-nav-user {
+            display: none !important;
+          }
 
           .spk-hamburger {
             display: flex;
@@ -778,12 +914,11 @@ export default function Navbar() {
         }
         @media (max-width: 480px) {
           .spk-nav { padding: 0 8px; padding-bottom: 3px; }
-          .spk-nav-logo img { height: 32px; }
-          .spk-nav-tagline img { height: 22px; }
+          .spk-logo-mobile-icon { width: 40px; height: 40px; }
+          .spk-logo-creafolio-icon { width: 40px; height: 40px; }
           .spk-nav-sep { height: 18px; margin: 0 5px; }
-          .spk-nav-right { gap: 5px; margin-left: auto; }
+          .spk-nav-right { gap: 5px; margin-left: 8px; }
           .spk-bell { width: 32px; height: 32px; }
-          .spk-user-avatar { width: 28px; height: 28px; }
           .spk-hamburger { padding: 6px; }
           .spk-user-dropdown {
             position: fixed;
@@ -804,19 +939,65 @@ export default function Navbar() {
         }
       `}</style>
 
-      <nav className={`spk-nav${scrolled ? ' scrolled' : ''}`}>
+      <nav className={`spk-nav${scrolled ? ' scrolled' : ''}${navSearchOpen ? ' search-open' : ''}`}>
+        <form className="spk-nav-search-expanded" onSubmit={handleNavSearchSubmit}>
+          <div className="spk-nav-search-box">
+            <svg className="spk-nav-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.8-3.8" />
+            </svg>
+            <input
+              ref={searchInputRef}
+              className="spk-nav-search-input"
+              type="text"
+              value={navSearchTerm}
+              onChange={(event) => setNavSearchTerm(event.target.value)}
+              placeholder={t('portfolioSearch.search.placeholder')}
+              aria-label={t('portfolioSearch.search.submit')}
+            />
+          </div>
+
+          <button className="spk-search-close" type="button" onClick={closeNavSearch} aria-label="Cerrar busqueda">
+            <svg viewBox="0 0 24 24">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </form>
+
         <a href="/" className="spk-nav-logo">
           <img className="spk-logo-umss-full" src="/img/logo.png" width="130" height="38" alt="UMSS" />
+          <img className="spk-logo-mobile-icon spk-logo-umss-icon" src="/img/iconoUMSS.png" width="42" height="42" alt="UMSS" />
         </a>
 
         <div className="spk-nav-sep" />
 
         <a href="/" className="spk-nav-tagline">
-          <picture>
-            <source media="(max-width: 900px)" srcSet="/img/logoNavbarCreaFoliomb.png" />
-            <img src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
-          </picture>
+          <img className="spk-logo-creafolio-full" src="/img/logoNavbarCreaFolio.png" width="110" height="25" alt="CreaFolio" />
+          <img className="spk-logo-mobile-icon spk-logo-creafolio-icon" src="/img/iconoCreaFolio.png" width="46" height="46" alt="CreaFolio" />
         </a>
+
+        <form className="spk-nav-search-desktop spk-nav-search-box" onSubmit={handleNavSearchSubmit}>
+          <svg className="spk-nav-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.8-3.8" />
+          </svg>
+          <input
+            className="spk-nav-search-input"
+            type="text"
+            value={navSearchTerm}
+            onChange={(event) => setNavSearchTerm(event.target.value)}
+            placeholder={t('portfolioSearch.search.placeholder')}
+            aria-label={t('portfolioSearch.search.submit')}
+          />
+        </form>
+
+        <button className="spk-search-toggle spk-search-toggle-inline" type="button" onClick={openNavSearch} aria-label={t('portfolioSearch.search.submit')}>
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.8-3.8" />
+          </svg>
+        </button>
 
         <ul className="spk-nav-links">
           {NAV_LINKS.map(({ labelKey, href, icon }) => (
