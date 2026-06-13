@@ -112,7 +112,7 @@ export function getEventActionState(event = {}, registering = false, t = (key) =
   if (event.requiresLogin) {
     return {
       disabled: false,
-      label: t('home.events.login'),
+      label: t('home.events.register'),
       tone: 'primary',
     };
   }
