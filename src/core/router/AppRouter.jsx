@@ -146,9 +146,10 @@ function ScrollToTop() {
 
 function RoleGate({ children, adminOnly = false, userOnly = false }) {
   const user = getStoredUser();
+  const location = useLocation();
 
   if (!user) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/auth/login" replace state={{ from: `${location.pathname}${location.search}${location.hash}` }} />;
   }
 
   if (adminOnly && !isAdminUser(user)) {
@@ -176,7 +177,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
           <Route path="desarrolladores" element={<DevelopersPage />} />
           <Route path="eventos" element={<PublicEventsPage />} />
           <Route path="proyectos" element={<PublicProjectsPage />} />
-          <Route path="portafolio/:userId" element={<PortfolioPage />} />
+          <Route path="portafolio/:userId" element={<RoleGate><PortfolioPage /></RoleGate>} />
           <Route path="dashboard" element={<RoleGate userOnly><DashboardLayout /></RoleGate>}>
             <Route index element={<DashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />

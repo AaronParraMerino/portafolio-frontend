@@ -44,7 +44,9 @@ export default function FeaturedPortfolios() {
     <>
       <style>{`
         .spk-featured-portfolios {
-          background: #043B5A;
+          background-color: #043B5A;
+          background-image: url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M52 0H0V52' fill='none' stroke='%23ffffff' stroke-opacity='.09' stroke-width='1'/%3E%3C/svg%3E");
+          background-size: 52px 52px;
           border-top: 1px solid rgba(209,213,219,.8);
           overflow-x: hidden;
           padding: 74px 24px 82px;
