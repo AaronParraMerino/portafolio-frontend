@@ -33,111 +33,75 @@ const SECTION_CONFIG = [
 
 export default function FeaturedPortfolios() {
   const { t } = useLanguage();
-  const [draftSearch, setDraftSearch] = useState('');
-  const [search, setSearch] = useState('');
-  const { sections, loading, error } = useFeaturedPortfolios(search, {
+  const { sections, loading, error } = useFeaturedPortfolios('', {
     defaultErrorMessage: t('featured.error.text'),
   });
   const [activeKey, setActiveKey] = useState(SECTION_CONFIG[0].key);
   const activeSection = SECTION_CONFIG.find((section) => section.key === activeKey) || SECTION_CONFIG[0];
-  const isSearchMode = Boolean(search);
-  const portfolios = isSearchMode
-    ? sections.resultados_busqueda || []
-    : sections[activeSection.key] || [];
-
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    setSearch(draftSearch.trim());
-  };
-
-  const clearSearch = () => {
-    setDraftSearch('');
-    setSearch('');
-  };
+  const portfolios = sections[activeSection.key] || [];
 
   return (
     <>
       <style>{`
         .spk-featured-portfolios {
-          background: var(--blanco);
+          background: #043B5A;
           border-top: 1px solid rgba(209,213,219,.8);
           overflow-x: hidden;
           padding: 74px 24px 82px;
         }
         .spk-featured-inner { max-width: 1180px; margin: 0 auto; }
         .spk-featured-header {
-          display: flex; align-items: end; justify-content: space-between;
-          gap: 24px; margin-bottom: 24px;
-        }
-        .spk-featured-kicker {
-          font-family: var(--mono); color: var(--azul); font-size: 11px;
-          font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px;
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 18px; margin-bottom: 18px; min-width: 0;
         }
         .spk-featured-title {
-          color: var(--negro-texto); font-size: clamp(28px, 4vw, 44px);
-          font-weight: 800; letter-spacing: 0; line-height: 1.04; margin: 0;
+          color: var(--blanco); font-size: 18px;
+          font-weight: 900; letter-spacing: 0; line-height: 1.2; margin: 0;
+          overflow-wrap: anywhere;
         }
         .spk-featured-copy {
-          color: var(--gris-texto); max-width: 440px; font-size: 14px;
-          line-height: 1.7; margin: 10px 0 0;
+          color: rgba(255, 255, 255, .78); max-width: 440px; font-size: 14px;
+          line-height: 1.7; margin: 8px 0 0;
         }
         .spk-featured-link {
-          color: var(--azul); font-size: 13px; font-weight: 700; text-decoration: none;
-          border: 1.5px solid var(--azul-mid); border-radius: 6px; padding: 9px 14px;
-          white-space: nowrap; transition: background .15s, border-color .15s;
+          background: rgba(255, 255, 255, .08); color: var(--blanco); font-size: 13px; font-weight: 900; text-decoration: none;
+          border: 1.5px solid rgba(255, 255, 255, .55); border-radius: 7px; padding: 9px 13px;
+          white-space: nowrap; transition: background .15s, border-color .15s, color .15s;
         }
-        .spk-featured-link:hover { background: var(--azul-light); border-color: var(--azul); color: var(--azul); }
-        .spk-featured-search {
-          display: flex; align-items: center; gap: 10px; margin: 0 0 22px;
-          width: 100%;
-        }
-        .spk-featured-search-input {
-          box-sizing: border-box; flex: 1 1 auto; min-width: 0; max-width: 100%;
-          width: 100%; height: 44px; border: 1.5px solid var(--gris-borde);
-          border-radius: 8px; background: var(--blanco); color: var(--negro-texto);
-          font-family: var(--font); font-size: 14px; outline: none; padding: 0 14px;
-          transition: border-color .15s, box-shadow .15s;
-        }
-        .spk-featured-search-input:focus {
-          border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,119,183,.12);
-        }
-        .spk-featured-search-btn,
-        .spk-featured-clear-btn {
-          height: 44px; border-radius: 8px; font-family: var(--font); font-size: 13px;
-          font-weight: 800; padding: 0 15px; cursor: pointer; white-space: nowrap;
-        }
-        .spk-featured-search-btn {
-          background: var(--azul); border: 1.5px solid var(--azul); color: var(--blanco);
-        }
-        .spk-featured-search-btn:hover { background: var(--azul-hover); border-color: var(--azul-hover); }
-        .spk-featured-clear-btn {
-          background: var(--blanco); border: 1.5px solid var(--azul-mid); color: var(--azul-deep);
-        }
-        .spk-featured-search-state {
-          align-items: center; display: flex; justify-content: space-between;
-          gap: 14px; margin: -4px 0 22px; color: var(--gris-texto); font-size: 13px;
-        }
-        .spk-featured-search-state strong { color: var(--negro-texto); }
+        .spk-featured-link:hover { background: var(--blanco); border-color: var(--blanco); color: var(--azul-deep); }
         .spk-featured-tabs {
           display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 10px; margin-bottom: 26px;
         }
         .spk-featured-tab {
-          border: 1.5px solid var(--gris-borde); background: #f9fbfc; border-radius: 8px;
-          padding: 13px 14px; text-align: left; color: var(--gris-oscuro); cursor: pointer;
-          min-width: 0;
-          transition: border-color .15s, background .15s, box-shadow .15s;
+          align-items: flex-start; background: rgba(255, 255, 255, .08);
+          border: 1.5px solid rgba(255, 255, 255, .32); border-radius: 8px;
+          color: rgba(255, 255, 255, .86); cursor: pointer; display: flex;
+          flex-direction: column; font-family: var(--font); gap: 4px;
+          min-height: 40px; min-width: 0; padding: 8px 12px;
+          text-align: left;
+          transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
         }
         .spk-featured-tab strong {
-          display: block; font-size: 13px; color: var(--negro-texto); margin-bottom: 4px;
+          display: block; font-size: 12px; color: inherit; margin-bottom: 0;
           overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
         .spk-featured-tab span {
-          display: block; font-size: 11px; line-height: 1.45; color: var(--gris-texto);
+          display: block; color: rgba(255, 255, 255, .66);
+          font-size: 11px; line-height: 1.35; max-width: 230px;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .spk-featured-tab:hover {
+          border-color: rgba(255, 255, 255, .62);
+          color: var(--blanco);
         }
         .spk-featured-tab.active {
-          background: var(--azul-light); border-color: var(--azul);
-          box-shadow: 0 8px 22px rgba(0,119,183,.12);
+          background: var(--blanco); border-color: var(--blanco);
+          box-shadow: 0 8px 22px rgba(0, 15, 25, .18);
+          color: var(--azul-deep);
+        }
+        .spk-featured-tab.active span {
+          color: var(--gris-texto);
         }
         .spk-portfolio-grid {
           display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -219,22 +183,29 @@ export default function FeaturedPortfolios() {
           color: var(--gris-texto); font-size: 13px; max-width: 380px; line-height: 1.6;
         }
         @media (max-width: 980px) {
-          .spk-featured-header { align-items: flex-start; flex-direction: column; }
-          .spk-featured-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .spk-featured-header { align-items: flex-start; }
+          .spk-featured-tabs {
+            display: flex; gap: 9px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: thin;
+          }
+          .spk-featured-tab {
+            align-items: center; flex: 0 0 auto; flex-direction: row; gap: 8px;
+          }
           .spk-portfolio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 620px) {
           .spk-featured-portfolios { padding: 56px 18px 64px; }
-          .spk-featured-header { gap: 18px; }
+          .spk-featured-header {
+            display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) auto;
+          }
           .spk-featured-link { width: fit-content; max-width: 100%; }
-          .spk-featured-search { align-items: stretch; flex-direction: column; }
-          .spk-featured-search-input { flex: 0 0 auto; width: 100%; }
-          .spk-featured-search-btn,
-          .spk-featured-clear-btn { width: 100%; }
-          .spk-featured-search-state { align-items: flex-start; flex-direction: column; }
-          .spk-featured-tabs,
+          .spk-featured-tabs {
+            margin-left: -2px; margin-right: -2px; max-width: 100%;
+          }
+          .spk-featured-tab {
+            min-height: 38px; padding: 8px 11px;
+          }
+          .spk-featured-tab span { display: none; }
           .spk-portfolio-grid { grid-template-columns: 1fr; }
-          .spk-featured-tab { padding: 12px; }
           .spk-portfolio-card { padding: 14px; min-height: 220px; }
           .spk-portfolio-card-head { align-items: flex-start; }
           .spk-portfolio-avatar { width: 48px; height: 48px; }
@@ -243,7 +214,7 @@ export default function FeaturedPortfolios() {
         }
         @media (max-width: 380px) {
           .spk-featured-portfolios { padding-left: 14px; padding-right: 14px; }
-          .spk-featured-title { font-size: 28px; }
+          .spk-featured-title { font-size: 17px; }
           .spk-portfolio-main h3 { font-size: 15px; }
           .spk-portfolio-skills span { max-width: calc(100vw - 64px); }
         }
@@ -253,7 +224,6 @@ export default function FeaturedPortfolios() {
         <div className="spk-featured-inner">
           <div className="spk-featured-header">
             <div>
-              <div className="spk-featured-kicker">{t('featured.kicker')}</div>
               <h2 className="spk-featured-title">{t('featured.title')}</h2>
               <p className="spk-featured-copy">
                 {t('featured.copy')}
@@ -264,46 +234,19 @@ export default function FeaturedPortfolios() {
             </Link>
           </div>
 
-          <form className="spk-featured-search" onSubmit={handleSearchSubmit}>
-            <input
-              className="spk-featured-search-input"
-              type="text"
-              value={draftSearch}
-              onChange={(event) => setDraftSearch(event.target.value)}
-              placeholder={t('featured.search.placeholder')}
-              aria-label={t('featured.search.aria')}
-            />
-            <button className="spk-featured-search-btn" type="submit" disabled={loading}>
-              {loading && isSearchMode ? t('featured.search.loading') : t('featured.search.button')}
-            </button>
-            {isSearchMode && (
-              <button className="spk-featured-clear-btn" type="button" onClick={clearSearch}>
-                {t('featured.search.clear')}
+          <div className="spk-featured-tabs" role="tablist" aria-label={t('featured.tabs.aria')}>
+            {SECTION_CONFIG.map((section) => (
+              <button
+                key={section.key}
+                type="button"
+                className={`spk-featured-tab${section.key === activeKey ? ' active' : ''}`}
+                onClick={() => setActiveKey(section.key)}
+              >
+                <strong>{t(section.labelKey)}</strong>
+                <span>{t(section.descriptionKey)}</span>
               </button>
-            )}
-          </form>
-
-          {isSearchMode ? (
-            <div className="spk-featured-search-state">
-              <span>
-                {t('featured.search.statePrefix')} <strong>{search}</strong>, {t('featured.search.stateSuffix')}
-              </span>
-            </div>
-          ) : (
-            <div className="spk-featured-tabs" role="tablist" aria-label={t('featured.tabs.aria')}>
-              {SECTION_CONFIG.map((section) => (
-                <button
-                  key={section.key}
-                  type="button"
-                  className={`spk-featured-tab${section.key === activeKey ? ' active' : ''}`}
-                  onClick={() => setActiveKey(section.key)}
-                >
-                  <strong>{t(section.labelKey)}</strong>
-                  <span>{t(section.descriptionKey)}</span>
-                </button>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
 
           <div className="spk-portfolio-grid">
             {loading && (
@@ -322,20 +265,16 @@ export default function FeaturedPortfolios() {
 
             {!loading && !error && portfolios.length === 0 && (
               <div className="spk-featured-empty">
-                <strong>{isSearchMode ? t('featured.empty.search.title') : t('featured.empty.default.title')}</strong>
-                <span>
-                  {isSearchMode
-                    ? t('featured.empty.search.text')
-                    : t('featured.empty.default.text')}
-                </span>
+                <strong>{t('featured.empty.default.title')}</strong>
+                <span>{t('featured.empty.default.text')}</span>
               </div>
             )}
 
             {!loading && !error && portfolios.map((portfolio) => (
               <PortfolioCard
-                key={`${isSearchMode ? 'search' : activeSection.key}-${portfolio.id_usuario}`}
+                key={`${activeSection.key}-${portfolio.id_usuario}`}
                 portfolio={portfolio}
-                variant={isSearchMode ? 'projects' : activeSection.variant}
+                variant={activeSection.variant}
               />
             ))}
           </div>
