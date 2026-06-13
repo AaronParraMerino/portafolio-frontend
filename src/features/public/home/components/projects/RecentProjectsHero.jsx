@@ -81,6 +81,9 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
   return (
     <section className="prh-section" id="proyectos">
       <div className="prh-inner">
+        <div className="prh-head">
+          <h2>{t('home.projects.explore')}</h2>
+        </div>
         <article
           className={`prh-hero${project.imageUrl ? ' has-image' : ''}`}
           onMouseEnter={() => setPaused(true)}
@@ -132,10 +135,12 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
 
           <div className="prh-media">
             {project.imageUrl ? (
-              <>
+              <div className="prh-contained-media" aria-hidden="true">
                 <img className="prh-media-backdrop" src={project.imageUrl} alt="" />
-                <img className="prh-media-image" src={project.imageUrl} alt="" />
-              </>
+                <div className="prh-contained-canvas">
+                  <img className="prh-media-image" src={project.imageUrl} alt="" />
+                </div>
+              </div>
             ) : (
               <div className="prh-media-fallback">
                 <BsCodeSlash />
@@ -163,21 +168,21 @@ export default function RecentProjectsHero({ projects = [], onViewDetails }) {
               </button>
             </>
           )}
-        </article>
 
-        {visibleProjects.length > 1 && (
-          <div className="prh-dots" aria-label={t('home.projects.recentAria')}>
-            {visibleProjects.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                className={index === activeIndex ? 'active' : ''}
-                onClick={() => setActiveIndex(index)}
-                aria-label={t('home.projects.showAria', { title: item.title })}
-              />
-            ))}
-          </div>
-        )}
+          {visibleProjects.length > 1 && (
+            <div className="prh-dots" aria-label={t('home.projects.recentAria')}>
+              {visibleProjects.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={index === activeIndex ? 'active' : ''}
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={t('home.projects.showAria', { title: item.title })}
+                />
+              ))}
+            </div>
+          )}
+        </article>
       </div>
     </section>
   );

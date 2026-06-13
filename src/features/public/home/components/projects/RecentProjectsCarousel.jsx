@@ -40,7 +40,6 @@ export default function RecentProjectsCarousel({ projects = [], onViewDetails })
       <div className="prc-inner">
         <div className="prc-head">
           <div>
-            <span>{t('home.projects.explore')}</span>
             <h2 id="prc-title">{t('home.projects.builtFor')}</h2>
           </div>
           <div className="prc-head-actions">

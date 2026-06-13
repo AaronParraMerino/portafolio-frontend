@@ -28,6 +28,16 @@ function normalizeText(value = '') {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+function findCatalogOption(options = [], value = '') {
+  const normalizedValue = normalizeText(value);
+  if (!normalizedValue) return null;
+
+  return options.find(option => (
+    normalizeText(option.value) === normalizedValue ||
+    normalizeText(option.label) === normalizedValue
+  )) || null;
+}
+
 function getStatusLabel(proyecto = {}, t) {
   const status = proyecto.estado || 'borrador';
 
@@ -51,8 +61,12 @@ function getStatusPillClass(estado) {
 }
 
 function getTipoLabel(proyecto = {}, t) {
-  const tipoObj = TIPOS_PROYECTO.find(tipo => tipo.value === proyecto.tipo);
+  const tipoObj = findCatalogOption(TIPOS_PROYECTO, proyecto.tipo);
   const value = tipoObj?.value || proyecto.tipo || '';
+
+  if (tipoObj?.value) {
+    return t(tipoObj.labelKey, {}, proyecto.tipoLabel || proyecto.tipo_label || tipoObj.label);
+  }
 
   if (value) {
     return t(`projects.type.${value}`, {}, proyecto.tipoLabel || proyecto.tipo_label || tipoObj?.label || value);
@@ -62,8 +76,12 @@ function getTipoLabel(proyecto = {}, t) {
 }
 
 function getDesarrolladoLabel(proyecto = {}, t) {
-  const item = DESARROLLADO_PARA.find(op => op.value === proyecto.desarrollado_para);
+  const item = findCatalogOption(DESARROLLADO_PARA, proyecto.desarrollado_para);
   const value = item?.value || proyecto.desarrollado_para || '';
+
+  if (item?.value) {
+    return t(item.labelKey, {}, proyecto.desarrolladoParaLabel || proyecto.desarrollado_para_label || item.label);
+  }
 
   if (value) {
     return t(`projects.platform.${value}`, {}, proyecto.desarrolladoParaLabel || proyecto.desarrollado_para_label || item?.label || value);

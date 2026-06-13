@@ -80,14 +80,20 @@
 .evh-tone-gray { background: linear-gradient(135deg, #f3f4f6, #d1d5db); color: #374151; }
 
 .evh-section {
-  background: #f8fafc;
-  border-top: 1px solid rgba(209, 213, 219, .8);
+  background-color: #075985;
+  background-image: url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M52 0H0V52' fill='none' stroke='%23ffffff' stroke-opacity='.09' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 52px 52px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  overflow: hidden;
   padding: 70px 24px;
+  position: relative;
 }
 
 .evh-section-inner {
   margin: 0 auto;
   max-width: 1180px;
+  position: relative;
+  z-index: 1;
 }
 
 .evh-section-message {
@@ -593,7 +599,7 @@
 }
 
 .evh-carousel-head h3 {
-  color: var(--negro-texto);
+  color: var(--blanco);
   font-size: 18px;
   font-weight: 900;
   margin: 0;
@@ -615,9 +621,10 @@
 }
 
 .evh-carousel-head-actions > a {
-  border: 1.5px solid var(--azul-mid);
+  background: rgba(255, 255, 255, .08);
+  border: 1.5px solid rgba(255, 255, 255, .55);
   border-radius: 7px;
-  color: var(--azul-deep);
+  color: var(--blanco);
   font-size: 13px;
   font-weight: 900;
   padding: 9px 13px;
@@ -627,17 +634,17 @@
 }
 
 .evh-carousel-head-actions > a:hover {
-  background: var(--azul-light);
-  border-color: var(--azul);
-  color: var(--azul);
+  background: var(--blanco);
+  border-color: var(--blanco);
+  color: var(--azul-deep);
 }
 
 .evh-carousel-controls button {
   align-items: center;
-  background: #fff;
-  border: 1.5px solid var(--gris-borde);
+  background: rgba(255, 255, 255, .08);
+  border: 1.5px solid rgba(255, 255, 255, .42);
   border-radius: 50%;
-  color: var(--gris-oscuro);
+  color: var(--blanco);
   cursor: pointer;
   display: flex;
   height: 36px;
@@ -646,8 +653,9 @@
 }
 
 .evh-carousel-controls button:hover {
-  border-color: var(--azul-mid);
-  color: var(--azul);
+  background: var(--blanco);
+  border-color: var(--blanco);
+  color: var(--azul-deep);
 }
 
 .evh-carousel-track {

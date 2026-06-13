@@ -26,6 +26,14 @@ const CHIPS_TOP = [
   { text: 'TypeScript', red: false },
   { text: 'Rust',       red: false },
 ];
+const CHIPS_CORNER = [
+  { text: 'Next.js', red: false },
+  { text: 'Django', red: false },
+  { text: 'Supabase', red: true },
+  { text: 'Kubernetes', red: false },
+  { text: 'Tailwind', red: false },
+  { text: 'MongoDB', red: true },
+];
 
 const STATS = [
   { key: 'developers', labelKey: 'hero.stats.developers' },
@@ -139,7 +147,7 @@ export default function Hero({ eventsState }) {
           text-align: center;
           position: relative;
           overflow: hidden;
-          padding: 42px 24px 86px;
+          padding: 34px 24px 70px;
         }
 
         /* Franja superior azul */
@@ -178,8 +186,8 @@ export default function Hero({ eventsState }) {
         .spk-hero-grid {
           position: absolute; inset: 0;
           background-image:
-            linear-gradient(rgba(0,119,183,.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,119,183,.05) 1px, transparent 1px);
+            linear-gradient(rgba(0,119,183,.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,119,183,.07) 1px, transparent 1px);
           background-size: 52px 52px;
           pointer-events: none;
         }
@@ -209,7 +217,7 @@ export default function Hero({ eventsState }) {
           box-shadow: 0 2px 10px rgba(0,0,0,.07);
           font-family: var(--mono);
           white-space: nowrap;
-          opacity: .72;
+          opacity: .76;
         }
         .spk-chip.chip-red {
           background: var(--rojo-chip);
@@ -223,23 +231,29 @@ export default function Hero({ eventsState }) {
         .spk-chip.chip-red .spk-chip-dot { background: var(--rojo-soft); }
 
         /* posiciones — izquierda */
-        .cl-0 { top: 130px; left:  20px; transform: rotate(-4deg); }
-        .cl-1 { top: 200px; left: -10px; transform: rotate( 2deg); }
-        .cl-2 { top: 270px; left:  25px; transform: rotate(-3deg); }
-        .cl-3 { top: 345px; left:  -5px; transform: rotate( 4deg); }
-        .cl-4 { top: 415px; left:  30px; transform: rotate(-2deg); }
-        .cl-5 { top: 480px; left:  -8px; transform: rotate( 3deg); }
+        .cl-0 { top: 118px; left:  44px; transform: rotate(-4deg); }
+        .cl-1 { top: 248px; left:  18px; transform: rotate( 2deg); }
+        .cl-2 { bottom: 156px; left:  52px; transform: rotate(-3deg); }
+        .cl-3 { top: 50%; left:  116px; transform: translateY(-50%) rotate( 4deg); }
+        .cl-4 { bottom: 76px; left:  192px; transform: rotate(-2deg); }
+        .cl-5 { top: 74px; left:  228px; transform: rotate( 3deg); }
 
         /* posiciones — derecha */
-        .cr-0 { top: 130px; right:  15px; transform: rotate( 4deg); }
-        .cr-1 { top: 200px; right: -10px; transform: rotate(-3deg); }
-        .cr-2 { top: 270px; right:  20px; transform: rotate( 2deg); }
-        .cr-3 { top: 345px; right:  -5px; transform: rotate(-4deg); }
-        .cr-4 { top: 415px; right:  25px; transform: rotate( 3deg); }
-        .cr-5 { top: 480px; right: -12px; transform: rotate(-2deg); }
+        .cr-0 { top: 116px; right:  52px; transform: rotate( 4deg); }
+        .cr-1 { top: 246px; right: 18px; transform: rotate(-3deg); }
+        .cr-2 { bottom: 158px; right: 48px; transform: rotate( 2deg); }
+        .cr-3 { top: 50%; right: 116px; transform: translateY(-50%) rotate(-4deg); }
+        .cr-4 { bottom: 78px; right: 190px; transform: rotate( 3deg); }
+        .cr-5 { top: 72px; right: 228px; transform: rotate(-2deg); }
 
-        .ct-0 { top: 62px; left:  calc(50% - 360px); transform: rotate(-2deg); }
-        .ct-1 { top: 62px; left:  calc(50% + 240px); transform: rotate( 2deg); }
+        .ct-0 { top: 66px; left:  calc(50% - 430px); transform: rotate(-2deg); }
+        .ct-1 { top: 66px; left:  calc(50% + 286px); transform: rotate( 2deg); }
+        .cc-0 { top: 28px; left: 34px; transform: rotate(3deg); }
+        .cc-1 { top: 28px; right: 34px; transform: rotate(-3deg); }
+        .cc-2 { bottom: 28px; left: 42px; transform: rotate(-2deg); }
+        .cc-3 { bottom: 28px; right: 42px; transform: rotate(2deg); }
+        .cc-4 { bottom: 30px; left: calc(50% - 250px); transform: rotate(2deg); }
+        .cc-5 { bottom: 30px; right: calc(50% - 250px); transform: rotate(-2deg); }
 
         /* ══ CONTENIDO CENTRAL ══ */
         .spk-hero-inner {
@@ -253,15 +267,35 @@ export default function Hero({ eventsState }) {
         .spk-hero-showcase {
           order: 1;
           position: relative;
-          width: min(1180px, calc(100% - 72px));
+          width: min(1340px, calc(100% - 44px));
           z-index: 3;
+          padding: 0;
+          background: transparent;
+          border-radius: 14px;
         }
         .spk-hero-institutional {
           align-items: center;
           display: flex;
           justify-content: center;
-          min-height: 430px;
+          min-height: clamp(500px, 62vh, 620px);
           padding: 24px;
+        }
+        .spk-hero-showcase .evh-hero-media {
+          border: 1.5px solid rgba(184, 221, 240, .8);
+          border-radius: 14px;
+          box-shadow: 0 24px 62px rgba(0, 79, 124, .2);
+          min-height: clamp(540px, 68vh, 680px);
+        }
+        .spk-hero-showcase .evh-hero-content {
+          max-width: min(560px, 50%);
+          padding: 36px 38px;
+        }
+        .spk-hero-showcase .evh-hero h3 {
+          font-size: clamp(31px, 4vw, 54px);
+        }
+        .spk-hero-showcase .evh-hero p {
+          font-size: 16px;
+          line-height: 1.65;
         }
         .spk-hero-showcase .spk-hero-inner { max-width: 880px; }
         .spk-hero-showcase-nav {
@@ -282,10 +316,10 @@ export default function Hero({ eventsState }) {
           z-index: 8;
         }
         .spk-hero-showcase-nav:hover { background: var(--azul-light); border-color: var(--azul); color: var(--azul); }
-        .spk-hero-showcase-prev { left: -20px; }
-        .spk-hero-showcase-next { right: -20px; }
+        .spk-hero-showcase-prev { left: -14px; }
+        .spk-hero-showcase-next { right: -14px; }
         .spk-hero-showcase-dots {
-          bottom: 12px;
+          bottom: 28px;
           display: flex;
           gap: 7px;
           left: 50%;
@@ -554,7 +588,11 @@ export default function Hero({ eventsState }) {
           .spk-chips-area { display: none; }
         }
         @media (max-width: 768px) {
-          .spk-hero { padding: 34px 20px 80px; }
+          .spk-hero {
+            justify-content: flex-start;
+            min-height: auto;
+            padding: 28px 16px 64px;
+          }
           .spk-search-box {
             width: min(100%, 560px);
             margin: 20px auto 0;
@@ -584,19 +622,67 @@ export default function Hero({ eventsState }) {
           .spk-stat:nth-child(3),
           .spk-stat:nth-child(4) { border-bottom: none; }
           .spk-copyright { right: 20px; }
-          .spk-hero-showcase { width: 100%; }
-          .spk-hero-institutional { min-height: 0; padding: 16px 0 28px; }
+          .spk-hero-showcase {
+            width: 100%;
+            border-radius: 12px;
+          }
+          .spk-hero-institutional {
+            min-height: calc(100svh - var(--nav-height, 60px) - 92px);
+            padding: 20px 0 34px;
+          }
+          .spk-hero-title {
+            font-size: clamp(34px, 11vw, 52px);
+            line-height: 1;
+            margin-bottom: 18px;
+          }
+          .spk-divider {
+            margin-bottom: 18px;
+          }
+          .spk-hero-desc {
+            max-width: 92%;
+          }
+          .spk-hero-showcase .evh-hero-media {
+            border-radius: 10px;
+            box-shadow: 0 16px 36px rgba(0, 79, 124, .18);
+            min-height: 0;
+          }
+          .spk-hero-showcase .evh-hero-content {
+            max-width: none;
+            padding: 20px;
+          }
+          .spk-hero-showcase .evh-hero h3 {
+            font-size: clamp(28px, 8vw, 40px);
+          }
+          .spk-hero-showcase .evh-hero p {
+            font-size: 14px;
+            line-height: 1.55;
+          }
           .spk-hero-showcase-nav,
           .spk-hero-showcase-dots { display: none; }
         }
         @media (max-width: 520px) {
+          .spk-hero {
+            padding: 22px 12px 56px;
+          }
           .spk-badge {
             font-size: 10px;
             padding-inline: 12px;
+            margin-bottom: 16px;
           }
           .spk-hero-desc {
             font-size: 14px;
-            margin-bottom: 20px;
+            line-height: 1.65;
+            margin-bottom: 0;
+          }
+          .spk-hero-institutional {
+            min-height: calc(100svh - var(--nav-height, 60px) - 76px);
+            padding: 16px 0 26px;
+          }
+          .spk-stats {
+            margin-top: 24px;
+          }
+          .spk-hero-showcase .evh-hero-content {
+            padding: 18px;
           }
           .spk-search-icon {
             width: 28px;
@@ -647,6 +733,11 @@ export default function Hero({ eventsState }) {
           ))}
           {CHIPS_RIGHT.map((c, i) => (
             <div key={`r${i}`} className={`spk-chip cr-${i}${c.red ? ' chip-red' : ''}`}>
+              <span className="spk-chip-dot" />{c.text}
+            </div>
+          ))}
+          {CHIPS_CORNER.map((c, i) => (
+            <div key={`c${i}`} className={`spk-chip cc-${i}${c.red ? ' chip-red' : ''}`}>
               <span className="spk-chip-dot" />{c.text}
             </div>
           ))}
@@ -701,7 +792,7 @@ export default function Hero({ eventsState }) {
             />
           )}
 
-          {slideCount > 1 && (
+          {slideCount > 1 && activeSlide !== 0 && (
             <>
               <button type="button" className="spk-hero-showcase-nav spk-hero-showcase-prev" onClick={() => moveSlide(-1)} aria-label="Banner anterior">
                 <BsChevronLeft />
