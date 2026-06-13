@@ -14,7 +14,10 @@ import {
   pauseUserAccount,
   registerAdminNoticeTemplateUse,
   sendAdminNotice,
+  toAdminNoticePriority,
+  USER_GLOBAL_NOTICE_TYPES,
   updateAdminNoticeTemplate,
+  updateGlobalAdminNotice,
   updateUserRole,
 } from '../services/usersService';
 import { useLanguage } from '../../../../core/i18n';
@@ -416,45 +419,66 @@ export function useUsersDirectory() {
       && !payload.directUser
       && Array.isArray(payload.segmentos)
       && payload.segmentos.length === 1
-      && payload.segmentos[0] === 'todos';
-    const response = isGlobalNotice
-      ? await createGlobalAdminNotice({
+      && payload.segmentos[0] === 'todos'
+      && USER_GLOBAL_NOTICE_TYPES.some((type) => type.id === payload.tipo);
+    const globalNoticePayload = {
         tipo: payload.tipo,
         titulo: payload.titulo,
         mensaje: payload.contenido,
         estado: 'activo',
-        prioridad: payload.prioridad || (payload.urgencia === 'media' ? 'normal' : payload.urgencia),
+        prioridad: payload.prioridad || toAdminNoticePriority(payload.urgencia),
         visible_desde: payload.visible_desde || null,
         visible_hasta: payload.visible_hasta || null,
-      })
+      };
+    const response = isGlobalNotice
+      ? (payload.noticeId
+        ? await updateGlobalAdminNotice(payload.noticeId, globalNoticePayload)
+        : await createGlobalAdminNotice(globalNoticePayload))
       : await sendAdminNotice(payload);
     const notice = response?.data || {};
     const createdAt = notice.created_at || new Date().toISOString();
+    const noticeId = notice.id_aviso || notice.id_envio || payload.noticeId;
+    const nextCommunication = {
+      id: noticeId,
+      id_aviso: notice.id_aviso || payload.noticeId || undefined,
+      titulo: notice.titulo || payload.titulo,
+      cuerpo: notice.mensaje || notice.contenido || payload.contenido,
+      tipo: notice.tipo || payload.tipo,
+      urgencia: notice.urgencia || notice.prioridad || payload.urgencia,
+      prioridad: notice.prioridad || payload.prioridad || toAdminNoticePriority(payload.urgencia),
+      canales: notice.canales || ['inapp'],
+      destinatarios: notice.destinatarios || 0,
+      creado: new Date(createdAt).toLocaleString('es-BO'),
+      estado: notice.estado || (isGlobalNotice ? 'activo' : 'enviado'),
+      segmentos: notice.segmentos || payload.segmentos || [],
+    };
 
     setDirectory((current) => ({
       ...current,
-      communications: [
-        {
-          id: notice.id_aviso || notice.id_envio,
-          titulo: notice.titulo || payload.titulo,
-          cuerpo: notice.mensaje || notice.contenido || payload.contenido,
-          tipo: notice.tipo,
-          urgencia: notice.prioridad || notice.urgencia || payload.urgencia,
-          canales: notice.canales || ['inapp'],
-          destinatarios: notice.destinatarios || (isGlobalNotice ? current.items.length : 0),
-          creado: new Date(createdAt).toLocaleString('es-BO'),
-          estado: notice.estado || 'enviado',
-          segmentos: notice.segmentos || payload.segmentos || [],
-        },
-        ...current.communications,
-      ],
+      communications: payload.noticeId
+        ? current.communications.map((item) => (
+          String(item.id || item.id_aviso || item.id_comunicacion) === String(payload.noticeId)
+            ? {
+              ...item,
+              ...nextCommunication,
+              destinatarios: nextCommunication.destinatarios || current.items.length,
+            }
+            : item
+        ))
+        : [
+          {
+            ...nextCommunication,
+            destinatarios: nextCommunication.destinatarios || current.items.length,
+          },
+          ...current.communications,
+        ],
       history: [
         {
-          id: notice.id_aviso || notice.id_envio,
+          id: noticeId,
           titulo: notice.titulo || payload.titulo,
           cuerpo: notice.mensaje || notice.contenido || payload.contenido,
           tipo: notice.tipo || payload.tipo,
-          estado: notice.estado || 'enviado',
+          estado: notice.estado || (isGlobalNotice ? 'activo' : 'enviado'),
           destinatarios: notice.destinatarios || (isGlobalNotice ? current.items.length : 0),
           creado: new Date(createdAt).toLocaleString('es-BO'),
           canales: notice.canales || ['inapp'],

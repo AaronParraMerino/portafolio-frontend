@@ -227,6 +227,7 @@ export const adminEventsTranslations = {
     "adminEvents.calendar.title": "Calendario de eventos",
     "adminEvents.calendar.prev": "Mes anterior",
     "adminEvents.calendar.next": "Mes siguiente",
+    "adminEvents.calendar.today": "Hoy",
     "adminEvents.calendar.dayEvents": "Eventos del día",
     "adminEvents.calendar.count": "{count} eventos",
     "adminEvents.calendar.empty": "Sin eventos",
@@ -401,6 +402,7 @@ export const adminEventsTranslations = {
     "adminEvents.communicationModal.footer": "Revisa el contenido y la audiencia antes de guardar.",
     "adminEvents.communications.adminCenterTitle": "Centro administrativo",
     "adminEvents.communications.adminCenterDescription": "Gestiona comunicados de plataforma, oportunidades, seguridad, mantenimiento y comunidad.",
+    "adminEvents.communications.review": "Revisar",
     "adminEvents.communications.recipients": "{count} destinatarios",
     "adminEvents.templates.title": "Plantillas",
     "adminEvents.templates.new": "Nueva plantilla",
@@ -408,7 +410,8 @@ export const adminEventsTranslations = {
     "adminEvents.templates.community": "Comunidad",
     "adminEvents.templates.catalog": "Catálogo",
     "adminEvents.templates.available": "Plantillas disponibles",
-    "adminEvents.templates.uses": "{count} usos"
+    "adminEvents.templates.uses": "{count} usos",
+    "adminEvents.templates.use": "Usar plantilla"
   },
   "en": {
     "adminEvents.common.save": "Save",
@@ -638,6 +641,7 @@ export const adminEventsTranslations = {
     "adminEvents.calendar.title": "Calendario de eventos",
     "adminEvents.calendar.prev": "Mes anterior",
     "adminEvents.calendar.next": "Mes siguiente",
+    "adminEvents.calendar.today": "Today",
     "adminEvents.calendar.dayEvents": "Eventos del día",
     "adminEvents.calendar.count": "{count} eventos",
     "adminEvents.calendar.empty": "Sin eventos",
@@ -812,6 +816,7 @@ export const adminEventsTranslations = {
     "adminEvents.communicationModal.footer": "Review the content and audience before saving.",
     "adminEvents.communications.adminCenterTitle": "Administrative center",
     "adminEvents.communications.adminCenterDescription": "Manage platform announcements, opportunities, security, maintenance, and community messages.",
+    "adminEvents.communications.review": "Review",
     "adminEvents.communications.recipients": "{count} recipients",
     "adminEvents.templates.title": "Templates",
     "adminEvents.templates.new": "New template",
@@ -819,7 +824,8 @@ export const adminEventsTranslations = {
     "adminEvents.templates.community": "Community",
     "adminEvents.templates.catalog": "Catalog",
     "adminEvents.templates.available": "Available templates",
-    "adminEvents.templates.uses": "{count} uses"
+    "adminEvents.templates.uses": "{count} uses",
+    "adminEvents.templates.use": "Use template"
   },
   "pt": {
     "adminEvents.common.save": "Salvar",
@@ -1049,6 +1055,7 @@ export const adminEventsTranslations = {
     "adminEvents.calendar.title": "Calendario de eventos",
     "adminEvents.calendar.prev": "Mes anterior",
     "adminEvents.calendar.next": "Mes siguiente",
+    "adminEvents.calendar.today": "Hoje",
     "adminEvents.calendar.dayEvents": "Eventos del día",
     "adminEvents.calendar.count": "{count} eventos",
     "adminEvents.calendar.empty": "Sin eventos",
@@ -1223,6 +1230,7 @@ export const adminEventsTranslations = {
     "adminEvents.communicationModal.footer": "Revise o conteúdo e a audiência antes de salvar.",
     "adminEvents.communications.adminCenterTitle": "Centro administrativo",
     "adminEvents.communications.adminCenterDescription": "Gerencie comunicados da plataforma, oportunidades, segurança, manutenção e comunidade.",
+    "adminEvents.communications.review": "Revisar",
     "adminEvents.communications.recipients": "{count} destinatários",
     "adminEvents.templates.title": "Modelos",
     "adminEvents.templates.new": "Novo modelo",
@@ -1230,6 +1238,7 @@ export const adminEventsTranslations = {
     "adminEvents.templates.community": "Comunidade",
     "adminEvents.templates.catalog": "Catálogo",
     "adminEvents.templates.available": "Modelos disponíveis",
-    "adminEvents.templates.uses": "{count} usos"
+    "adminEvents.templates.uses": "{count} usos",
+    "adminEvents.templates.use": "Usar modelo"
   }
 };

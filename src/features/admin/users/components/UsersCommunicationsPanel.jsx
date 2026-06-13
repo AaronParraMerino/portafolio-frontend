@@ -3,7 +3,6 @@ import {
   BsBell,
   BsClock,
   BsEnvelope,
-  BsFunnel,
   BsMegaphone,
   BsPeople,
   BsPlusLg,
@@ -16,6 +15,7 @@ import {
   USER_NOTICE_STATUSES,
   getUserNoticeStatusMeta,
   getUserNoticeTypeMeta,
+  normalizeNoticeUrgency,
 } from '../services/usersService';
 import UsersWorkspaceEmpty from './UsersWorkspaceEmpty';
 import { useLanguage } from '../../../../core/i18n';
@@ -29,14 +29,16 @@ const COMMUNICATIONS_PAGE_SIZE = 6;
 
 function normalizeNotice(item = {}) {
   const channels = item.channels || item.canales || [];
+  const rawStatus = item.status || item.estado || 'borrador';
+  const status = rawStatus === 'activo' ? 'enviado' : rawStatus;
 
   return {
     id: item.id || item.id_aviso || item.id_comunicacion,
     title: item.title || item.titulo || '',
     body: item.body || item.preview || item.cuerpo || item.descripcion || '',
     type: item.type || item.tipo || 'sistema',
-    status: item.status || item.estado || 'borrador',
-    urgency: item.urgency || item.urgencia || 'baja',
+    status,
+    urgency: normalizeNoticeUrgency(item.urgency || item.urgencia || item.prioridad),
     audience: item.audience || item.dest || item.destinatarios || 0,
     date: item.scheduledAt || item.fecha || item.createdAt || item.creado || '--',
     segments: item.segments || item.segmentos || [],
@@ -115,9 +117,6 @@ export default function UsersCommunicationsPanel({
           </div>
 
           <div className="usr-view-toolbar-actions">
-            <button type="button" className="usr-icon-tool" title={t('admin.users.communications.filters')} aria-label={t('admin.users.communications.filters')}>
-              <BsFunnel />
-            </button>
             <button
               type="button"
               className="usr-context-btn usr-context-btn--primary"
@@ -144,38 +143,24 @@ export default function UsersCommunicationsPanel({
             />
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.communications.filterTypeAria')}>
-            <button
-              type="button"
-              className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
-              onClick={() => setTypeFilter('todos')}
-            >
-              {t('admin.users.communications.all')}
-            </button>
-            {USER_ALL_NOTICE_TYPES.map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                className={`usr-filter-chip${typeFilter === type.id ? ' active' : ''}`}
-                onClick={() => setTypeFilter(type.id)}
-              >
-                {t(`admin.users.noticeType.${type.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('admin.users.communications.filterTypeAria')}</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <option value="todos">{t('admin.users.communications.all')}</option>
+              {USER_ALL_NOTICE_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{t(`admin.users.noticeType.${type.id}`)}</option>
+              ))}
+            </select>
+          </label>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.communications.filterStatusAria')}>
-            {USER_NOTICE_STATUSES.map((status) => (
-              <button
-                key={status.id}
-                type="button"
-                className={`usr-filter-chip${statusFilter === status.id ? ' active' : ''}`}
-                onClick={() => setStatusFilter(status.id)}
-              >
-                {t(`admin.users.status.${status.id}.label`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('admin.users.communications.filterStatusAria')}</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              {USER_NOTICE_STATUSES.map((status) => (
+                <option key={status.id} value={status.id}>{t(`admin.users.status.${status.id}.label`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {sourceReady && visibleNotices.length > 0 ? (

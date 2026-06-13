@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  BsDatabase,
+  BsHddStack,
+  BsListOl,
+  BsTable,
+} from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
@@ -6,6 +12,8 @@ import { fetchBackupMetadata, generateBackup } from '../services/backupsService'
 import '../styles/backups.css';
 
 const LOCALES = { es: 'es-BO', en: 'en-US', pt: 'pt-BR' };
+
+const BACKUP_STAT_ICONS = [BsDatabase, BsTable, BsListOl, BsHddStack];
 
 function backupFilename(mode) {
   const now = new Date();
@@ -118,7 +126,7 @@ export default function BackupsPage() {
   };
 
   return (
-    <div className="bkp-page">
+    <div className="bkp-page adm-page-shell">
       <AdminHeader
         eyebrow={t(headerConfig.eyebrowKey || headerConfig.eyebrow)}
         title={t(headerConfig.titleKey || headerConfig.title)}
@@ -144,10 +152,27 @@ export default function BackupsPage() {
         ) : null}
 
         <div className="bkp-stats">
-          <div><span>{t('adminBackups.stats.database')}</span><strong>{metadata?.database?.name || '--'}</strong><small>{metadata?.database?.format || '--'}</small></div>
-          <div><span>{t('adminBackups.stats.tables')}</span><strong>{loading ? '--' : tables.length}</strong><small>{t('adminBackups.stats.available')}</small></div>
-          <div><span>{t('adminBackups.stats.rows')}</span><strong>{loading ? '--' : numberFormatter.format(totalRows)}</strong><small>{t('adminBackups.stats.approximate')}</small></div>
-          <div><span>{t('adminBackups.stats.size')}</span><strong>{loading ? '--' : sizeFormatter.format(totalSize / 1048576)}</strong><small>{t('adminBackups.stats.databaseSize')}</small></div>
+          {[
+            [t('adminBackups.stats.database'), metadata?.database?.name || '--', metadata?.database?.format || '--'],
+            [t('adminBackups.stats.tables'), loading ? '--' : tables.length, t('adminBackups.stats.available')],
+            [t('adminBackups.stats.rows'), loading ? '--' : numberFormatter.format(totalRows), t('adminBackups.stats.approximate')],
+            [t('adminBackups.stats.size'), loading ? '--' : sizeFormatter.format(totalSize / 1048576), t('adminBackups.stats.databaseSize')],
+          ].map(([label, value, helper], index) => {
+            const Icon = BACKUP_STAT_ICONS[index] || BsDatabase;
+
+            return (
+              <div key={label}>
+                <div className="bkp-stat-top">
+                  <span className="bkp-stat-icon">
+                    <Icon aria-hidden="true" />
+                  </span>
+                </div>
+                <strong>{value}</strong>
+                <span>{label}</span>
+                <small>{helper}</small>
+              </div>
+            );
+          })}
         </div>
 
         <section className="bkp-panel">

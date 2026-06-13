@@ -1,10 +1,14 @@
 // src/features/admin/dashboard/AdminDashboardPage.jsx
 
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../core/i18n';
 import { getStoredUser } from '../../../shared/utils/authStorage';
+import { fetchAuditLogs } from '../audit/services/auditService';
+import { buildEventMetrics, fetchEventsWorkspace } from '../events/services/eventsService';
 import AdminHeader from '../layout/AdminHeader';
 import { getAdminSectionConfig } from '../layout/adminHeaderConfig';
+import { buildUsersMetrics, fetchUsersDirectory } from '../users/services/usersService';
 
 const QUICK_MODULES = [
   {
@@ -88,11 +92,56 @@ function getUserName() {
     .trim();
 }
 
+const DASHBOARD_STATS_INITIAL = {
+  users: null,
+  events: null,
+  audit: null,
+  loading: true,
+};
+
 export default function AdminDashboardPage({ section = 'dashboard' }) {
   const { t } = useLanguage();
   const config = getAdminSectionConfig(section);
   const storedUserName = getUserName();
   const userName = storedUserName || t('admin.dashboard.defaultUser');
+  const [dashboardStats, setDashboardStats] = useState(DASHBOARD_STATS_INITIAL);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboardStats() {
+      const [usersResult, eventsResult, auditResult] = await Promise.allSettled([
+        fetchUsersDirectory(),
+        fetchEventsWorkspace(),
+        fetchAuditLogs({ per_page: 1 }),
+      ]);
+
+      if (cancelled) return;
+
+      const usersPayload = usersResult.status === 'fulfilled' ? usersResult.value : null;
+      const eventsPayload = eventsResult.status === 'fulfilled' ? eventsResult.value : null;
+      const auditPayload = auditResult.status === 'fulfilled' ? auditResult.value : null;
+      const userMetrics = buildUsersMetrics(usersPayload?.items || []);
+      const eventMetrics = buildEventMetrics(
+        eventsPayload?.events || [],
+        eventsPayload?.communications || [],
+        eventsPayload?.publisherRequests || [],
+      );
+
+      setDashboardStats({
+        users: userMetrics.total,
+        events: eventMetrics.total,
+        audit: auditPayload?.metrics?.total ?? auditPayload?.meta?.total ?? null,
+        loading: false,
+      });
+    }
+
+    loadDashboardStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <>
@@ -101,7 +150,7 @@ export default function AdminDashboardPage({ section = 'dashboard' }) {
         title={t(config.titleKey || '') || config.title}
       />
 
-      <div className="adm-page">
+      <div className="adm-page adm-page-shell">
         <section className="adm-hero">
           <div>
             <span className="adm-hero-label">
@@ -126,13 +175,13 @@ export default function AdminDashboardPage({ section = 'dashboard' }) {
         <div className="adm-stats-grid">
           <div className="adm-stat-card">
             <span>{t('admin.dashboard.stats.users')}</span>
-            <strong>--</strong>
+            <strong>{dashboardStats.loading ? '--' : dashboardStats.users ?? '--'}</strong>
             <small>{t('admin.dashboard.stats.pendingManagement')}</small>
           </div>
 
           <div className="adm-stat-card">
             <span>{t('admin.dashboard.stats.events')}</span>
-            <strong>--</strong>
+            <strong>{dashboardStats.loading ? '--' : dashboardStats.events ?? '--'}</strong>
             <small>{t('admin.dashboard.stats.moduleReady')}</small>
           </div>
 

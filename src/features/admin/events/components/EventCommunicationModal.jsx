@@ -6,9 +6,9 @@ import {
   BsMegaphone,
   BsPeople,
   BsPhone,
-  BsX,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
+import AdminEdit, { AdminEditBody, AdminEditFieldError, AdminEditFooter, AdminEditSection } from '../../layout/AdminEdit';
 import {
   EVENT_COMMUNICATION_AUDIENCES,
   EVENT_COMMUNICATION_CHANNELS,
@@ -128,22 +128,17 @@ export default function EventCommunicationModal({
   };
 
   return (
-    <div className="evt-modal-backdrop" role="presentation">
-      <form className="evt-modal" onSubmit={handleSubmit} aria-label={isTemplateMode ? t('adminEvents.communicationModal.createTemplate') : t('adminEvents.communicationModal.createCommunication')}>
-        <div className="evt-modal-head">
-          <span className="evt-modal-icon">
-            <BsMegaphone />
-          </span>
-          <div className="evt-modal-copy">
-            <strong>{isTemplateMode ? t('adminEvents.communicationModal.templateTitle') : t('adminEvents.communicationModal.announcementTitle')}</strong>
-            <span>{isTemplateMode ? t('adminEvents.communicationModal.templateSubtitle') : t('adminEvents.communicationModal.announcementSubtitle')}</span>
-          </div>
-          <button type="button" className="evt-modal-close" onClick={onClose} aria-label={t('adminEvents.common.closeModal')}>
-            <BsX />
-          </button>
-        </div>
-
-        <div className="evt-modal-body">
+    <AdminEdit
+      as="form"
+      title={isTemplateMode ? t('adminEvents.communicationModal.templateTitle') : t('adminEvents.communicationModal.announcementTitle')}
+      subtitle={isTemplateMode ? t('adminEvents.communicationModal.templateSubtitle') : t('adminEvents.communicationModal.announcementSubtitle')}
+      icon={<BsMegaphone />}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      size="lg"
+      ariaLabel={isTemplateMode ? t('adminEvents.communicationModal.createTemplate') : t('adminEvents.communicationModal.createCommunication')}
+    >
+        <AdminEditBody>
           <div className="evt-form-grid">
             {!isTemplateMode ? (
               <label className="evt-field evt-field--full">
@@ -209,8 +204,7 @@ export default function EventCommunicationModal({
           </div>
 
           {!isTemplateMode ? (
-            <div className="evt-modal-section">
-              <span className="evt-modal-section-label">{t('adminEvents.communicationModal.urgency')}</span>
+            <AdminEditSection label={t('adminEvents.communicationModal.urgency')}>
               <div className="evt-urgency-grid">
                 {URGENCY_OPTIONS.map((option) => (
                   <button
@@ -225,11 +219,10 @@ export default function EventCommunicationModal({
                   </button>
                 ))}
               </div>
-            </div>
+            </AdminEditSection>
           ) : null}
 
-          <div className="evt-modal-section">
-            <span className="evt-modal-section-label">{t('adminEvents.communicationModal.channels')}</span>
+          <AdminEditSection label={t('adminEvents.communicationModal.channels')}>
             <div className="evt-option-row">
               {EVENT_COMMUNICATION_CHANNELS.map((channel) => {
                 const Icon = CHANNEL_ICONS[channel.id] || BsBell;
@@ -247,11 +240,10 @@ export default function EventCommunicationModal({
                 );
               })}
             </div>
-          </div>
+          </AdminEditSection>
 
           {!isTemplateMode ? (
-            <div className="evt-modal-section">
-              <span className="evt-modal-section-label">{t('adminEvents.communicationModal.audience')}</span>
+            <AdminEditSection label={t('adminEvents.communicationModal.audience')}>
               <div className="evt-segment-grid">
                 {EVENT_COMMUNICATION_AUDIENCES.map((segment) => (
                   <button
@@ -279,13 +271,13 @@ export default function EventCommunicationModal({
                 <span>{t('adminEvents.common.selected', { count: form.audiences.length })}</span>
                 <small>{selectedEvent ? t('adminEvents.communicationModal.related', { title: selectedEvent.title }) : t('adminEvents.communicationModal.independent')}</small>
               </div>
-            </div>
+            </AdminEditSection>
           ) : null}
 
-          {message ? <div className="evt-modal-message">{message}</div> : null}
-        </div>
+          <AdminEditFieldError msg={message} />
+        </AdminEditBody>
 
-        <div className="evt-modal-foot">
+        <AdminEditFooter>
           <span>{t('adminEvents.communicationModal.footer')}</span>
           <div className="evt-modal-actions">
             <button type="button" className="evt-reason-btn evt-reason-btn--ghost" onClick={onClose}>
@@ -296,8 +288,7 @@ export default function EventCommunicationModal({
               {isTemplateMode ? t('adminEvents.communicationModal.saveTemplate') : t('adminEvents.communicationModal.saveAnnouncement')}
             </button>
           </div>
-        </div>
-      </form>
-    </div>
+        </AdminEditFooter>
+    </AdminEdit>
   );
 }

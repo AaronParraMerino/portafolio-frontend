@@ -184,25 +184,15 @@ export default function UsersTemplatesPanel({
             />
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.templates.typeAria')}>
-            <button
-              type="button"
-              className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
-              onClick={() => setTypeFilter('todos')}
-            >
-              {t('admin.users.communications.all')}
-            </button>
-            {USER_NOTICE_TYPES.map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                className={`usr-filter-chip${typeFilter === type.id ? ' active' : ''}`}
-                onClick={() => setTypeFilter(type.id)}
-              >
-                {t(`admin.users.noticeType.${type.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('admin.users.templates.typeAria')}</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <option value="todos">{t('admin.users.communications.all')}</option>
+              {USER_NOTICE_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{t(`admin.users.noticeType.${type.id}`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {message ? <div className="usr-notice-message" role="status">{message}</div> : null}

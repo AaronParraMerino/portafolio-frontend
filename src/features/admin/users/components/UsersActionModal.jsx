@@ -9,22 +9,7 @@ import {
 import CachedUserAvatar from './CachedUserAvatar';
 import UsersSessionsMenu from './UsersSessionsMenu';
 import { useLanguage } from '../../../../core/i18n';
-
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 12 12"
-      aria-hidden="true"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M1 1l10 10M11 1 1 11" />
-    </svg>
-  );
-}
+import AdminEdit, { AdminEditBody, AdminEditSection } from '../../layout/AdminEdit';
 
 export default function UsersActionModal({
   user,
@@ -71,8 +56,10 @@ export default function UsersActionModal({
   const isRoleAction = !!selectedRoleAction;
   const canAssignPublisher = roleValue !== 'publicante' && roleValue !== 'administrador';
   const canRemovePublisher = roleValue === 'publicante';
-  const canManageSelectedRole = (selectedRoleAction?.id === 'asignar_publicante' && canAssignPublisher)
-    || (selectedRoleAction?.id === 'quitar_publicante' && canRemovePublisher);
+  const canManageSelectedRole = supportsRoleManagement && (
+    (selectedRoleAction?.id === 'asignar_publicante' && canAssignPublisher)
+    || (selectedRoleAction?.id === 'quitar_publicante' && canRemovePublisher)
+  );
   const canConfirmSelectedAction = (isActivation && canActivate)
     || (isPausing && canPause)
     || (isBlocking && canBlock)
@@ -80,20 +67,16 @@ export default function UsersActionModal({
     || (isRoleAction && canManageSelectedRole && actionMessage.trim().length >= 10);
 
   return (
-    <div className="usr-modal-backdrop" onClick={onClose}>
-      <div
-        className="usr-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('admin.users.actionModal.aria', { name: user.nombre || t('admin.users.table.unknownUser') })}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="usr-modal-head">
-          <CachedUserAvatar user={user} className="usr-modal-avatar" />
-
-          <div className="usr-modal-copy">
-            <strong>{user.nombre || t('admin.users.table.unknownUser')}</strong>
-            <span>{user.email || t('admin.users.table.noEmail')}</span>
+    <AdminEdit
+      title={user.nombre || t('admin.users.table.unknownUser')}
+      subtitle={user.email || t('admin.users.table.noEmail')}
+      icon={<CachedUserAvatar user={user} className="usr-modal-avatar" />}
+      onClose={onClose}
+      size="xl"
+      ariaLabel={t('admin.users.actionModal.aria', { name: user.nombre || t('admin.users.table.unknownUser') })}
+    >
+        <AdminEditBody>
+          <div className="usr-modal-copy usr-modal-copy--inline">
             <div className={`usr-status-badge usr-status-badge--${statusMeta.tone}`}>
               <span className="usr-status-dot" />
               {t(`admin.users.status.${user.estado || 'inactivo'}.label`)}
@@ -103,19 +86,7 @@ export default function UsersActionModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            className="usr-modal-close"
-            onClick={onClose}
-            title={t('admin.users.actionModal.close')}
-            aria-label={t('admin.users.actionModal.close')}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        <div className="usr-modal-body">
-          <section className="usr-modal-section">
+          <AdminEditSection>
             <div className="usr-modal-section-head">
               <span className="usr-modal-section-kicker">{t('admin.users.actionModal.account.kicker')}</span>
               <h3>{t('admin.users.actionModal.account.title')}</h3>
@@ -154,7 +125,7 @@ export default function UsersActionModal({
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
                   <strong>{t(`admin.users.action.${selectedAccountAction.id}.label`)}</strong>
-                  <span>{canConfirmSelectedAction ? t('admin.users.actionModal.available') : t('admin.users.actionModal.integrationPending')}</span>
+                  <span>{t('admin.users.actionModal.available')}</span>
                 </div>
 
                 {canConfirmSelectedAction ? (
@@ -226,7 +197,7 @@ export default function UsersActionModal({
                         : (isPausing
                           ? t('admin.users.actionModal.pauseFoot')
                           : t('admin.users.actionModal.customMessageFoot', { messageType: isActivation ? t('admin.users.actionModal.customMessage') : t('admin.users.actionModal.customReason') })))
-                      : t('admin.users.actionModal.futureReady')}
+                      : t('admin.users.actionModal.roleReasonRequired')}
                   </p>
 
                   <div className="usr-reason-actions">
@@ -248,7 +219,7 @@ export default function UsersActionModal({
                         ? (actionSubmitting
                           ? (isActivation ? t('admin.users.actionModal.activating') : (isPausing ? t('admin.users.actionModal.pausing') : (isBlocking ? t('admin.users.actionModal.blocking') : t('admin.users.actionModal.inactivating'))))
                           : (isActivation ? t('admin.users.actionModal.confirmActivation') : (isPausing ? t('admin.users.actionModal.confirmPause') : (isBlocking ? t('admin.users.actionModal.confirmBlock') : t('admin.users.actionModal.confirmInactivation')))))
-                        : t('admin.users.actionModal.availableSoon')}
+                        : t('admin.users.actionModal.confirmRoleChange')}
                     </button>
                   </div>
                 </div>
@@ -257,9 +228,9 @@ export default function UsersActionModal({
 
             {actionError ? <p className="usr-action-feedback usr-action-feedback--error">{actionError}</p> : null}
             {actionSuccess ? <p className="usr-action-feedback usr-action-feedback--success">{actionSuccess}</p> : null}
-          </section>
+          </AdminEditSection>
 
-          <section className="usr-modal-section">
+          <AdminEditSection>
             <div className="usr-modal-section-head">
               <span className="usr-modal-section-kicker">{t('admin.users.actionModal.role.kicker')}</span>
               <h3>{t('admin.users.actionModal.role.title')}</h3>
@@ -283,7 +254,7 @@ export default function UsersActionModal({
 
             <div className="usr-action-grid">
               {USER_ROLE_ACTIONS.map((action) => {
-                const disabled = action.id === 'asignar_publicante' ? !canAssignPublisher : !canRemovePublisher;
+                const disabled = !supportsRoleManagement || (action.id === 'asignar_publicante' ? !canAssignPublisher : !canRemovePublisher);
 
                 return (
                   <button
@@ -304,7 +275,7 @@ export default function UsersActionModal({
               <div className="usr-reason-panel">
                 <div className="usr-reason-head">
                   <strong>{t(`admin.users.roleAction.${selectedRoleAction.id}.label`)}</strong>
-                  <span>{supportsRoleManagement ? t('admin.users.actionModal.backendConnected') : t('admin.users.actionModal.frontendReady')}</span>
+                  <span>{t('admin.users.actionModal.available')}</span>
                 </div>
 
                 <p className="usr-action-confirm-copy">
@@ -346,31 +317,26 @@ export default function UsersActionModal({
                 </div>
               </div>
             ) : null}
-          </section>
+          </AdminEditSection>
 
-          <section className="usr-modal-section">
+          {supportsSessions ? (
+          <AdminEditSection>
             <div className="usr-modal-section-head">
               <span className="usr-modal-section-kicker">{t('admin.users.actionModal.sessions.kicker')}</span>
               <h3>{t('admin.users.actionModal.activityTitle')}</h3>
-              <p>{supportsSessions ? t('admin.users.actionModal.sessions.descriptionReady', { count: sessionCount }) : t('admin.users.actionModal.sessions.descriptionPending')}</p>
+              <p>{t('admin.users.actionModal.sessions.descriptionReady', { count: sessionCount })}</p>
             </div>
 
-            {supportsSessions ? (
-              <UsersSessionsMenu
-                key={`${user.id}:${user.estado}:${sessionCount}`}
-                user={user}
-                onCountChange={onSessionCountChange}
-                onRequestClose={onClose}
-                onRunInBackground={onRunInBackground}
-              />
-            ) : (
-              <div className="usr-session-empty">
-                {t('admin.users.actionModal.sessions.hint')}
-              </div>
-            )}
-          </section>
-        </div>
-      </div>
-    </div>
+            <UsersSessionsMenu
+              key={`${user.id}:${user.estado}:${sessionCount}`}
+              user={user}
+              onCountChange={onSessionCountChange}
+              onRequestClose={onClose}
+              onRunInBackground={onRunInBackground}
+            />
+          </AdminEditSection>
+          ) : null}
+        </AdminEditBody>
+    </AdminEdit>
   );
 }

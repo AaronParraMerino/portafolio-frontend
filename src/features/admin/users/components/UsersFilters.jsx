@@ -57,26 +57,20 @@ export default function UsersFilters({
         )}
       </div>
 
-      <div className="usr-filter-strip" role="tablist" aria-label={t('admin.users.filters.statusAria')}>
-        {USER_STATUS_FILTERS.map((filter) => (
-          <button
-            key={filter.id}
-            type="button"
-            className={`usr-filter-chip${statusFilter === filter.id ? ' active' : ''}`}
-            onClick={() => onStatusFilterChange(filter.id)}
-            role="tab"
-            aria-selected={statusFilter === filter.id}
-          >
-            <span>{t(`admin.users.status.${filter.id}.label`)}</span>
-
-            {sourceReady && (
-              <span className="usr-filter-count">
-                {filterCounts?.[filter.id] ?? 0}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <label className="adm-filter-field">
+        <span>{t('admin.users.filters.statusAria')}</span>
+        <select
+          value={statusFilter}
+          onChange={(event) => onStatusFilterChange(event.target.value)}
+        >
+          {USER_STATUS_FILTERS.map((filter) => (
+            <option key={filter.id} value={filter.id}>
+              {t(`admin.users.status.${filter.id}.label`)}
+              {sourceReady ? ` (${filterCounts?.[filter.id] ?? 0})` : ''}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 }

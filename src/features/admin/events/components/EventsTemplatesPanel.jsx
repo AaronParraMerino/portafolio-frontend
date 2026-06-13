@@ -110,18 +110,14 @@ export default function EventsTemplatesPanel({
             />
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.templates.typeAria')}>
-            {EVENT_COMMUNICATION_TYPES.map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                className={`evt-filter-chip${typeFilter === type.id ? ' active' : ''}`}
-                onClick={() => setTypeFilter(type.id)}
-              >
-                {t(`adminEvents.type.${type.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('adminEvents.templates.typeAria')}</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              {EVENT_COMMUNICATION_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{t(`adminEvents.type.${type.id}`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {sourceReady && visibleTemplates.length > 0 ? (
@@ -161,7 +157,7 @@ export default function EventsTemplatesPanel({
                       className="evt-mini-action evt-mini-action--wide"
                       onClick={() => onUseTemplate(template)}
                     >
-                      Usar plantilla
+                      {t('adminEvents.templates.use')}
                     </button>
                   ) : null}
                 </article>

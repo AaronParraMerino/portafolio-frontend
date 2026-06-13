@@ -118,38 +118,24 @@ export default function UsersHistoryPanel({
             />
           </div>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.history.typeAria')}>
-            <button
-              type="button"
-              className={`usr-filter-chip${typeFilter === 'todos' ? ' active' : ''}`}
-              onClick={() => setTypeFilter('todos')}
-            >
-              {t('admin.users.communications.all')}
-            </button>
-            {USER_NOTICE_TYPES.map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                className={`usr-filter-chip${typeFilter === type.id ? ' active' : ''}`}
-                onClick={() => setTypeFilter(type.id)}
-              >
-                {t(`admin.users.noticeType.${type.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('admin.users.history.typeAria')}</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <option value="todos">{t('admin.users.communications.all')}</option>
+              {USER_NOTICE_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{t(`admin.users.noticeType.${type.id}`)}</option>
+              ))}
+            </select>
+          </label>
 
-          <div className="usr-filter-strip usr-filter-strip--compact" aria-label={t('admin.users.history.statusAria')}>
-            {USER_NOTICE_STATUSES.map((status) => (
-              <button
-                key={status.id}
-                type="button"
-                className={`usr-filter-chip${statusFilter === status.id ? ' active' : ''}`}
-                onClick={() => setStatusFilter(status.id)}
-              >
-                {t(`admin.users.status.${status.id}.label`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('admin.users.history.statusAria')}</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              {USER_NOTICE_STATUSES.map((status) => (
+                <option key={status.id} value={status.id}>{t(`admin.users.status.${status.id}.label`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {sourceReady && visibleHistory.length > 0 ? (

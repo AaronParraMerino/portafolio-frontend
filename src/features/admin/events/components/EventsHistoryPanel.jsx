@@ -97,31 +97,23 @@ export default function EventsHistoryPanel({
             />
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.history.typeAria')}>
-            {EVENT_HISTORY_TYPES.map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                className={`evt-filter-chip${typeFilter === type.id ? ' active' : ''}`}
-                onClick={() => setTypeFilter(type.id)}
-              >
-                {t(`adminEvents.historyType.${type.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('adminEvents.history.typeAria')}</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              {EVENT_HISTORY_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{t(`adminEvents.historyType.${type.id}`)}</option>
+              ))}
+            </select>
+          </label>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.history.statusAria')}>
-            {EVENT_HISTORY_STATUS.map((status) => (
-              <button
-                key={status.id}
-                type="button"
-                className={`evt-filter-chip${statusFilter === status.id ? ' active' : ''}`}
-                onClick={() => setStatusFilter(status.id)}
-              >
-                {t(`adminEvents.status.${status.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('adminEvents.history.statusAria')}</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              {EVENT_HISTORY_STATUS.map((status) => (
+                <option key={status.id} value={status.id}>{t(`adminEvents.status.${status.id}`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {sourceReady && visibleHistory.length > 0 ? (

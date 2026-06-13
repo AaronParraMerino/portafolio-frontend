@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   BsBell,
   BsEnvelope,
-  BsFunnel,
   BsMegaphone,
   BsPeople,
   BsPhone,
@@ -84,9 +83,6 @@ export default function EventsCommunicationsPanel({
           </div>
 
           <div className="evt-view-toolbar-actions">
-            <button type="button" className="evt-icon-btn" title={t('adminEvents.communications.filters')} aria-label={t('adminEvents.communications.filters')}>
-              <BsFunnel />
-            </button>
             {onCreateCommunication ? (
               <button
                 type="button"
@@ -115,31 +111,23 @@ export default function EventsCommunicationsPanel({
             />
           </div>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.communications.typeAria')}>
-            {EVENT_COMMUNICATION_TYPES.map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                className={`evt-filter-chip${typeFilter === type.id ? ' active' : ''}`}
-                onClick={() => setTypeFilter(type.id)}
-              >
-                {t(`adminEvents.type.${type.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('adminEvents.communications.typeAria')}</span>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              {EVENT_COMMUNICATION_TYPES.map((type) => (
+                <option key={type.id} value={type.id}>{t(`adminEvents.type.${type.id}`)}</option>
+              ))}
+            </select>
+          </label>
 
-          <div className="evt-filter-group evt-filter-group--compact" aria-label={t('adminEvents.communications.statusAria')}>
-            {EVENT_COMMUNICATION_STATUS.map((status) => (
-              <button
-                key={status.id}
-                type="button"
-                className={`evt-filter-chip${statusFilter === status.id ? ' active' : ''}`}
-                onClick={() => setStatusFilter(status.id)}
-              >
-                {t(`adminEvents.status.${status.id}`)}
-              </button>
-            ))}
-          </div>
+          <label className="adm-filter-field">
+            <span>{t('adminEvents.communications.statusAria')}</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              {EVENT_COMMUNICATION_STATUS.map((status) => (
+                <option key={status.id} value={status.id}>{t(`adminEvents.status.${status.id}`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {sourceReady && visibleCommunications.length > 0 ? (
@@ -198,7 +186,7 @@ export default function EventsCommunicationsPanel({
                       className="evt-mini-action"
                       onClick={() => onEditCommunication?.(item)}
                     >
-                      Revisar
+                      {t('adminEvents.communications.review')}
                     </button>
                   </div>
                 </article>
