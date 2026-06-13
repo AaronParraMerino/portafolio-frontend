@@ -46,7 +46,6 @@ export default function Hero({ eventsState }) {
   const { t } = useLanguage();
   const heroRef = useRef(null);
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
   const [stats, setStats] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
@@ -86,20 +85,6 @@ export default function Hero({ eventsState }) {
       setActiveSlide(0);
     }
   }, [activeSlide, slideCount]);
-
-  const goToSearch = (term = searchTerm) => {
-    const cleanTerm = term.trim();
-    if (cleanTerm) {
-      navigate(`/portafolios?q=${encodeURIComponent(cleanTerm)}`);
-      return;
-    }
-    navigate('/portafolios');
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    goToSearch();
-  };
 
   const moveSlide = (step) => {
     setActiveSlide((index) => (index + step + slideCount) % slideCount);
@@ -665,47 +650,6 @@ export default function Hero({ eventsState }) {
               <span className="spk-chip-dot" />{c.text}
             </div>
           ))}
-        </div>
-
-        {/* Buscador público — esquina superior izquierda */}
-        <div className="spk-search-box" aria-label={t('hero.search.aria')}>
-          <form className="spk-portfolio-search" onSubmit={handleSubmit}>
-            <div className="spk-search-input-wrap">
-              <span className="spk-search-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-3.8-3.8" />
-                </svg>
-              </span>
-              <input
-                className="spk-search-input"
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder={t('hero.search.placeholder')}
-                aria-label={t('hero.search.aria')}
-              />
-            </div>
-
-            <button className="spk-search-btn" type="submit">
-              {t('hero.search.button')}
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14" />
-                <path d="M13 6l6 6-6 6" />
-              </svg>
-            </button>
-          </form>
-
-          <div className="spk-search-meta">
-            <button className="spk-advanced-btn" type="button" onClick={() => navigate('/portafolios')}>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6h16" />
-                <path d="M7 12h10" />
-                <path d="M10 18h4" />
-              </svg>
-              {t('hero.advancedSearch')}
-            </button>
-          </div>
         </div>
 
         {/* Contenido principal y eventos destacados */}
