@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainLayout from '../../shared/components/layout/MainLayout';
 import HomePage from '../../features/public/home/pages/HomePage';
 import PortfolioSearchPage from '../../features/public/portfolio-search/pages/PortfolioSearchPage';
@@ -38,6 +39,111 @@ import PublicProjectsPage from '../../features/public/projects/pages/PublicProje
 import { getStoredUser, isAdminUser } from '../../shared/utils/authStorage';
 import { LanguageProvider } from '../i18n';
 
+const SCROLLABLE_ROUTE_CONTAINERS = [
+  '.dsh-main',
+  '.dsh-paused-content',
+  '.prj-content',
+  '.dbe-content',
+  '.usr-content',
+  '.evt-content',
+  '.aud-content',
+  '.rpt-content',
+  '.bkp-content',
+  '.sk-view-content',
+  '.exp-content',
+];
+
+const ROUTE_SCROLL_DURATION_MS = 620;
+
+function easeInOutCubic(progress) {
+  return progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - ((-2 * progress + 2) ** 3) / 2;
+}
+
+function animateValue(from, to, duration, onUpdate) {
+  const start = performance.now();
+  let frameId = 0;
+
+  const tick = (now) => {
+    const progress = Math.min(1, (now - start) / duration);
+    const eased = easeInOutCubic(progress);
+    onUpdate(from + ((to - from) * eased));
+
+    if (progress < 1) {
+      frameId = window.requestAnimationFrame(tick);
+    }
+  };
+
+  frameId = window.requestAnimationFrame(tick);
+  return () => window.cancelAnimationFrame(frameId);
+}
+
+function animateWindowToTop() {
+  const startY = window.scrollY || window.pageYOffset || 0;
+  if (startY <= 1) return () => {};
+
+  return animateValue(startY, 0, ROUTE_SCROLL_DURATION_MS, (top) => {
+    window.scrollTo(0, top);
+  });
+}
+
+function animateElementToTop(element) {
+  if (!element || element.scrollTop <= 1) return () => {};
+
+  const startY = element.scrollTop;
+  return animateValue(startY, 0, ROUTE_SCROLL_DURATION_MS, (top) => {
+    if (element.isConnected) element.scrollTop = top;
+  });
+}
+
+function jumpToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  SCROLLABLE_ROUTE_CONTAINERS.forEach((selector) => {
+    document.querySelectorAll(selector).forEach((element) => {
+      element.scrollTop = 0;
+      element.scrollLeft = 0;
+    });
+  });
+}
+
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    let cleanupAnimations = [];
+    let firstFrame = 0;
+    let secondFrame = 0;
+
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (reduceMotion) {
+          jumpToTop();
+          return;
+        }
+
+        cleanupAnimations = [animateWindowToTop()];
+
+        SCROLLABLE_ROUTE_CONTAINERS.forEach((selector) => {
+          document.querySelectorAll(selector).forEach((element) => {
+            cleanupAnimations.push(animateElementToTop(element));
+          });
+        });
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      cleanupAnimations.forEach((cleanup) => cleanup());
+    };
+  }, [pathname, search]);
+
+  return null;
+}
+
 function RoleGate({ children, adminOnly = false, userOnly = false }) {
   const user = getStoredUser();
 
@@ -60,6 +166,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
   return (
     <LanguageProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
 
         {/* ── CON Navbar y Footer ── */}
