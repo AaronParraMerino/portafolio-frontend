@@ -9,7 +9,7 @@ import RecentProjectsHero from '../components/projects/RecentProjectsHero';
 import useHomeEvents from '../hooks/useHomeEvents';
 import useRecentProjects from '../hooks/useRecentProjects';
 import { getPublicProjectDetail } from '../services/homePortfolioService';
-import { getStoredUser } from '../../../../shared/utils/authStorage';
+import { hasActiveStoredSession } from '../../../../shared/utils/authStorage';
 
 export default function HomePage() {
   const eventsState = useHomeEvents();
@@ -20,7 +20,7 @@ export default function HomePage() {
   const [projectDetailError, setProjectDetailError] = useState('');
 
   const openProjectDetail = async (project) => {
-    if (!getStoredUser()) {
+    if (!hasActiveStoredSession()) {
       sessionStorage.setItem('auth:return-to', '/');
       navigate('/auth/login', { state: { from: '/' } });
       return;

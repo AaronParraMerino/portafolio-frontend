@@ -10,9 +10,9 @@ import {
   FaUserCircle,
 } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-import { GoogleLogin } from "@react-oauth/google";
 import PoliticaPrivacidad from "./PoliticasP";
 import PoliticaCookies from "./PoliticasC";
+import GoogleCredentialButton from "./GoogleCredentialButton";
 import { BASE_SESSION_TOKEN_KEY } from "../services/sessionService";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import "./RegisterForm.css";
@@ -617,7 +617,7 @@ export default function RegisterForm() {
 
               {googleClientId ? (
                 <div className="reg-google-wrapper" ref={googleButtonRef}>
-                  <GoogleLogin
+                  <GoogleCredentialButton
                     onSuccess={handleGoogleLogin}
                     onError={() =>
                       setError(
@@ -627,8 +627,6 @@ export default function RegisterForm() {
                     text="continue_with"
                     shape="rectangular"
                     width={`${googleButtonWidth}`}
-                    auto_select={false}
-                    useOneTap={false}
                   />
                 </div>
               ) : (

@@ -74,6 +74,11 @@ export function getStoredUser() {
   }
 }
 
+export function hasActiveStoredSession() {
+  const token = localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT');
+  return Boolean(token && getStoredUser());
+}
+
 async function isPausedAccountResponse(response) {
   if (response.status !== 423) return false;
 

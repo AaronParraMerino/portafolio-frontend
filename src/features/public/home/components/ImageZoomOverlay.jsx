@@ -98,18 +98,43 @@ export default function ImageZoomOverlay({ src, alt = '', onClose }) {
   };
 
   const handleTouchMove = (event) => {
-    if (event.touches.length === 2 && pinchRef.current) {
-      setScale(pinchRef.current.scale * (touchDistance(event.touches) / pinchRef.current.distance));
+    const pinch = pinchRef.current;
+
+    if (event.touches.length === 2 && pinch) {
+      const distance = touchDistance(event.touches);
+      setScale(pinch.scale * (distance / pinch.distance));
       return;
     }
 
-    if (event.touches.length === 1 && dragRef.current && transform.scale > 1) {
+    const drag = dragRef.current;
+    const touch = event.touches[0];
+
+    if (event.touches.length === 1 && drag && touch && transform.scale > 1) {
+      const nextX = drag.originX + touch.clientX - drag.startX;
+      const nextY = drag.originY + touch.clientY - drag.startY;
+
       setTransform((current) => ({
         ...current,
-        x: dragRef.current.originX + event.touches[0].clientX - dragRef.current.startX,
-        y: dragRef.current.originY + event.touches[0].clientY - dragRef.current.startY,
+        x: nextX,
+        y: nextY,
       }));
     }
+  };
+
+  const handleTouchEnd = (event) => {
+    pinchRef.current = null;
+
+    if (event.touches.length === 1 && transform.scale > 1) {
+      dragRef.current = {
+        startX: event.touches[0].clientX,
+        startY: event.touches[0].clientY,
+        originX: transform.x,
+        originY: transform.y,
+      };
+      return;
+    }
+
+    dragRef.current = null;
   };
 
   return (
@@ -134,10 +159,8 @@ export default function ImageZoomOverlay({ src, alt = '', onClose }) {
         onPointerCancel={() => { dragRef.current = null; }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
-        onTouchEnd={() => {
-          dragRef.current = null;
-          pinchRef.current = null;
-        }}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
         onDoubleClick={reset}
       >
         <div className="izo-controls">

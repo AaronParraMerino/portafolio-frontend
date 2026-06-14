@@ -5,6 +5,7 @@ import { useLanguage } from '../../../../core/i18n';
 import { getHomeStats } from '../services/homePortfolioService';
 import useHeroInputNavigation from '../hooks/useHeroInputNavigation';
 import { EventDetailModal, EventHeroBanner } from './events';
+import { hasActiveStoredSession } from '../../../../shared/utils/authStorage';
 
 /* ── Datos ── */
 const CHIPS_LEFT = [
@@ -104,9 +105,23 @@ export default function Hero({ eventsState }) {
     }
   }, [activeSlide, slideCount]);
 
+  const redirectToLogin = () => {
+    sessionStorage.setItem('auth:return-to', '/');
+    navigate('/auth/login', { state: { from: '/' } });
+  };
+
+  const handleViewDetails = (event) => {
+    if (!hasActiveStoredSession()) {
+      redirectToLogin();
+      return;
+    }
+
+    setSelectedEvent(event);
+  };
+
   const handleRegister = async (event) => {
-    if (event?.requiresLogin) {
-      navigate('/auth/login', { state: { from: '/' } });
+    if (!hasActiveStoredSession()) {
+      redirectToLogin();
       return;
     }
 
@@ -795,7 +810,7 @@ export default function Hero({ eventsState }) {
             <EventHeroBanner
               events={[highlighted[activeSlide - 1]]}
               onRegister={handleRegister}
-              onViewDetails={setSelectedEvent}
+              onViewDetails={handleViewDetails}
               registeringId={eventsState?.registeringId}
               showMobileNavigation={false}
             />
