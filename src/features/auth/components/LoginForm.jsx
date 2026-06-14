@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { FaDiscord, FaGithub, FaGitlab, FaUserCircle } from "react-icons/fa";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-import { GoogleLogin } from "@react-oauth/google";
 import { Link } from "react-router-dom";
+import GoogleCredentialButton from "./GoogleCredentialButton";
 import Navbar from "../../../shared/components/layout/Navbar";
 import {
   BlockedAccountModal,
@@ -409,7 +409,7 @@ export default function LoginForm() {
 
                 {googleClientId ? (
                   <div className="google-login-wrapper" ref={googleButtonRef}>
-                    <GoogleLogin
+                    <GoogleCredentialButton
                       onSuccess={handleGoogleLogin}
                       onError={() =>
                         setError(
@@ -419,8 +419,6 @@ export default function LoginForm() {
                       text="continue_with"
                       shape="rectangular"
                       width={`${googleButtonWidth}`}
-                      auto_select={false}
-                      useOneTap={false}
                     />
                   </div>
                 ) : (
