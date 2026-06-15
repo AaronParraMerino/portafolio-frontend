@@ -12,7 +12,10 @@ import ProjectsToast       from '../components/ProjectsToast';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import { ESTADOS_PROYECTO, getProjectOptionLabel } from '../model/projectsModel';
-import { getProyectoDeletionPreview } from '../services/projectsService';
+import {
+  getProyectoConfiguracion,
+  getProyectoDeletionPreview,
+} from '../services/projectsService';
 
 const ESTADO_DETALLE = {
   publicado: 'projects.statusDetail.publicado',
@@ -74,6 +77,7 @@ export default function ProjectsPage() {
   const [confirmDelError, setConfirmDelError] = useState('');
   const [confirmDetach, setConfirmDetach] = useState(null);
   const [configurando, setConfigurando] = useState(null);
+  const [cargandoConfiguracionId, setCargandoConfiguracionId] = useState(null);
   const [estadoProyecto, setEstadoProyecto] = useState(null);
   const [estadoSeleccionado, setEstadoSeleccionado] = useState('');
   const [estadoError, setEstadoError] = useState('');
@@ -170,6 +174,32 @@ export default function ProjectsPage() {
 
     tarea.catch(() => {});
     return tarea;
+  };
+
+  const handleAbrirConfiguracion = async (proyecto) => {
+    const id = proyecto?.id || proyecto?.id_proyecto;
+    if (!id || savingProjectIdSet.has(String(id)) || cargandoConfiguracionId !== null) return;
+
+    setCargandoConfiguracionId(String(id));
+
+    try {
+      const data = await getProyectoConfiguracion(id);
+      const permisos = data?.permisos || proyecto?.permisos || {};
+
+      setConfigurando({
+        ...proyecto,
+        configuracion: data?.configuracion || proyecto?.configuracion || {},
+        permisos,
+        puede_editar: permisos.puede_editar ?? proyecto?.puede_editar,
+        puede_configurar: permisos.puede_configurar ?? proyecto?.puede_configurar,
+        puede_eliminar: permisos.puede_eliminar ?? proyecto?.puede_eliminar,
+      });
+    } catch (error) {
+      await refrescar({ silent: true }).catch(() => {});
+      window.alert(error.message || 'No se pudo cargar la configuración actual del proyecto.');
+    } finally {
+      setCargandoConfiguracionId(null);
+    }
   };
 
   const handleAbrirEstadoProyecto = (proyecto) => {
@@ -302,13 +332,10 @@ export default function ProjectsPage() {
           onEditar={handleEditar}
           onEliminar={handleAbrirEliminar}
           onDesvincular={(p) => setConfirmDetach(p)}
-          onConfigurar={(p) => {
-            const id = p?.id || p?.id_proyecto;
-            if (id && savingProjectIdSet.has(String(id))) return;
-            setConfigurando(p);
-          }}
+          onConfigurar={handleAbrirConfiguracion}
           onEstadoProyecto={handleAbrirEstadoProyecto}
           onAgregar={handleAgregarNuevo}
+          validatingConfigurationId={cargandoConfiguracionId}
         />
 
       </div>

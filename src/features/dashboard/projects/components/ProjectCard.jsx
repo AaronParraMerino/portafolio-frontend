@@ -400,6 +400,7 @@ export default function ProjectCard({
   onDesvincular,
   onConfigurar,
   onEstadoProyecto,
+  validatingConfiguration = false,
 }) {
   const { t, language } = useLanguage();
   const [idx, setIdx] = useState(0);
@@ -632,6 +633,8 @@ export default function ProjectCard({
             onDesvincular={onDesvincular}
             onConfigurar={onConfigurar}
             onEstadoProyecto={onEstadoProyecto}
+            disabled={validatingConfiguration}
+            loading={validatingConfiguration}
           />
         </div>
       </div>
