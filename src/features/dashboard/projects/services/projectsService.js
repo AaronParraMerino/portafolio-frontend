@@ -1619,6 +1619,31 @@ export async function getProyectos({ force = false } = {}) {
   return lista.map(normalizeProyectoFromApi);
 }
 
+export async function getProyectosProgressively({ perPage = 12, onPage } = {}) {
+  const { userId } = getSession();
+  const collected = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const endpoint = `${userProjectsEndpoint(userId)}?page=${page}&per_page=${perPage}`;
+    const data = await apiFetch(`${API_URL}${endpoint}`);
+    const items = unwrapProjectsPayload(data).map(normalizeProyectoFromApi);
+
+    collected.push(...items);
+    onPage?.([...collected], {
+      ...(data?.meta || {}),
+      pagina_actual: page,
+    });
+
+    hasMore = Boolean(data?.meta?.hay_mas);
+    page += 1;
+  }
+
+  writeUserProjectsCache(userId, collected, { invalidate: false });
+  return collected;
+}
+
 export async function getProyecto(id, { force = false } = {}) {
   const { userId } = getSession();
   const endpoint = projectEndpoint(id);
@@ -1669,6 +1694,7 @@ export async function actualizarProyecto(id, datos) {
         : item;
     });
   });
+  clearProyectoParticipantesCache(id);
   removeCachedDashboardEndpoint(projectEndpoint(id));
 
   return normalizeProyectoFromApi(project);
@@ -1907,6 +1933,8 @@ export async function actualizarEnlacesProyecto(id, datos = {}) {
   });
 
   const project = data?.data || data?.proyecto || data;
+  clearProyectoParticipantesCache(id);
+  removeCachedDashboardEndpoint(projectEndpoint(id));
 
   return normalizeProyectoFromApi(project);
 }

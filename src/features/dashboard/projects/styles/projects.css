@@ -375,6 +375,14 @@
   width: 14px; height: 14px;
   stroke: rgba(255,255,255,.85); fill: none; stroke-width: 2;
 }
+.prj-dots-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: prj-spin .7s linear infinite;
+}
 
 .prj-dots-menu {
   position: absolute; top: calc(100% + 6px); right: 0;

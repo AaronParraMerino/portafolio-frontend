@@ -30,6 +30,7 @@ export default function ProjectsGrid({
   onConfigurar,
   onEstadoProyecto,
   onAgregar,
+  validatingConfigurationId = null,
 }) {
   const { t } = useLanguage();
 
@@ -90,6 +91,9 @@ export default function ProjectsGrid({
           onDesvincular={onDesvincular}
           onConfigurar={onConfigurar}
           onEstadoProyecto={onEstadoProyecto}
+          validatingConfiguration={
+            String(getProjectKey(p, index)) === String(validatingConfigurationId)
+          }
         />
       ))}
 

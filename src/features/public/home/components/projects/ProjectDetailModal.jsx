@@ -5,7 +5,6 @@ import {
   BsChevronLeft,
   BsChevronRight,
   BsCodeSlash,
-  BsGithub,
   BsPeople,
   BsStar,
   BsX,
@@ -18,6 +17,7 @@ import {
   getProjectStatusLabel,
   getProjectTypeLabel,
 } from '../../../../dashboard/projects/model/projectsModel';
+import RepositoryProviderIcon, { getRepositoryProvider } from '../../../../dashboard/projects/components/RepositoryProviderIcon';
 import './projectDetailModal.css';
 
 function youtubeEmbed(url = '') {
@@ -58,6 +58,19 @@ function demoFromProject(project = {}) {
   return (project?.evidencias || []).find((item) => (
     ['demo', 'sitio', 'sitio_web', 'web'].includes(String(item.tipo || '').toLowerCase()) && item.url
   )) || null;
+}
+
+function participantCardClass(participant = {}) {
+  if (participant.es_propietario_repositorio) return 'is-repository-owner';
+
+  const role = String(participant.rol || participant.role || participant.github_role || '')
+    .trim()
+    .toLowerCase();
+  const isMaintainer = /maintainer|mantenedor|mantenedora|admin/.test(role);
+
+  if (participant.vinculado_repositorio && !isMaintainer) return 'is-repository-collaborator';
+  if (participant.vinculado_repositorio) return 'is-other-repository-role';
+  return '';
 }
 
 export default function ProjectDetailModal({ project, loading, error, onClose }) {
@@ -187,7 +200,7 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
                 {project.participantes.map((participant, index) => (
                   <Link
                     key={`participant-${participant.id_participacion || participant.id_usuario || index}-${index}`}
-                    className={participant.vinculado_repositorio || participant.es_propietario_repositorio ? 'is-repository-linked' : ''}
+                    className={participantCardClass(participant)}
                     to={participant.ruta_portafolio || `/portafolio/${participant.id_usuario}`}
                     aria-label={t('home.projects.detail.viewPortfolio', { name: participant.nombre })}
                   >
@@ -210,7 +223,11 @@ export default function ProjectDetailModal({ project, loading, error, onClose })
               <div className="pdm-repositories">
                 {project.repositorios.map((repo, index) => (
                   <article key={`repository-${repo.id_proyecto_repositorio || repo.url_repositorio || index}-${index}`}>
-                    <div><BsGithub /><strong>{repo.nombre || repo.github_repo_name || t('home.projects.detail.repository')}</strong><span>{repo.proveedor}</span></div>
+                    <div>
+                      <RepositoryProviderIcon provider={getRepositoryProvider(repo)} />
+                      <strong>{repo.nombre || repo.github_repo_name || t('home.projects.detail.repository')}</strong>
+                      <span>{getRepositoryProvider(repo) === 'gitlab' ? 'GitLab' : 'GitHub'}</span>
+                    </div>
                     <p>{repo.descripcion || repo.github_description || repo.readme_resumen || t('home.projects.detail.noDescription')}</p>
                     <div className="pdm-repo-stats">
                       <span><BsStar /> {repo.stars_count || 0}</span>
