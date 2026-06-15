@@ -2,6 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import '../styles/profile.css';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import { useLanguage } from '../../../../core/i18n';
+import {
+  DashboardCheckIcon,
+  DashboardCloseIcon,
+  DashboardDeleteIcon,
+  DashboardEditIcon,
+  DashboardUploadIcon,
+  DashboardWarningIcon,
+} from '../../layout/DashboardIcons';
 
 /* ══════════════════════════════════════════════
    MODAL: Subir imagen (banner o avatar)
@@ -61,7 +69,7 @@ function UploadImageModal({ tipo, onConfirm, onClose }) {
               </div>
             </div>
             <button className="prf-modal-close" onClick={onClose}>
-              <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
+              <DashboardCloseIcon />
             </button>
           </div>
 
@@ -79,17 +87,13 @@ function UploadImageModal({ tipo, onConfirm, onClose }) {
                     className={`prf-upload-preview${tipo === "avatar" ? " round" : ""}`} />
                   <button className="prf-upload-remove"
                     onClick={(e) => { e.stopPropagation(); limpiar(); }} title={t('profile.image.removePreview')}>
-                    <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
+                    <DashboardCloseIcon />
                   </button>
                 </div>
               ) : (
                 <div className="prf-upload-placeholder">
                   <div className="prf-upload-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
+                    <DashboardUploadIcon />
                   </div>
                   <div className="prf-upload-text">{t('profile.image.dropHere')}</div>
                   <div className="prf-upload-subtext">{t('profile.image.clickSelect')}</div>
@@ -103,7 +107,7 @@ function UploadImageModal({ tipo, onConfirm, onClose }) {
             {preview && (
               <button className="prf-btn-outline" style={{ marginTop: 12, fontSize: 12 }}
                 onClick={() => inputRef.current?.click()}>
-                <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
+                <DashboardEditIcon />
                 {t('profile.image.chooseAnother')}
               </button>
             )}
@@ -112,7 +116,7 @@ function UploadImageModal({ tipo, onConfirm, onClose }) {
           <div className="prf-modal-foot">
             <button className="prf-btn-cancel" onClick={onClose}>{t('profile.action.cancel')}</button>
             <button className="prf-btn-save" onClick={handleGuardarClick} disabled={!archivo}>
-              <svg viewBox="0 0 12 12"><path d="M1 6l3.5 3.5L11 2" stroke="currentColor" fill="none" strokeWidth="2"/></svg>{t('profile.image.saveLabel', { label })}
+              <DashboardCheckIcon />{t('profile.image.saveLabel', { label })}
             </button>
           </div>
         </div>
@@ -144,11 +148,7 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose }) {
         <div className="prf-modal-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--rojo-bg)', border: '1.5px solid var(--rojo-borde)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--rojo-soft)" strokeWidth="1.8">
-                <path d="M8 1.5L14.5 13H1.5L8 1.5z"/>
-                <path d="M8 6v3.5"/>
-                <circle cx="8" cy="11.5" r=".5" fill="var(--rojo-soft)"/>
-              </svg>
+              <DashboardWarningIcon />
             </div>
             <div>
               <div className="prf-modal-title">{tipo === 'banner' ? t('profile.image.deleteBannerTitle') : t('profile.image.deleteAvatarTitle')}</div>
@@ -156,7 +156,7 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose }) {
             </div>
           </div>
           <button className="prf-modal-close" onClick={onClose}>
-            <svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>
+            <DashboardCloseIcon />
           </button>
         </div>
         <div className="prf-modal-body" style={{ padding: '18px 22px' }}>
@@ -167,7 +167,7 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose }) {
         <div className="prf-modal-foot">
           <button className="prf-btn-cancel" onClick={onClose}>{t('profile.action.cancel')}</button>
           <button className="prf-btn-save" style={{ background: 'var(--rojo-soft)' }} onClick={onConfirm}>
-            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1,3 11,3"/><path d="M4.5 3V1.5h3V3M2 3v7a1.5 1.5 0 001.5 1.5h5A1.5 1.5 0 0010 10V3"/><line x1="4.5" y1="5.5" x2="4.5" y2="9"/><line x1="7.5" y1="5.5" x2="7.5" y2="9"/></svg>{t('profile.image.confirmDelete')}
+            <DashboardDeleteIcon />{t('profile.image.confirmDelete')}
           </button>
         </div>
       </div>
@@ -220,17 +220,12 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
           <div className="prf-img-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button className="prf-avatar-btn" style={{ position: 'static', transform: 'none', margin: 0 }}
               title={t('profile.image.changeBanner')} onClick={() => setModal({ tipo: 'upload-banner' })}>
-              <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
+              <DashboardEditIcon />
             </button>
             {perfil.bannerUrl && (
               <button className="prf-avatar-delete-btn" style={{ position: 'static', transform: 'none', margin: 0 }}
                 title={t('profile.image.deleteBannerTitle')} onClick={() => setModal({ tipo: 'delete-banner' })}>
-                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <polyline points="1,2.5 11,2.5"/>
-                  <path d="M4 2.5V1.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V2.5M2 2.5v7A1.5 1.5 0 003.5 11h5A1.5 1.5 0 0010 9.5v-7"/>
-                  <line x1="4.5" y1="5" x2="4.5" y2="9"/>
-                  <line x1="7.5" y1="5" x2="7.5" y2="9"/>
-                </svg>
+                <DashboardDeleteIcon />
               </button>
             )}
           </div>
@@ -244,17 +239,12 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
           </div>
           <button className="prf-avatar-btn" title={t('profile.image.changeAvatar')}
             onClick={() => setModal({ tipo: 'upload-avatar' })}>
-            <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
+            <DashboardEditIcon />
           </button>
           {perfil.avatarUrl && (
             <button className="prf-avatar-delete-btn" title={t('profile.image.deleteAvatarTitle')}
               onClick={() => setModal({ tipo: 'delete-avatar' })}>
-              <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <polyline points="1,2.5 11,2.5"/>
-                <path d="M4 2.5V1.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V2.5M2 2.5v7A1.5 1.5 0 003.5 11h5A1.5 1.5 0 0010 9.5v-7"/>
-                <line x1="4.5" y1="5" x2="4.5" y2="9"/>
-                <line x1="7.5" y1="5" x2="7.5" y2="9"/>
-              </svg>
+              <DashboardDeleteIcon />
             </button>
           )}
         </div>
@@ -265,7 +255,7 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
           </div>
           <div className="prf-acciones">
             <button className="prf-btn-primary" onClick={onEditar}>
-              <svg viewBox="0 0 14 14"><path d="M2 11.5V13h1.5l5-5-1.5-1.5-5 5zM12.5 3.5a1 1 0 000-1.4L11.4 1a1 1 0 00-1.4 0L9 2 12 5z"/></svg>
+              <DashboardEditIcon />
               {t('profile.action.edit')}
             </button>
           </div>

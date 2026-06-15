@@ -1,5 +1,5 @@
-import { FiPlus } from 'react-icons/fi';
 import Header from '../../layout/Header';
+import { DashboardAddIcon } from '../../layout/DashboardIcons';
 import { useLanguage } from '../../../../core/i18n';
 
 /* ════════════════════════════════════════
@@ -20,7 +20,7 @@ export default function ProjectsHeader({ onAgregar }) {
           label: t('projects.header.add'),
           title: t('projects.header.addProject'),
           ariaLabel: t('projects.header.addProject'),
-          icon: <FiPlus />,
+          icon: <DashboardAddIcon />,
           onClick: onAgregar,
         },
       ]}

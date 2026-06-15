@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '../../../../core/i18n';
-import { FiPlus } from 'react-icons/fi';
 import '../styles/projects.css';
 import { useProjects } from '../hooks/useProjects';
 import Header from '../../layout/Header';
+import { DashboardAddIcon } from '../../layout/DashboardIcons';
 import ProjectsFilters     from '../components/ProjectsFilters';
 import ProjectsGrid        from '../components/ProjectsGrid';
 import ProjectsEdit        from '../components/ProjectsEdit';
@@ -89,7 +89,7 @@ export default function ProjectsPage() {
       label: t('projects.header.add'),
       title: t('projects.header.addProject'),
       ariaLabel: t('projects.header.addProject'),
-      icon: <FiPlus />,
+      icon: <DashboardAddIcon />,
       onClick: () => setEditando('nuevo'),
     },
   ];

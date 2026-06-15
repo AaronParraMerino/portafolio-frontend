@@ -6,6 +6,10 @@ import DashboardEdit, {
   DashboardEditBody,
   DashboardEditFooter,
 } from '../../layout/DashboardEdit';
+import {
+  DashboardCheckIcon,
+  DashboardWarningIcon,
+} from '../../layout/DashboardIcons';
 
 /* ══════════════════════════════════════════════
    DATOS: Países con bandera, código y regex tel
@@ -247,9 +251,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
       >
           {submitAttempted && hasErrors && (
             <div className="dash-edit-banner-error prf-global-error-banner" role="alert">
-              <svg viewBox="0 0 14 14" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
-                <path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10v.5"/>
-              </svg>
+              <DashboardWarningIcon />
               {t('profile.edit.reviewErrors')}
             </div>
           )}
@@ -337,7 +339,7 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
               <button type="submit" className="dash-edit-btn dash-edit-btn--primary" disabled={guardando}>
                 {guardando
                   ? <><span className="dash-edit-spinner" /> {t('profile.action.saving')}</>
-                  : <><svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" fill="none" strokeWidth="2.2"/></svg>{t('profile.action.saveChanges')}</>
+                  : <><DashboardCheckIcon />{t('profile.action.saveChanges')}</>
                 }
               </button>
             </DashboardEditFooter>

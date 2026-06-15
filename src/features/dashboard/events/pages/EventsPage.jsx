@@ -29,6 +29,12 @@ import {
 import '../../../admin/events/styles/events.css';
 import '../styles/dashboard-events.css';
 import PublisherPermissionModal from '../components/PublisherPermissionModal';
+import {
+  DashboardCalendarIcon,
+  DashboardCheckIcon,
+  DashboardEventsIcon,
+  DashboardStatusIcon,
+} from '../../layout/DashboardIcons';
 
 const MONTHLY_LIMIT = 3;
 
@@ -432,20 +438,32 @@ export default function DashboardEventsPage() {
 
             <section className="dbe-publisher-stats" aria-label={t('adminEvents.dashboard.publisherSummaryAria')}>
               <article>
-                <span>{t('adminEvents.dashboard.totalEvents')}</span>
-                <strong>{metrics.total}</strong>
+                <div className="dbe-stat-icon"><DashboardEventsIcon /></div>
+                <div>
+                  <strong>{metrics.total}</strong>
+                  <span>{t('adminEvents.dashboard.totalEvents')}</span>
+                </div>
               </article>
               <article>
-                <span>{t('adminEvents.dashboard.active')}</span>
-                <strong>{metrics.activo}</strong>
+                <div className="dbe-stat-icon"><DashboardCheckIcon /></div>
+                <div>
+                  <strong>{metrics.activo}</strong>
+                  <span>{t('adminEvents.dashboard.active')}</span>
+                </div>
               </article>
               <article>
-                <span>{t('adminEvents.dashboard.scheduled')}</span>
-                <strong>{metrics.programado}</strong>
+                <div className="dbe-stat-icon"><DashboardCalendarIcon /></div>
+                <div>
+                  <strong>{metrics.programado}</strong>
+                  <span>{t('adminEvents.dashboard.scheduled')}</span>
+                </div>
               </article>
               <article>
-                <span>{t('adminEvents.dashboard.monthlyQuota')}</span>
-                <strong>{remainingThisMonth}/{MONTHLY_LIMIT}</strong>
+                <div className="dbe-stat-icon"><DashboardStatusIcon /></div>
+                <div>
+                  <strong>{remainingThisMonth}/{MONTHLY_LIMIT}</strong>
+                  <span>{t('adminEvents.dashboard.monthlyQuota')}</span>
+                </div>
               </article>
             </section>
 

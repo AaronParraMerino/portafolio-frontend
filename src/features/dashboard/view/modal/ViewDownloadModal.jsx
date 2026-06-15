@@ -1,31 +1,36 @@
 import { createPortal } from 'react-dom';
-import { FiFileText, FiImage, FiMonitor, FiX } from 'react-icons/fi';
 import { useLanguage } from '../../../../core/i18n';
+import {
+  DashboardCloseIcon,
+  DashboardFileIcon,
+  DashboardImageIcon,
+  DashboardScreenIcon,
+} from '../../layout/DashboardIcons';
 
 const FORMAT_OPTIONS = [
   {
     id: 'png',
     labelKey: 'view.download.format.png.label',
     metaKey: 'view.download.format.png.meta',
-    icon: <FiImage />,
+    icon: <DashboardImageIcon />,
   },
   {
     id: 'jpg',
     labelKey: 'view.download.format.jpg.label',
     metaKey: 'view.download.format.jpg.meta',
-    icon: <FiImage />,
+    icon: <DashboardImageIcon />,
   },
   {
     id: 'pdf',
     labelKey: 'view.download.format.pdf.label',
     metaKey: 'view.download.format.pdf.meta',
-    icon: <FiFileText />,
+    icon: <DashboardFileIcon />,
   },
   {
     id: 'pptx',
     labelKey: 'view.download.format.pptx.label',
     metaKey: 'view.download.format.pptx.meta',
-    icon: <FiMonitor />,
+    icon: <DashboardScreenIcon />,
   },
 ];
 
@@ -68,7 +73,7 @@ export default function ViewDownloadModal({
             disabled={Boolean(exporting)}
             aria-label={t('actions.close')}
           >
-            <FiX />
+            <DashboardCloseIcon />
           </button>
         </div>
 

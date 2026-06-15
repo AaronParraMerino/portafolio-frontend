@@ -1,23 +1,10 @@
 import { useLanguage } from '../../../core/i18n';
+import { DashboardAddIcon } from './DashboardIcons';
 
 const toArray = (actions) => {
   if (!actions) return [];
   return Array.isArray(actions) ? actions.filter(Boolean) : [actions];
 };
-
-const PlusIcon = () => (
-  <svg
-    viewBox="0 0 16 16"
-    aria-hidden="true"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M8 3v10M3 8h10" />
-  </svg>
-);
 
 export default function Header({
   eyebrow = 'Portafolio',
@@ -42,7 +29,7 @@ export default function Header({
     actionLabel
       ? {
           label: actionLabel,
-          icon: <PlusIcon />,
+          icon: <DashboardAddIcon />,
           onClick: onAction,
         }
       : null,

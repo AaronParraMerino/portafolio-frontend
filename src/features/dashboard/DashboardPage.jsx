@@ -3,12 +3,23 @@ import { Link } from 'react-router-dom';
 import Header from './layout/Header';
 import { useDashboardSummary } from './hooks/useDashboardSummary';
 import { useLanguage } from '../../core/i18n';
+import {
+  DashboardAcademicIcon,
+  DashboardLinkIcon,
+  DashboardOpenIcon,
+  DashboardProjectIcon,
+  DashboardSettingsIcon,
+  DashboardSkillIcon,
+  DashboardUserIcon,
+  DashboardVisibleIcon,
+  DashboardWorkIcon,
+} from './layout/DashboardIcons';
 
 const QUICK_STATS = [
-  { id: 'projects', labelKey: 'dashboard.stats.projects', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { id: 'skills', labelKey: 'dashboard.stats.skills', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { id: 'experiences', labelKey: 'dashboard.stats.experiences', color: 'var(--azul)', bg: 'var(--azul-light)', border: 'var(--azul-mid)' },
-  { id: 'links', labelKey: 'dashboard.stats.links', color: 'var(--rojo-mid)', bg: 'var(--rojo-bg)', border: 'var(--rojo-borde)' },
+  { id: 'projects', labelKey: 'dashboard.stats.projects', icon: DashboardProjectIcon },
+  { id: 'skills', labelKey: 'dashboard.stats.skills', icon: DashboardSkillIcon },
+  { id: 'experiences', labelKey: 'dashboard.stats.experiences', icon: DashboardWorkIcon },
+  { id: 'links', labelKey: 'dashboard.stats.links', icon: DashboardLinkIcon },
 ];
 
 const QUICK_LINKS = [
@@ -19,26 +30,16 @@ const QUICK_LINKS = [
     to: '/dashboard/projects',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <rect x="3" y="4" width="14" height="13" rx="2" />
-        <path d="M7 4V3M13 4V3M3 8h14" />
-      </svg>
-    ),
+    Icon: DashboardProjectIcon,
   },
   {
     id: 'profile',
     labelKey: 'dashboard.quick.profile.label',
     descKey: 'dashboard.quick.profile.desc',
     to: '/dashboard/profile',
-    badgeColor: '#f59e0b',
-    badgeBg: 'rgba(245,158,11,.1)',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <circle cx="10" cy="7" r="4" />
-        <path d="M2 19c0-4.4 3.6-8 8-8s8 3.6 8 8" />
-      </svg>
-    ),
+    badgeColor: 'var(--azul)',
+    badgeBg: 'var(--azul-light)',
+    Icon: DashboardUserIcon,
   },
   {
     id: 'skills',
@@ -47,25 +48,16 @@ const QUICK_LINKS = [
     to: '/dashboard/skills',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M3 15V17h2l7-7-2-2-7 7zM17 5a1.4 1.4 0 000-2l-1.5-1.5a1.4 1.4 0 00-2 0L12 3l3.5 3.5L17 5z" />
-      </svg>
-    ),
+    Icon: DashboardSkillIcon,
   },
   {
     id: 'experience',
     labelKey: 'dashboard.quick.experience.label',
     descKey: 'dashboard.quick.experience.desc',
     to: '/dashboard/experience',
-    badgeColor: '#f59e0b',
-    badgeBg: 'rgba(245,158,11,.1)',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <rect x="3" y="4" width="14" height="13" rx="2" />
-        <path d="M7 4V2M13 4V2M3 9h14M7 13h2M7 16h6" />
-      </svg>
-    ),
+    badgeColor: 'var(--azul)',
+    badgeBg: 'var(--azul-light)',
+    Icon: DashboardAcademicIcon,
   },
   {
     id: 'enlaces',
@@ -74,26 +66,16 @@ const QUICK_LINKS = [
     to: '/dashboard/enlaces',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-        <path d="M13 10l4-4M7 10l-4 4M10 7V3M10 17v-4" />
-      </svg>
-    ),
+    Icon: DashboardLinkIcon,
   },
   {
     id: 'preview',
     labelKey: 'dashboard.quick.preview.label',
     descKey: 'dashboard.quick.preview.desc',
     to: '/dashboard/view',
-    badgeColor: 'var(--rojo-mid)',
-    badgeBg: 'var(--rojo-bg)',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <path d="M1 10S4.5 3 10 3s9 7 9 7-3.5 7-9 7-9-7-9-7z" />
-        <circle cx="10" cy="10" r="3" />
-      </svg>
-    ),
+    badgeColor: 'var(--azul)',
+    badgeBg: 'var(--azul-light)',
+    Icon: DashboardVisibleIcon,
   },
   {
     id: 'settings',
@@ -101,12 +83,7 @@ const QUICK_LINKS = [
     descKey: 'dashboard.quick.settings.desc',
     to: '/dashboard/settings',
     badge: null,
-    icon: (
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-        <circle cx="10" cy="10" r="3" />
-        <path d="M10 1v2.5M10 16.5V19M1 10h2.5M16.5 10H19M3.2 3.2l1.8 1.8M15 15l1.8 1.8M3.2 16.8L5 15M15 5l1.8-1.8" />
-      </svg>
-    ),
+    Icon: DashboardSettingsIcon,
   },
 ];
 
@@ -196,19 +173,13 @@ export default function DashboardPage() {
         </div>
 
         <div className="dsh-stats-row">
-          {QUICK_STATS.map(({ id, labelKey, color, bg, border }) => (
+          {QUICK_STATS.map(({ id, labelKey, icon: Icon }) => (
             <div className="dsh-stat-card" key={id}>
-              <div
-                className="dsh-stat-icon"
-                style={{ background: bg, border: `1px solid ${border}`, color }}
-              >
-                <svg viewBox="0 0 20 20">
-                  <circle cx="10" cy="10" r="8" />
-                  <path d="M10 6v4l3 3" />
-                </svg>
+              <div className="dsh-stat-icon">
+                <Icon />
               </div>
               <div>
-                <div className="dsh-stat-num" style={{ color }}>{countText(getStatNumber(id))}</div>
+                <div className="dsh-stat-num">{countText(getStatNumber(id))}</div>
                 <div className="dsh-stat-lbl">{t(labelKey)}</div>
               </div>
             </div>
@@ -223,11 +194,12 @@ export default function DashboardPage() {
         <div className="dsh-links-grid">
           {QUICK_LINKS.map((item) => {
             const badge = getQuickBadge(item.id);
+            const Icon = item.Icon || DashboardOpenIcon;
 
             return (
               <Link key={item.id} to={item.to} className="dsh-link-card">
                 <div className="dsh-link-card-top">
-                  <div className="dsh-link-icon">{item.icon}</div>
+                  <div className="dsh-link-icon"><Icon /></div>
                   <svg className="dsh-link-arrow" viewBox="0 0 14 14">
                     <path d="M3 11L11 3M5 3h6v6" />
                   </svg>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { preloadDashboardData } from '../services/dashboardPrefetchService';
 import { getStoredUser, onStoredUserUpdated } from '../../../shared/utils/authStorage';
@@ -27,9 +27,12 @@ function blockPausedKeyboardInteraction(event) {
 
 export default function DashboardLayout() {
   const { t } = useLanguage();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [account, setAccount] = useState(() => getStoredUser());
   const paused = account?.estado === 'pausado';
+  const isPortfolioView = location.pathname === '/dashboard/view'
+    || location.pathname.startsWith('/dashboard/view/');
 
   useEffect(() => {
     preloadDashboardData();
@@ -49,7 +52,11 @@ export default function DashboardLayout() {
         onToggle={() => setCollapsed(v => !v)}
       />
 
-      <main className={`dsh-main${collapsed ? ' collapsed' : ''}`}>
+      <main className={[
+        'dsh-main',
+        collapsed ? 'collapsed' : '',
+        isPortfolioView ? 'dsh-main--view' : '',
+      ].filter(Boolean).join(' ')}>
         {paused ? (
           <aside className="dsh-paused-banner" role="status">
             <strong>{t('dashboard.paused.badge')}</strong>

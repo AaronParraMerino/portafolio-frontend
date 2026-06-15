@@ -5,6 +5,8 @@ import {
   BsChevronRight,
   BsClock,
   BsGeoAlt,
+  BsMegaphone,
+  BsPencil,
   BsX,
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
@@ -255,9 +257,11 @@ export default function EventsCalendar({
                     {showActions ? (
                       <div className="evt-card-actions">
                         <button type="button" className="evt-btn evt-btn--ghost" onClick={() => onCommunicate(event)}>
+                          <BsMegaphone />
                           Comunicar
                         </button>
                         <button type="button" className="evt-btn evt-btn--primary" onClick={() => onEditEvent(event)}>
+                          <BsPencil />
                           Editar
                         </button>
                       </div>
