@@ -22,21 +22,25 @@ const project = {
     { id_evidencia: 2, titulo: 'Demo', tipo: 'video', url: 'https://youtube.com/watch?v=abc123' },
   ],
   tecnologias: [{ id_tecnologia: 1, nombre: 'React', version_usada: '18', porcentaje_uso: 70 }],
-  repositorios: [{ id_proyecto_repositorio: 1, nombre: 'frontend', proveedor: 'github', stars_count: 4 }],
+  repositorios: [
+    { id_proyecto_repositorio: 1, nombre: 'frontend', proveedor: 'github', stars_count: 4 },
+    { id_proyecto_repositorio: 2, nombre: 'backend-gitlab', url_repositorio: 'https://gitlab.com/example/backend' },
+  ],
   participantes: [{ id_participacion: 1, id_usuario: 10, nombre: 'Ada Lovelace', rol: 'Backend', vinculado_repositorio: true }],
   participantes_count: 1,
 };
 
 test('muestra el detalle completo y permite cerrar con Escape', () => {
   const onClose = jest.fn();
-  render(<ProjectDetailModal project={project} onClose={onClose} />);
+  const { container } = render(<ProjectDetailModal project={project} onClose={onClose} />);
 
   expect(screen.getByRole('heading', { name: 'Proyecto completo' })).toBeInTheDocument();
   expect(screen.getByText('React')).toBeInTheDocument();
   expect(screen.getByText('frontend')).toBeInTheDocument();
   expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'home.projects.detail.viewPortfolio' })).toHaveAttribute('href', '/portafolio/10');
-  expect(screen.getByRole('link', { name: 'home.projects.detail.viewPortfolio' })).toHaveClass('is-repository-linked');
+  expect(screen.getByRole('link', { name: 'home.projects.detail.viewPortfolio' })).toHaveClass('is-repository-collaborator');
+  expect(container.querySelector('.prj-repo-provider-icon.gitlab')).toBeInTheDocument();
 
   fireEvent.keyDown(window, { key: 'Escape' });
   expect(onClose).toHaveBeenCalled();
@@ -53,6 +57,29 @@ test('muestra miniatura de YouTube y el estado de carga', () => {
 
   expect(screen.getByRole('status')).toHaveTextContent('home.projects.detail.loading');
   expect(container.querySelector('img[src="https://i.ytimg.com/vi/abc123/mqdefault.jpg"]')).toBeInTheDocument();
+});
+
+test('colorea participantes segun su relacion con el repositorio', () => {
+  const categorizedProject = {
+    ...project,
+    participantes: [
+      { id_usuario: 1, nombre: 'Owner', es_propietario_repositorio: true },
+      { id_usuario: 2, nombre: 'Collaborator', vinculado_repositorio: true, rol: 'Backend' },
+      { id_usuario: 3, nombre: 'Maintainer', vinculado_repositorio: true, rol: 'Maintainer' },
+      { id_usuario: 4, nombre: 'Other', rol: 'Diseno' },
+    ],
+  };
+
+  render(<ProjectDetailModal project={categorizedProject} onClose={jest.fn()} />);
+
+  expect(screen.getByText('Owner').closest('a')).toHaveClass('is-repository-owner');
+  expect(screen.getByText('Collaborator').closest('a')).toHaveClass('is-repository-collaborator');
+  expect(screen.getByText('Maintainer').closest('a')).toHaveClass('is-other-repository-role');
+  expect(screen.getByText('Other').closest('a')).not.toHaveClass(
+    'is-repository-owner',
+    'is-repository-collaborator',
+    'is-other-repository-role'
+  );
 });
 
 test('amplia una imagen sin cerrar el detalle', () => {

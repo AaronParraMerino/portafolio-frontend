@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '../../../../core/i18n';
 import {
-  getProyectos,
+  getProyectosProgressively,
   getProyecto,
   getCachedProyectos,
   setCachedProyectos,
@@ -357,7 +357,12 @@ export function useProjects() {
     if (_cargaIniciada) return;
     _cargaIniciada = true;
 
-    getProyectos({ force: true })
+    getProyectosProgressively({
+      onPage: (items) => {
+        const mapeados = items.map(mapearProyecto);
+        setProyectos(mapeados);
+      },
+    })
       .then(data => {
         const mapeados = (data || []).map(mapearProyecto);
         setProyectos(mapeados);
@@ -615,11 +620,16 @@ export function useProjects() {
     }
   };
 
-  const refrescar = async () => {
-    setLoading(true);
+  const refrescar = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
 
     try {
-      const data = await getProyectos({ force: true });
+      const data = await getProyectosProgressively({
+        onPage: (items) => {
+          const parciales = items.map(mapearProyecto);
+          setProyectos(parciales);
+        },
+      });
       const mapeados = (data || []).map(mapearProyecto);
 
       setProyectos(mapeados);
@@ -629,12 +639,12 @@ export function useProjects() {
 
     } catch (err) {
       console.error('[useProjects] Error refrescando proyectos:', err.message);
-      mostrarToast(t('projects.toast.refreshError'), 'error');
+      if (!silent) mostrarToast(t('projects.toast.refreshError'), 'error');
       throw err;
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [guardarEnCache, mostrarToast, t]);
 
   // ════════════════════════════════════════
   // LIMPIAR CACHÉ

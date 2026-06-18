@@ -27,6 +27,7 @@ export default function ProjectsDotsMenu({
   onConfigurar,
   onEstadoProyecto,
   disabled = false,
+  loading = false,
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -37,6 +38,10 @@ export default function ProjectsDotsMenu({
   const puedeConfigurar = permisos.puede_configurar ?? proyecto?.puede_configurar ?? false;
   const puedeDesvincular = permisos.puede_desvincular_participacion ?? proyecto?.puede_desvincular_participacion ?? false;
   const puedeCambiarEstado = puedeEditar && typeof onEstadoProyecto === 'function';
+
+  useEffect(() => {
+    if (loading) setOpen(false);
+  }, [loading]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -80,13 +85,21 @@ export default function ProjectsDotsMenu({
         className="prj-dots-btn"
         type="button"
         title={t('projects.menu.options')}
-        aria-label={t('projects.menu.optionsProject')}
+        aria-label={loading ? 'Validando permisos del proyecto' : t('projects.menu.optionsProject')}
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={disabled}
         onClick={() => setOpen(v => !v)}
       >
-        <DashboardMenuIcon />
+        {loading ? (
+          <span className="prj-dots-spinner" aria-hidden="true" />
+        ) : (
+          <svg viewBox="0 0 4 16" fill="rgba(255,255,255,.85)" stroke="none">
+            <circle cx="2" cy="2" r="1.5" />
+            <circle cx="2" cy="8" r="1.5" />
+            <circle cx="2" cy="14" r="1.5" />
+          </svg>
+        )}
       </button>
 
       {open && (

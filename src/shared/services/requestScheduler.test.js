@@ -66,4 +66,31 @@ describe('requestScheduler', () => {
     await Promise.all([normal, background]);
     expect(order).toEqual(['normal', 'background']);
   });
+
+  test('prioriza high antes que normal cuando ambas esperan', async () => {
+    const order = [];
+    const releases = [];
+
+    const blocker = () => scheduleRequest(() => new Promise((resolve) => {
+      releases.push(resolve);
+    }), { priority: 'normal' });
+
+    const first = blocker();
+    const second = blocker();
+    await flush();
+
+    const normal = scheduleRequest(async () => {
+      order.push('normal');
+    }, { priority: 'normal' });
+    const high = scheduleRequest(async () => {
+      order.push('high');
+    }, { priority: 'high' });
+
+    releases.shift()();
+    await flush();
+    releases.shift()();
+    await Promise.all([first, second, normal, high]);
+
+    expect(order).toEqual(['high', 'normal']);
+  });
 });
