@@ -1,6 +1,8 @@
 export const projectsTranslations = {
   es: {
     'projects.header.title': 'Mis Proyectos',
+    'projects.summary.title': 'Proyectos',
+    'projects.summary.description': 'Gestiona tus proyectos publicados, borradores y avances desde un solo lugar.',
     'projects.header.add': 'Agregar nuevo',
     'projects.header.addProject': 'Agregar nuevo proyecto',
     'projects.loading.title': 'Cargando proyectos',
@@ -377,6 +379,8 @@ export const projectsTranslations = {
   },
   en: {
     'projects.header.title': 'My Projects',
+    'projects.summary.title': 'Projects',
+    'projects.summary.description': 'Manage your published projects, drafts, and progress from one place.',
     'projects.header.add': 'Add new',
     'projects.header.addProject': 'Add new project',
     'projects.loading.title': 'Loading projects',
@@ -753,6 +757,8 @@ export const projectsTranslations = {
   },
   pt: {
     'projects.header.title': 'Meus Projetos',
+    'projects.summary.title': 'Projetos',
+    'projects.summary.description': 'Gerencie seus projetos publicados, rascunhos e avanços em um só lugar.',
     'projects.header.add': 'Adicionar novo',
     'projects.header.addProject': 'Adicionar novo projeto',
     'projects.loading.title': 'Carregando projetos',

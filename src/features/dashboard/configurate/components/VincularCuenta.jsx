@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BASE_URL from "../../../../services/http/const";
+import DashboardFeedback from "../../layout/DashboardFeedback";
+import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
+import { useLanguage } from "../../../../core/i18n";
 
 export default function VincularCuenta() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -337,8 +341,6 @@ export default function VincularCuenta() {
           </p>
         </section>
 
-        {error ? <div style={errorStyle}>{error}</div> : null}
-        {notice ? <div style={noticeStyle}>{notice}</div> : null}
 
         {loading ? (
           <div
@@ -461,6 +463,16 @@ export default function VincularCuenta() {
             </article>
           ))}
         </section>
+        <DashboardFeedback feedback={error
+          ? { msg: error, tipo: "error" }
+          : notice
+            ? { msg: notice, tipo: "ok" }
+            : null}
+        />
+        <BackgroundSaveIndicator
+          active={Boolean(loadingProvider || unlinkingProvider || repoSyncingProvider)}
+          label={t("actions.saving")}
+        />
       </main>
     </div>
   );
@@ -685,7 +697,6 @@ const listStyle = {
 const cardStyle = {
   background: "var(--blanco)",
   border: "1px solid var(--gris-borde)",
-  borderLeft: "4px solid var(--azul)",
   borderRadius: 18,
   padding: "18px 20px",
   display: "flex",
@@ -798,26 +809,4 @@ const btnUnlinkStyle = {
   background: "var(--rojo-chip)",
   color: "var(--rojo-mid)",
   border: "1.5px solid var(--rojo-borde)",
-};
-
-const errorStyle = {
-  background: "var(--rojo-chip)",
-  border: "1px solid var(--rojo-borde)",
-  color: "var(--rojo-mid)",
-  borderRadius: 14,
-  padding: "12px 14px",
-  marginBottom: 12,
-  fontSize: 14,
-  fontWeight: 600,
-};
-
-const noticeStyle = {
-  background: "var(--verde-chip)",
-  border: "1px solid var(--verde-borde)",
-  color: "var(--verde-hover)",
-  borderRadius: 14,
-  padding: "12px 14px",
-  marginBottom: 12,
-  fontSize: 14,
-  fontWeight: 600,
 };

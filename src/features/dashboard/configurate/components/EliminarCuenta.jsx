@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearAuthStorage } from "../../../../shared/utils/authStorage";
 import { useLanguage } from "../../../../core/i18n";
+import DashboardFeedback from "../../layout/DashboardFeedback";
+import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 
 export default function EliminarCuenta() {
   const navigate = useNavigate();
@@ -134,7 +136,7 @@ export default function EliminarCuenta() {
           {t("actions.back")}
         </button>
 
-        {toast && (
+        {false && toast && (
           <div
             style={
               toast.type === "success" ? toastSuccessStyle : toastErrorStyle
@@ -374,6 +376,11 @@ export default function EliminarCuenta() {
             </button>
           </div>
         </section>
+        <DashboardFeedback feedback={toast
+          ? { msg: toast.message, tipo: toast.type === "success" ? "ok" : "error" }
+          : null}
+        />
+        <BackgroundSaveIndicator active={loading} label={t("actions.saving")} />
       </main>
     </div>
   );
@@ -465,7 +472,6 @@ const subtitleStyle = {
 const warningCardStyle = {
   background: "var(--rojo-chip)",
   border: "1px solid var(--rojo-borde)",
-  borderLeft: "4px solid var(--rojo-soft)",
   borderRadius: 18,
   padding: "18px 20px",
   display: "flex",

@@ -47,6 +47,7 @@ export function useEnlace() {
       setRedes(prev => [...prev, creada]);
     } catch (err) {
       setError(err.message ?? t('links.error.create'));
+      throw err;
     }
   };
 
@@ -57,6 +58,7 @@ export function useEnlace() {
       setRedes(prev => prev.map(r => r.id === actualizada.id ? { ...r, ...result } : r));
     } catch (err) {
       setError(err.message ?? t('links.error.edit'));
+      throw err;
     }
   };
 
@@ -72,6 +74,7 @@ export function useEnlace() {
       // Revertir si falla
       setRedes(prev => prev.map(r => r.id === id ? { ...r, visible: red.visible } : r));
       setError(err.message ?? t('links.error.visibility'));
+      throw err;
     }
   };
 
@@ -82,6 +85,7 @@ export function useEnlace() {
       setRedes(prev => prev.filter(r => r.id !== id));
     } catch (err) {
       setError(err.message ?? t('links.error.delete'));
+      throw err;
     }
   };
 

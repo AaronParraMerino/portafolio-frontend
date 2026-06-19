@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '../../../../core/i18n';
-import { FiPlus } from 'react-icons/fi';
 import '../styles/projects.css';
 import { useProjects } from '../hooks/useProjects';
 import Header from '../../layout/Header';
+import { DashboardAddIcon } from '../../layout/DashboardIcons';
+import DashboardListSummary from '../../layout/DashboardListSummary';
+import DashboardPagination from '../../layout/DashboardPagination';
 import ProjectsFilters     from '../components/ProjectsFilters';
 import ProjectsGrid        from '../components/ProjectsGrid';
 import ProjectsEdit        from '../components/ProjectsEdit';
@@ -39,6 +41,8 @@ const ESTADO_SECCIONES = [
     estados: ['en_desarrollo', 'pausado', 'terminado', 'mantenimiento', 'versionado', 'cancelado'],
   },
 ];
+
+const PROJECTS_PAGE_SIZE = 4;
 
 function getEstadoLabel(value, t = null) {
   const option = ESTADOS_PROYECTO.find((estado) => estado.value === value);
@@ -84,6 +88,7 @@ export default function ProjectsPage() {
   const [filtro,     setFiltro]     = useState('todos');
   const [busqueda,   setBusqueda]   = useState('');
   const [orden,      setOrden]      = useState('recientes');
+  const [currentPage, setCurrentPage] = useState(1);
   const [reposIniciales, setReposIniciales] = useState(null);
   const [cargaInicialTerminada, setCargaInicialTerminada] = useState(false);
   const savingProjectIdSet = new Set((savingProjectIds || []).map(String));
@@ -93,7 +98,7 @@ export default function ProjectsPage() {
       label: t('projects.header.add'),
       title: t('projects.header.addProject'),
       ariaLabel: t('projects.header.addProject'),
-      icon: <FiPlus />,
+      icon: <DashboardAddIcon />,
       onClick: () => setEditando('nuevo'),
     },
   ];
@@ -278,6 +283,15 @@ export default function ProjectsPage() {
     archivado:  proyectos.filter(p => p.estado === 'archivado').length,
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [busqueda, filtro, orden, proyectos.length]);
+
+  const proyectosPaginados = proyectosFiltrados.slice(
+    (currentPage - 1) * PROJECTS_PAGE_SIZE,
+    currentPage * PROJECTS_PAGE_SIZE
+  );
+
   const estadoActualProyecto = normalizarEstadoSeleccionable(estadoProyecto?.estado);
   const hayCambioEstado = estadoSeleccionado !== estadoActualProyecto;
   const loadingInicial = loading && !cargaInicialTerminada && proyectos.length === 0;
@@ -317,6 +331,13 @@ export default function ProjectsPage() {
 
       <div className="prj-content">
 
+        <DashboardListSummary
+          title={t('projects.summary.title')}
+          description={t('projects.summary.description')}
+          count={conteo.todos}
+          label={t('projects.filters.all')}
+        />
+
         <ProjectsFilters
           busqueda={busqueda}   onBusqueda={setBusqueda}
           filtro={filtro}       onFiltro={setFiltro}
@@ -327,7 +348,7 @@ export default function ProjectsPage() {
         />
 
         <ProjectsGrid
-          proyectos={proyectosFiltrados}
+          proyectos={proyectosPaginados}
           busqueda={busqueda}
           onEditar={handleEditar}
           onEliminar={handleAbrirEliminar}
@@ -336,6 +357,13 @@ export default function ProjectsPage() {
           onEstadoProyecto={handleAbrirEstadoProyecto}
           onAgregar={handleAgregarNuevo}
           validatingConfigurationId={cargandoConfiguracionId}
+        />
+
+        <DashboardPagination
+          page={currentPage}
+          pageSize={PROJECTS_PAGE_SIZE}
+          totalItems={proyectosFiltrados.length}
+          onPageChange={setCurrentPage}
         />
 
       </div>

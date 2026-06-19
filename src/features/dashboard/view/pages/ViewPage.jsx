@@ -1,12 +1,17 @@
 // src/features/dashboard/view/pages/ViewPage.jsx
 
 import { useRef, useState } from 'react';
-import { FiCheck, FiDownload, FiEyeOff, FiSettings } from 'react-icons/fi';
 import '../styles/view.css';
 
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import Header from '../../layout/Header';
+import {
+  DashboardCheckIcon,
+  DashboardDownloadIcon,
+  DashboardHiddenIcon,
+  DashboardSettingsIcon,
+} from '../../layout/DashboardIcons';
 
 import { useView } from '../hooks/useView';
 import { getFullName, FONTS, getAutoTextColor, getLuminance } from '../model/viewModel';
@@ -40,6 +45,8 @@ export default function ViewPage() {
     loading,
     dataSource,
     error,
+    reload,
+    updateConfig,
     updatePerfil,
     saveCurrentConfig,
     publicar,
@@ -63,8 +70,12 @@ export default function ViewPage() {
   };
 
   const handleSaveConfig = (draftConfig) => {
+    updateConfig(draftConfig);
     setConfigOpen(false);
-    saveCurrentConfig(draftConfig).catch(() => {});
+
+    saveCurrentConfig(draftConfig).catch(() => {
+      reload().catch(() => {});
+    });
   };
 
   const handleExport = async (format) => {
@@ -77,8 +88,8 @@ export default function ViewPage() {
         title: getFullName(perfil),
       });
       setDownloadOpen(false);
-    } catch {
-      setExportError(t('view.export.error.download'));
+    } catch (error) {
+      setExportError(error?.message || t('view.export.error.download'));
     } finally {
       setExporting('');
     }
@@ -162,7 +173,7 @@ export default function ViewPage() {
           {
             label: t('view.action.download'),
             title: t('view.action.downloadTitle'),
-            icon: <FiDownload />,
+            icon: <DashboardDownloadIcon />,
             variant: 'secondary',
             disabled: !hasPortfolioContent,
             onClick: () => {
@@ -173,7 +184,7 @@ export default function ViewPage() {
           {
             label: t('view.action.customize'),
             title: t('view.action.customizeTitle'),
-            icon: <FiSettings />,
+            icon: <DashboardSettingsIcon />,
             variant: 'secondary',
             disabled: guardando,
             onClick: () => setConfigOpen(true),
@@ -182,7 +193,7 @@ export default function ViewPage() {
             label: isPublished ? t('view.action.hide') : t('view.action.publish'),
             loadingLabel: isPublished ? t('view.action.hiding') : t('view.action.publishing'),
             title: isPublished ? t('view.action.hideTitle') : t('view.action.publishTitle'),
-            icon: isPublished ? <FiEyeOff /> : <FiCheck />,
+            icon: isPublished ? <DashboardHiddenIcon /> : <DashboardCheckIcon />,
             loading: false,
             disabled: guardando,
             variant: isPublished ? 'secondary' : undefined,

@@ -6,6 +6,8 @@ import {
   fetchMySessions,
 } from "../services/ConfigurateServices";
 import { useLanguage } from "../../../../core/i18n";
+import DashboardFeedback from "../../layout/DashboardFeedback";
+import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 
 const localeByLanguage = { es: "es", en: "en", pt: "pt-BR" };
 
@@ -57,6 +59,7 @@ export default function SesionesActivas() {
   const [error, setError] = useState("");
   const [busyIds, setBusyIds] = useState([]);
   const [closingAll, setClosingAll] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   useEffect(() => {
@@ -100,8 +103,10 @@ export default function SesionesActivas() {
     try {
       await closeSessionById(id, t);
       setSessions((prev) => prev.filter((s) => s.id !== id));
+      setFeedback({ msg: t("actions.saved"), tipo: "ok" });
     } catch (err) {
       setError(err.message || t("configurate.sessions.error.close"));
+      setFeedback({ msg: err.message || t("configurate.sessions.error.close"), tipo: "error" });
     } finally {
       setBusyIds((prev) => prev.filter((item) => item !== id));
     }
@@ -114,8 +119,10 @@ export default function SesionesActivas() {
     try {
       await closeOtherSessions(t);
       await loadSessions();
+      setFeedback({ msg: t("actions.saved"), tipo: "ok" });
     } catch (err) {
       setError(err.message || t("configurate.sessions.error.closeOthers"));
+      setFeedback({ msg: err.message || t("configurate.sessions.error.closeOthers"), tipo: "error" });
     } finally {
       setClosingAll(false);
     }
@@ -295,6 +302,11 @@ export default function SesionesActivas() {
               : t("configurate.sessions.closeOtherSessions")}
           </button>
         )}
+        <DashboardFeedback feedback={feedback} />
+        <BackgroundSaveIndicator
+          active={closingAll || busyIds.length > 0}
+          label={t("actions.saving")}
+        />
       </main>
     </div>
   );
@@ -419,7 +431,6 @@ const listStyle = {
 const cardStyle = {
   background: "var(--blanco)",
   border: "1px solid var(--gris-borde)",
-  borderLeft: "4px solid var(--azul)",
   borderRadius: 18,
   padding: "18px 20px",
   display: "flex",

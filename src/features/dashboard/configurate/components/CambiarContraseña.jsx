@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import BASE_URL from "../../../../services/http/const";
 import { BASE_SESSION_TOKEN_KEY } from "../../../auth/services/sessionService";
 import { useLanguage } from "../../../../core/i18n";
+import DashboardFeedback from "../../layout/DashboardFeedback";
+import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 
 const getToken = () => localStorage.getItem("tokenPORT");
 
@@ -270,8 +272,6 @@ export default function CambiarContraseña() {
             />
           </div>
 
-          {error && <div style={errorMsgStyle}>{error}</div>}
-          {success && <div style={successMsgStyle}>{success}</div>}
 
           <div
             style={{
@@ -359,8 +359,6 @@ export default function CambiarContraseña() {
             />
           </div>
 
-          {recovError && <div style={errorMsgStyle}>{recovError}</div>}
-          {recovMsg && <div style={successMsgStyle}>{recovMsg}</div>}
 
           <button
             type="button"
@@ -376,6 +374,13 @@ export default function CambiarContraseña() {
             {recovLoading ? t("auth.status.sending") : t("configurate.password.sendRecoveryCode")}
           </button>
         </section>
+        <DashboardFeedback feedback={error || recovError
+          ? { msg: error || recovError, tipo: "error" }
+          : success || recovMsg
+            ? { msg: success || recovMsg, tipo: "ok" }
+            : null}
+        />
+        <BackgroundSaveIndicator active={loading || recovLoading} label={t("actions.saving")} />
       </main>
     </div>
   );
@@ -468,7 +473,6 @@ const subtitleStyle = {
 const cardStyle = {
   background: "var(--blanco)",
   border: "1px solid var(--gris-borde)",
-  borderLeft: "4px solid var(--azul)",
   borderRadius: 18,
   padding: "24px",
   display: "flex",
@@ -560,28 +564,6 @@ const btnCancelStyle = {
   fontWeight: 800,
   cursor: "pointer",
   fontFamily: "var(--font)",
-};
-
-const errorMsgStyle = {
-  fontSize: 13,
-  color: "var(--rojo-mid)",
-  background: "var(--rojo-chip)",
-  border: "1px solid var(--rojo-borde)",
-  borderRadius: 12,
-  padding: "10px 14px",
-  margin: 0,
-  fontWeight: 700,
-};
-
-const successMsgStyle = {
-  fontSize: 13,
-  color: "var(--verde-hover)",
-  background: "var(--verde-chip)",
-  border: "1px solid var(--verde-borde)",
-  borderRadius: 12,
-  padding: "10px 14px",
-  margin: 0,
-  fontWeight: 700,
 };
 
 const dividerStyle = {

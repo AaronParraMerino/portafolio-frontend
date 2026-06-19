@@ -1,40 +1,45 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  BsCalendar2Plus,
-  BsCalendar3,
-  BsCheck2Circle,
-  BsExclamationTriangle,
-  BsLock,
-  BsShieldCheck,
-} from 'react-icons/bs';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../../layout/Header';
 import { useLanguage } from '../../../../core/i18n';
 import { getStoredUser, isPublisherUser } from '../../../../shared/utils/authStorage';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
+import DashboardFeedback from '../../layout/DashboardFeedback';
 import EventFormModal from '../../../admin/events/components/EventFormModal';
 import EventsCalendar from '../../../admin/events/components/EventsCalendar';
 import EventsFilters from '../../../admin/events/components/EventsFilters';
 import EventsGrid from '../../../admin/events/components/EventsGrid';
 import {
-  EVENT_PAGE_SIZE,
   buildEventMetrics,
   createPublisherEvent,
   createPublisherRequest,
   fetchEventProfileTargets,
   fetchPublisherEvents,
+  getCachedEventProfileTargets,
+  getCachedPublisherEvents,
   normalizeEvent,
   updatePublisherEvent,
 } from '../../../admin/events/services/eventsService';
 import '../../../admin/events/styles/events.css';
 import '../styles/dashboard-events.css';
 import PublisherPermissionModal from '../components/PublisherPermissionModal';
+import {
+  DashboardCalendarIcon,
+  DashboardCheckIcon,
+  DashboardAddIcon,
+  DashboardEventsIcon,
+  DashboardLockIcon,
+  DashboardShieldIcon,
+  DashboardStatusIcon,
+  DashboardWarningIcon,
+} from '../../layout/DashboardIcons';
 
 const MONTHLY_LIMIT = 3;
+const PUBLISHER_EVENT_PAGE_SIZE = 4;
 
 const PUBLISHER_TABS = [
-  { id: 'events', labelKey: 'adminEvents.dashboard.tab.events', icon: BsCalendar2Plus },
-  { id: 'calendar', labelKey: 'adminEvents.dashboard.tab.calendar', icon: BsCalendar3 },
+  { id: 'events', labelKey: 'adminEvents.dashboard.tab.events', icon: DashboardEventsIcon },
+  { id: 'calendar', labelKey: 'adminEvents.dashboard.tab.calendar', icon: DashboardCalendarIcon },
 ];
 
 function isSameMonth(dateValue, date = new Date()) {
@@ -70,23 +75,33 @@ export default function DashboardEventsPage() {
   const [notice, setNotice] = useState('');
   const [activeView, setActiveView] = useState('events');
   const [eventModal, setEventModal] = useState(null);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(() => (canPublish ? getCachedPublisherEvents() : []));
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
-  const [profileTargets, setProfileTargets] = useState(null);
-  const [profileTargetsLoading, setProfileTargetsLoading] = useState(false);
+  const [profileTargets, setProfileTargets] = useState(() => (canPublish ? getCachedEventProfileTargets() : null));
+  const [profileTargetsLoading, setProfileTargetsLoading] = useState(() => (
+    canPublish && !getCachedEventProfileTargets()
+  ));
+  const profileTargetsHadCache = useRef(Boolean(profileTargets));
   const [eventSavingCount, setEventSavingCount] = useState(0);
   const [savingEventIds, setSavingEventIds] = useState([]);
   const [pendingEventSave, setPendingEventSave] = useState(null);
+  const [feedback, setFeedback] = useState(null);
   const eventSaving = eventSavingCount > 0;
 
-  const loadEvents = useCallback(async () => {
+  const showFeedback = useCallback((msg, tipo = 'ok') => {
+    setFeedback({ msg, tipo });
+    window.clearTimeout(window.__dashboard_events_feedback_timer);
+    window.__dashboard_events_feedback_timer = window.setTimeout(() => setFeedback(null), 3000);
+  }, []);
+
+  const loadEvents = useCallback(async ({ force = false } = {}) => {
     if (!canPublish) return;
 
     try {
-      const data = await fetchPublisherEvents();
+      const data = await fetchPublisherEvents({ force });
       setEvents(data);
       setNotice('');
     } catch (error) {
@@ -95,16 +110,16 @@ export default function DashboardEventsPage() {
   }, [canPublish, t]);
 
   useEffect(() => {
-    loadEvents();
+    loadEvents({ force: true });
   }, [loadEvents]);
 
   useEffect(() => {
     if (!canPublish) return undefined;
 
     let active = true;
-    setProfileTargetsLoading(true);
+    setProfileTargetsLoading(!profileTargetsHadCache.current);
 
-    fetchEventProfileTargets()
+    fetchEventProfileTargets({ force: profileTargetsHadCache.current })
       .then((targets) => {
         if (active) setProfileTargets(targets);
       })
@@ -147,9 +162,12 @@ export default function DashboardEventsPage() {
       ].some((value) => String(value || '').toLowerCase().includes(normalizedQuery));
     });
   }, [normalizedEvents, query, statusFilter, typeFilter]);
-  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / EVENT_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / PUBLISHER_EVENT_PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const visibleEvents = filteredEvents.slice((safeCurrentPage - 1) * EVENT_PAGE_SIZE, safeCurrentPage * EVENT_PAGE_SIZE);
+  const visibleEvents = filteredEvents.slice(
+    (safeCurrentPage - 1) * PUBLISHER_EVENT_PAGE_SIZE,
+    safeCurrentPage * PUBLISHER_EVENT_PAGE_SIZE
+  );
   const paginationItems = useMemo(() => {
     const visibleCount = Math.min(3, totalPages);
     const start = totalPages <= 3
@@ -169,8 +187,8 @@ export default function DashboardEventsPage() {
   }), [normalizedEvents]);
   const pageSummary = filteredEvents.length
     ? t('adminEvents.pagination.showingEvents', {
-      start: ((safeCurrentPage - 1) * EVENT_PAGE_SIZE) + 1,
-      end: Math.min(safeCurrentPage * EVENT_PAGE_SIZE, filteredEvents.length),
+      start: ((safeCurrentPage - 1) * PUBLISHER_EVENT_PAGE_SIZE) + 1,
+      end: Math.min(safeCurrentPage * PUBLISHER_EVENT_PAGE_SIZE, filteredEvents.length),
       count: filteredEvents.length,
     })
     : t('adminEvents.pagination.noResults');
@@ -204,7 +222,7 @@ export default function DashboardEventsPage() {
     {
       key: 'create-event',
       label: remainingThisMonth > 0 ? t('adminEvents.dashboard.addEvent') : t('adminEvents.dashboard.monthlyLimit'),
-      icon: <BsCalendar2Plus />,
+      icon: <DashboardAddIcon />,
       variant: 'primary',
       disabled: remainingThisMonth <= 0,
       onClick: () => setEventModal({ mode: 'create', event: null }),
@@ -213,7 +231,7 @@ export default function DashboardEventsPage() {
     {
       key: 'request-permission',
       label: requestSent ? t('adminEvents.dashboard.requestSent') : t('adminEvents.dashboard.requestPermission'),
-      icon: requestSent ? <BsCheck2Circle /> : <BsShieldCheck />,
+      icon: requestSent ? <DashboardCheckIcon /> : <DashboardShieldIcon />,
       variant: requestSent ? 'secondary' : 'primary',
       disabled: requestSent,
       onClick: () => setPermissionModalOpen(true),
@@ -310,12 +328,14 @@ export default function DashboardEventsPage() {
         await createPublisherEvent(saveContext.payload);
       }
 
-      await loadEvents();
+      await loadEvents({ force: true });
       setNotice(saveContext.mode === 'edit'
         ? t('adminEvents.dashboard.updatedNotice')
         : t('adminEvents.dashboard.savedNotice'));
+      showFeedback(t('actions.saved'));
     } catch (error) {
       setNotice(error.message || t('adminEvents.form.validation.saveError'));
+      showFeedback(error.message || t('adminEvents.form.validation.saveError'), 'error');
     } finally {
       setEventSavingCount((count) => Math.max(0, count - 1));
       if (saveContext.eventId) {
@@ -340,10 +360,12 @@ export default function DashboardEventsPage() {
 
     try {
       await updatePublisherEvent(event.id, buildPublisherStatusPayload(event, action.status));
-      await loadEvents();
+      await loadEvents({ force: true });
       setNotice(t('adminEvents.dashboard.statusUpdated'));
+      showFeedback(t('actions.saved'));
     } catch (error) {
       setNotice(error.message || t('adminEvents.dashboard.statusUpdateError'));
+      showFeedback(error.message || t('adminEvents.dashboard.statusUpdateError'), 'error');
     } finally {
       setEventSavingCount((count) => Math.max(0, count - 1));
       setSavingEventIds((current) => current.filter((id) => id !== String(event.id)));
@@ -355,6 +377,7 @@ export default function DashboardEventsPage() {
     setRequestSent(true);
     setPermissionModalOpen(false);
     setNotice(t('adminEvents.dashboard.requestReviewNotice'));
+    showFeedback(t('actions.saved'));
   };
 
   return (
@@ -374,7 +397,7 @@ export default function DashboardEventsPage() {
           <section className="dbe-gate">
             <div className="dbe-gate-hero">
               <span className="dbe-gate-icon">
-                <BsLock />
+                <DashboardLockIcon />
               </span>
               <div>
                 <span className="dbe-kicker">{t('adminEvents.dashboard.permissionAccess')}</span>
@@ -385,24 +408,24 @@ export default function DashboardEventsPage() {
 
             {requestSent ? (
               <div className="dbe-request-status">
-                <BsCheck2Circle />
+                <DashboardCheckIcon />
                 <span>{t('adminEvents.dashboard.requestPrepared')}</span>
               </div>
             ) : null}
 
             <div className="dbe-requirement-grid">
               <article>
-                <BsShieldCheck />
+                <DashboardShieldIcon />
                 <strong>{t('adminEvents.dashboard.identityTitle')}</strong>
                 <p>{t('adminEvents.dashboard.identityDescription')}</p>
               </article>
               <article>
-                <BsCalendar2Plus />
+                <DashboardEventsIcon />
                 <strong>{t('adminEvents.dashboard.reasonTitle')}</strong>
                 <p>{t('adminEvents.dashboard.reasonDescription')}</p>
               </article>
               <article>
-                <BsExclamationTriangle />
+                <DashboardWarningIcon />
                 <strong>{t('adminEvents.dashboard.responsibilityTitle')}</strong>
                 <p>{t('adminEvents.dashboard.responsibilityDescription')}</p>
               </article>
@@ -412,7 +435,7 @@ export default function DashboardEventsPage() {
               <strong>{t('adminEvents.dashboard.whenPublisherTitle')}</strong>
               <p>{t('adminEvents.dashboard.whenPublisherDescription')}</p>
               <button type="button" className="evt-context-btn evt-context-btn--primary" onClick={() => setPermissionModalOpen(true)}>
-                <BsShieldCheck />
+                <DashboardShieldIcon />
                 {t('adminEvents.dashboard.requestPermissions')}
               </button>
             </div>
@@ -432,22 +455,49 @@ export default function DashboardEventsPage() {
 
             <section className="dbe-publisher-stats" aria-label={t('adminEvents.dashboard.publisherSummaryAria')}>
               <article>
-                <span>{t('adminEvents.dashboard.totalEvents')}</span>
-                <strong>{metrics.total}</strong>
+                <div className="dbe-stat-icon"><DashboardEventsIcon /></div>
+                <div>
+                  <strong>{metrics.total}</strong>
+                  <span>{t('adminEvents.dashboard.totalEvents')}</span>
+                </div>
               </article>
               <article>
-                <span>{t('adminEvents.dashboard.active')}</span>
-                <strong>{metrics.activo}</strong>
+                <div className="dbe-stat-icon"><DashboardCheckIcon /></div>
+                <div>
+                  <strong>{metrics.activo}</strong>
+                  <span>{t('adminEvents.dashboard.active')}</span>
+                </div>
               </article>
               <article>
-                <span>{t('adminEvents.dashboard.scheduled')}</span>
-                <strong>{metrics.programado}</strong>
+                <div className="dbe-stat-icon"><DashboardCalendarIcon /></div>
+                <div>
+                  <strong>{metrics.programado}</strong>
+                  <span>{t('adminEvents.dashboard.scheduled')}</span>
+                </div>
               </article>
               <article>
-                <span>{t('adminEvents.dashboard.monthlyQuota')}</span>
-                <strong>{remainingThisMonth}/{MONTHLY_LIMIT}</strong>
+                <div className="dbe-stat-icon"><DashboardStatusIcon /></div>
+                <div>
+                  <strong>{remainingThisMonth}/{MONTHLY_LIMIT}</strong>
+                  <span>{t('adminEvents.dashboard.monthlyQuota')}</span>
+                </div>
               </article>
             </section>
+
+            {activeView === 'events' ? (
+              <EventsFilters
+                query={query}
+                statusFilter={statusFilter}
+                typeFilter={typeFilter}
+                statusCounts={statusCounts}
+                sourceReady
+                showSyncStatus={false}
+                compactTypeFilter
+                onQueryChange={handleQueryChange}
+                onStatusFilterChange={handleStatusFilterChange}
+                onTypeFilterChange={handleTypeFilterChange}
+              />
+            ) : null}
 
             <section className="evt-panel">
               <div className="evt-tabs-wrap">
@@ -472,21 +522,9 @@ export default function DashboardEventsPage() {
               {activeView === 'events' ? (
                 <>
                   <div className="dbe-admin-state-note">
-                    <BsExclamationTriangle />
+                    <DashboardWarningIcon />
                     <span>{t('adminEvents.dashboard.adminStateNote')}</span>
                   </div>
-
-                  <EventsFilters
-                    query={query}
-                    statusFilter={statusFilter}
-                    typeFilter={typeFilter}
-                    statusCounts={statusCounts}
-                    sourceReady
-                    showSyncStatus={false}
-                    onQueryChange={handleQueryChange}
-                    onStatusFilterChange={handleStatusFilterChange}
-                    onTypeFilterChange={handleTypeFilterChange}
-                  />
 
                   <EventsGrid
                     events={visibleEvents}
@@ -553,6 +591,7 @@ export default function DashboardEventsPage() {
       />
 
       <BackgroundSaveIndicator active={eventSaving} label={t('adminEvents.dashboard.savingEvent')} />
+      <DashboardFeedback feedback={feedback} />
     </div>
   );
 }

@@ -1,12 +1,9 @@
 import '../styles/profile.css';
 import { useLanguage } from '../../../../core/i18n';
-
-const CheckIcon = () => (
-  <svg viewBox="0 0 14 14"><path d="M2 7l3.5 3.5L12 3"/></svg>
-);
-const CircleIcon = () => (
-  <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5"/></svg>
-);
+import {
+  DashboardCheckIcon,
+  DashboardStatusIcon,
+} from '../../layout/DashboardIcons';
 
 export default function ProfileCompletitud({ perfil }) {
   const { t } = useLanguage();
@@ -42,7 +39,7 @@ export default function ProfileCompletitud({ perfil }) {
         <div className="prf-comp-items">
           {items.map(({ labelKey, done }) => (
             <div key={labelKey} className={`prf-comp-item${done ? ' done' : ''}`}>
-              {done ? <CheckIcon /> : <CircleIcon />}
+              {done ? <DashboardCheckIcon /> : <DashboardStatusIcon />}
               {t(labelKey)}
             </div>
           ))}
