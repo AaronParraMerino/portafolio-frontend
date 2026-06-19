@@ -472,7 +472,6 @@ const subtitleStyle = {
 const warningCardStyle = {
   background: "var(--rojo-chip)",
   border: "1px solid var(--rojo-borde)",
-  borderLeft: "4px solid var(--rojo-soft)",
   borderRadius: 18,
   padding: "18px 20px",
   display: "flex",

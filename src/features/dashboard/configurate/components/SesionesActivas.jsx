@@ -431,7 +431,6 @@ const listStyle = {
 const cardStyle = {
   background: "var(--blanco)",
   border: "1px solid var(--gris-borde)",
-  borderLeft: "4px solid var(--azul)",
   borderRadius: 18,
   padding: "18px 20px",
   display: "flex",

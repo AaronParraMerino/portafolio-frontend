@@ -473,7 +473,6 @@ const subtitleStyle = {
 const cardStyle = {
   background: "var(--blanco)",
   border: "1px solid var(--gris-borde)",
-  borderLeft: "4px solid var(--azul)",
   borderRadius: 18,
   padding: "24px",
   display: "flex",
