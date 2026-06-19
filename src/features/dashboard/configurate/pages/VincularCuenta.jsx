@@ -1,6 +1,7 @@
 import VincularCuenta from '../components/VincularCuenta';
 import Header from '../../layout/Header';
 import { useLanguage } from '../../../../core/i18n';
+import '../styles/configurate.css';
 
 export default function VincularCuentaPage() {
   const { t } = useLanguage();
@@ -12,7 +13,9 @@ export default function VincularCuentaPage() {
         title={t("configurate.link.pageTitle")}
         subtitle={t("configurate.header.title")}
       />
-      <VincularCuenta />
+      <div className="cfg-subpage-shell">
+        <VincularCuenta />
+      </div>
     </>
   );
 }

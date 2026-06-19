@@ -1,25 +1,40 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "../../layout/Header";
 import { DashboardAddIcon } from "../../layout/DashboardIcons";
+import DashboardListSummary from "../../layout/DashboardListSummary";
+import DashboardListControls from "../../layout/DashboardListControls";
+import DashboardPagination from "../../layout/DashboardPagination";
 import Card from "./Card";
 import Modal from "./Modal";
 import ModalEditar from "./ModalEditar";
-import Toggle from "./Toggle";
 import { useEnlace } from "../hooks/useEnlace";
 import { useLanguage } from "../../../../core/i18n";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
+import { getLinkPlatform } from "../model/linkPlatforms";
 import "../styles/links.css";
+
+const LINKS_PAGE_SIZE = 5;
+
+const normalizeText = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 export default function RedesSociales() {
   const { t } = useLanguage();
   const { redes, loading, error, setError, agregar, editar, toggleVisible } = useEnlace();
 
-  const [secActiva, setSecActiva] = useState(true);
   const [modal, setModal] = useState(false);
   const [redEditar, setRedEditar] = useState(null);
   const [pendingSave, setPendingSave] = useState(null);
   const [savingCount, setSavingCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [linkFilter, setLinkFilter] = useState("todos");
+  const [sortBy, setSortBy] = useState("alfa");
+  const [currentPage, setCurrentPage] = useState(1);
   const saving = savingCount > 0;
 
   const runInBackground = (task) => {
@@ -31,6 +46,57 @@ export default function RedesSociales() {
 
   const activas = redes.filter((r) => r.visible);
   const ocultas = redes.filter((r) => !r.visible);
+  const conteo = useMemo(() => ({
+    todos: redes.length,
+    visible: activas.length,
+    hidden: ocultas.length,
+    connected: redes.filter((red) => red.conectado).length,
+    custom: redes.filter((red) => !getLinkPlatform(red)).length,
+  }), [activas.length, ocultas.length, redes]);
+
+  const filteredLinks = useMemo(() => {
+    const query = normalizeText(searchTerm);
+
+    return redes
+      .filter((red) => {
+        if (linkFilter === "visible" && !red.visible) return false;
+        if (linkFilter === "hidden" && red.visible) return false;
+        if (linkFilter === "connected" && !red.conectado) return false;
+        if (linkFilter === "custom" && getLinkPlatform(red)) return false;
+
+        if (!query) return true;
+
+        const platform = getLinkPlatform(red);
+        return [
+          red.nombre,
+          red.url,
+          red.descripcion,
+          platform?.name,
+        ].some((value) => normalizeText(value).includes(query));
+      })
+      .sort((a, b) => {
+        if (sortBy === "platform") {
+          return String(getLinkPlatform(a)?.name || a.nombre || "").localeCompare(
+            String(getLinkPlatform(b)?.name || b.nombre || "")
+          );
+        }
+
+        if (sortBy === "visibility") {
+          return Number(b.visible) - Number(a.visible);
+        }
+
+        return String(a.nombre || "").localeCompare(String(b.nombre || ""));
+      });
+  }, [linkFilter, redes, searchTerm, sortBy]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, linkFilter, sortBy, redes.length]);
+
+  const pagedLinks = useMemo(() => {
+    const start = (currentPage - 1) * LINKS_PAGE_SIZE;
+    return filteredLinks.slice(start, start + LINKS_PAGE_SIZE);
+  }, [currentPage, filteredLinks]);
 
   const handleToggle = (id) => {
     toggleVisible(id);
@@ -98,79 +164,59 @@ export default function RedesSociales() {
           </div>
         )}
 
-        <p className="links-intro">{t("links.page.subtitle")}</p>
+        <DashboardListSummary
+          title={t("links.summary.title")}
+          description={t("links.page.subtitle")}
+          count={conteo.todos}
+          label={t("links.filters.all")}
+        />
 
-        <div className="dash-panel dash-toolbar links-visibility-panel">
-          <div className="dash-toolbar-main">
-            <p className="dash-toolbar-title">{t("links.section.visibleTitle")}</p>
-            <p className="dash-toolbar-text">
-              {secActiva
-                ? t("links.section.visibleDescription")
-                : t("links.section.disabledDescription")}
-            </p>
-          </div>
+        <DashboardListControls
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder={t("links.filters.searchPlaceholder")}
+          searchAria={t("links.filters.searchAria")}
+          tabs={[
+            { value: "todos", label: t("links.filters.all"), count: conteo.todos },
+            { value: "visible", label: t("links.filters.visible"), count: conteo.visible },
+            { value: "hidden", label: t("links.filters.hidden"), count: conteo.hidden },
+            { value: "connected", label: t("links.filters.connected"), count: conteo.connected },
+            { value: "custom", label: t("links.filters.custom"), count: conteo.custom },
+          ]}
+          activeTab={linkFilter}
+          onTabChange={setLinkFilter}
+          sortValue={sortBy}
+          onSortChange={setSortBy}
+          sortAria={t("links.filters.sortAria")}
+          sortOptions={[
+            { value: "alfa", label: t("links.filters.sort.alpha") },
+            { value: "platform", label: t("links.filters.sort.platform") },
+            { value: "visibility", label: t("links.filters.sort.visibility") },
+          ]}
+        />
 
-          <div className="links-visibility-state">
-            <Toggle on={secActiva} onChange={setSecActiva} />
-            <span className={`links-visibility-label${secActiva ? "" : " is-disabled"}`}>
-              {secActiva ? t("links.status.active") : t("links.status.disabled")}
-            </span>
-          </div>
-        </div>
-
-        {secActiva ? (
-          <>
-            {activas.length === 0 ? (
-              <div className="dash-empty">{t("links.empty.active")}</div>
-            ) : (
-              <div className="links-list">
-                {activas.map((red) => (
-                  <Card
-                    key={red.id}
-                    red={red}
-                    onToggle={handleToggle}
-                    onEdit={handleEdit}
-                    isOculta={false}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+        {filteredLinks.length === 0 ? (
+          <div className="dash-empty">{t("links.empty.filtered")}</div>
         ) : (
-          <>
-            <div className="dash-empty links-disabled-note">
-              <p className="dash-toolbar-title">
-                {t("links.section.disabledTitle")}
-              </p>
-              <p className="dash-toolbar-text">
-                {ocultas.length > 0
-                  ? t("links.section.disabledWithHidden")
-                  : t("links.section.disabledNoHidden")}
-              </p>
-            </div>
-
-            {ocultas.length > 0 && (
-              <div>
-                <div className="links-hidden-head">
-                  <span className="links-hidden-title">{t("links.hidden.title")}</span>
-                  <span className="dash-pill dash-pill--muted">{ocultas.length}</span>
-                </div>
-
-                <div className="links-list">
-                  {ocultas.map((red) => (
-                    <Card
-                      key={red.id}
-                      red={red}
-                      onToggle={handleToggle}
-                      onEdit={handleEdit}
-                      isOculta
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
+          <div className="links-list">
+            {pagedLinks.map((red) => (
+              <Card
+                key={red.id}
+                red={red}
+                onToggle={handleToggle}
+                onEdit={handleEdit}
+                isOculta={!red.visible}
+              />
+            ))}
+          </div>
         )}
+
+        <DashboardPagination
+          page={currentPage}
+          pageSize={LINKS_PAGE_SIZE}
+          totalItems={filteredLinks.length}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {modal && <Modal onClose={() => setModal(false)} onAdd={handleAdd} />}

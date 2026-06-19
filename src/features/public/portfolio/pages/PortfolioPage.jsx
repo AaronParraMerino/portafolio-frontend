@@ -15,43 +15,6 @@ import { FONTS, getAutoTextColor, getFullName } from '../../../dashboard/view/mo
 import { usePublicPortfolio } from '../hooks/usePublicPortfolio';
 import { useLanguage } from '../../../../core/i18n';
 
-const backBarStyle = {
-  alignItems: 'center',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: 10,
-  justifyContent: 'space-between',
-  marginBottom: 18,
-};
-
-const backButtonStyle = {
-  alignItems: 'center',
-  background: 'var(--blanco)',
-  border: '1.5px solid var(--azul-mid)',
-  borderRadius: 8,
-  boxShadow: '0 8px 22px var(--azul-glow)',
-  color: 'var(--azul-deep)',
-  cursor: 'pointer',
-  display: 'inline-flex',
-  fontFamily: 'var(--font)',
-  fontSize: 13,
-  fontWeight: 800,
-  gap: 8,
-  minHeight: 40,
-  padding: '0 14px',
-};
-
-const backIndicatorStyle = {
-  background: 'var(--azul-light)',
-  border: '1px solid var(--azul-mid)',
-  borderRadius: 999,
-  color: 'var(--azul-deep)',
-  fontFamily: 'var(--mono)',
-  fontSize: 11,
-  fontWeight: 700,
-  padding: '6px 10px',
-};
-
 function PublicPortfolioBackButton() {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -73,17 +36,17 @@ function PublicPortfolioBackButton() {
   };
 
   return (
-    <div style={backBarStyle}>
+    <div className="public-portfolio-backbar">
       <button
         type="button"
-        style={backButtonStyle}
+        className="public-portfolio-backbtn"
         onClick={handleBack}
         aria-label={backLabel}
       >
         <FiArrowLeft aria-hidden="true" size={17} />
         <span>{backLabel}</span>
       </button>
-      <span style={backIndicatorStyle}>{t('publicPortfolio.previousView')}</span>
+      <span className="public-portfolio-backhint">{t('publicPortfolio.previousView')}</span>
     </div>
   );
 }

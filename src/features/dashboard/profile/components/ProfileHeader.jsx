@@ -178,7 +178,7 @@ function ConfirmDeleteModal({ tipo, onConfirm, onClose }) {
 /* ══════════════════════════════════════════════
    PROFILE HEADER (sin cambios en la estructura)
 ══════════════════════════════════════════════ */
-export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onEliminarBanner, onSubirAvatar, onEliminarAvatar }) {
+export default function ProfileHeader({ perfil, onSubirBanner, onEliminarBanner, onSubirAvatar, onEliminarAvatar }) {
   const { t } = useLanguage();
   const iniciales = perfil.nombre.split(' ').slice(0, 2).map(n => n[0]).join('');
   const [modal,    setModal]    = useState(null);
@@ -249,15 +249,9 @@ export default function ProfileHeader({ perfil, onEditar, onSubirBanner, onElimi
           )}
         </div>
 
-        <div className="prf-info-row">
+        <div className="prf-info-row prf-info-row--compact">
           <div className="prf-info">
             <div className="prf-nombre">{perfil.nombre && `${perfil.nombre} ${perfil.apellido}`}</div>
-          </div>
-          <div className="prf-acciones">
-            <button className="prf-btn-primary" onClick={onEditar}>
-              <DashboardEditIcon />
-              {t('profile.action.edit')}
-            </button>
           </div>
         </div>
       </div>

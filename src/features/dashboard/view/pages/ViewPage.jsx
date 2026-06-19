@@ -45,6 +45,8 @@ export default function ViewPage() {
     loading,
     dataSource,
     error,
+    reload,
+    updateConfig,
     updatePerfil,
     saveCurrentConfig,
     publicar,
@@ -68,8 +70,12 @@ export default function ViewPage() {
   };
 
   const handleSaveConfig = (draftConfig) => {
+    updateConfig(draftConfig);
     setConfigOpen(false);
-    saveCurrentConfig(draftConfig).catch(() => {});
+
+    saveCurrentConfig(draftConfig).catch(() => {
+      reload().catch(() => {});
+    });
   };
 
   const handleExport = async (format) => {
@@ -82,8 +88,8 @@ export default function ViewPage() {
         title: getFullName(perfil),
       });
       setDownloadOpen(false);
-    } catch {
-      setExportError(t('view.export.error.download'));
+    } catch (error) {
+      setExportError(error?.message || t('view.export.error.download'));
     } finally {
       setExporting('');
     }

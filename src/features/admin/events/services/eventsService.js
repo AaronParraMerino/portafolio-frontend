@@ -1,7 +1,16 @@
 import BASE_URL from '../../../../services/http/const';
+import {
+  getCachedDashboardEndpoint,
+  getCurrentDashboardSession,
+  invalidateDashboardDerivedCaches,
+  readCachedDashboardEndpoint,
+  removeCachedDashboardEndpoint,
+} from '../../../dashboard/services/dashboardCache';
 
 export const EVENT_PAGE_SIZE = 9;
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
+const PUBLISHER_EVENTS_ENDPOINT = '/publicante/eventos';
+const PUBLISHER_PROFILE_TARGETS_ENDPOINT = '/publicante/eventos/profile-targets';
 
 export const EVENT_WORKSPACE_VIEWS = [
   { id: 'requests', label: 'Solicitudes' },
@@ -223,6 +232,40 @@ function getAdminRequestHeaders() {
   };
 }
 
+function getDashboardUserIdSafe() {
+  try {
+    return getCurrentDashboardSession({ requireToken: false }).userId;
+  } catch {
+    return null;
+  }
+}
+
+function unwrapEventList(payload) {
+  return Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []);
+}
+
+export function getCachedPublisherEvents() {
+  const userId = getDashboardUserIdSafe();
+  if (!userId) return [];
+
+  return unwrapEventList(readCachedDashboardEndpoint(PUBLISHER_EVENTS_ENDPOINT, { userId }));
+}
+
+export function getCachedEventProfileTargets() {
+  const userId = getDashboardUserIdSafe();
+  if (!userId) return null;
+
+  return readCachedDashboardEndpoint(PUBLISHER_PROFILE_TARGETS_ENDPOINT, { userId });
+}
+
+function invalidatePublisherEventsCache() {
+  const userId = getDashboardUserIdSafe();
+  if (!userId) return;
+
+  removeCachedDashboardEndpoint(PUBLISHER_EVENTS_ENDPOINT, { userId });
+  invalidateDashboardDerivedCaches(userId);
+}
+
 async function parseAdminResponse(response, fallbackMessage) {
   const payload = await response.json().catch(() => ({}));
 
@@ -417,13 +460,21 @@ export async function createPublisherRequest(payload) {
   return parseAdminResponse(response, 'No se pudo enviar la solicitud.');
 }
 
-export async function fetchPublisherEvents() {
-  const response = await fetch(`${BASE_URL}/publicante/eventos`, {
-    headers: getAdminRequestHeaders(),
-  });
-  const payload = await parseAdminResponse(response, 'No se pudieron cargar tus eventos.');
+export async function fetchPublisherEvents({ force = false } = {}) {
+  const { userId } = getCurrentDashboardSession();
+  const payload = await getCachedDashboardEndpoint(
+    PUBLISHER_EVENTS_ENDPOINT,
+    async () => {
+      const response = await fetch(`${BASE_URL}/publicante/eventos`, {
+        headers: getAdminRequestHeaders(),
+      });
 
-  return Array.isArray(payload?.data) ? payload.data : [];
+      return parseAdminResponse(response, 'No se pudieron cargar tus eventos.');
+    },
+    { force, userId },
+  );
+
+  return unwrapEventList(payload);
 }
 
 async function fetchEventCatalog(path) {
@@ -441,23 +492,31 @@ async function fetchEventCatalog(path) {
     .filter(Boolean))];
 }
 
-export async function fetchEventProfileTargets() {
-  const [
-    technicalSkills,
-    softSkills,
-    experiencePositions,
-  ] = await Promise.all([
-    fetchEventCatalog('habilidades-tecnicas'),
-    fetchEventCatalog('habilidades-blandas'),
-    fetchEventCatalog('cargos-experiencia'),
-  ]);
+export async function fetchEventProfileTargets({ force = false } = {}) {
+  const { userId } = getCurrentDashboardSession();
 
-  return {
-    technicalSkills,
-    softSkills,
-    academicExperience: experiencePositions,
-    workExperience: experiencePositions,
-  };
+  return getCachedDashboardEndpoint(
+    PUBLISHER_PROFILE_TARGETS_ENDPOINT,
+    async () => {
+      const [
+        technicalSkills,
+        softSkills,
+        experiencePositions,
+      ] = await Promise.all([
+        fetchEventCatalog('habilidades-tecnicas'),
+        fetchEventCatalog('habilidades-blandas'),
+        fetchEventCatalog('cargos-experiencia'),
+      ]);
+
+      return {
+        technicalSkills,
+        softSkills,
+        academicExperience: experiencePositions,
+        workExperience: experiencePositions,
+      };
+    },
+    { force, userId },
+  );
 }
 
 export async function createPublisherEvent(payload) {
@@ -467,7 +526,9 @@ export async function createPublisherEvent(payload) {
     body: buildEventFormData(payload),
   });
 
-  return parseAdminResponse(response, 'No se pudo crear el evento.');
+  const result = await parseAdminResponse(response, 'No se pudo crear el evento.');
+  invalidatePublisherEventsCache();
+  return result;
 }
 
 export async function updatePublisherEvent(eventId, payload) {
@@ -477,7 +538,9 @@ export async function updatePublisherEvent(eventId, payload) {
     body: buildEventFormData(payload, 'PUT'),
   });
 
-  return parseAdminResponse(response, 'No se pudo actualizar el evento.');
+  const result = await parseAdminResponse(response, 'No se pudo actualizar el evento.');
+  invalidatePublisherEventsCache();
+  return result;
 }
 
 export function normalizeEvent(item = {}) {

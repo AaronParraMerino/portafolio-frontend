@@ -1,5 +1,9 @@
-import { BsSearch, BsX } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
+import {
+  DashboardCloseIcon,
+  DashboardMenuIcon,
+  DashboardSearchIcon,
+} from '../../../dashboard/layout/DashboardIcons';
 import {
   EVENT_STATUS_FILTERS,
   EVENT_TYPES,
@@ -12,6 +16,7 @@ export default function EventsFilters({
   statusCounts,
   sourceReady,
   showSyncStatus = true,
+  compactTypeFilter = false,
   onQueryChange,
   onStatusFilterChange,
   onTypeFilterChange,
@@ -22,7 +27,7 @@ export default function EventsFilters({
     <div className="evt-toolbar">
       <div className="evt-search-box">
         <span className="evt-search-icon">
-          <BsSearch />
+          <DashboardSearchIcon />
         </span>
         <input
           type="text"
@@ -40,36 +45,63 @@ export default function EventsFilters({
             aria-label={t('adminEvents.filters.clearSearch')}
             title={t('adminEvents.filters.clearSearch')}
           >
-            <BsX />
+            <DashboardCloseIcon />
           </button>
         ) : null}
       </div>
 
-      <div className="evt-filter-group" aria-label={t('adminEvents.filters.statusAria')}>
-        {EVENT_STATUS_FILTERS.map((filter) => (
-          <button
-            key={filter.id}
-            type="button"
-            className={`evt-filter-chip${statusFilter === filter.id ? ' active' : ''}`}
-            onClick={() => onStatusFilterChange(filter.id)}
-          >
-            <span>{t(`adminEvents.statusPlural.${filter.id}`)}</span>
-            {sourceReady ? <small>{statusCounts?.[filter.id] ?? 0}</small> : null}
-          </button>
-        ))}
-      </div>
+      <div className="evt-filter-row">
+        <div className="evt-filter-group" aria-label={t('adminEvents.filters.statusAria')}>
+          {EVENT_STATUS_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              className={`evt-filter-chip${statusFilter === filter.id ? ' active' : ''}`}
+              onClick={() => onStatusFilterChange(filter.id)}
+            >
+              <span>{t(`adminEvents.statusPlural.${filter.id}`)}</span>
+              {sourceReady ? <small>{statusCounts?.[filter.id] ?? 0}</small> : null}
+            </button>
+          ))}
+        </div>
 
-      <div className="evt-filter-group evt-filter-group--types" aria-label={t('adminEvents.filters.typeAria')}>
-        {EVENT_TYPES.map((filter) => (
-          <button
-            key={filter.id}
-            type="button"
-            className={`evt-filter-chip${typeFilter === filter.id ? ' active' : ''}`}
-            onClick={() => onTypeFilterChange(filter.id)}
-          >
-            {t(`adminEvents.type.${filter.id}`)}
-          </button>
-        ))}
+        {compactTypeFilter ? (
+          <details className="evt-type-menu">
+            <summary className="evt-type-menu-trigger" aria-label={t('adminEvents.filters.typeAria')}>
+              <DashboardMenuIcon />
+              <span>{t(`adminEvents.type.${typeFilter}`)}</span>
+            </summary>
+
+            <div className="evt-type-menu-list">
+              {EVENT_TYPES.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={`evt-type-menu-item${typeFilter === filter.id ? ' active' : ''}`}
+                  onClick={(event) => {
+                    event.currentTarget.closest('details')?.removeAttribute('open');
+                    onTypeFilterChange(filter.id);
+                  }}
+                >
+                  {t(`adminEvents.type.${filter.id}`)}
+                </button>
+              ))}
+            </div>
+          </details>
+        ) : (
+          <div className="evt-filter-group evt-filter-group--types" aria-label={t('adminEvents.filters.typeAria')}>
+            {EVENT_TYPES.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                className={`evt-filter-chip${typeFilter === filter.id ? ' active' : ''}`}
+                onClick={() => onTypeFilterChange(filter.id)}
+              >
+                {t(`adminEvents.type.${filter.id}`)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {showSyncStatus ? (

@@ -1,18 +1,17 @@
 import { useProfile }        from '../hooks/useProfile';
 import ProfileHeader          from '../components/ProfileHeader';
 import ProfileDataCard        from '../components/ProfileDataCard';
-import ProfileInfo            from '../components/ProfileInfo';
 import ProfileEdit            from '../components/ProfileEdit';
-import ProfileCompletitud     from '../components/ProfileCompletitud';
 import ProfileToast           from '../components/ProfileToast';
 import Header                 from '../../layout/Header';
 import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
 import '../styles/profile.css';
 import { useLanguage } from '../../../../core/i18n';
+import { DashboardEditIcon } from '../../layout/DashboardIcons';
 
 export default function ProfilePage() {
   const { t } = useLanguage();
-  const { perfil, loading, guardando, editando, setEditando, guardarPerfil, toggleVisibilidad, toast, subirImagen, eliminarImagen } = useProfile();
+  const { perfil, loading, guardando, editando, setEditando, guardarPerfil, toast, subirImagen, eliminarImagen } = useProfile();
 
   if (loading) {
     return (
@@ -43,16 +42,26 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Header eyebrow={t('profile.header.eyebrow')} title={t('profile.header.title')} />
+      <Header
+        eyebrow={t('profile.header.eyebrow')}
+        title={t('profile.header.title')}
+        actions={[
+          {
+            key: 'edit-profile',
+            label: t('profile.action.edit'),
+            icon: <DashboardEditIcon />,
+            onClick: () => {
+              if (!guardando) setEditando(true);
+            },
+          },
+        ]}
+      />
 
       <div className="prf-page">
 
       {/* ── Header: banner + avatar + stats strip ── */}
       <ProfileHeader
         perfil={perfil}
-        onEditar={() => {
-          if (!guardando) setEditando(true);
-        }}
         onVistaPublica={() => window.open(`/u/${perfil.id}`, '_blank')}
         onSubirAvatar={(archivo) => subirImagen('avatar', archivo)}
         onEliminarAvatar={() => eliminarImagen('avatar')}
@@ -65,29 +74,9 @@ export default function ProfilePage() {
            fuera del grid para que ocupe todo el ancho */}
       <ProfileDataCard
         perfil={perfil}
-        onEditar={() => {
-          if (!guardando) setEditando(true);
-        }}
       />
 
       {/* ── Grid principal ── */}
-      <div className="prf-grid">
-
-        {/* Columna izquierda: visibilidad de campos */}
-        <div>
-          <ProfileInfo
-            perfil={perfil}
-            onToggleVisibilidad={toggleVisibilidad}
-          />
-        </div>
-
-        {/* Columna derecha: completitud */}
-        <div>
-          <ProfileCompletitud perfil={perfil} />
-        </div>
-
-      </div>
-
       {/* ── Modal de edición ── */}
       {editando && (
         <ProfileEdit

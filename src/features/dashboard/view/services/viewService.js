@@ -7,6 +7,10 @@ import {
   invalidateDashboardDerivedCaches,
   writeCachedDashboardEndpoint,
 } from '../../services/dashboardCache';
+import {
+  publicCacheKey,
+  removePublicCache,
+} from '../../../public/services/publicCache';
 
 const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8000/storage';
 const CONFIG_STORAGE_PREFIX = 'portfolio-view-config';
@@ -145,6 +149,7 @@ function clearPortfolioCaches(userId) {
   try {
     ['es', 'en', 'pt'].forEach((language) => {
       sessionStorage.removeItem(dataCacheKey(userId, language));
+      removePublicCache(publicCacheKey('portfolio:view', `${userId}:${language}`));
     });
 
     const publicPrefix = `${PUBLIC_CACHE_PREFIX}:${userId}`;
@@ -153,7 +158,10 @@ function clearPortfolioCaches(userId) {
     for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
       const key = sessionStorage.key(index);
 
-      if (key?.startsWith(`${publicPrefix}:`)) {
+      if (
+        key?.startsWith(`${publicPrefix}:`) ||
+        key?.startsWith(`public-cache:v1:portfolio:view:${userId}:`)
+      ) {
         sessionStorage.removeItem(key);
       }
     }
@@ -459,6 +467,7 @@ export async function saveConfig(payload) {
   });
 
   writeCachedDashboardEndpoint(`/portfolio/${userId}/config`, response, { userId });
+  clearPortfolioCaches(userId);
   invalidateDashboardDerivedCaches(userId);
 
   return response;

@@ -10,8 +10,8 @@ import {
   DashboardProjectIcon,
   DashboardSettingsIcon,
   DashboardSkillIcon,
+  DashboardScreenIcon,
   DashboardUserIcon,
-  DashboardVisibleIcon,
   DashboardWorkIcon,
 } from './layout/DashboardIcons';
 
@@ -75,7 +75,7 @@ const QUICK_LINKS = [
     to: '/dashboard/view',
     badgeColor: 'var(--azul)',
     badgeBg: 'var(--azul-light)',
-    Icon: DashboardVisibleIcon,
+    Icon: DashboardScreenIcon,
   },
   {
     id: 'settings',

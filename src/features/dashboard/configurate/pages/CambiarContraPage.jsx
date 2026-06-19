@@ -1,8 +1,9 @@
-import CambiarContraseña from '../components/CambiarContraseña';
+import CambiarContrasena from '../components/CambiarContraseña';
 import Header from '../../layout/Header';
 import { useLanguage } from '../../../../core/i18n';
+import '../styles/configurate.css';
 
-export default function CambiarContraseñaPage() {
+export default function CambiarContrasenaPage() {
   const { t } = useLanguage();
 
   return (
@@ -12,7 +13,9 @@ export default function CambiarContraseñaPage() {
         title={t("configurate.password.pageTitle")}
         subtitle={t("configurate.header.title")}
       />
-      <CambiarContraseña />
+      <div className="cfg-subpage-shell">
+        <CambiarContrasena />
+      </div>
     </>
   );
 }

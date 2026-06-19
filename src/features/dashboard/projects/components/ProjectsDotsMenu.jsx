@@ -94,11 +94,7 @@ export default function ProjectsDotsMenu({
         {loading ? (
           <span className="prj-dots-spinner" aria-hidden="true" />
         ) : (
-          <svg viewBox="0 0 4 16" fill="rgba(255,255,255,.85)" stroke="none">
-            <circle cx="2" cy="2" r="1.5" />
-            <circle cx="2" cy="8" r="1.5" />
-            <circle cx="2" cy="14" r="1.5" />
-          </svg>
+          <DashboardMenuIcon />
         )}
       </button>
 
@@ -106,7 +102,7 @@ export default function ProjectsDotsMenu({
         <div className="prj-dots-menu" role="menu">
           {puedeEditar && (
             <button
-              className="prj-menu-item"
+              className="prj-menu-item is-edit"
               type="button"
               role="menuitem"
               onClick={action(onEditar)}
@@ -156,7 +152,7 @@ export default function ProjectsDotsMenu({
 
           {puedeEliminar && (
             <button
-              className="prj-menu-item danger"
+              className="prj-menu-item is-delete danger"
               type="button"
               role="menuitem"
               onClick={action(onEliminar)}

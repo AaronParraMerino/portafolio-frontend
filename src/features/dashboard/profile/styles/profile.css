@@ -7,8 +7,11 @@
 
 /* ── PAGE WRAPPER ── */
 .prf-page {
+  margin-inline: auto;
+  max-width: 1180px;
   padding: 32px 42px 52px;
   min-height: calc(100vh - var(--nav-height, 60px));
+  width: 100%;
 }
 
 /* ── LOADING / ERROR ── */
@@ -153,10 +156,11 @@
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: var(--azul);
+  background: var(--azul-light);
+  color: var(--azul);
   border: 2px solid var(--blanco);
   display: flex;
   align-items: center;
@@ -164,10 +168,10 @@
   cursor: pointer;
   transition: background .15s;
 }
-.prf-avatar-btn:hover { background: var(--azul-hover); }
+.prf-avatar-btn:hover { background: rgba(0, 119, 183, .16); }
 .prf-avatar-btn svg {
-  width: 10px; height: 10px;
-  stroke: #fff; fill: none; stroke-width: 2;
+  width: 15px; height: 15px;
+  stroke: currentColor; fill: none; stroke-width: 1.6;
 }
 
 /* Fila info + acciones
@@ -257,24 +261,30 @@
   gap: 6px;
   padding: 7px 16px;
   border-radius: 7px;
-  border: none;
-  background: var(--azul);
+  border: 1.5px solid var(--azul-mid);
+  background: var(--azul-light);
   font-family: var(--font);
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: var(--azul);
   cursor: pointer;
   transition: all .15s;
   white-space: nowrap;
 }
 .prf-btn-primary:hover {
-  background: var(--azul-hover);
-  box-shadow: 0 3px 10px rgba(0,119,183,.3);
+  background: rgba(0, 119, 183, .16);
+  border-color: var(--azul);
+  box-shadow: 0 3px 10px rgba(0,119,183,.14);
   transform: translateY(-1px);
 }
+
+.prf-info-row--compact {
+  min-height: 0;
+  padding-bottom: 16px;
+}
 .prf-btn-primary svg {
-  width: 12px; height: 12px;
-  stroke: currentColor; fill: none; stroke-width: 2;
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none; stroke-width: 1.6;
 }
 
 /* ── Datos personales ──
@@ -343,9 +353,10 @@
   background: var(--azul-light);
 }
 .prf-datacard-editbtn svg {
-  width: 13px;
-  height: 13px;
-  stroke: var(--gris-texto);
+  width: 16px;
+  height: 16px;
+  stroke: var(--azul);
+  stroke-width: 1.6;
   transition: stroke .15s;
 }
 .prf-datacard-editbtn:hover svg {
@@ -648,6 +659,10 @@
    COMPLETITUD (sidebar card)
 ════════════════════════════════════════ */
 .prf-completitud { padding: 16px 20px; }
+
+.prf-grid--single {
+  grid-template-columns: 1fr;
+}
 .prf-comp-labels {
   display: flex;
   justify-content: space-between;
@@ -1030,7 +1045,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--rojo-soft);
+  background: var(--rojo-chip);
+  color: var(--rojo-soft);
   border: 2px solid var(--blanco);
   display: flex;
   align-items: center;
@@ -1040,12 +1056,23 @@
   z-index: 4;
 }
 .prf-avatar-delete-btn:hover {
-  background: var(--rojo-mid);
+  background: var(--rojo-bg);
 }
 .prf-avatar-delete-btn svg {
   width: 10px;
   height: 10px;
-  stroke: #fff;
+  stroke: currentColor;
+}
+
+.prf-avatar-delete-btn {
+  height: 30px;
+  width: 30px;
+}
+
+.prf-avatar-delete-btn svg {
+  height: 15px;
+  stroke-width: 1.6;
+  width: 15px;
 }
 
 /* ── Zona de drag & drop (upload modal) ── */
@@ -1445,5 +1472,121 @@
 
   .prf-card {
     border-radius: 12px;
+  }
+}
+
+/* Ajustes finales de perfil para alinearlo con el resto del dashboard */
+.prf-header {
+  box-shadow: 0 2px 8px rgba(17, 24, 39, .04);
+  margin-bottom: 16px;
+}
+
+.prf-banner {
+  background: var(--azul-deep);
+}
+
+.prf-datacard {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, .04);
+}
+
+.prf-datacard .prf-card-head {
+  align-items: center;
+  min-height: 54px;
+}
+
+.prf-datacard .prf-card-title {
+  color: var(--azul);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.prf-datacard-fields {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 18px;
+}
+
+.prf-datacard-field,
+.prf-datacard-field:nth-child(3),
+.prf-datacard-field:nth-child(4) {
+  background: var(--blanco);
+  border: 1.5px solid var(--gris-borde);
+  border-radius: 12px;
+  min-width: 0;
+  padding: 14px;
+  transition: border-color .18s, box-shadow .18s, transform .18s;
+}
+
+.prf-datacard-field:hover {
+  border-color: var(--azul-mid);
+  box-shadow: 0 8px 22px rgba(17, 24, 39, .06);
+  transform: translateY(-1px);
+}
+
+.prf-datacard-field--full {
+  grid-column: 1 / -1;
+}
+
+.prf-datacard-field:nth-child(4) {
+  grid-column: auto;
+}
+
+.prf-datacard-label {
+  align-items: center !important;
+  color: var(--gris-texto);
+  display: flex !important;
+  font-size: 10px;
+  font-weight: 800;
+  gap: 8px !important;
+  letter-spacing: .07em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.prf-datacard-field-icon {
+  align-items: center;
+  background: var(--azul-light);
+  border: 1px solid var(--azul-mid);
+  border-radius: 8px;
+  color: var(--azul);
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  opacity: 1;
+  width: 26px;
+}
+
+.prf-datacard-field-icon.is-empty {
+  background: var(--fondo);
+  border-color: var(--gris-borde);
+  color: var(--gris-texto);
+}
+
+.prf-datacard-field-icon svg {
+  height: 14px;
+  width: 14px;
+}
+
+.prf-datacard-value {
+  background: var(--azul-light);
+  border: 1.5px solid var(--azul-mid);
+  border-radius: 10px;
+  font-weight: 700;
+  padding: 8px 10px;
+}
+
+.prf-datacard-value.is-empty {
+  background: var(--fondo);
+  border-color: var(--gris-borde);
+}
+
+@media (max-width: 760px) {
+  .prf-datacard-fields {
+    grid-template-columns: 1fr;
   }
 }

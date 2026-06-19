@@ -1,15 +1,15 @@
-import {
-  BsCalendarEvent,
-  BsGeoAlt,
-  BsMegaphone,
-  BsPeople,
-  BsPencil,
-  BsPlayFill,
-  BsThreeDotsVertical,
-  BsFileEarmarkText,
-  BsXCircle,
-} from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
+import {
+  DashboardCalendarIcon,
+  DashboardCloseIcon,
+  DashboardEditIcon,
+  DashboardFileIcon,
+  DashboardLocationIcon,
+  DashboardMegaphoneIcon,
+  DashboardMenuIcon,
+  DashboardPlayIcon,
+  DashboardUserIcon,
+} from '../../../dashboard/layout/DashboardIcons';
 import {
   getEventStatusMeta,
   getEventTypeMeta,
@@ -68,17 +68,17 @@ export default function EventsGrid({
                     {statusActions.length > 0 ? (
                       <details className="evt-card-menu">
                         <summary className="evt-icon-btn evt-icon-btn--sm" title={t('adminEvents.grid.changeStatus')} aria-label={t('adminEvents.grid.changeStatus')}>
-                          <BsThreeDotsVertical />
+                          <DashboardMenuIcon />
                         </summary>
                         <div className="evt-card-menu-list">
                           {statusActions.map((action) => {
                             const Icon = action.icon === 'edit'
-                              ? BsPencil
+                              ? DashboardEditIcon
                               : action.icon === 'draft'
-                                ? BsFileEarmarkText
+                                ? DashboardFileIcon
                                 : action.icon === 'cancel'
-                                  ? BsXCircle
-                                  : BsPlayFill;
+                                  ? DashboardCloseIcon
+                                  : DashboardPlayIcon;
 
                             return (
                               <button
@@ -105,20 +105,20 @@ export default function EventsGrid({
 
                   <div className="evt-card-meta">
                     <span>
-                      <BsCalendarEvent />
+                      <DashboardCalendarIcon />
                       {event.date}{event.time ? ` - ${event.time}` : ''}
                     </span>
                     <span>
-                      <BsGeoAlt />
+                      <DashboardLocationIcon />
                       {event.location}
                     </span>
                     <span>
-                      <BsPeople />
+                      <DashboardUserIcon />
                       {t('adminEvents.grid.registered', { registered: event.registered, capacity: event.capacity || '--' })}
                     </span>
                     {showCommunicationsMeta ? (
                       <span>
-                        <BsMegaphone />
+                        <DashboardMegaphoneIcon />
                         {t('adminEvents.grid.communications', { count: event.communicationsCount })}
                       </span>
                     ) : null}
@@ -140,7 +140,7 @@ export default function EventsGrid({
                       className="evt-btn evt-btn--ghost"
                       onClick={() => onCommunicate(event)}
                     >
-                      <BsMegaphone />
+                      <DashboardMegaphoneIcon />
                       {t('adminEvents.grid.communicate')}
                     </button>
                     ) : null}
@@ -150,7 +150,7 @@ export default function EventsGrid({
                         className="evt-btn evt-btn--primary"
                         onClick={() => onEditEvent(event)}
                       >
-                        <BsPencil />
+                        <DashboardEditIcon />
                         {finalPrimaryActionLabel}
                       </button>
                     ) : null}
@@ -162,7 +162,7 @@ export default function EventsGrid({
         </div>
       ) : (
         <EventsEmptyState
-          icon={BsCalendarEvent}
+          icon={DashboardCalendarIcon}
           title={emptyState.title}
           description={emptyState.description}
           hint={finalEmptyHint}

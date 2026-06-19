@@ -67,6 +67,7 @@ function Card({ red, onToggle, onEdit, isOculta }) {
             onClick={() => !isOculta && onEdit(red, isKnownPlatform)}
             disabled={isOculta}
             title={isOculta ? t("links.action.unavailableHidden") : t("links.action.edit")}
+            variant="edit"
           >
             <DashboardEditIcon />
           </IconBtn>

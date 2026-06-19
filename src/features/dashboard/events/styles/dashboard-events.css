@@ -475,34 +475,115 @@
 
 .dbe-page .evt-toolbar {
   align-items: flex-start;
-  gap: 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 10px;
+  padding: 0;
 }
 
 .dbe-page .evt-search-box {
-  flex: 1 1 430px;
-  max-width: 560px;
-  min-width: 280px;
+  background: var(--blanco, #fff);
+  border: 1.5px solid var(--gris-borde, #d1d5db);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, .04);
+  flex: 1 1 auto;
+  max-width: none;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 13px;
+  width: 100%;
+}
+
+.dbe-page .evt-search-box:focus-within {
+  border-color: var(--azul, #0077b7);
+  box-shadow: 0 8px 22px rgba(0, 119, 183, .12);
+}
+
+.dbe-page .evt-search-input {
+  background: transparent;
+  border: 0 !important;
+  box-shadow: none !important;
+  min-height: 42px;
+  outline: 0;
+  padding: 0 38px;
+}
+
+.dbe-page .evt-search-input:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0;
+}
+
+.dbe-page .evt-filter-row {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
 }
 
 .dbe-page .evt-filter-group {
-  flex: 1 1 300px;
-  gap: 6px;
+  background: var(--blanco, #fff);
+  border: 1.5px solid var(--gris-borde, #d1d5db);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, .04);
+  flex: 1 1 auto;
+  gap: 7px;
+  min-height: 58px;
+  padding: 10px 12px;
+}
+
+.dbe-page .evt-type-menu {
+  flex: 0 0 auto;
+}
+
+.dbe-page .evt-type-menu-trigger {
+  background: var(--blanco, #fff);
+  border: 1.5px solid var(--gris-borde, #d1d5db);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, .04);
+  color: var(--gris-oscuro, #374151);
+  min-height: 58px;
+  padding: 0 14px;
+  transition: border-color .16s, box-shadow .16s, color .16s, transform .16s;
+}
+
+.dbe-page .evt-type-menu-trigger:hover,
+.dbe-page .evt-type-menu[open] .evt-type-menu-trigger {
+  border-color: var(--azul-mid, #b8ddf0);
+  box-shadow: 0 7px 16px rgba(17, 24, 39, .08);
+  color: var(--azul-deep, #004f7c);
+  transform: translateY(-1px);
+}
+
+.dbe-page .evt-type-menu-list {
+  border-radius: 12px;
+}
+
+.dbe-page .evt-type-menu-item:hover,
+.dbe-page .evt-type-menu-item.active {
+  background: var(--azul-light, #e8f4fb);
+  color: var(--azul-deep, #004f7c);
 }
 
 .dbe-page .evt-filter-group--types {
-  flex: 1 1 260px;
+  flex: 1 1 auto;
 }
 
 .dbe-page .evt-filter-chip {
-  font-size: 11px;
-  gap: 6px;
-  min-height: 30px;
-  padding: 0 10px;
+  background: var(--blanco, #fff);
+  border-radius: 999px;
+  font-size: 12px;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 13px;
+  transition: background .16s, border-color .16s, box-shadow .16s, color .16s, transform .16s;
 }
 
 .dbe-page .evt-filter-chip small {
-  font-size: 9px;
-  min-width: 17px;
+  font-size: 10px;
+  min-width: 20px;
   padding: 0 5px;
 }
 
@@ -554,6 +635,11 @@
   box-shadow: 0 10px 22px rgba(0, 119, 183, .1);
 }
 
+.dbe-page .evt-filter-chip:hover {
+  box-shadow: 0 7px 16px rgba(17, 24, 39, .08);
+  transform: translateY(-1px);
+}
+
 .dbe-page .evt-context-btn--primary:hover,
 .dbe-page .evt-btn--primary:hover,
 .dbe-page .evt-reason-btn--primary:hover,
@@ -577,10 +663,15 @@
 .dbe-page .evt-segment-card.active,
 .dbe-page .evt-urgency-card.active,
 .dbe-page .evt-calendar-day.is-today .evt-calendar-day-number {
-  background: var(--azul-light, #e8f4fb);
+  background: var(--azul, #0077b7);
   border-color: var(--azul, #0077b7);
-  box-shadow: 0 0 0 3px var(--azul-glow, rgba(0, 119, 183, .13));
-  color: var(--azul-deep, #004f7c);
+  box-shadow: 0 8px 20px rgba(0, 119, 183, .18);
+  color: #fff;
+}
+
+.dbe-page .evt-filter-chip.active small {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
 }
 
 .dbe-page .evt-calendar-day.is-today .evt-calendar-day-number {
@@ -715,5 +806,14 @@
   .dbe-phone-country {
     border-bottom: 1px solid var(--gris-borde, #d1d5db);
     border-right: 0;
+  }
+
+  .dbe-page .evt-filter-row {
+    flex-direction: column;
+  }
+
+  .dbe-page .evt-type-menu,
+  .dbe-page .evt-type-menu-trigger {
+    width: 100%;
   }
 }

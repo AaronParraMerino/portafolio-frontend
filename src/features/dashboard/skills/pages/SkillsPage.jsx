@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useLanguage } from "../../../../core/i18n";
 import SkillForm from "../components/SkillForm";
 import {
@@ -13,6 +13,9 @@ import ExperienceToast from "../../experience/components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 import Header from "../../layout/Header";
+import DashboardListSummary from "../../layout/DashboardListSummary";
+import DashboardListControls from "../../layout/DashboardListControls";
+import DashboardPagination from "../../layout/DashboardPagination";
 import {
   DashboardAddIcon,
   DashboardDeleteIcon,
@@ -24,6 +27,8 @@ import {
   getSkillProgress,
 } from "../model/skillLevel";
 import "../styles/skills.css";
+
+const SKILLS_PAGE_SIZE = 6;
 
 const normalizeSkillName = (value = "") =>
   String(value)
@@ -65,6 +70,10 @@ export default function SkillsPage() {
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [toast, setToast] = useState(null);
   const [savingCount, setSavingCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("todos");
+  const [sortBy, setSortBy] = useState("nivel");
+  const [currentPage, setCurrentPage] = useState(1);
   const saving = savingCount > 0;
 
   const [confirmConfig, setConfirmConfig] = useState({
@@ -240,13 +249,56 @@ export default function SkillsPage() {
     setModalMode("add");
   };
 
-  const tecnicas = skills.filter(
-    (s) => normalizeSkillType(s.tipo) === "tecnica"
-  );
+  const conteo = useMemo(() => ({
+    todos: skills.length,
+    tecnica: skills.filter((s) => normalizeSkillType(s.tipo) === "tecnica").length,
+    blanda: skills.filter((s) => normalizeSkillType(s.tipo) === "blanda").length,
+  }), [skills]);
 
-  const blandas = skills.filter(
-    (s) => normalizeSkillType(s.tipo) === "blanda"
-  );
+  const filteredSkills = useMemo(() => {
+    const query = normalizeSkillName(searchTerm);
+
+    return skills
+      .filter((skill) => {
+        const type = normalizeSkillType(skill.tipo);
+        if (typeFilter !== "todos" && type !== typeFilter) return false;
+
+        if (!query) return true;
+
+        return [
+          getSkillName(skill),
+          getSkillDescription(skill, t),
+          skill.nivel,
+          skill.tipo,
+        ].some((value) => normalizeSkillName(value).includes(query));
+      })
+      .sort((a, b) => {
+        if (typeFilter === "todos") {
+          const typeOrder = { tecnica: 0, blanda: 1 };
+          const typeCompare = (typeOrder[normalizeSkillType(a.tipo)] ?? 2) - (typeOrder[normalizeSkillType(b.tipo)] ?? 2);
+          if (typeCompare !== 0) return typeCompare;
+        }
+
+        if (sortBy === "nombre") {
+          return getSkillName(a).localeCompare(getSkillName(b));
+        }
+
+        if (sortBy === "tipo") {
+          return normalizeSkillType(a.tipo).localeCompare(normalizeSkillType(b.tipo));
+        }
+
+        return getSkillProgress(b.nivel) - getSkillProgress(a.nivel);
+      });
+  }, [skills, searchTerm, sortBy, t, typeFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, sortBy, skills.length]);
+
+  const pagedSkills = useMemo(() => {
+    const start = (currentPage - 1) * SKILLS_PAGE_SIZE;
+    return filteredSkills.slice(start, start + SKILLS_PAGE_SIZE);
+  }, [currentPage, filteredSkills]);
 
   return (
     <>
@@ -269,49 +321,74 @@ export default function SkillsPage() {
               <SkillEmptyState onAdd={openAddModal} />
             ) : (
               <>
-                <h5 className="skill-section-divider">
-                  {t("skills.section.technical")}
-                </h5>
+                <DashboardListSummary
+                  title={t("skills.summary.title")}
+                  description={t("skills.summary.description")}
+                  count={conteo.todos}
+                  label={t("skills.filters.all")}
+                />
 
-                {tecnicas.length === 0 ? (
+                <DashboardListControls
+                  searchValue={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  searchPlaceholder={t("skills.filters.searchPlaceholder")}
+                  searchAria={t("skills.filters.searchAria")}
+                  tabs={[
+                    { value: "todos", label: t("skills.filters.all"), count: conteo.todos },
+                    { value: "tecnica", label: t("skills.filters.technical"), count: conteo.tecnica },
+                    { value: "blanda", label: t("skills.filters.soft"), count: conteo.blanda },
+                  ]}
+                  activeTab={typeFilter}
+                  onTabChange={setTypeFilter}
+                  sortValue={sortBy}
+                  onSortChange={setSortBy}
+                  sortAria={t("skills.filters.sortAria")}
+                  sortOptions={[
+                    { value: "nivel", label: t("skills.filters.sort.level") },
+                    { value: "nombre", label: t("skills.filters.sort.name") },
+                    { value: "tipo", label: t("skills.filters.sort.type") },
+                  ]}
+                />
+
+                {filteredSkills.length === 0 ? (
                   <div className="skill-empty-category">
-                    {t("skills.empty.technical")}
+                    {t("skills.empty.filtered")}
                   </div>
                 ) : (
-                  tecnicas.map((s) => (
-                    <SkillLongRow
-                      key={s.id}
-                      skill={s}
-                      onEdit={(sk) => {
-                        setSelectedSkill(sk);
-                        setModalMode("edit");
-                      }}
-                      onDelete={handleDeleteRequest}
-                    />
-                  ))
+                  pagedSkills.map((s, index) => {
+                    const currentType = normalizeSkillType(s.tipo);
+                    const previousType = normalizeSkillType(pagedSkills[index - 1]?.tipo);
+                    const showSection = typeFilter === "todos" && currentType !== previousType;
+
+                    return (
+                      <React.Fragment key={s.id}>
+                        {showSection && (
+                          <div className="dash-list-section-break">
+                            {currentType === "blanda"
+                              ? t("skills.section.soft")
+                              : t("skills.section.technical")}
+                          </div>
+                        )}
+
+                        <SkillLongRow
+                          skill={s}
+                          onEdit={(sk) => {
+                            setSelectedSkill(sk);
+                            setModalMode("edit");
+                          }}
+                          onDelete={handleDeleteRequest}
+                        />
+                      </React.Fragment>
+                    );
+                  })
                 )}
 
-                <h5 className="skill-section-divider">
-                  {t("skills.section.soft")}
-                </h5>
-
-                {blandas.length === 0 ? (
-                  <div className="skill-empty-category">
-                    {t("skills.empty.soft")}
-                  </div>
-                ) : (
-                  blandas.map((s) => (
-                    <SkillLongRow
-                      key={s.id}
-                      skill={s}
-                      onEdit={(sk) => {
-                        setSelectedSkill(sk);
-                        setModalMode("edit");
-                      }}
-                      onDelete={handleDeleteRequest}
-                    />
-                  ))
-                )}
+                <DashboardPagination
+                  page={currentPage}
+                  pageSize={SKILLS_PAGE_SIZE}
+                  totalItems={filteredSkills.length}
+                  onPageChange={setCurrentPage}
+                />
               </>
             )}
           </div>
@@ -381,7 +458,6 @@ function SkillLongRow({ skill, onEdit, onDelete }) {
   return (
     <div
       className="skill-long-card d-flex align-items-center justify-content-between flex-wrap gap-3"
-      style={{ borderLeftColor: color }}
     >
       <div className="skill-main-info">
         <div

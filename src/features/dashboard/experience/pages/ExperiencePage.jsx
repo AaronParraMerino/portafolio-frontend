@@ -1,9 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ExperienceForm from "../components/ExperienceForm";
 import ExperienceToast from "../components/ExperienceToast";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
 import Header from "../../layout/Header";
+import DashboardListSummary from "../../layout/DashboardListSummary";
+import DashboardListControls from "../../layout/DashboardListControls";
+import DashboardPagination from "../../layout/DashboardPagination";
 import {
   DashboardAcademicIcon,
   DashboardAddIcon,
@@ -20,6 +23,8 @@ import {
   deleteExperiencia,
 } from "../services/experienceService";
 import "../styles/experience.css";
+
+const EXPERIENCE_PAGE_SIZE = 4;
 
 const formatearFechaCompleta = (fechaStr, t) => {
   if (!fechaStr) return t("experience.date.empty");
@@ -38,6 +43,19 @@ const getInitialExperiencias = () => {
   }
 };
 
+const normalizeText = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const isAcademicExperience = (exp) =>
+  normalizeText(exp?.tipo_experiencia).includes("academ");
+
+const isWorkExperience = (exp) =>
+  normalizeText(exp?.tipo_experiencia).includes("labor");
+
 export default function ExperiencePage() {
   const { t } = useLanguage();
   const [experiencias, setExperiencias] = useState(getInitialExperiencias);
@@ -46,6 +64,10 @@ export default function ExperiencePage() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(() => getInitialExperiencias().length === 0);
   const [savingCount, setSavingCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("todos");
+  const [sortBy, setSortBy] = useState("recientes");
+  const [currentPage, setCurrentPage] = useState(1);
   const saving = savingCount > 0;
 
   const [confirmData, setConfirmData] = useState({
@@ -176,13 +198,60 @@ export default function ExperiencePage() {
     });
   };
 
-  const laborales = experiencias.filter(
-    (e) => e.tipo_experiencia === "Laboral"
-  );
+  const conteo = useMemo(() => ({
+    todos: experiencias.length,
+    laboral: experiencias.filter(isWorkExperience).length,
+    academica: experiencias.filter(isAcademicExperience).length,
+    actual: experiencias.filter((exp) => Boolean(exp.actual)).length,
+  }), [experiencias]);
 
-  const academicas = experiencias.filter(
-    (e) => e.tipo_experiencia === "Académica"
-  );
+  const filteredExperiencias = useMemo(() => {
+    const query = normalizeText(searchTerm);
+
+    return experiencias
+      .filter((exp) => {
+        if (typeFilter === "laboral" && !isWorkExperience(exp)) return false;
+        if (typeFilter === "academica" && !isAcademicExperience(exp)) return false;
+        if (typeFilter === "actual" && !exp.actual) return false;
+
+        if (!query) return true;
+
+        return [
+          exp.puesto,
+          exp.empresa,
+          exp.descripcion,
+          exp.tipo_experiencia,
+          exp.fecha_inicio,
+          exp.fecha_fin,
+        ].some((value) => normalizeText(value).includes(query));
+      })
+      .sort((a, b) => {
+        if (typeFilter === "todos") {
+          const aGroup = isWorkExperience(a) ? "0" : "1";
+          const bGroup = isWorkExperience(b) ? "0" : "1";
+          if (aGroup !== bGroup) return aGroup.localeCompare(bGroup);
+        }
+
+        if (sortBy === "antiguos") {
+          return String(a.fecha_inicio || "").localeCompare(String(b.fecha_inicio || ""));
+        }
+
+        if (sortBy === "alfa") {
+          return String(a.puesto || "").localeCompare(String(b.puesto || ""));
+        }
+
+        return String(b.fecha_inicio || "").localeCompare(String(a.fecha_inicio || ""));
+      });
+  }, [experiencias, searchTerm, sortBy, typeFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, sortBy, experiencias.length]);
+
+  const pagedExperiencias = useMemo(() => {
+    const start = (currentPage - 1) * EXPERIENCE_PAGE_SIZE;
+    return filteredExperiencias.slice(start, start + EXPERIENCE_PAGE_SIZE);
+  }, [currentPage, filteredExperiencias]);
 
   return (
     <>
@@ -205,49 +274,80 @@ export default function ExperiencePage() {
               <ExperienceEmptyState onAdd={openAddModal} />
             ) : (
               <>
-                <SubsectionTitle>{t("experience.section.work")}</SubsectionTitle>
+                <DashboardListSummary
+                  title={t("experience.summary.title")}
+                  description={t("experience.summary.description")}
+                  count={conteo.todos}
+                  label={t("experience.filters.all")}
+                />
 
-                {laborales.length === 0 ? (
+                <DashboardListControls
+                  searchValue={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  searchPlaceholder={t("experience.filters.searchPlaceholder")}
+                  searchAria={t("experience.filters.searchAria")}
+                  tabs={[
+                    { value: "todos", label: t("experience.filters.all"), count: conteo.todos },
+                    { value: "laboral", label: t("experience.filters.work"), count: conteo.laboral },
+                    { value: "academica", label: t("experience.filters.academic"), count: conteo.academica },
+                    { value: "actual", label: t("experience.filters.current"), count: conteo.actual },
+                  ]}
+                  activeTab={typeFilter}
+                  onTabChange={setTypeFilter}
+                  sortValue={sortBy}
+                  onSortChange={setSortBy}
+                  sortAria={t("experience.filters.sortAria")}
+                  sortOptions={[
+                    { value: "recientes", label: t("experience.filters.sort.recent") },
+                    { value: "antiguos", label: t("experience.filters.sort.oldest") },
+                    { value: "alfa", label: t("experience.filters.sort.alpha") },
+                  ]}
+                />
+
+                {filteredExperiencias.length === 0 ? (
                   <div className="exp-category-empty">
-                    {t("experience.empty.work")}
+                    {t("experience.empty.filtered")}
                   </div>
                 ) : (
                   <div className="exp-edit-list">
-                    {laborales.map((exp) => (
-                      <ExperienceCard
-                        key={exp.id}
-                        exp={exp}
-                        onEdit={() => {
-                          setSelectedExp(exp);
-                          setModalMode("edit");
-                        }}
-                        onDelete={() => handleDeleteRequest(exp.id)}
-                      />
-                    ))}
+                    {pagedExperiencias.map((exp, index) => {
+                      const currentType = isAcademicExperience(exp) ? "academica" : "laboral";
+                      const previousExp = pagedExperiencias[index - 1];
+                      const previousType = previousExp
+                        ? (isAcademicExperience(previousExp) ? "academica" : "laboral")
+                        : "";
+                      const showSection = typeFilter === "todos" && currentType !== previousType;
+
+                      return (
+                        <React.Fragment key={exp.id}>
+                          {showSection && (
+                            <div className="dash-list-section-break">
+                              {currentType === "academica"
+                                ? t("experience.section.academic")
+                                : t("experience.section.work")}
+                            </div>
+                          )}
+
+                          <ExperienceCard
+                            exp={exp}
+                            onEdit={() => {
+                              setSelectedExp(exp);
+                              setModalMode("edit");
+                            }}
+                            onDelete={() => handleDeleteRequest(exp.id)}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
                   </div>
                 )}
 
-                <SubsectionTitle>{t("experience.section.academic")}</SubsectionTitle>
-
-                {academicas.length === 0 ? (
-                  <div className="exp-category-empty">
-                    {t("experience.empty.academic")}
-                  </div>
-                ) : (
-                  <div className="exp-edit-list">
-                    {academicas.map((exp) => (
-                      <ExperienceCard
-                        key={exp.id}
-                        exp={exp}
-                        onEdit={() => {
-                          setSelectedExp(exp);
-                          setModalMode("edit");
-                        }}
-                        onDelete={() => handleDeleteRequest(exp.id)}
-                      />
-                    ))}
-                  </div>
-                )}
+                <DashboardPagination
+                  page={currentPage}
+                  pageSize={EXPERIENCE_PAGE_SIZE}
+                  totalItems={filteredExperiencias.length}
+                  onPageChange={setCurrentPage}
+                />
               </>
             )}
           </div>
@@ -282,15 +382,6 @@ export default function ExperiencePage() {
   );
 }
 
-function SubsectionTitle({ children }) {
-  return (
-    <div className="exp-edit-section-divider">
-      <div className="exp-edit-section-title">{children}</div>
-      <div className="exp-edit-section-line" />
-    </div>
-  );
-}
-
 function ExperienceEmptyState({ onAdd }) {
   const { t } = useLanguage();
 
@@ -322,7 +413,7 @@ function ExperienceEmptyState({ onAdd }) {
 
 function ExperienceCard({ exp, onEdit, onDelete }) {
   const { t } = useLanguage();
-  const isAcademica = exp.tipo_experiencia === "Académica";
+  const isAcademica = isAcademicExperience(exp);
 
   const fechaInicio = formatearFechaCompleta(exp.fecha_inicio, t);
   const fechaFin = exp.actual
@@ -333,8 +424,6 @@ function ExperienceCard({ exp, onEdit, onDelete }) {
     <article
       className={`exp-edit-card ${isAcademica ? "is-academica" : "is-laboral"}`}
     >
-      <div className="exp-edit-left-panel" />
-
       <div className="exp-edit-content">
         <div className="exp-edit-body">
           <div className="exp-edit-top">

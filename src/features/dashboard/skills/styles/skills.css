@@ -75,13 +75,17 @@
 }
 
 .skill-long-card {
+  align-items: center;
   background: var(--blanco);
   border: 1.5px solid var(--gris-borde);
-  border-left: 6px solid var(--azul);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(17, 24, 39, .04);
+  display: grid !important;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, .75fr) auto;
   margin-bottom: 14px;
   padding: 16px 18px;
+  position: relative;
   transition: border-color .18s, box-shadow .18s, transform .18s;
 }
 
@@ -94,9 +98,8 @@
 .skill-main-info {
   align-items: center;
   display: flex;
-  flex: 1;
   gap: 14px;
-  min-width: 250px;
+  min-width: 0;
 }
 
 .level-circle-badge {
@@ -136,10 +139,9 @@
 }
 
 .skill-progress-zone {
-  flex: 1;
-  margin-inline: 18px;
-  max-width: 400px;
-  min-width: 200px;
+  margin-inline: 0;
+  max-width: none;
+  min-width: 0;
 }
 
 .skill-progress-top {
@@ -182,6 +184,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 .btn-action-skill {
@@ -207,11 +210,23 @@
   transform: translateY(-1px);
 }
 
+.btn-edit {
+  background: var(--azul-light);
+  border-color: var(--azul-mid);
+  color: var(--azul);
+}
+
 .btn-edit:hover {
   background: var(--azul-light);
   border-color: var(--azul-mid);
   box-shadow: 0 3px 10px rgba(0, 119, 183, .14);
   color: var(--azul);
+}
+
+.btn-delete {
+  background: var(--rojo-chip);
+  border-color: var(--rojo-soft);
+  color: var(--rojo-soft);
 }
 
 .btn-delete:hover {
@@ -244,14 +259,6 @@
   padding: 2.2rem 2rem;
   position: relative;
   text-align: center;
-}
-
-.skill-empty-state::before {
-  background: var(--azul);
-  content: "";
-  height: 5px;
-  inset: 0 0 auto;
-  position: absolute;
 }
 
 .skill-empty-icon {
@@ -310,6 +317,7 @@
 @media (max-width: 768px) {
   .skill-long-card {
     align-items: stretch !important;
+    grid-template-columns: 1fr;
   }
 
   .skill-main-info,
@@ -323,6 +331,7 @@
   }
 
   .skill-actions {
+    justify-content: flex-end;
     width: 100%;
   }
 

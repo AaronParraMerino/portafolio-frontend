@@ -15,12 +15,6 @@ const FORMAT_OPTIONS = [
     icon: <DashboardImageIcon />,
   },
   {
-    id: 'jpg',
-    labelKey: 'view.download.format.jpg.label',
-    metaKey: 'view.download.format.jpg.meta',
-    icon: <DashboardImageIcon />,
-  },
-  {
     id: 'pdf',
     labelKey: 'view.download.format.pdf.label',
     metaKey: 'view.download.format.pdf.meta',
@@ -30,6 +24,12 @@ const FORMAT_OPTIONS = [
     id: 'pptx',
     labelKey: 'view.download.format.pptx.label',
     metaKey: 'view.download.format.pptx.meta',
+    icon: <DashboardScreenIcon />,
+  },
+  {
+    id: 'html',
+    labelKey: 'view.download.format.html.label',
+    metaKey: 'view.download.format.html.meta',
     icon: <DashboardScreenIcon />,
   },
 ];

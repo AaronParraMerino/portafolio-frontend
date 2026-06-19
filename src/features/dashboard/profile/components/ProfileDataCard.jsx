@@ -9,29 +9,14 @@ import {
   DashboardWorkIcon,
 } from '../../layout/DashboardIcons';
 
-// Íconos por campo — dan identidad visual sin emojis
-
-// Campo con ícono
-// isEmpty: controla borde izquierdo y fondo del value
 function Campo({ label, icon, children, full = false, isEmpty = false }) {
   return (
-    <div
-      className={`prf-datacard-field${full ? ' prf-datacard-field--full' : ''}`}
-      style={{
-        borderLeft: isEmpty
-          ? '3px solid var(--gris-borde)'       // vacío → gris discreto
-          : '3px solid var(--azul)',             // lleno → azul institucional
-        transition: 'border-color .15s',
-      }}
-    >
-      <label className="prf-datacard-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span style={{ color: isEmpty ? 'var(--gris-texto)' : 'var(--azul)', opacity: .8, display: 'flex' }}>{icon}</span>
+    <div className={`prf-datacard-field${full ? ' prf-datacard-field--full' : ''}`}>
+      <label className="prf-datacard-label">
+        <span className={`prf-datacard-field-icon${isEmpty ? ' is-empty' : ''}`}>{icon}</span>
         {label}
       </label>
-      <div
-        className={`prf-datacard-value${full ? ' prf-datacard-value--bio' : ''}`}
-        style={isEmpty ? { background: 'var(--fondo)', borderColor: 'var(--gris-borde)' } : { background: '#f0f8ff', borderColor: 'var(--azul-mid)' }}
-      >
+      <div className={`prf-datacard-value${full ? ' prf-datacard-value--bio' : ''}${isEmpty ? ' is-empty' : ''}`}>
         {children}
       </div>
     </div>
@@ -44,15 +29,11 @@ export default function ProfileDataCard({ perfil }) {
 
   return (
     <div className="prf-datacard">
-
       <div className="prf-card-head">
         <span className="prf-card-title">{t('profile.data.title')}</span>
       </div>
 
-      <div className="prf-datacard-divider" />
-
       <div className="prf-datacard-fields">
-
         <Campo label={t('profile.field.email')} icon={<DashboardMailIcon />} isEmpty={!perfil.correo}>
           {perfil.correo || empty()}
         </Campo>
@@ -76,7 +57,6 @@ export default function ProfileDataCard({ perfil }) {
         <Campo label={t('profile.field.about')} icon={<DashboardUserIcon />} full isEmpty={!perfil.biografia}>
           {perfil.biografia || empty()}
         </Campo>
-
       </div>
     </div>
   );

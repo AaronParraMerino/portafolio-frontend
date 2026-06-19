@@ -77,8 +77,8 @@ export default function Configurate() {
         subtitle={t("configurate.header.subtitle")}
       />
 
-      <main className="dash-content dash-content--narrow">
-        <section className="dash-panel cfg-settings-panel">
+      <main className="dash-content dash-content--narrow cfg-settings-content">
+        <section className="cfg-settings-panel">
           <div className="cfg-section-label">
             <span>{t("configurate.section.accountManagement")}</span>
           </div>

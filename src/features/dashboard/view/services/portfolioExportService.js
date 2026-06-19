@@ -3,18 +3,82 @@ import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
 
 const MAX_CANVAS_HEIGHT = 26000;
-const IMAGE_QUALITY = 0.92;
+const IMAGE_QUALITY = 0.96;
 const PDF_PAGE = {
   width: 210,
   height: 297,
-  margin: 8,
+  margin: 10,
 };
 const PPTX_PAGE = {
-  width: 8.27,
-  height: 11.69,
-  margin: 0.3,
+  width: 13.333,
+  height: 7.5,
+  margin: 0.32,
 };
 const EMU_PER_INCH = 914400;
+const EXPORT_BG = '#f8fafc';
+const CAPTURE_TIMEOUT_MS = 28000;
+const ASSET_TIMEOUT_MS = 4500;
+const INLINE_STYLE_PROPERTIES = [
+  'alignItems',
+  'backgroundColor',
+  'backgroundImage',
+  'backgroundPosition',
+  'backgroundRepeat',
+  'backgroundSize',
+  'borderBottomColor',
+  'borderBottomLeftRadius',
+  'borderBottomRightRadius',
+  'borderBottomStyle',
+  'borderBottomWidth',
+  'borderLeftColor',
+  'borderLeftStyle',
+  'borderLeftWidth',
+  'borderRightColor',
+  'borderRightStyle',
+  'borderRightWidth',
+  'borderTopColor',
+  'borderTopLeftRadius',
+  'borderTopRightRadius',
+  'borderTopStyle',
+  'borderTopWidth',
+  'boxShadow',
+  'boxSizing',
+  'color',
+  'display',
+  'flexDirection',
+  'flexGrow',
+  'flexShrink',
+  'flexWrap',
+  'fontFamily',
+  'fontSize',
+  'fontStyle',
+  'fontWeight',
+  'gap',
+  'gridTemplateColumns',
+  'height',
+  'justifyContent',
+  'letterSpacing',
+  'lineHeight',
+  'marginBottom',
+  'marginLeft',
+  'marginRight',
+  'marginTop',
+  'maxWidth',
+  'minHeight',
+  'minWidth',
+  'objectFit',
+  'overflow',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingRight',
+  'paddingTop',
+  'position',
+  'textAlign',
+  'textDecoration',
+  'textTransform',
+  'transform',
+  'width',
+];
 
 function slugify(value = 'portafolio') {
   return String(value || 'portafolio')
@@ -35,6 +99,36 @@ function downloadBlob(blob, fileName) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadText(content, fileName, type = 'text/html;charset=utf-8') {
+  downloadBlob(new Blob([content], { type }), fileName);
+}
+
+function withTimeout(promise, ms, message) {
+  let timer;
+
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]).finally(() => {
+    window.clearTimeout(timer);
+  });
+}
+
+function waitAtMost(promise, ms) {
+  let timer;
+
+  return Promise.race([
+    promise.catch(() => undefined),
+    new Promise((resolve) => {
+      timer = window.setTimeout(resolve, ms);
+    }),
+  ]).finally(() => {
+    window.clearTimeout(timer);
+  });
 }
 
 function canvasToBlob(canvas, type = 'image/png', quality = IMAGE_QUALITY) {
@@ -76,6 +170,66 @@ function inchesToEmu(value) {
   return Math.round(value * EMU_PER_INCH);
 }
 
+function clamp(value, min = 0, max = 255) {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function hexToRgb(hex = '#ffffff') {
+  const clean = String(hex || '#ffffff').replace('#', '').trim();
+  const full = clean.length === 3
+    ? clean.split('').map(char => `${char}${char}`).join('')
+    : clean;
+
+  if (!/^[0-9a-f]{6}$/i.test(full)) {
+    return { r: 255, g: 255, b: 255 };
+  }
+
+  return {
+    r: parseInt(full.slice(0, 2), 16),
+    g: parseInt(full.slice(2, 4), 16),
+    b: parseInt(full.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex({ r, g, b }) {
+  return `#${[r, g, b].map(value => clamp(value).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function mixHex(left, right, leftPercent = 50) {
+  const a = hexToRgb(left);
+  const b = hexToRgb(right);
+  const weight = Math.max(0, Math.min(100, Number(leftPercent))) / 100;
+
+  return rgbToHex({
+    r: (a.r * weight) + (b.r * (1 - weight)),
+    g: (a.g * weight) + (b.g * (1 - weight)),
+    b: (a.b * weight) + (b.b * (1 - weight)),
+  });
+}
+
+function getCssVar(element, name, fallback) {
+  const value = getComputedStyle(element).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function buildExportTheme(element) {
+  const cardBg = getCssVar(element, '--card-bg', '#ffffff');
+  const accent = getCssVar(element, '--accent', '#0077b7');
+  const text = getCssVar(element, '--text-color', '#111827');
+  const muted = getCssVar(element, '--muted-text-color', mixHex(text, cardBg, 62));
+
+  return {
+    cardBg,
+    accent,
+    text,
+    muted,
+    softSurface: getCssVar(element, '--soft-surface-bg', mixHex(cardBg, accent, 92)),
+    softHover: getCssVar(element, '--soft-surface-hover-bg', mixHex(cardBg, accent, 84)),
+    softBorder: getCssVar(element, '--soft-border-color', mixHex(text, cardBg, 16)),
+    github: getCssVar(element, '--github-link-color', '#24292f'),
+  };
+}
+
 function sliceCanvas(sourceCanvas, y, height) {
   const slice = document.createElement('canvas');
   const safeHeight = Math.min(height, sourceCanvas.height - y);
@@ -101,13 +255,67 @@ function sliceCanvas(sourceCanvas, y, height) {
   return slice;
 }
 
-function injectExportStyles(clonedDocument) {
+function getPreferredBreaks(element, canvas) {
+  const rootRect = element.getBoundingClientRect();
+  const scaleY = canvas.height / Math.max(element.scrollHeight || rootRect.height, 1);
+  const selectors = [
+    '.pf-sec',
+    '.pf-identity',
+    '.pf-stats',
+    '.pf-hero',
+    '.subsec-divider',
+    '.sk-view-card',
+    '.exp-card',
+    '.prj-card',
+  ];
+
+  return [...element.querySelectorAll(selectors.join(','))]
+    .map((node) => {
+      const rect = node.getBoundingClientRect();
+      return Math.max(0, Math.round((rect.top - rootRect.top + element.scrollTop) * scaleY));
+    })
+    .filter((value) => value > 0 && value < canvas.height)
+    .sort((a, b) => a - b)
+    .filter((value, index, list) => index === 0 || Math.abs(value - list[index - 1]) > 24);
+}
+
+function getNextSliceHeight({ y, maxSliceHeight, canvasHeight, breaks = [] }) {
+  const remaining = canvasHeight - y;
+
+  if (remaining <= maxSliceHeight) return remaining;
+
+  const minSliceHeight = Math.floor(maxSliceHeight * 0.58);
+  const idealEnd = y + maxSliceHeight;
+  const minEnd = y + minSliceHeight;
+  const candidates = breaks.filter(point => point > minEnd && point < idealEnd - 24);
+  const selected = candidates.length ? candidates[candidates.length - 1] : idealEnd;
+
+  return Math.max(1, Math.min(selected - y, remaining));
+}
+
+function injectExportStyles(clonedDocument, theme) {
   const style = clonedDocument.createElement('style');
   style.textContent = `
     * {
       animation: none !important;
       transition: none !important;
       caret-color: transparent !important;
+    }
+
+    .portfolio-export-mode .portfolio-export-target,
+    .portfolio-export-mode .pf-card {
+      --card-bg: ${theme.cardBg};
+      --accent: ${theme.accent};
+      --text-color: ${theme.text};
+      --muted-text-color: ${theme.muted};
+      --soft-surface-bg: ${theme.softSurface};
+      --soft-surface-hover-bg: ${theme.softHover};
+      --soft-border-color: ${theme.softBorder};
+      --github-link-color: ${theme.github};
+    }
+
+    .portfolio-export-mode .portfolio-export-target {
+      background: transparent !important;
     }
 
     .portfolio-export-mode iframe,
@@ -129,7 +337,7 @@ function injectExportStyles(clonedDocument) {
     }
 
     .portfolio-export-mode .pf-avatar {
-      box-shadow: 0 0 0 10px rgba(0,119,183,.2), 0 0 0 17px rgba(255,255,255,.13), 0 30px 72px rgba(0,0,0,.46) !important;
+      box-shadow: 0 0 0 8px ${mixHex(theme.accent, '#ffffff', 24)}, 0 22px 46px rgba(0,0,0,.28) !important;
     }
 
     .portfolio-export-mode .chip,
@@ -145,8 +353,8 @@ function injectExportStyles(clonedDocument) {
     .portfolio-export-mode .sk-level-badge,
     .portfolio-export-mode .sk-soft-level,
     .portfolio-export-mode .sk-meter-fill {
-      background: #eef6fb !important;
-      border-color: #bfdceb !important;
+      background: ${theme.softSurface} !important;
+      border-color: ${theme.softBorder} !important;
     }
 
     .portfolio-export-mode .pf-about-text,
@@ -158,7 +366,7 @@ function injectExportStyles(clonedDocument) {
     .portfolio-export-mode .prj-card-desc,
     .portfolio-export-mode .prj-detail-description,
     .portfolio-export-mode .prj-card-contribution p {
-      color: #4b5563 !important;
+      color: ${theme.muted} !important;
     }
   `;
 
@@ -169,7 +377,11 @@ function hasUnsupportedColorFunction(value = '') {
   return /\bcolor-mix\s*\(|\bcolor\s*\(/i.test(String(value || ''));
 }
 
-function sanitizeUnsupportedColors(clonedDocument) {
+function isUnsupportedStyleValue(value = '') {
+  return hasUnsupportedColorFunction(value) || /\bvar\s*\(/i.test(String(value || ''));
+}
+
+function sanitizeUnsupportedColors(clonedDocument, theme) {
   const target = clonedDocument.querySelector('.portfolio-export-target');
   const nodes = target ? [target, ...target.querySelectorAll('*')] : [];
 
@@ -177,21 +389,21 @@ function sanitizeUnsupportedColors(clonedDocument) {
     const style = clonedDocument.defaultView.getComputedStyle(node);
 
     if (hasUnsupportedColorFunction(style.color)) {
-      node.style.color = '#111827';
+      node.style.color = theme.text;
     }
 
     if (hasUnsupportedColorFunction(style.backgroundColor) || hasUnsupportedColorFunction(style.backgroundImage)) {
-      node.style.backgroundColor = 'transparent';
+      node.style.backgroundColor = theme.softSurface;
       node.style.backgroundImage = 'none';
     }
 
     if (hasUnsupportedColorFunction(style.borderColor)) {
-      node.style.borderColor = '#d1d5db';
+      node.style.borderColor = theme.softBorder;
     }
 
     ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'outlineColor'].forEach((property) => {
       if (hasUnsupportedColorFunction(style[property])) {
-        node.style[property] = '#d1d5db';
+        node.style[property] = theme.softBorder;
       }
     });
 
@@ -213,16 +425,202 @@ function sanitizeUnsupportedColors(clonedDocument) {
   });
 }
 
+function stripExportClasses(root) {
+  [root, ...root.querySelectorAll('*')].forEach((node) => {
+    node.removeAttribute('class');
+  });
+}
+
+function getFallbackStyleValue(property, theme) {
+  if (property === 'color') return theme.text;
+  if (property === 'fill' || property === 'stroke') return 'currentColor';
+  if (property.includes('background-image') || property === 'filter' || property === 'backdrop-filter') return 'none';
+  if (property.includes('background')) return theme.softSurface;
+  if (property.includes('border') || property.includes('outline')) return theme.softBorder;
+  if (property.includes('shadow')) return 'none';
+  return '';
+}
+
+function sanitizeInlineStyleTree(root, theme) {
+  [root, ...root.querySelectorAll('*')].forEach((node) => {
+    const style = node.style;
+
+    for (let index = style.length - 1; index >= 0; index -= 1) {
+      const property = style[index];
+      const value = style.getPropertyValue(property);
+
+      if (!isUnsupportedStyleValue(value)) continue;
+
+      const fallback = getFallbackStyleValue(property, theme);
+
+      if (fallback) {
+        style.setProperty(property, fallback);
+      } else {
+        style.removeProperty(property);
+      }
+    }
+  });
+}
+
+function prepareInlinedClone(source, clone, assetMap, theme, width) {
+  inlineComputedTree(source, clone, assetMap, theme);
+
+  clone.style.width = `${width}px`;
+  clone.style.maxWidth = `${width}px`;
+  clone.style.margin = '0 auto';
+  clone.querySelectorAll('script, iframe, video').forEach(node => node.remove());
+  sanitizeInlineStyleTree(clone, theme);
+  stripExportClasses(clone);
+}
+
+function extractUrl(value = '') {
+  const match = String(value || '').match(/url\((["']?)(.*?)\1\)/i);
+  return match?.[2] || '';
+}
+
+function isDataUrl(value = '') {
+  return /^data:/i.test(String(value || ''));
+}
+
+function isFetchableAsset(url = '') {
+  if (!url || isDataUrl(url) || /^blob:/i.test(url)) return false;
+  return /^(https?:)?\/\//i.test(url) || url.startsWith('/');
+}
+
+async function fetchAssetAsDataUrl(url) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), ASSET_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      mode: 'cors',
+      credentials: 'omit',
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return null;
+
+    const blob = await response.blob();
+
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function buildAssetMap(element) {
+  const urls = new Set();
+
+  [...element.querySelectorAll('img')].forEach((image) => {
+    const url = image.currentSrc || image.src;
+    if (isFetchableAsset(url)) urls.add(url);
+  });
+
+  [element, ...element.querySelectorAll('*')].forEach((node) => {
+    const url = extractUrl(getComputedStyle(node).backgroundImage);
+    if (isFetchableAsset(url)) urls.add(url);
+  });
+
+  const entries = await Promise.all([...urls].map(async (url) => [
+    url,
+    await fetchAssetAsDataUrl(url),
+  ]));
+
+  return new Map(entries);
+}
+
+function removeRiskyMedia(clonedDocument) {
+  const target = clonedDocument.querySelector('.portfolio-export-target');
+  if (!target) return;
+
+  [...target.querySelectorAll('img')].forEach((image) => {
+    image.style.visibility = 'hidden';
+    image.removeAttribute('src');
+    image.removeAttribute('srcset');
+  });
+
+  [target, ...target.querySelectorAll('*')].forEach((node) => {
+    node.style.backgroundImage = 'none';
+  });
+}
+
+function applyAssetMap(clonedDocument, assetMap, { removeMissing = false } = {}) {
+  const target = clonedDocument.querySelector('.portfolio-export-target');
+  const nodes = target ? [target, ...target.querySelectorAll('*')] : [];
+  const images = target ? [...target.querySelectorAll('img')] : [];
+
+  images.forEach((image) => {
+    const url = image.currentSrc || image.src;
+
+    if (!assetMap.has(url)) {
+      if (removeMissing) {
+        image.style.visibility = 'hidden';
+        image.removeAttribute('src');
+        image.removeAttribute('srcset');
+      }
+      return;
+    }
+
+    const dataUrl = assetMap.get(url);
+
+    if (dataUrl) {
+      image.src = dataUrl;
+      image.removeAttribute('srcset');
+      return;
+    }
+
+    image.style.visibility = 'hidden';
+  });
+
+  nodes.forEach((node) => {
+    const url = extractUrl(clonedDocument.defaultView.getComputedStyle(node).backgroundImage);
+
+    if (!assetMap.has(url)) {
+      if (removeMissing && isFetchableAsset(url)) {
+        node.style.backgroundImage = 'none';
+      }
+      return;
+    }
+
+    const dataUrl = assetMap.get(url);
+
+    if (dataUrl) {
+      node.style.backgroundImage = `url("${dataUrl}")`;
+      return;
+    }
+
+    node.style.backgroundImage = 'none';
+  });
+}
+
 async function waitForImages(element) {
   const images = [...element.querySelectorAll('img')];
 
   await Promise.allSettled(images.map((image) => {
     if (image.complete && image.naturalWidth > 0) return Promise.resolve();
-    if (typeof image.decode === 'function') return image.decode();
+    if (typeof image.decode === 'function') {
+      return withTimeout(image.decode(), ASSET_TIMEOUT_MS, 'Imagen lenta.');
+    }
 
     return new Promise((resolve) => {
+      const timeout = window.setTimeout(resolve, ASSET_TIMEOUT_MS);
       image.onload = resolve;
       image.onerror = resolve;
+      image.onload = () => {
+        window.clearTimeout(timeout);
+        resolve();
+      };
+      image.onerror = () => {
+        window.clearTimeout(timeout);
+        resolve();
+      };
     });
   }));
 }
@@ -235,23 +633,32 @@ async function waitForReady(element) {
   await waitForImages(element);
 }
 
-async function capturePortfolio(element) {
+async function capturePortfolio(element, options = {}) {
+  const { safeMode = false } = options;
+
   if (!element) {
     throw new Error('No se encontro el portafolio para descargar.');
   }
 
-  await waitForReady(element);
+  await waitAtMost(waitForReady(element), 7000);
 
   const width = Math.ceil(element.scrollWidth || element.getBoundingClientRect().width);
   const height = Math.ceil(element.scrollHeight || element.getBoundingClientRect().height);
-  const scale = Math.max(1, Math.min(2, MAX_CANVAS_HEIGHT / Math.max(height, 1)));
+  const scale = safeMode
+    ? 1
+    : Math.max(1, Math.min(1.55, MAX_CANVAS_HEIGHT / Math.max(height, 1), window.devicePixelRatio || 1.25));
+  const theme = buildExportTheme(element);
+  const assetMap = safeMode
+    ? new Map()
+    : await waitAtMost(buildAssetMap(element), 8000) || new Map();
 
-  return html2canvas(element, {
-    backgroundColor: '#f8fafc',
+  return withTimeout(html2canvas(element, {
+    backgroundColor: EXPORT_BG,
     scale,
-    useCORS: true,
+    useCORS: !safeMode,
     allowTaint: false,
     logging: false,
+    imageTimeout: safeMode ? 0 : 4500,
     width,
     height,
     windowWidth: Math.max(document.documentElement.scrollWidth, width),
@@ -260,21 +667,146 @@ async function capturePortfolio(element) {
     scrollY: -window.scrollY,
     onclone: (clonedDocument) => {
       clonedDocument.body.classList.add('portfolio-export-mode');
-      injectExportStyles(clonedDocument);
-      sanitizeUnsupportedColors(clonedDocument);
+      injectExportStyles(clonedDocument, theme);
+      if (safeMode) {
+        removeRiskyMedia(clonedDocument);
+      } else {
+        applyAssetMap(clonedDocument, assetMap, { removeMissing: true });
+      }
+      sanitizeUnsupportedColors(clonedDocument, theme);
     },
+  }), CAPTURE_TIMEOUT_MS, 'La captura del portafolio tardo demasiado.');
+}
+
+async function capturePortfolioWithFallback(element) {
+  try {
+    return await captureSanitizedClone(element);
+  } catch (sanitizedError) {
+    try {
+      return await capturePortfolio(element, { safeMode: true });
+    } catch {
+      throw sanitizedError;
+    }
+  }
+}
+
+function copyComputedStyles(source, target, assetMap, theme) {
+  const computed = getComputedStyle(source);
+
+  INLINE_STYLE_PROPERTIES.forEach((property) => {
+    const value = computed[property];
+
+    if (!value || isUnsupportedStyleValue(value)) return;
+
+    target.style[property] = value;
+  });
+
+  target.style.transition = 'none';
+  target.style.animation = 'none';
+  target.style.caretColor = 'transparent';
+
+  if (isUnsupportedStyleValue(computed.color)) {
+    target.style.color = theme.text;
+  }
+
+  if (isUnsupportedStyleValue(computed.backgroundColor)) {
+    target.style.backgroundColor = theme.softSurface;
+  }
+
+  const backgroundUrl = extractUrl(computed.backgroundImage);
+
+  if (backgroundUrl) {
+    const dataUrl = assetMap.get(backgroundUrl);
+    target.style.backgroundImage = dataUrl ? `url("${dataUrl}")` : 'none';
+  }
+
+  if (source.tagName === 'IMG') {
+    const url = source.currentSrc || source.src;
+    const dataUrl = assetMap.get(url);
+
+    if (dataUrl) {
+      target.src = dataUrl;
+      target.removeAttribute('srcset');
+      return;
+    }
+
+    target.style.visibility = 'hidden';
+    target.removeAttribute('src');
+    target.removeAttribute('srcset');
+  }
+
+  if (source.tagName === 'IFRAME' || source.tagName === 'VIDEO') {
+    target.remove();
+  }
+}
+
+function inlineComputedTree(sourceRoot, targetRoot, assetMap, theme) {
+  copyComputedStyles(sourceRoot, targetRoot, assetMap, theme);
+
+  const sourceChildren = [...sourceRoot.children];
+  const targetChildren = [...targetRoot.children];
+
+  sourceChildren.forEach((sourceChild, index) => {
+    const targetChild = targetChildren[index];
+    if (!targetChild) return;
+    inlineComputedTree(sourceChild, targetChild, assetMap, theme);
   });
 }
 
+async function captureSanitizedClone(element) {
+  if (!element) {
+    throw new Error('No se encontro el portafolio para descargar.');
+  }
+
+  const theme = buildExportTheme(element);
+  const assetMap = await waitAtMost(buildAssetMap(element), 8000) || new Map();
+  const width = Math.ceil(element.scrollWidth || element.getBoundingClientRect().width);
+  const clone = element.cloneNode(true);
+  const host = document.createElement('div');
+
+  host.style.position = 'absolute';
+  host.style.left = '0';
+  host.style.top = '0';
+  host.style.width = `${width}px`;
+  host.style.background = EXPORT_BG;
+  host.style.padding = '0';
+  host.style.margin = '0';
+  host.style.pointerEvents = 'none';
+  host.style.zIndex = '-1';
+  host.appendChild(clone);
+  document.body.appendChild(host);
+
+  try {
+    prepareInlinedClone(element, clone, assetMap, theme, width);
+
+    const height = Math.ceil(clone.scrollHeight || clone.getBoundingClientRect().height);
+
+    return await withTimeout(html2canvas(clone, {
+      backgroundColor: EXPORT_BG,
+      scale: 1,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      imageTimeout: 0,
+      width,
+      height,
+      windowWidth: width,
+      windowHeight: Math.max(height, window.innerHeight),
+      scrollX: 0,
+      scrollY: 0,
+    }), CAPTURE_TIMEOUT_MS, 'La captura segura del portafolio tardo demasiado.');
+  } finally {
+    host.remove();
+  }
+}
+
 async function exportImage(canvas, format, baseName) {
-  const isJpg = format === 'jpg';
-  const type = isJpg ? 'image/jpeg' : 'image/png';
-  const blob = await canvasToBlob(canvas, type, isJpg ? IMAGE_QUALITY : undefined);
+  const blob = await canvasToBlob(canvas, 'image/png');
 
   downloadBlob(blob, `${baseName}.${format}`);
 }
 
-function exportPdf(canvas, baseName) {
+function exportPdf(canvas, baseName, element) {
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -284,11 +816,18 @@ function exportPdf(canvas, baseName) {
 
   const usableWidth = PDF_PAGE.width - (PDF_PAGE.margin * 2);
   const usableHeight = PDF_PAGE.height - (PDF_PAGE.margin * 2);
-  const sliceHeight = Math.floor(canvas.width * (usableHeight / usableWidth));
+  const maxSliceHeight = Math.floor(canvas.width * (usableHeight / usableWidth));
+  const breaks = getPreferredBreaks(element, canvas);
   let y = 0;
   let page = 0;
 
   while (y < canvas.height) {
+    const sliceHeight = getNextSliceHeight({
+      y,
+      maxSliceHeight,
+      canvasHeight: canvas.height,
+      breaks,
+    });
     const slice = sliceCanvas(canvas, y, sliceHeight);
     const imageHeight = Math.min(usableHeight, usableWidth * (slice.height / slice.width));
 
@@ -314,21 +853,29 @@ function exportPdf(canvas, baseName) {
   pdf.save(`${baseName}.pdf`);
 }
 
-async function exportPptx(canvas, baseName) {
+async function exportPptx(canvas, baseName, element) {
   const usableWidth = PPTX_PAGE.width - (PPTX_PAGE.margin * 2);
   const usableHeight = PPTX_PAGE.height - (PPTX_PAGE.margin * 2);
-  const sliceHeight = Math.floor(canvas.width * (usableHeight / usableWidth));
+  const maxSliceHeight = Math.floor(canvas.width * (usableHeight / usableWidth));
+  const breaks = getPreferredBreaks(element, canvas);
   const slides = [];
   let y = 0;
 
   while (y < canvas.height) {
+    const sliceHeight = getNextSliceHeight({
+      y,
+      maxSliceHeight,
+      canvasHeight: canvas.height,
+      breaks,
+    });
     const slice = sliceCanvas(canvas, y, sliceHeight);
     const imageHeight = Math.min(usableHeight, usableWidth * (slice.height / slice.width));
+    const offsetY = PPTX_PAGE.margin + Math.max(0, (usableHeight - imageHeight) / 2);
 
     slides.push({
       imageBase64: canvasToJpegDataUrl(slice).split(',')[1],
       x: PPTX_PAGE.margin,
-      y: PPTX_PAGE.margin,
+      y: offsetY,
       w: usableWidth,
       h: imageHeight,
     });
@@ -411,7 +958,7 @@ function buildAppXml(slideCount) {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
   <Application>Portafolio</Application>
-  <PresentationFormat>A4 Portrait</PresentationFormat>
+  <PresentationFormat>16:9 Widescreen</PresentationFormat>
   <Slides>${slideCount}</Slides>
 </Properties>`;
 }
@@ -533,23 +1080,82 @@ function buildThemeXml() {
 </a:theme>`;
 }
 
+async function buildFallbackHtml(element, title) {
+  if (!element) {
+    throw new Error('No se encontro el portafolio para descargar.');
+  }
+
+  await waitAtMost(waitForReady(element), 7000);
+
+  const theme = buildExportTheme(element);
+  const assetMap = await waitAtMost(buildAssetMap(element), 8000) || new Map();
+  const width = Math.ceil(element.scrollWidth || element.getBoundingClientRect().width);
+  const clone = element.cloneNode(true);
+
+  prepareInlinedClone(element, clone, assetMap, theme, width);
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeXml(title)}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: ${EXPORT_BG};
+      font-family: Arial, sans-serif;
+      color: #111827;
+    }
+    main {
+      width: 100%;
+      overflow-x: auto;
+    }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    ${clone.outerHTML}
+  </main>
+</body>
+</html>`;
+}
+
 export async function exportPortfolio(element, { format, title = 'portafolio' }) {
-  const canvas = await capturePortfolio(element);
   const baseName = slugify(`${title}-${new Date().toISOString().slice(0, 10)}`);
 
-  if (format === 'png' || format === 'jpg') {
-    await exportImage(canvas, format, baseName);
+  if (format === 'html') {
+    downloadText(await buildFallbackHtml(element, title), `${baseName}.html`);
     return;
   }
 
-  if (format === 'pdf') {
-    exportPdf(canvas, baseName);
-    return;
+  let canvas;
+
+  try {
+    canvas = await capturePortfolioWithFallback(element);
+  } catch (error) {
+    throw new Error(error?.message || 'No se pudo capturar el portafolio.');
   }
 
-  if (format === 'pptx') {
-    await exportPptx(canvas, baseName);
-    return;
+  try {
+    if (format === 'png') {
+      await exportImage(canvas, format, baseName);
+      return;
+    }
+
+    if (format === 'pdf') {
+      exportPdf(canvas, baseName, element);
+      return;
+    }
+
+    if (format === 'pptx') {
+      await exportPptx(canvas, baseName, element);
+      return;
+    }
+  } catch (error) {
+    throw new Error(error?.message || 'No se pudo generar el archivo solicitado.');
   }
 
   throw new Error('Formato de descarga no soportado.');

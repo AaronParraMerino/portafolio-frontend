@@ -55,7 +55,7 @@ export default function DashboardEdit({
   children,
   onClose,
   closeDisabled = false,
-  closeOnOverlay = true,
+  closeOnOverlay = false,
   size = 'md',
   className = '',
   ariaLabel,
