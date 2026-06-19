@@ -56,7 +56,7 @@ function UploadImageModal({ tipo, onConfirm, onClose }) {
 
   return (
     <>
-      <div className="prf-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="prf-modal-overlay">
         <div className="prf-modal" style={{ maxWidth: 480 }}>
 
           <div className="prf-modal-head">
@@ -143,7 +143,7 @@ function UploadImageModal({ tipo, onConfirm, onClose }) {
 function ConfirmDeleteModal({ tipo, onConfirm, onClose }) {
   const { t } = useLanguage();
   return (
-    <div className="prf-modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="prf-modal-overlay">
       <div className="prf-modal" style={{ maxWidth: 400 }}>
         <div className="prf-modal-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

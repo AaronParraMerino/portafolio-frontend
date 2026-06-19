@@ -3367,6 +3367,10 @@
   }
 }
 
+.export-option:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 /* ══ Portfolio visual refresh shared by dashboard preview and public view ══ */
 .vw-page {
   background: var(--fondo, #f2f2f2);
@@ -3526,15 +3530,50 @@
 }
 
 .vw-page .pf-social-platform-icon.links-platform-icon {
+  align-items: center;
+  background: var(--links-platform-color, var(--accent));
+  border: 1.5px solid rgba(255, 255, 255, .42);
   border-radius: 10px;
   box-shadow: 0 3px 10px rgba(17, 24, 39, .1);
+  color: #fff;
+  display: inline-flex;
+  flex: 0 0 36px;
   height: 34px;
+  justify-content: center;
+  line-height: 1;
+  overflow: hidden;
+  position: relative;
   width: 34px;
 }
 
 .vw-page .pf-social-platform-icon.links-platform-icon svg {
+  color: inherit !important;
+  display: block;
+  fill: currentColor;
   height: 17px;
+  max-height: 100%;
+  max-width: 100%;
+  stroke: none;
   width: 17px;
+}
+
+.vw-page .pf-social-platform-icon.links-platform-icon.platform-github svg {
+  height: 20px;
+  width: 20px;
+}
+
+.vw-page .pf-social-platform-icon.links-platform-icon.platform-linkedin svg {
+  height: 19px;
+  width: 19px;
+}
+
+.vw-page .pf-social-platform-icon.links-platform-icon.is-custom {
+  background: var(--soft-surface-hover-bg, var(--azul-light));
+  border-color: var(--soft-border-color, var(--azul-mid));
+  box-shadow: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .vw-page .pf-about-inline {

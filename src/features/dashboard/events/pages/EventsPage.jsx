@@ -4,6 +4,7 @@ import { useLanguage } from '../../../../core/i18n';
 import { getStoredUser, isPublisherUser } from '../../../../shared/utils/authStorage';
 import ConfirmModal from '../../../../shared/ui/ConfirmModal';
 import BackgroundSaveIndicator from '../../../../shared/ui/BackgroundSaveIndicator';
+import DashboardFeedback from '../../layout/DashboardFeedback';
 import EventFormModal from '../../../admin/events/components/EventFormModal';
 import EventsCalendar from '../../../admin/events/components/EventsCalendar';
 import EventsFilters from '../../../admin/events/components/EventsFilters';
@@ -87,7 +88,14 @@ export default function DashboardEventsPage() {
   const [eventSavingCount, setEventSavingCount] = useState(0);
   const [savingEventIds, setSavingEventIds] = useState([]);
   const [pendingEventSave, setPendingEventSave] = useState(null);
+  const [feedback, setFeedback] = useState(null);
   const eventSaving = eventSavingCount > 0;
+
+  const showFeedback = useCallback((msg, tipo = 'ok') => {
+    setFeedback({ msg, tipo });
+    window.clearTimeout(window.__dashboard_events_feedback_timer);
+    window.__dashboard_events_feedback_timer = window.setTimeout(() => setFeedback(null), 3000);
+  }, []);
 
   const loadEvents = useCallback(async ({ force = false } = {}) => {
     if (!canPublish) return;
@@ -324,8 +332,10 @@ export default function DashboardEventsPage() {
       setNotice(saveContext.mode === 'edit'
         ? t('adminEvents.dashboard.updatedNotice')
         : t('adminEvents.dashboard.savedNotice'));
+      showFeedback(t('actions.saved'));
     } catch (error) {
       setNotice(error.message || t('adminEvents.form.validation.saveError'));
+      showFeedback(error.message || t('adminEvents.form.validation.saveError'), 'error');
     } finally {
       setEventSavingCount((count) => Math.max(0, count - 1));
       if (saveContext.eventId) {
@@ -352,8 +362,10 @@ export default function DashboardEventsPage() {
       await updatePublisherEvent(event.id, buildPublisherStatusPayload(event, action.status));
       await loadEvents({ force: true });
       setNotice(t('adminEvents.dashboard.statusUpdated'));
+      showFeedback(t('actions.saved'));
     } catch (error) {
       setNotice(error.message || t('adminEvents.dashboard.statusUpdateError'));
+      showFeedback(error.message || t('adminEvents.dashboard.statusUpdateError'), 'error');
     } finally {
       setEventSavingCount((count) => Math.max(0, count - 1));
       setSavingEventIds((current) => current.filter((id) => id !== String(event.id)));
@@ -365,6 +377,7 @@ export default function DashboardEventsPage() {
     setRequestSent(true);
     setPermissionModalOpen(false);
     setNotice(t('adminEvents.dashboard.requestReviewNotice'));
+    showFeedback(t('actions.saved'));
   };
 
   return (
@@ -578,6 +591,7 @@ export default function DashboardEventsPage() {
       />
 
       <BackgroundSaveIndicator active={eventSaving} label={t('adminEvents.dashboard.savingEvent')} />
+      <DashboardFeedback feedback={feedback} />
     </div>
   );
 }

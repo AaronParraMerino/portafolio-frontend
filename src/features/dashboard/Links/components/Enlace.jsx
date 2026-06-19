@@ -11,6 +11,7 @@ import { useEnlace } from "../hooks/useEnlace";
 import { useLanguage } from "../../../../core/i18n";
 import ConfirmModal from "../../../../shared/ui/ConfirmModal";
 import BackgroundSaveIndicator from "../../../../shared/ui/BackgroundSaveIndicator";
+import DashboardFeedback from "../../layout/DashboardFeedback";
 import { getLinkPlatform } from "../model/linkPlatforms";
 import "../styles/links.css";
 
@@ -31,16 +32,25 @@ export default function RedesSociales() {
   const [redEditar, setRedEditar] = useState(null);
   const [pendingSave, setPendingSave] = useState(null);
   const [savingCount, setSavingCount] = useState(0);
+  const [feedback, setFeedback] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [linkFilter, setLinkFilter] = useState("todos");
   const [sortBy, setSortBy] = useState("alfa");
   const [currentPage, setCurrentPage] = useState(1);
   const saving = savingCount > 0;
 
-  const runInBackground = (task) => {
+  const showFeedback = (message, tipo = "ok") => {
+    setFeedback({ msg: message, tipo });
+    window.clearTimeout(window.__links_feedback_timer);
+    window.__links_feedback_timer = window.setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const runInBackground = (task, successMessage = t("actions.saved")) => {
     setSavingCount((count) => count + 1);
     Promise.resolve()
       .then(task)
+      .then(() => showFeedback(successMessage, "ok"))
+      .catch((saveError) => showFeedback(saveError?.message || error || t("links.error.edit"), "error"))
       .finally(() => setSavingCount((count) => Math.max(0, count - 1)));
   };
 
@@ -99,7 +109,7 @@ export default function RedesSociales() {
   }, [currentPage, filteredLinks]);
 
   const handleToggle = (id) => {
-    toggleVisible(id);
+    runInBackground(() => toggleVisible(id));
   };
 
   const handleAdd = (payload) => setPendingSave({ mode: "add", payload });
@@ -247,6 +257,7 @@ export default function RedesSociales() {
       />
 
       <BackgroundSaveIndicator active={saving} label={t("actions.saving")} />
+      <DashboardFeedback feedback={feedback} />
     </div>
   );
 }

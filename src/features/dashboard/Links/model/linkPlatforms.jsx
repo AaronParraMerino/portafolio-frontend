@@ -107,6 +107,7 @@ export function LinkPlatformIcon({ platform, url, className = "" }) {
   const iconClassName = [
     "links-platform-icon",
     platform ? "is-known" : "is-custom",
+    platform?.key ? `platform-${platform.key}` : "platform-custom",
     platform?.darkIcon ? "has-dark-icon" : "",
     className,
   ].filter(Boolean).join(" ");

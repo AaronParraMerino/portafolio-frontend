@@ -149,7 +149,6 @@ export default function ProjectsTechModal({
     <div
       className="dash-edit-overlay prj-modal-overlay"
       style={{ zIndex: 700 }}
-      onClick={(e) => e.target === e.currentTarget && cerrar()}
     >
       <div
         className="dash-edit-modal dash-edit-modal--sm prj-modal"

@@ -245,7 +245,6 @@ export default function ProfileEdit({ perfil, onGuardar, onCancelar, guardando }
         subtitle={t('profile.edit.subtitle')}
         onClose={onCancelar}
         closeDisabled={guardando}
-        closeOnOverlay={!guardando}
         size="lg"
         ariaLabel={t('profile.edit.title')}
       >

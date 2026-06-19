@@ -1,16 +1,5 @@
-import '../styles/profile.css';
-import {
-  DashboardCheckIcon,
-  DashboardCloseIcon,
-} from '../../layout/DashboardIcons';
+import DashboardFeedback from '../../layout/DashboardFeedback';
 
 export default function ProfileToast({ toast }) {
-  if (!toast) return null;
-
-  return (
-    <div className={`prf-toast ${toast.tipo === 'error' ? 'error' : 'ok'}`}>
-      {toast.tipo === 'error' ? <DashboardCloseIcon /> : <DashboardCheckIcon />}
-      {toast.msg}
-    </div>
-  );
+  return <DashboardFeedback feedback={toast} />;
 }

@@ -555,11 +555,6 @@ export default function ViewConfigModal({
     <>
       <div
         className="cfg-overlay open"
-        onClick={event => {
-          if (event.target === event.currentTarget) {
-            requestClose();
-          }
-        }}
       >
         <div
           className="cfg-drawer open"

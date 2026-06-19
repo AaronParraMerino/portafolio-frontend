@@ -32,6 +32,12 @@ const FORMAT_OPTIONS = [
     metaKey: 'view.download.format.html.meta',
     icon: <DashboardScreenIcon />,
   },
+  {
+    id: 'cv',
+    labelKey: 'view.download.format.cv.label',
+    metaKey: 'view.download.format.cv.meta',
+    icon: <DashboardFileIcon />,
+  },
 ];
 
 export default function ViewDownloadModal({

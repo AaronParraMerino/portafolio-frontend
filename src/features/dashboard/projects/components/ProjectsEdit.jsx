@@ -1701,7 +1701,6 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
     <>
       <div
         className="dash-edit-overlay prj-modal-overlay"
-        onClick={(e) => e.target === e.currentTarget && !guardando && onCancelar()}
       >
         <div className="dash-edit-modal dash-edit-modal--xl prj-modal" role="dialog" aria-modal="true">
           <div className="dash-edit-head prj-modal-head">

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useLanguage } from '../../../core/i18n';
 import '../styles/dashboard.css';
 
@@ -55,25 +54,11 @@ export default function DashboardEdit({
   children,
   onClose,
   closeDisabled = false,
-  closeOnOverlay = false,
   size = 'md',
   className = '',
   ariaLabel,
 }) {
   const { t } = useLanguage();
-
-  useEffect(() => {
-    if (!onClose || closeDisabled) return undefined;
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeDisabled, onClose]);
 
   const modalClassName = cx(
     'dash-edit-modal',
@@ -81,16 +66,10 @@ export default function DashboardEdit({
     className,
   );
 
-  const handleOverlayClick = (event) => {
-    if (closeOnOverlay && onClose && !closeDisabled && event.target === event.currentTarget) {
-      onClose();
-    }
-  };
-
   const closeLabel = t('dashboard.edit.close');
 
   return (
-    <div className="dash-edit-overlay" onClick={handleOverlayClick}>
+    <div className="dash-edit-overlay">
       <div className={modalClassName} role="dialog" aria-modal="true" aria-label={ariaLabel || title}>
         <div className="dash-edit-head">
           <div>

@@ -539,6 +539,7 @@ export function mapRedesFromBackend(lista = [], options = {}) {
         url: displayUrl(item.link ?? item.url),
         href,
         tipo,
+        plataformaKey: tipo,
         descripcion: item.descripcion || '',
         visible,
       };
