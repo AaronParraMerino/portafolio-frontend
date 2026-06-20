@@ -12,7 +12,7 @@ import { scheduleRequest } from '../../../../shared/services/requestScheduler';
 import { invalidateCalendarEventsForUser } from '../../../calendar/services/calendarCache';
 
 export const HOME_EVENTS_PAGE_SIZE = 20;
-export const EVENTS_LIST_PAGE_SIZE = 12;
+export const EVENTS_LIST_PAGE_SIZE = 9;
 export const HOME_HIGHLIGHT_LIMIT = 5;
 export const HOME_CAROUSEL_LIMIT = 10;
 

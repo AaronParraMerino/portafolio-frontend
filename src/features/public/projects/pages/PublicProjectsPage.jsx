@@ -12,6 +12,11 @@ import {
 } from '../../home/services/homePortfolioService';
 import '../styles/publicProjects.css';
 import { getStoredUser } from '../../../../shared/utils/authStorage';
+import PublicCatalogSkeleton from '../../shared/PublicCatalogSkeleton';
+import PublicCatalogPagination from '../../shared/PublicCatalogPagination';
+import '../../shared/publicCatalog.css';
+
+const PROJECTS_PER_PAGE = 9;
 
 export default function PublicProjectsPage() {
   const { t } = useLanguage();
@@ -24,6 +29,7 @@ export default function PublicProjectsPage() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const translateKnownProjectError = (message, fallbackKey) => {
     if (message === 'No se encontro el proyecto seleccionado.') {
@@ -39,6 +45,16 @@ export default function PublicProjectsPage() {
   const visibleProjects = activePlatform === 'todos'
     ? projects
     : projects.filter((project) => project.platform === activePlatform);
+  const totalPages = Math.max(1, Math.ceil(visibleProjects.length / PROJECTS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pagedProjects = visibleProjects.slice(
+    (safeCurrentPage - 1) * PROJECTS_PER_PAGE,
+    safeCurrentPage * PROJECTS_PER_PAGE,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activePlatform, projects.length]);
 
   const loadProjects = async ({ force = false } = {}) => {
     if (force || projects.length === 0) setLoading(true);
@@ -78,22 +94,27 @@ export default function PublicProjectsPage() {
   };
 
   return (
-    <main className="prjpub-page">
-      <section className="prjpub-shell">
-        <header className="prjpub-header">
+    <main className="prjpub-page pubcat-page">
+      <section className="prjpub-shell pubcat-shell">
+        <header className="prjpub-header pubcat-header">
           <div>
-            <div className="prjpub-kicker">
+            <div className="prjpub-kicker pubcat-kicker">
               <BsCodeSlash aria-hidden="true" />
               {t('public.projects.kicker')}
             </div>
             <h1>{t('public.projects.title')}</h1>
             <p>{t('public.projects.description')}</p>
           </div>
-          <div className="prjpub-actions">
+          <div className="prjpub-actions pubcat-actions">
             <button type="button" onClick={() => loadProjects({ force: true })} disabled={loading}><BsArrowClockwise />{t('public.projects.refresh')}</button>
             <Link to="/"><BsArrowLeft />{t('public.projects.backHome')}</Link>
           </div>
         </header>
+
+        <div className="pubcat-summary" aria-live="polite">
+          <span>{loading ? t('public.projects.loading') : t('public.projects.showing', { count: visibleProjects.length })}</span>
+          <strong>{activePlatform === 'todos' ? t('public.projects.filterAll') : getProjectPlatformLabel(activePlatform, t)}</strong>
+        </div>
 
         <div className="prjpub-filters" role="group" aria-label={t('public.projects.filterAria')}>
           <button type="button" className={activePlatform === 'todos' ? 'active' : ''} onClick={() => setActivePlatform('todos')}>
@@ -107,15 +128,26 @@ export default function PublicProjectsPage() {
           ))}
         </div>
 
-        {error && <div className="prjpub-state is-error">{error}</div>}
-        {loading && <div className="prjpub-state">{t('public.projects.loading')}</div>}
+        {error && <div className="prjpub-state pubcat-state is-error"><BsCodeSlash /><span>{error}</span></div>}
+        {loading && <section className="prjpub-grid pubcat-grid"><PublicCatalogSkeleton count={9} /></section>}
         {!loading && !error && visibleProjects.length === 0 && (
-          <div className="prjpub-state"><BsCodeSlash /><span>{t('public.projects.empty')}</span></div>
+          <div className="prjpub-state pubcat-state"><BsCodeSlash /><span>{t('public.projects.empty')}</span></div>
         )}
         {!loading && !error && visibleProjects.length > 0 && (
-          <section className="prjpub-grid" aria-live="polite">
-            {visibleProjects.map((project) => <RecentProjectCard key={project.id} project={project} onViewDetails={openDetail} />)}
+          <section className="prjpub-grid pubcat-grid" aria-live="polite">
+            {pagedProjects.map((project) => <RecentProjectCard key={project.id} project={project} onViewDetails={openDetail} />)}
           </section>
+        )}
+
+        {!loading && !error && visibleProjects.length > 0 && (
+          <PublicCatalogPagination
+            currentPage={safeCurrentPage}
+            lastPage={totalPages}
+            onPageChange={setCurrentPage}
+            ariaLabel={t('public.projects.paginationAria')}
+            previousLabel={t('public.projects.previousPage')}
+            nextLabel={t('public.projects.nextPage')}
+          />
         )}
       </section>
 

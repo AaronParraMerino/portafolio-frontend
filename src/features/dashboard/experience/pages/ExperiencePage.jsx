@@ -7,9 +7,9 @@ import Header from "../../layout/Header";
 import DashboardListSummary from "../../layout/DashboardListSummary";
 import DashboardListControls from "../../layout/DashboardListControls";
 import DashboardPagination from "../../layout/DashboardPagination";
+import DashboardEmptyState from "../../layout/DashboardEmptyState";
 import {
   DashboardAcademicIcon,
-  DashboardAddIcon,
   DashboardDeleteIcon,
   DashboardEditIcon,
   DashboardWorkIcon,
@@ -270,8 +270,6 @@ export default function ExperiencePage() {
                 <span className="dash-loading-spinner" />
                 <span>{t("experience.loading")}</span>
               </div>
-            ) : experiencias.length === 0 ? (
-              <ExperienceEmptyState onAdd={openAddModal} />
             ) : (
               <>
                 <DashboardListSummary
@@ -304,7 +302,15 @@ export default function ExperiencePage() {
                   ]}
                 />
 
-                {filteredExperiencias.length === 0 ? (
+                {experiencias.length === 0 ? (
+                  <DashboardEmptyState
+                    icon={DashboardWorkIcon}
+                    title={t("experience.empty.title")}
+                    description={t("experience.empty.text")}
+                    actionLabel={t("experience.empty.add")}
+                    onAction={openAddModal}
+                  />
+                ) : filteredExperiencias.length === 0 ? (
                   <div className="exp-category-empty">
                     {t("experience.empty.filtered")}
                   </div>
@@ -379,35 +385,6 @@ export default function ExperiencePage() {
       <ExperienceToast toast={toast} />
       <BackgroundSaveIndicator active={saving} label={t("experience.actions.processing")} />
     </>
-  );
-}
-
-function ExperienceEmptyState({ onAdd }) {
-  const { t } = useLanguage();
-
-  return (
-    <div className="exp-empty-state">
-      <div className="exp-empty-icon">
-        <DashboardWorkIcon />
-      </div>
-
-      <h3 className="exp-empty-title">{t("experience.empty.title")}</h3>
-
-      <p className="exp-empty-text">
-        {t("experience.empty.text")}
-      </p>
-
-      <div className="exp-empty-chips" aria-hidden="true">
-        <span className="exp-empty-chip">{t("experience.type.work")}</span>
-        <span className="exp-empty-chip">{t("experience.type.academic")}</span>
-        <span className="exp-empty-chip">{t("experience.empty.chipDates")}</span>
-      </div>
-
-      <button type="button" className="exp-add-btn" onClick={onAdd}>
-        <DashboardAddIcon />
-        {t("experience.empty.add")}
-      </button>
-    </div>
   );
 }
 

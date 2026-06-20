@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "../../layout/Header";
-import { DashboardAddIcon } from "../../layout/DashboardIcons";
+import { DashboardAddIcon, DashboardLinkIcon } from "../../layout/DashboardIcons";
 import DashboardListSummary from "../../layout/DashboardListSummary";
 import DashboardListControls from "../../layout/DashboardListControls";
 import DashboardPagination from "../../layout/DashboardPagination";
+import DashboardEmptyState from "../../layout/DashboardEmptyState";
 import Card from "./Card";
 import Modal from "./Modal";
 import ModalEditar from "./ModalEditar";
@@ -206,7 +207,13 @@ export default function RedesSociales() {
         />
 
         {filteredLinks.length === 0 ? (
-          <div className="dash-empty">{t("links.empty.filtered")}</div>
+          <DashboardEmptyState
+            icon={DashboardLinkIcon}
+            title={t("links.summary.title")}
+            description={redes.length === 0 ? t("links.empty.active") : t("links.empty.filtered")}
+            actionLabel={t("links.action.add")}
+            onAction={() => setModal(true)}
+          />
         ) : (
           <div className="links-list">
             {pagedLinks.map((red) => (

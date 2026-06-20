@@ -1,13 +1,16 @@
-import { FiRefreshCw, FiUsers } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiUsers } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { useLanguage } from '../../../../core/i18n';
 import DeveloperCard from '../components/DeveloperCard';
 import DeveloperSearch from '../components/DeveloperSearch';
 import DevelopersPagination from '../components/DevelopersPagination';
 import useDevelopers from '../hooks/useDevelopers';
+import PublicCatalogSkeleton from '../../shared/PublicCatalogSkeleton';
 import '../styles/developers.css';
-
-const skeletonItems = Array.from({ length: 8 }, (_, index) => index + 1);
+import '../../shared/publicCatalog.css';
 
 export default function DevelopersPage() {
+  const { t } = useLanguage();
   const {
     developers,
     meta,
@@ -20,6 +23,7 @@ export default function DevelopersPage() {
     search,
     clearSearch,
     goToPage,
+    refresh,
   } = useDevelopers();
 
   const hasDevelopers = developers.length > 0;
@@ -30,11 +34,11 @@ export default function DevelopersPage() {
       : 'Sin resultados';
 
   return (
-    <main className="dev-page">
-      <section className="dev-shell">
-        <header className="dev-header">
+    <main className="dev-page pubcat-page">
+      <section className="dev-shell pubcat-shell">
+        <header className="dev-header pubcat-header">
           <div>
-            <div className="dev-kicker">
+            <div className="dev-kicker pubcat-kicker">
               <FiUsers aria-hidden="true" />
               Comunidad publica
             </div>
@@ -44,13 +48,24 @@ export default function DevelopersPage() {
             </p>
           </div>
 
-          <div className="dev-count-card" aria-live="polite">
-            <span>{countLabel}</span>
-            <strong>Pagina {summary.currentPage} de {meta.last_page || 1}</strong>
+          <div className="pubcat-actions">
+            <button type="button" onClick={refresh} disabled={loading}>
+              <FiRefreshCw />
+              {t('public.developers.refresh')}
+            </button>
+            <Link to="/">
+              <FiArrowLeft />
+              {t('public.developers.backHome')}
+            </Link>
           </div>
         </header>
 
-        <div className="dev-toolbar">
+        <div className="dev-count-card pubcat-summary" aria-live="polite">
+          <span>{countLabel}</span>
+          <strong>{t('public.developers.page', { current: summary.currentPage, last: meta.last_page || 1 })}</strong>
+        </div>
+
+        <div className="dev-toolbar pubcat-toolbar">
           <DeveloperSearch
             value={query}
             loading={loading}
@@ -67,7 +82,7 @@ export default function DevelopersPage() {
         </div>
 
         {error && (
-          <div className="dev-state dev-state-error" role="alert">
+          <div className="dev-state dev-state-error pubcat-state is-error" role="alert">
             <FiRefreshCw aria-hidden="true" />
             <div>
               <strong>No se pudo cargar la lista</strong>
@@ -76,14 +91,8 @@ export default function DevelopersPage() {
           </div>
         )}
 
-        <section className="dev-grid" aria-live="polite">
-          {loading && skeletonItems.map((item) => (
-            <div className="dev-card dev-card-skeleton" key={item}>
-              <span />
-              <span />
-              <span />
-            </div>
-          ))}
+        <section className="dev-grid pubcat-grid" aria-live="polite">
+          {loading && <PublicCatalogSkeleton count={9} />}
 
           {!loading && !error && hasDevelopers && developers.map((developer, index) => (
             <DeveloperCard
@@ -94,7 +103,7 @@ export default function DevelopersPage() {
         </section>
 
         {!loading && !error && !hasDevelopers && (
-          <div className="dev-state">
+          <div className="dev-state pubcat-state">
             <FiUsers aria-hidden="true" />
             <div>
               <strong>No encontramos desarrolladores</strong>
