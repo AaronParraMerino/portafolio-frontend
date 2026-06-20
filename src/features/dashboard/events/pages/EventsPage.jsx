@@ -34,20 +34,14 @@ import {
   DashboardWarningIcon,
 } from '../../layout/DashboardIcons';
 
-const MONTHLY_LIMIT = 3;
+const ACTIVE_EVENT_LIMIT = 3;
+const PUBLISHED_EVENT_STATUSES = ['activo', 'programado'];
 const PUBLISHER_EVENT_PAGE_SIZE = 4;
 
 const PUBLISHER_TABS = [
   { id: 'events', labelKey: 'adminEvents.dashboard.tab.events', icon: DashboardEventsIcon },
   { id: 'calendar', labelKey: 'adminEvents.dashboard.tab.calendar', icon: DashboardCalendarIcon },
 ];
-
-function isSameMonth(dateValue, date = new Date()) {
-  if (!dateValue) return false;
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) return false;
-  return parsed.getFullYear() === date.getFullYear() && parsed.getMonth() === date.getMonth();
-}
 
 function buildPublisherStatusPayload(event, status) {
   return {
@@ -140,8 +134,10 @@ export default function DashboardEventsPage() {
     [events],
   );
   const metrics = useMemo(() => buildEventMetrics(normalizedEvents, []), [normalizedEvents]);
-  const currentMonthCount = normalizedEvents.filter((event) => isSameMonth(event.startsAt || event.date)).length;
-  const remainingThisMonth = Math.max(MONTHLY_LIMIT - currentMonthCount, 0);
+  const publishedEventCount = normalizedEvents.filter((event) => (
+    PUBLISHED_EVENT_STATUSES.includes(event.status)
+  )).length;
+  const availablePublicationSlots = Math.max(ACTIVE_EVENT_LIMIT - publishedEventCount, 0);
   const filteredEvents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -221,11 +217,14 @@ export default function DashboardEventsPage() {
   const headerActions = canPublish ? [
     {
       key: 'create-event',
-      label: remainingThisMonth > 0 ? t('adminEvents.dashboard.addEvent') : t('adminEvents.dashboard.monthlyLimit'),
+      label: t('adminEvents.dashboard.addEvent'),
       icon: <DashboardAddIcon />,
       variant: 'primary',
-      disabled: remainingThisMonth <= 0,
-      onClick: () => setEventModal({ mode: 'create', event: null }),
+      onClick: () => setEventModal({
+        mode: 'create',
+        event: null,
+        defaultStatus: availablePublicationSlots > 0 ? 'activo' : 'borrador',
+      }),
     },
   ] : [
     {
@@ -292,7 +291,12 @@ export default function DashboardEventsPage() {
   };
 
   const handleRequestSaveEvent = (payload) => {
-    if (remainingThisMonth <= 0 && eventModal?.mode !== 'edit') {
+    const nextStatusUsesSlot = PUBLISHED_EVENT_STATUSES.includes(payload?.status);
+    const editedEventUsesSlot = eventModal?.mode === 'edit'
+      && PUBLISHED_EVENT_STATUSES.includes(eventModal?.event?.status);
+    const occupiedSlotsWithoutEditedEvent = publishedEventCount - (editedEventUsesSlot ? 1 : 0);
+
+    if (nextStatusUsesSlot && occupiedSlotsWithoutEditedEvent >= ACTIVE_EVENT_LIMIT) {
       throw new Error(t('adminEvents.dashboard.limitReachedError'));
     }
 
@@ -445,11 +449,11 @@ export default function DashboardEventsPage() {
             <section className="dbe-quota">
               <div>
                 <span className="dbe-kicker">{t('adminEvents.dashboard.monthlyLimit')}</span>
-                <strong>{t('adminEvents.dashboard.monthlyCreated', { current: currentMonthCount, limit: MONTHLY_LIMIT })}</strong>
+                <strong>{t('adminEvents.dashboard.monthlyCreated', { current: publishedEventCount, limit: ACTIVE_EVENT_LIMIT })}</strong>
                 <p>{t('adminEvents.dashboard.monthlyDescription')}</p>
               </div>
-              <span className={`dbe-quota-pill${remainingThisMonth <= 0 ? ' locked' : ''}`}>
-                {remainingThisMonth > 0 ? t('adminEvents.dashboard.available', { count: remainingThisMonth }) : t('adminEvents.dashboard.limitReached')}
+              <span className={`dbe-quota-pill${availablePublicationSlots <= 0 ? ' locked' : ''}`}>
+                {availablePublicationSlots > 0 ? t('adminEvents.dashboard.available', { count: availablePublicationSlots }) : t('adminEvents.dashboard.limitReached')}
               </span>
             </section>
 
@@ -478,7 +482,7 @@ export default function DashboardEventsPage() {
               <article>
                 <div className="dbe-stat-icon"><DashboardStatusIcon /></div>
                 <div>
-                  <strong>{remainingThisMonth}/{MONTHLY_LIMIT}</strong>
+                  <strong>{availablePublicationSlots}/{ACTIVE_EVENT_LIMIT}</strong>
                   <span>{t('adminEvents.dashboard.monthlyQuota')}</span>
                 </div>
               </article>
