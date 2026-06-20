@@ -224,7 +224,7 @@ export default function EventFormModal({
     setForm({
       title: event.title || '',
       type: event.type || 'taller',
-      status: event.status || 'activo',
+      status: event.status || modal.defaultStatus || 'activo',
       imageFile: null,
       imagePreview: event.imagePreview || '',
       imageUrl: event.imageUrl || event.image_url || event.imagen_url || event.banner_url || '',
