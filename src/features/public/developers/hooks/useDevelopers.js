@@ -39,6 +39,7 @@ export default function useDevelopers() {
   const [meta, setMeta] = useState(() => initialCached?.meta || { ...emptyMeta, current_page: initialPage });
   const [loading, setLoading] = useState(() => !initialCached);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const syncUrl = (nextQuery, nextPage) => {
     const params = {};
@@ -56,7 +57,7 @@ export default function useDevelopers() {
       search: submittedQuery,
     });
 
-    if (cached) {
+    if (cached && refreshKey === 0) {
       setDevelopers(cached.items || []);
       setMeta(cached.meta || { ...emptyMeta, current_page: page });
       setLoading(false);
@@ -70,7 +71,7 @@ export default function useDevelopers() {
       perPage: DEVELOPERS_PER_PAGE,
       search: submittedQuery,
       signal: controller.signal,
-      force: false,
+      force: refreshKey > 0,
     })
       .then((response) => {
         if (!active) return;
@@ -111,7 +112,7 @@ export default function useDevelopers() {
     return () => {
       active = false;
     };
-  }, [page, submittedQuery]);
+  }, [page, submittedQuery, refreshKey]);
 
   const search = () => {
     const nextQuery = cleanText(query);
@@ -133,6 +134,8 @@ export default function useDevelopers() {
     setPage(safePage);
     syncUrl(submittedQuery, safePage);
   };
+
+  const refresh = () => setRefreshKey((value) => value + 1);
 
   const summary = useMemo(() => {
     const currentPage = Number(meta?.current_page || page || 1);
@@ -156,5 +159,6 @@ export default function useDevelopers() {
     search,
     clearSearch,
     goToPage,
+    refresh,
   };
 }

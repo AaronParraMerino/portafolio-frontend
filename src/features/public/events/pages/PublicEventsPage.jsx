@@ -8,9 +8,9 @@ import {
 } from '../../home/components/events';
 import useEventsPage from '../hooks/useEventsPage';
 import EventsPagination from '../components/EventsPagination';
+import PublicCatalogSkeleton from '../../shared/PublicCatalogSkeleton';
 import '../styles/publicEvents.css';
-
-const skeletonItems = Array.from({ length: 6 }, (_, index) => index + 1);
+import '../../shared/publicCatalog.css';
 
 export default function PublicEventsPage() {
   const { t } = useLanguage();
@@ -59,11 +59,11 @@ export default function PublicEventsPage() {
   };
 
   return (
-    <main className="evtpub-page">
-      <section className="evtpub-shell">
-        <header className="evtpub-header">
+    <main className="evtpub-page pubcat-page">
+      <section className="evtpub-shell pubcat-shell">
+        <header className="evtpub-header pubcat-header">
           <div>
-            <div className="evtpub-kicker">
+            <div className="evtpub-kicker pubcat-kicker">
               <BsCalendarEvent aria-hidden="true" />
               {t('public.events.kicker')}
             </div>
@@ -71,7 +71,7 @@ export default function PublicEventsPage() {
             <p>{t('public.events.description')}</p>
           </div>
 
-          <div className="evtpub-header-actions">
+          <div className="evtpub-header-actions pubcat-actions">
             <button type="button" onClick={refresh} disabled={loading}>
               <BsArrowClockwise />
               {t('public.events.refresh')}
@@ -83,13 +83,13 @@ export default function PublicEventsPage() {
           </div>
         </header>
 
-        <div className="evtpub-summary" aria-live="polite">
+        <div className="evtpub-summary pubcat-summary" aria-live="polite">
           <span>{countLabel}</span>
           <strong>{t('public.events.page', { current: currentPage, last: lastPage })}</strong>
         </div>
 
         {authRequired && (
-          <div className="evtpub-state">
+          <div className="evtpub-state pubcat-state">
             <BsCalendarEvent aria-hidden="true" />
             <div>
               <strong>{t('public.events.authTitle')}</strong>
@@ -109,14 +109,8 @@ export default function PublicEventsPage() {
           </div>
         )}
 
-        <section className="evtpub-grid" aria-live="polite">
-          {loading && skeletonItems.map((item) => (
-            <div className="evtpub-skeleton" key={item}>
-              <span />
-              <span />
-              <span />
-            </div>
-          ))}
+        <section className="evtpub-grid pubcat-grid" aria-live="polite">
+          {loading && <PublicCatalogSkeleton count={9} />}
 
           {!loading && !authRequired && !error && hasEvents && events.map((event) => (
             <EventCard
@@ -131,7 +125,7 @@ export default function PublicEventsPage() {
         </section>
 
         {!loading && !authRequired && !error && !hasEvents && (
-          <div className="evtpub-state">
+          <div className="evtpub-state pubcat-state">
             <BsCalendarEvent aria-hidden="true" />
             <div>
               <strong>{t('public.events.emptyTitle')}</strong>

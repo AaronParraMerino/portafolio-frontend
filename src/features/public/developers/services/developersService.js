@@ -5,7 +5,7 @@ import {
   withPublicCache,
 } from '../../services/publicCache';
 
-export const DEVELOPERS_PER_PAGE = 20;
+export const DEVELOPERS_PER_PAGE = 9;
 const PROJECT_COUNT_CACHE_PREFIX = 'developers:project-count:v1';
 const PROJECT_COUNT_CACHE_TTL = 15 * 60 * 1000;
 const PROJECT_COUNT_CONCURRENCY = 4;

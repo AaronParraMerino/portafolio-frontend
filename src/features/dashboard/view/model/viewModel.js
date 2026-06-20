@@ -148,6 +148,7 @@ export const DEFAULT_CONFIG = {
   frameId: 'none',
 
   disponible: true,
+  publicado: false,
 
   visibilidad: DEFAULT_VISIBILITY,
 };

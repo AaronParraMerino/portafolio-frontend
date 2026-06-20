@@ -1,6 +1,8 @@
 import '../styles/projects.css';
 import { useLanguage } from '../../../../core/i18n';
 import ProjectCard from './ProjectCard';
+import DashboardEmptyState from '../../layout/DashboardEmptyState';
+import { DashboardProjectIcon } from '../../layout/DashboardIcons';
 
 /* ════════════════════════════════════════
    ProjectsGrid
@@ -45,39 +47,15 @@ export default function ProjectsGrid({
 
       {/* ── Estado vacío ── */}
       {proyectos.length === 0 && (
-        <div className="prj-empty">
-          {busqueda ? (
-            <>
-              <svg viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-
-              <div className="prj-empty-title">
-                {t('projects.empty.searchTitle', { query: busqueda })}
-              </div>
-
-              <div className="prj-empty-sub">
-                {t('projects.empty.searchText')}
-              </div>
-            </>
-          ) : (
-            <>
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M12 8v8M8 12h8" />
-              </svg>
-
-              <div className="prj-empty-title">
-                {t('projects.empty.categoryTitle')}
-              </div>
-
-              <div className="prj-empty-sub">
-                {t('projects.empty.categoryText')}
-              </div>
-            </>
-          )}
-        </div>
+        <DashboardEmptyState
+          icon={DashboardProjectIcon}
+          title={busqueda
+            ? t('projects.empty.searchTitle', { query: busqueda })
+            : t('projects.empty.categoryTitle')}
+          description={busqueda ? t('projects.empty.searchText') : t('projects.empty.categoryText')}
+          actionLabel={t('projects.empty.addLabel')}
+          onAction={handleAgregar}
+        />
       )}
 
       {/* ── Cards ── */}
@@ -98,7 +76,7 @@ export default function ProjectsGrid({
       ))}
 
       {/* ── Card agregar ── */}
-      <div
+      {proyectos.length > 0 && <div
         className="prj-card-add"
         onClick={handleAgregar}
         role="button"
@@ -118,7 +96,7 @@ export default function ProjectsGrid({
 
         <div className="prj-add-label">{t('projects.empty.addLabel')}</div>
         <div className="prj-add-sub">{t('projects.empty.addSub')}</div>
-      </div>
+      </div>}
 
     </div>
   );

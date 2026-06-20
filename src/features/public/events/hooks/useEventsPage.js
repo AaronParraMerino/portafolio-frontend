@@ -34,13 +34,23 @@ function translateKnownEventError(message, t) {
 }
 
 function normalizePagination(pagination = {}, page = 1) {
+  const currentPage = Number(pagination.pagina_actual || pagination.current_page || page) || 1;
+  const perPage = Number(
+    pagination.por_pagina || pagination.per_page || EVENTS_LIST_PAGE_SIZE,
+  ) || EVENTS_LIST_PAGE_SIZE;
+  const total = Number(pagination.total || 0) || 0;
+  const reportedLastPage = Number(pagination.ultima_pagina || pagination.last_page || 0);
+  const lastPage = reportedLastPage > 0
+    ? reportedLastPage
+    : Math.max(1, Math.ceil(total / Math.max(1, perPage)));
+
   return {
     ...initialState.pagination,
     ...pagination,
-    pagina_actual: Number(pagination.pagina_actual || pagination.current_page || page),
-    por_pagina: Number(pagination.por_pagina || pagination.per_page || EVENTS_LIST_PAGE_SIZE),
-    total: Number(pagination.total || 0),
-    ultima_pagina: Number(pagination.ultima_pagina || pagination.last_page || 1),
+    pagina_actual: Math.min(Math.max(1, currentPage), lastPage),
+    por_pagina: perPage,
+    total,
+    ultima_pagina: lastPage,
   };
 }
 

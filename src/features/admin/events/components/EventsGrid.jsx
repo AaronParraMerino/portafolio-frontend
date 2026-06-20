@@ -15,6 +15,7 @@ import {
   getEventTypeMeta,
 } from '../services/eventsService';
 import EventsEmptyState from './EventsEmptyState';
+import { scrollDashboardPageToTop } from '../../../dashboard/layout/DashboardPagination';
 
 export default function EventsGrid({
   events,
@@ -38,6 +39,11 @@ export default function EventsGrid({
   const { t } = useLanguage();
   const finalPrimaryActionLabel = primaryActionLabel || t('adminEvents.common.edit');
   const finalEmptyHint = emptyHint || t('adminEvents.grid.defaultHint');
+  const handlePageChange = (page) => {
+    if (page === currentPage) return;
+    onGoToPage(page);
+    scrollDashboardPageToTop();
+  };
 
   return (
     <>
@@ -175,7 +181,7 @@ export default function EventsGrid({
           <button
             type="button"
             className="evt-page-btn"
-            onClick={() => onGoToPage(currentPage - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage <= 1 || !sourceReady}
           >
             {t('adminEvents.common.previous')}
@@ -185,7 +191,7 @@ export default function EventsGrid({
               key={page}
               type="button"
               className={`evt-page-btn${page === currentPage ? ' active' : ''}`}
-              onClick={() => onGoToPage(page)}
+              onClick={() => handlePageChange(page)}
               disabled={!sourceReady || totalPages <= 1}
             >
               {page}
@@ -194,7 +200,7 @@ export default function EventsGrid({
           <button
             type="button"
             className="evt-page-btn"
-            onClick={() => onGoToPage(currentPage + 1)}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage >= totalPages || !sourceReady}
           >
             {t('adminEvents.common.next')}

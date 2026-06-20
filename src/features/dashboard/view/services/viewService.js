@@ -497,6 +497,7 @@ export function mapPerfilFromBackend(raw) {
     ?? source.fotoFondoMediumUrl
     ?? perfil.foto_fondo_medium_url
     ?? perfil.fotoFondoMediumUrl;
+  const portfolioPublicValue = source.portfolio_publico ?? source.es_publico ?? perfil.es_publico;
 
   return {
     id: source.id ?? source.id_usuario,
@@ -513,7 +514,9 @@ export function mapPerfilFromBackend(raw) {
     avatarUrl: buildImageUrl(fotoPerfil),
     bannerUrl: buildImageUrl(fotoFondoMedium || fotoFondo),
     bannerOriginalUrl: buildImageUrl(fotoFondo),
-    portfolioPublico: toBool(source.portfolio_publico ?? source.es_publico ?? perfil.es_publico, true),
+    portfolioPublico: portfolioPublicValue === undefined || portfolioPublicValue === null
+      ? undefined
+      : toBool(portfolioPublicValue, false),
     visibilidad: normalizeProfileVisibility({
       ...source,
       ...perfil,

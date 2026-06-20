@@ -16,8 +16,8 @@ import Header from "../../layout/Header";
 import DashboardListSummary from "../../layout/DashboardListSummary";
 import DashboardListControls from "../../layout/DashboardListControls";
 import DashboardPagination from "../../layout/DashboardPagination";
+import DashboardEmptyState from "../../layout/DashboardEmptyState";
 import {
-  DashboardAddIcon,
   DashboardDeleteIcon,
   DashboardEditIcon,
   DashboardSkillIcon,
@@ -317,8 +317,6 @@ export default function SkillsPage() {
                 <span className="dash-loading-spinner" />
                 <span>{t("skills.loading")}</span>
               </div>
-            ) : skills.length === 0 ? (
-              <SkillEmptyState onAdd={openAddModal} />
             ) : (
               <>
                 <DashboardListSummary
@@ -350,7 +348,15 @@ export default function SkillsPage() {
                   ]}
                 />
 
-                {filteredSkills.length === 0 ? (
+                {skills.length === 0 ? (
+                  <DashboardEmptyState
+                    icon={DashboardSkillIcon}
+                    title={t("skills.empty.title")}
+                    description={t("skills.empty.text")}
+                    actionLabel={t("skills.empty.add")}
+                    onAction={openAddModal}
+                  />
+                ) : filteredSkills.length === 0 ? (
                   <div className="skill-empty-category">
                     {t("skills.empty.filtered")}
                   </div>
@@ -413,37 +419,6 @@ export default function SkillsPage() {
       <ExperienceToast toast={toast} />
       <BackgroundSaveIndicator active={saving} label={t("skills.form.saving")} />
     </>
-  );
-}
-
-function SkillEmptyState({ onAdd }) {
-  const { t } = useLanguage();
-
-  return (
-    <div className="skill-empty-state">
-      <div className="skill-empty-icon">
-        <DashboardSkillIcon />
-      </div>
-
-      <h3 className="skill-empty-title">
-        {t("skills.empty.title")}
-      </h3>
-
-      <p className="skill-empty-text">
-        {t("skills.empty.text")}
-      </p>
-
-      <div className="skill-empty-chips" aria-hidden="true">
-        <span className="skill-empty-chip">{t("skills.empty.chip.technical")}</span>
-        <span className="skill-empty-chip">{t("skills.empty.chip.soft")}</span>
-        <span className="skill-empty-chip">{t("skills.empty.chip.level")}</span>
-      </div>
-
-      <button type="button" className="skill-add-btn" onClick={onAdd}>
-        <DashboardAddIcon />
-        {t("skills.empty.add")}
-      </button>
-    </div>
   );
 }
 
