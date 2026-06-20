@@ -42,7 +42,7 @@ export default function HomePage() {
 
   return (
     <>
-      <Hero eventsState={eventsState} />
+      <Hero />
       <HomeEventsSection eventsState={eventsState} />
       <FeaturedPortfolios />
       <RecentProjectsHero projects={recentProjects.hero} onViewDetails={openProjectDetail} />
