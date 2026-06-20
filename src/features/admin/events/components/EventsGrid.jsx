@@ -11,6 +11,9 @@ import {
   DashboardUserIcon,
 } from '../../../dashboard/layout/DashboardIcons';
 import {
+  formatAdminEventActiveDays,
+  formatAdminEventDateRange,
+  formatAdminEventTimeRange,
   getEventStatusMeta,
   getEventTypeMeta,
 } from '../services/eventsService';
@@ -36,7 +39,7 @@ export default function EventsGrid({
   primaryActionLabel,
   emptyHint,
 }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const finalPrimaryActionLabel = primaryActionLabel || t('adminEvents.common.edit');
   const finalEmptyHint = emptyHint || t('adminEvents.grid.defaultHint');
   const handlePageChange = (page) => {
@@ -53,6 +56,9 @@ export default function EventsGrid({
             const statusMeta = getEventStatusMeta(event.status);
             const typeMeta = getEventTypeMeta(event.type);
             const statusActions = typeof getStatusActions === 'function' ? getStatusActions(event) : [];
+            const dateRange = formatAdminEventDateRange(event, language);
+            const timeRange = formatAdminEventTimeRange(event, language);
+            const activeDays = formatAdminEventActiveDays(event, language);
 
             return (
               <article key={event.id || event.title} className="evt-card">
@@ -112,8 +118,20 @@ export default function EventsGrid({
                   <div className="evt-card-meta">
                     <span>
                       <DashboardCalendarIcon />
-                      {event.date}{event.time ? ` - ${event.time}` : ''}
+                      {dateRange}
                     </span>
+                    {timeRange ? (
+                    <span>
+                      <DashboardCalendarIcon />
+                      {timeRange}
+                    </span>
+                    ) : null}
+                    {activeDays ? (
+                    <span>
+                      <DashboardCalendarIcon />
+                      {activeDays}
+                    </span>
+                    ) : null}
                     <span>
                       <DashboardLocationIcon />
                       {event.location}

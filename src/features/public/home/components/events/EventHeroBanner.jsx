@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BsCalendarEvent, BsChevronLeft, BsChevronRight, BsGeoAlt } from 'react-icons/bs';
+import { BsCalendarEvent, BsChevronLeft, BsChevronRight, BsClock, BsGeoAlt } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../../../core/i18n';
 import useHeroInputNavigation from '../../hooks/useHeroInputNavigation';
@@ -7,7 +7,9 @@ import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
   cx,
-  formatEventDate,
+  formatActiveDays,
+  formatEventDateRange,
+  formatEventTimeRange,
   getCapacityLabel,
   getEventStatusLabel,
   getEventTypeLabel,
@@ -92,6 +94,10 @@ export default function EventHeroBanner({
 
   if (!activeEvent) return null;
 
+  const dateRange = formatEventDateRange(activeEvent.startsAt, activeEvent.endsAt, language, t);
+  const timeRange = formatEventTimeRange(activeEvent.startsAt, activeEvent.endsAt, language);
+  const activeDays = formatActiveDays(activeEvent.activeDays, language);
+
   return (
     <section
       className="evh-hero"
@@ -147,18 +153,24 @@ export default function EventHeroBanner({
               </span>
               <span>
                 <BsCalendarEvent />
-                {formatEventDate(activeEvent.startsAt, language, {}, t)}
+                {dateRange}
               </span>
+              {timeRange && (
+                <span>
+                  <BsClock />
+                  {timeRange}
+                </span>
+              )}
+              {activeDays && (
+                <span>
+                  <BsCalendarEvent />
+                  {activeDays}
+                </span>
+              )}
               {activeEvent.location && (
                 <span>
                   <BsGeoAlt />
                   {activeEvent.location}
-                </span>
-              )}
-              {activeEvent.endsAt && (
-                <span>
-                  <BsCalendarEvent />
-                  {t('home.events.ends', { date: formatEventDate(activeEvent.endsAt, language, {}, t) })}
                 </span>
               )}
             </div>

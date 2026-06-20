@@ -1424,6 +1424,41 @@
   color: #64748b;
 }
 
+.evt-calendar-pill--pastel-mint {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.evt-calendar-pill--pastel-amber {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.evt-calendar-pill--pastel-sky {
+  background: #dbeafe;
+  color: #075985;
+}
+
+.evt-calendar-pill--pastel-lavender {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.evt-calendar-pill--pastel-rose {
+  background: #ffe4e6;
+  color: #9f1239;
+}
+
+.evt-calendar-pill--pastel-lime {
+  background: #ecfccb;
+  color: #3f6212;
+}
+
+.evt-calendar-pill--pastel-cyan {
+  background: #cffafe;
+  color: #155e75;
+}
+
 .evt-calendar-more {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
@@ -1907,6 +1942,61 @@
   padding-bottom: 12px;
   padding-top: 12px;
   resize: vertical;
+}
+
+.evt-field-hint {
+  color: var(--gris-texto, #6b7280);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.evt-weekday-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.evt-weekday-option {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: var(--gris-oscuro, #374151);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 10px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.evt-weekday-option:hover {
+  background: #f0fdf9;
+  border-color: rgba(15, 118, 110, .22);
+  color: var(--adm-primary, #0f766e);
+}
+
+.evt-weekday-option--all {
+  background: #ecfeff;
+  border-color: rgba(14, 116, 144, .22);
+  color: #0e7490;
+  grid-column: 1 / -1;
+}
+
+.evt-weekday-option input {
+  accent-color: var(--adm-primary, #0f766e);
+  cursor: pointer;
+  height: 14px;
+  width: 14px;
+}
+
+.evt-weekday-option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .evt-image-upload {
@@ -2554,6 +2644,10 @@
   .evt-profile-target-grid,
   .evt-profile-checklist-grid {
     grid-template-columns: 1fr;
+  }
+
+  .evt-weekday-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .evt-view-toolbar,

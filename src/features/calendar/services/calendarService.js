@@ -117,6 +117,74 @@ const splitDateTime = (value = '') => {
   };
 };
 
+const WEEK_DAY_BY_INDEX = [
+  'domingo',
+  'lunes',
+  'martes',
+  'miercoles',
+  'jueves',
+  'viernes',
+  'sabado',
+];
+
+const ALL_EVENT_DAYS = [
+  'lunes',
+  'martes',
+  'miercoles',
+  'jueves',
+  'viernes',
+  'sabado',
+  'domingo',
+];
+
+const SUBSCRIBED_COLOR_CLASSES = [
+  'mint',
+  'amber',
+  'sky',
+  'lavender',
+  'rose',
+  'lime',
+  'cyan',
+];
+
+const parseDateOnly = (value = '') => {
+  const text = String(value || '').slice(0, 10);
+  if (!text) return null;
+
+  const [year, month, day] = text.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day);
+};
+
+const toISODate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const normalizeActiveDays = (value) => {
+  const source = Array.isArray(value) ? value : [];
+  const normalized = source
+    .map((day) => normalizeText(day))
+    .filter((day) => ALL_EVENT_DAYS.includes(day));
+
+  return Array.from(new Set(normalized));
+};
+
+const subscribedColorClassForEvent = (eventId) => {
+  const text = String(eventId || '');
+  let hash = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash + text.charCodeAt(index) * (index + 1)) % SUBSCRIBED_COLOR_CLASSES.length;
+  }
+
+  return `subscribed-${SUBSCRIBED_COLOR_CLASSES[hash]}`;
+};
+
 const mapEventToFront = (item = {}) => ({
   id: item.id_evento ?? item.id ?? item.uuid,
   titulo: item.titulo ?? item.title ?? '',
@@ -153,10 +221,44 @@ const mapSubscribedEventToFront = (item = {}) => {
     cupoDisponible: item.cupo_disponible ?? item.availableSlots ?? null,
     autorNombre: item.autor_nombre ?? item.creador?.nombre ?? '',
     origen: 'inscrito',
+    colorClass: subscribedColorClassForEvent(eventoId),
     editable: false,
     desinscribible: true,
     raw: item,
   };
+};
+
+const expandSubscribedEventToCalendar = (item = {}) => {
+  const base = mapSubscribedEventToFront(item);
+  if (!base.eventoId || !base.fecha) return [];
+
+  const startDate = parseDateOnly(base.fecha);
+  const endDate = parseDateOnly(base.fechaFin || base.fecha);
+  if (!startDate || !endDate || endDate < startDate) return [base];
+
+  const activeDays = normalizeActiveDays(item.dias_activos || item.activeDays);
+  const allowedDays = activeDays.length ? activeDays : ALL_EVENT_DAYS;
+  const events = [];
+  const cursor = new Date(startDate);
+  let iterations = 0;
+
+  while (cursor <= endDate && iterations < 370) {
+    const iso = toISODate(cursor);
+    const dayName = WEEK_DAY_BY_INDEX[cursor.getDay()];
+
+    if (allowedDays.includes(dayName)) {
+      events.push({
+        ...base,
+        id: `inscrito-${base.eventoId}-${iso}`,
+        fecha: iso,
+      });
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+    iterations += 1;
+  }
+
+  return events.length ? events : [base];
 };
 
 const mapEventToBack = (event = {}) => ({
@@ -200,7 +302,7 @@ export const getSubscribedCalendarEvents = async () => {
 
   return extractList(data)
     .filter((item) => item.esta_inscrito === true || item.esta_inscrito === 1 || item.esta_inscrito === '1')
-    .map(mapSubscribedEventToFront)
+    .flatMap(expandSubscribedEventToCalendar)
     .filter((event) => event.eventoId && event.fecha);
 };
 

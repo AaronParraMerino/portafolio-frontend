@@ -185,16 +185,53 @@
 .cal-dow { text-align: center; color: var(--cal-muted); font-size: 10px; font-weight: 800; padding: 4px 0; }
 
 .cal-day {
+  align-items: center;
   height: 34px;
   border: 1px solid transparent;
   border-radius: 9px;
   background: transparent;
   cursor: pointer;
   color: #374151;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   position: relative;
   font-size: 12px;
   font-weight: 600;
+  gap: 2px;
 }
+
+.cal-day-number {
+  line-height: 1;
+}
+
+.cal-day-markers {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  height: 5px;
+  justify-content: center;
+  max-width: 28px;
+}
+
+.cal-day-marker {
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 999px;
+  height: 5px;
+  width: 5px;
+}
+
+.cal-day-marker.personal {
+  background: var(--cal-blue, #0077b7);
+}
+
+.cal-day-marker.subscribed-mint { background: #86efac; }
+.cal-day-marker.subscribed-amber { background: #fde68a; }
+.cal-day-marker.subscribed-sky { background: #93c5fd; }
+.cal-day-marker.subscribed-lavender { background: #c4b5fd; }
+.cal-day-marker.subscribed-rose { background: #fda4af; }
+.cal-day-marker.subscribed-lime { background: #bef264; }
+.cal-day-marker.subscribed-cyan { background: #67e8f9; }
 
 .cal-day:hover { background: var(--cal-blue-light); color: var(--cal-blue); border-color: var(--cal-blue-mid); }
 .cal-day.other-month { color: #cbd5e1; }
@@ -607,52 +644,40 @@
 
 /* Día con solo eventos inscritos: verde más notorio */
 .cal-day.has-subscribed-event:not(.selected) {
-  background: #bbf7d0;
-  color: #065f46;
-  border-color: #10b981;
+  background: #f8fafc;
+  color: #334155;
+  border-color: #dbeafe;
   font-weight: 950;
-  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .35);
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, .35);
 }
 
 .cal-day.has-subscribed-event:not(.selected):hover {
-  background: #86efac;
-  color: #064e3b;
-  border-color: #059669;
+  background: #eff6ff;
+  color: var(--cal-blue-deep);
+  border-color: #93c5fd;
 }
 
 /* Día con eventos personales + inscritos: mixto azul/verde */
 .cal-day.has-mixed-events:not(.selected) {
-  background: linear-gradient(
-    135deg,
-    #d9eef9 0%,
-    #d9eef9 48%,
-    #bbf7d0 52%,
-    #bbf7d0 100%
-  );
-  color: #064e3b;
-  border-color: #10b981;
+  background: var(--cal-blue-light);
+  color: var(--cal-blue-deep);
+  border-color: var(--cal-blue-mid);
   font-weight: 950;
-  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .28);
+  box-shadow: inset 0 0 0 1px rgba(0, 119, 183, .18);
 }
 
 .cal-day.has-mixed-events:not(.selected):hover {
-  background: linear-gradient(
-    135deg,
-    #c9e7f7 0%,
-    #c9e7f7 48%,
-    #86efac 52%,
-    #86efac 100%
-  );
-  color: #064e3b;
-  border-color: #059669;
+  background: #d9eef9;
+  color: var(--cal-blue-hover);
+  border-color: var(--cal-blue);
 }
 
 /* Si el día seleccionado tiene evento inscrito, verde fuerte */
 .cal-day.selected.has-subscribed-event,
 .cal-day.selected.has-mixed-events {
-  background: #10b981;
+  background: var(--cal-blue);
   color: #ffffff;
-  border-color: #059669;
+  border-color: var(--cal-blue);
 }
 
 /* HU13: ayuda visual para hora/minutos y borrador temporal */

@@ -52,6 +52,7 @@ export default function CalendarMonth({
     const hasPersonalEvent = !!meta.personal;
     const hasSubscribedEvent = !!meta.subscribed;
     const hasMixedEvents = hasPersonalEvent && hasSubscribedEvent;
+    const subscribedColors = Array.isArray(meta.subscribedColors) ? meta.subscribedColors.slice(0, 4) : [];
     const isPast = iso < today;
     const isPastEvent = isPast && hasEvent;
 
@@ -65,6 +66,7 @@ export default function CalendarMonth({
       hasPersonalEvent,
       hasSubscribedEvent,
       hasMixedEvents,
+      subscribedColors,
       isPast,
       isPastEvent,
     };
@@ -123,7 +125,15 @@ export default function CalendarMonth({
               onClick={() => onSelectDate(item.iso)}
               title={title}
             >
-              {item.day}
+              <span className="cal-day-number">{item.day}</span>
+              {(item.hasPersonalEvent || item.subscribedColors.length > 0) && (
+                <span className="cal-day-markers" aria-hidden="true">
+                  {item.hasPersonalEvent && <span className="cal-day-marker personal" />}
+                  {item.subscribedColors.map((color) => (
+                    <span key={color} className={`cal-day-marker ${color}`} />
+                  ))}
+                </span>
+              )}
             </button>
           );
         })}
