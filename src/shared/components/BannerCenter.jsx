@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLanguage } from '../../core/i18n';
 import PoliticaCookies from '../../features/auth/components/PoliticasC';
+import MessagingPanel from '../../features/messaging/components/MessagingPanel';
 import {
   aceptarCookiesYGuardarHardware,
   markCookieDismissed,
@@ -274,11 +275,26 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
   }, []);
 
   useEffect(() => {
+    const handleOpenMessagingCenter = () => {
+      setCollapsed(false);
+    };
+
+    window.addEventListener('folio:open-messaging-center', handleOpenMessagingCenter);
+
+    return () => {
+      window.removeEventListener('folio:open-messaging-center', handleOpenMessagingCenter);
+    };
+  }, []);
+
+  useEffect(() => {
     clearActiveTimer();
 
-    // Solo cuenta el tiempo del banner activo (el de abajo/del frente)
-    // y solo cuando la pila esta visible.
-    if (collapsed || showPolicyModal || items.length === 0) {
+    // Sin sesion mantiene el autocierre historico. Con sesion, los avisos quedan manuales.
+    const hasSession = Boolean(
+      localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT')
+    );
+
+    if (hasSession || collapsed || showPolicyModal || items.length === 0) {
       return () => clearActiveTimer();
     }
 
@@ -357,7 +373,13 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
   const hasItems = items.length > 0;
   const pendingCount = items.length;
   const activeItem = items[0] ?? null;
-  const titleItems = items.slice(1, MAX_VISIBLE_ITEMS);
+  const messagingEnabled = Boolean(
+    localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT')
+  );
+  const titleItems = messagingEnabled
+    ? items.slice(1)
+    : items.slice(1, MAX_VISIBLE_ITEMS);
+  const railVisible = (hasItems || messagingEnabled) && !collapsed;
 
   // El primer banner se muestra expandido directamente, sin animación de entrada.
 
@@ -413,87 +435,135 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   return (
     <>
-      {hasItems && (
+      {(hasItems || messagingEnabled) && (
         <div
           ref={panelRef}
-          style={{ ...styles.rail, ...(collapsed ? styles.railCollapsed : null) }}
+          style={{
+            ...styles.rail,
+            ...(!messagingEnabled ? styles.railPublic : null),
+            ...(!railVisible ? styles.railCollapsed : null),
+          }}
         >
-          <div style={styles.glassViewport}>
-            {activeItem && (
-              <div
-                key={activeItem.id}
-                style={{
-                  ...styles.banner,
-                  ...getNoticeToneStyles(activeItem),
-                  ...(promotingPhase[activeItem.id] === 'from-title' ? styles.bannerPromotingFromTitle : null),
-                  ...(promotingPhase[activeItem.id] === 'to-main' ? styles.bannerPromotingToMain : null),
-                  ...(closing[activeItem.id] ? styles.bannerClosing : null),
-                }}
-                role="status"
-                aria-live="polite"
-              >
-                <h4 style={styles.title}>{activeItem.title}</h4>
-
+          <div
+            style={{
+              ...styles.glassViewport,
+              ...(!messagingEnabled ? styles.glassViewportPublic : null),
+            }}
+          >
+            <div
+              style={{
+                ...styles.sectionBody,
+                ...(messagingEnabled ? styles.sectionBodyAuthenticated : null),
+              }}
+            >
+              {hasItems && (
                 <div
                   style={{
-                    ...styles.mainContent,
-                    ...(promotingPhase[activeItem.id] === 'from-title' ? styles.mainContentHidden : null),
-                    ...(promotingPhase[activeItem.id] === 'to-main' ? styles.mainContentReveal : null),
+                    ...styles.noticeSlot,
+                    ...(messagingEnabled ? styles.noticeSlotAuthenticated : null),
                   }}
                 >
-                  <p style={styles.text}>{activeItem.description}</p>
+                  {(messagingEnabled ? items : [activeItem].filter(Boolean)).map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        ...styles.banner,
+                        ...getNoticeToneStyles(item),
+                        ...(messagingEnabled ? styles.bannerAuthenticated : null),
+                        ...(promotingPhase[item.id] === 'from-title' ? styles.bannerPromotingFromTitle : null),
+                        ...(promotingPhase[item.id] === 'to-main' ? styles.bannerPromotingToMain : null),
+                        ...(closing[item.id] ? styles.bannerClosing : null),
+                      }}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <h4 style={styles.title}>{item.title}</h4>
 
-                  {activeItem.linkLabel && (
-                    <button type="button" style={styles.linkBtn} onClick={() => handleLink(activeItem)}>
-                      {activeItem.linkLabel}
-                    </button>
-                  )}
+                      <div
+                        style={{
+                          ...styles.mainContent,
+                          ...(promotingPhase[item.id] === 'from-title' ? styles.mainContentHidden : null),
+                          ...(promotingPhase[item.id] === 'to-main' ? styles.mainContentReveal : null),
+                        }}
+                      >
+                        <p style={styles.text}>{item.description}</p>
 
-                  <div style={styles.actions}>
-                    {activeItem.secondaryLabel && (
-                      <button type="button" style={styles.secondaryBtn} onClick={() => handleSecondary(activeItem)}>
-                        {activeItem.secondaryLabel}
-                      </button>
-                    )}
-                    {activeItem.primaryLabel && (
-                      <button type="button" style={styles.primaryBtn} onClick={() => handlePrimary(activeItem)}>
-                        {activeItem.primaryLabel}
-                      </button>
-                    )}
-                  </div>
+                        {item.linkLabel && (
+                          <button type="button" style={styles.linkBtn} onClick={() => handleLink(item)}>
+                            {item.linkLabel}
+                          </button>
+                        )}
+
+                        <div style={styles.actions}>
+                          {item.secondaryLabel && (
+                            <button type="button" style={styles.secondaryBtn} onClick={() => handleSecondary(item)}>
+                              {item.secondaryLabel}
+                            </button>
+                          )}
+                          {item.primaryLabel && (
+                            <button type="button" style={styles.primaryBtn} onClick={() => handlePrimary(item)}>
+                              {item.primaryLabel}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {!messagingEnabled && titleItems.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        ...styles.banner,
+                        ...getNoticeToneStyles(item),
+                        ...styles.bannerStacked,
+                        ...(closing[item.id] ? styles.bannerClosing : null),
+                      }}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <h4 style={styles.title}>{item.title}</h4>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              )}
 
-            {titleItems.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  ...styles.banner,
-                  ...getNoticeToneStyles(item),
-                  ...styles.bannerStacked,
-                  ...(closing[item.id] ? styles.bannerClosing : null),
-                }}
-                role="status"
-                aria-live="polite"
-              >
-                <h4 style={styles.title}>{item.title}</h4>
-              </div>
-            ))}
+              {messagingEnabled && (
+                <div
+                  style={{
+                    ...styles.messagingSlot,
+                    ...(hasItems ? styles.messagingSlotWithNotices : styles.messagingSlotFull),
+                  }}
+                >
+                  <MessagingPanel
+                    controlledOpen={!collapsed}
+                    embedded
+                    enabled={messagingEnabled}
+                    hideToggle
+                    onOpenChange={(value) => {
+                      if (!value) setCollapsed(true);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       )}
 
-      {hasItems && (
+      {(hasItems || messagingEnabled) && (
         <button
           type="button"
           style={styles.tab}
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? t('banner.openAria') : t('banner.closeAria')}
-          title={collapsed ? t('banner.showTitle') : t('banner.collapseTitle')}
+          onClick={() => {
+            setCollapsed((value) => !value);
+          }}
+          aria-label={collapsed ? 'Abrir centro de avisos y mensajeria' : 'Cerrar centro de avisos y mensajeria'}
+          title={collapsed ? 'Mostrar avisos y mensajeria' : 'Contraer avisos y mensajeria'}
         >
-          <span style={styles.tabLabel}>{t('banner.tab')}</span>
-          <span style={styles.tabBadge}>{pendingCount}</span>
+          <span style={styles.tabLabel}>Centro</span>
+          {pendingCount > 0 && <span style={styles.tabBadge}>{pendingCount}</span>}
         </button>
       )}
 
@@ -512,33 +582,99 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 const styles = {
   rail: {
     position: 'fixed',
-    right: '10px',
-    bottom: '74px',
-    zIndex: 10000,
+    top: 'var(--nav-height, 60px)',
+    right: 0,
+    bottom: 0,
+    zIndex: 9990,
     overflowX: 'hidden',
     transform: 'translateX(0)',
-    transition: 'transform 260ms ease, opacity 200ms ease',
+    transition: 'transform .22s cubic-bezier(.4,0,.2,1), box-shadow .22s cubic-bezier(.4,0,.2,1)',
+    width: '340px',
+    maxWidth: 'min(100vw, 340px)',
+    height: 'calc(100dvh - var(--nav-height, 60px))',
+    background: 'transparent',
+    borderLeft: 0,
+  },
+  railPublic: {
+    top: 'auto',
+    right: '10px',
+    bottom: '74px',
+    width: 'min(420px, calc(100vw - 34px))',
+    maxWidth: 'min(420px, calc(100vw - 34px))',
+    height: 'auto',
   },
   glassViewport: {
-    width: 'min(350px, calc(100vw - 34px))',
-    maxHeight: '44vh',
+    width: '100%',
+    height: '100%',
+    maxHeight: 'none',
     overflowY: 'auto',
     overflowX: 'hidden',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    padding: '8px',
-    borderRadius: '13px',
-    border: '1px solid rgba(148, 163, 184, 0.28)',
-    background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.34), rgba(15, 23, 42, 0.18))',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    boxShadow: '0 16px 40px rgba(0,0,0,0.24)',
+    gap: 0,
+    padding: 0,
+    borderRadius: 0,
+    border: 0,
+    background: 'transparent',
+    boxShadow: 'none',
+  },
+  glassViewportPublic: {
+    height: 'auto',
+    maxHeight: '52vh',
+    padding: '10px',
+  },
+  glassViewportWithMessaging: {
+    width: '100%',
+    maxHeight: 'none',
   },
   railCollapsed: {
-    transform: 'translateX(calc(100% + 24px))',
-    opacity: 0,
+    transform: 'translateX(100%)',
     pointerEvents: 'none',
+  },
+  sectionBody: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    gap: '8px',
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '8px 8px 22px',
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'var(--gris-borde, #d1d5db) transparent',
+  },
+  sectionBodyAuthenticated: {
+    height: '100%',
+    overflowY: 'hidden',
+  },
+  noticeSlot: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    minHeight: 0,
+  },
+  noticeSlotAuthenticated: {
+    flex: '1 1 0',
+    maxHeight: 'none',
+    minHeight: 0,
+    overflowY: 'auto',
+    paddingRight: '4px',
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'var(--gris-borde, #d1d5db) transparent',
+  },
+  messagingSlot: {
+    background: 'var(--blanco, #ffffff)',
+    border: '1px solid var(--gris-borde, #d1d5db)',
+    borderRadius: '8px',
+    boxShadow: '0 10px 24px rgba(15,23,42,.08)',
+    minHeight: 0,
+    overflow: 'hidden',
+    padding: '10px',
+  },
+  messagingSlotWithNotices: {
+    flex: '2 1 0',
+  },
+  messagingSlotFull: {
+    flex: '1 1 100%',
   },
   banner: {
     width: '100%',
@@ -547,12 +683,16 @@ const styles = {
     border: '1px solid rgba(184, 221, 240, 0.38)',
     borderRadius: '12px',
     boxShadow: '0 14px 40px rgba(0, 79, 124, 0.34)',
-    padding: '12px',
+    padding: '14px',
     maxHeight: '240px',
     overflow: 'hidden',
     transform: 'translateX(0)',
     opacity: 1,
     transition: `transform ${EXIT_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${EXIT_ANIMATION_MS}ms ease, margin-top ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), padding ${PROMOTE_ANIMATION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), max-height ${PROMOTE_ANIMATION_MS}ms ease, box-shadow ${PROMOTE_ANIMATION_MS}ms ease`,
+  },
+  bannerAuthenticated: {
+    maxHeight: 'none',
+    overflow: 'visible',
   },
   noticeShell: {
     backgroundColor: 'var(--azul-deep)',
@@ -659,18 +799,18 @@ const styles = {
     textAlign: 'left',
   },
   actions: {
-    marginTop: '9px',
+    marginTop: '14px',
     display: 'flex',
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
-    gap: '8px',
+    gap: '10px',
   },
   primaryBtn: {
     border: 'none',
     background: 'var(--blanco)',
     color: 'var(--azul-deep)',
     borderRadius: '8px',
-    padding: '7px 10px',
+    padding: '9px 12px',
     fontSize: '12px',
     cursor: 'pointer',
   },
@@ -679,7 +819,7 @@ const styles = {
     background: 'rgba(255,255,255,0.08)',
     color: 'var(--blanco)',
     borderRadius: '8px',
-    padding: '7px 10px',
+    padding: '9px 12px',
     fontSize: '12px',
     cursor: 'pointer',
   },
@@ -687,7 +827,7 @@ const styles = {
     position: 'fixed',
     right: 0,
     bottom: '86px',
-    zIndex: 10001,
+    zIndex: 10002,
     border: '1px solid rgba(255,255,255,0.22)',
     borderRight: 0,
     background: '#0077b7',
@@ -704,7 +844,7 @@ const styles = {
   },
   tabLabel: {
     writingMode: 'vertical-rl',
-    fontSize: '8px',
+    fontSize: '7px',
     fontWeight: 800,
     letterSpacing: '0.04em',
     textTransform: 'uppercase',

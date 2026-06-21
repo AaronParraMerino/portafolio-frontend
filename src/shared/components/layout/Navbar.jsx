@@ -134,6 +134,7 @@ function moduleFallbackTitle(modulo) {
     proyectos: 'Proyectos',
     eventos: 'Eventos',
     administracion: 'Administracion',
+    personales: 'Personales',
   }[modulo] || modulo || 'Notificaciones';
 }
 

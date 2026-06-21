@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
+import { useCallback, useEffect, useState } from 'react';
+import { FiArrowLeft, FiCheck, FiMessageSquare, FiSend, FiX } from 'react-icons/fi';
 import '../../../dashboard/styles/dashboard.css';
 import '../../../dashboard/view/styles/view.css';
 import '../styles/portfolio.css';
@@ -14,6 +15,12 @@ import ViewProjects from '../../../dashboard/view/components/ViewProjects';
 import { FONTS, getAutoTextColor, getFullName } from '../../../dashboard/view/model/viewModel';
 import { usePublicPortfolio } from '../hooks/usePublicPortfolio';
 import { useLanguage } from '../../../../core/i18n';
+import {
+  createPrivateChatRequest,
+  fetchProfileContactState,
+  unblockPrivateChat,
+} from '../../../messaging/services/messagingService';
+import { getStoredUser } from '../../../../shared/utils/authStorage';
 
 function PublicPortfolioBackButton() {
   const { t } = useLanguage();
@@ -48,6 +55,156 @@ function PublicPortfolioBackButton() {
       </button>
       <span className="public-portfolio-backhint">{t('publicPortfolio.previousView')}</span>
     </div>
+  );
+}
+
+function getCurrentUserId() {
+  const user = getStoredUser();
+  return Number(user?.id_usuario || user?.id || user?.idUsuario || 0);
+}
+
+function PublicPortfolioContact({ ownerId }) {
+  const [contactState, setContactState] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [acting, setActing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [error, setError] = useState('');
+  const currentUserId = getCurrentUserId();
+  const canLoad = Boolean(ownerId && currentUserId && Number(ownerId) !== Number(currentUserId));
+
+  const loadContactState = useCallback(async () => {
+    if (!canLoad) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      setContactState(await fetchProfileContactState(ownerId));
+    } catch (err) {
+      setError(err.message || 'No se pudo cargar el estado de contacto.');
+    } finally {
+      setLoading(false);
+    }
+  }, [canLoad, ownerId]);
+
+  useEffect(() => {
+    loadContactState();
+  }, [loadContactState]);
+
+  if (!canLoad) return null;
+  if (contactState?.estado === 'propio_perfil' || contactState?.estado === 'bloqueado_por_otro') return null;
+
+  const estado = contactState?.estado;
+  const buttonLabel = contactState?.boton || 'Contactarme por la aplicacion';
+  const canCreateRequest = estado === 'sin_relacion';
+  const canOpenChat = estado === 'chat_activo' && contactState?.id_chat;
+  const canUnblock = estado === 'bloqueado_por_mi' && contactState?.id_chat;
+  const disabled = loading || acting || estado === 'solicitud_enviada' || estado === 'cooldown';
+
+  const handlePrimary = async () => {
+    setFeedback('');
+    setError('');
+
+    if (canOpenChat) {
+      window.dispatchEvent(new CustomEvent('folio:open-messaging-center'));
+      return;
+    }
+
+    if (canUnblock) {
+      setActing(true);
+      try {
+        await unblockPrivateChat(contactState.id_chat);
+        setFeedback('Interacciones restauradas.');
+        await loadContactState();
+      } catch (err) {
+        setError(err.message || 'No se pudo restaurar la interaccion.');
+      } finally {
+        setActing(false);
+      }
+      return;
+    }
+
+    if (canCreateRequest) {
+      setModalOpen(true);
+    }
+  };
+
+  const submitRequest = async (event) => {
+    event.preventDefault();
+    const cleanMessage = message.trim();
+    if (!cleanMessage) {
+      setError('Escribe un mensaje inicial.');
+      return;
+    }
+
+    setActing(true);
+    setError('');
+
+    try {
+      await createPrivateChatRequest(ownerId, cleanMessage);
+      setFeedback('Solicitud enviada.');
+      setMessage('');
+      setModalOpen(false);
+      await loadContactState();
+    } catch (err) {
+      setError(err.message || 'No se pudo enviar la solicitud.');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  return (
+    <section className="public-contact-card">
+      <div>
+        <strong>Contacto por la aplicacion</strong>
+        <span>{feedback || error || 'Inicia una conversacion privada desde CreaFolio.'}</span>
+      </div>
+
+      <button
+        type="button"
+        className="public-contact-btn"
+        disabled={disabled || (!canCreateRequest && !canOpenChat && !canUnblock)}
+        onClick={handlePrimary}
+      >
+        {canUnblock ? <FiCheck /> : <FiMessageSquare />}
+        {loading ? 'Cargando...' : buttonLabel}
+      </button>
+
+      {modalOpen && (
+        <div className="public-contact-modal-backdrop" role="presentation" onClick={() => !acting && setModalOpen(false)}>
+          <form className="public-contact-modal" onSubmit={submitRequest} onClick={(event) => event.stopPropagation()}>
+            <div className="public-contact-modal-head">
+              <div>
+                <strong>Enviar solicitud de chat</strong>
+                <span>Este mensaje llegara como solicitud personal.</span>
+              </div>
+              <button type="button" onClick={() => !acting && setModalOpen(false)} aria-label="Cerrar">
+                <FiX />
+              </button>
+            </div>
+
+            <textarea
+              value={message}
+              maxLength={1000}
+              placeholder="Escribe el motivo de contacto"
+              onChange={(event) => setMessage(event.target.value)}
+            />
+
+            <div className="public-contact-modal-actions">
+              <button type="button" className="public-contact-secondary" disabled={acting} onClick={() => setModalOpen(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="public-contact-btn" disabled={acting || !message.trim()}>
+                <FiSend />
+                Enviar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -126,6 +283,8 @@ export default function PortfolioPage() {
         <PublicPortfolioBackButton />
         <ViewOsFrame frameId={config?.frameId || 'mac'} title={title}>
           <ViewHero perfil={perfil} config={config} />
+
+          <PublicPortfolioContact ownerId={userId} />
 
           <ViewIdentity
             perfil={perfil}

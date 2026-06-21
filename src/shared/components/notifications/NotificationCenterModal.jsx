@@ -22,6 +22,10 @@ const MODULE_TITLE_KEYS = {
   administracion: 'nav.module.administration',
 };
 
+const MODULE_TITLE_FALLBACKS = {
+  personales: 'Personales',
+};
+
 function formatRelativeTime(value, language = 'es') {
   if (!value) return '';
 
@@ -61,6 +65,7 @@ function moduleTitle(modulo, t) {
   const key = MODULE_TITLE_KEYS[modulo];
 
   if (key) return t(key);
+  if (MODULE_TITLE_FALLBACKS[modulo]) return MODULE_TITLE_FALLBACKS[modulo];
   return modulo || t('nav.module.default');
 }
 

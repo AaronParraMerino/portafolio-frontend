@@ -53,7 +53,12 @@ export function clearAuthStorage() {
   try {
     for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
       const key = sessionStorage.key(index);
-      if (key?.startsWith('notifications-cache:v1:')) {
+      if (
+        key?.startsWith('notifications-cache:v1:')
+        || key?.startsWith('notifications-cache:v2:')
+        || key?.startsWith('messaging-messages-cache:v1:')
+        || key?.startsWith('messaging-messages-cache:v2:')
+      ) {
         sessionStorage.removeItem(key);
       }
     }
