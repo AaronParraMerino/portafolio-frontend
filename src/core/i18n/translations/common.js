@@ -8,7 +8,16 @@ export const commonTranslations = {
     "actions.back": "Atrás",
     "actions.backPrevious": "Volver al anterior",
     "actions.cancel": "Cancelar",
-    "actions.close": "Cerrar"
+    "actions.close": "Cerrar",
+    "actions.loading": "Cargando...",
+    "confirm.defaultTitle": "¿Confirmar acción?",
+    "confirm.defaultSubtitle": "Esta acción requiere confirmación.",
+    "confirm.defaultMessage": "¿Estás seguro de que deseas continuar?",
+    "confirm.confirm": "Confirmar",
+    "imageZoom.zoomOut": "Alejar imagen",
+    "imageZoom.zoomIn": "Acercar imagen",
+    "imageZoom.reset": "Restablecer imagen",
+    "imageZoom.close": "Cerrar imagen ampliada"
   },
   "en": {
     "language.label": "Language",
@@ -19,7 +28,16 @@ export const commonTranslations = {
     "actions.back": "Back",
     "actions.backPrevious": "Go back",
     "actions.cancel": "Cancel",
-    "actions.close": "Close"
+    "actions.close": "Close",
+    "actions.loading": "Loading...",
+    "confirm.defaultTitle": "Confirm action?",
+    "confirm.defaultSubtitle": "This action requires confirmation.",
+    "confirm.defaultMessage": "Are you sure you want to continue?",
+    "confirm.confirm": "Confirm",
+    "imageZoom.zoomOut": "Zoom out",
+    "imageZoom.zoomIn": "Zoom in",
+    "imageZoom.reset": "Reset image",
+    "imageZoom.close": "Close enlarged image"
   },
   "pt": {
     "language.label": "Idioma",
@@ -30,6 +48,15 @@ export const commonTranslations = {
     "actions.back": "Voltar",
     "actions.backPrevious": "Voltar ao anterior",
     "actions.cancel": "Cancelar",
-    "actions.close": "Fechar"
+    "actions.close": "Fechar",
+    "actions.loading": "Carregando...",
+    "confirm.defaultTitle": "Confirmar ação?",
+    "confirm.defaultSubtitle": "Esta ação requer confirmação.",
+    "confirm.defaultMessage": "Tem certeza de que deseja continuar?",
+    "confirm.confirm": "Confirmar",
+    "imageZoom.zoomOut": "Afastar imagem",
+    "imageZoom.zoomIn": "Aproximar imagem",
+    "imageZoom.reset": "Restaurar imagem",
+    "imageZoom.close": "Fechar imagem ampliada"
   }
 };

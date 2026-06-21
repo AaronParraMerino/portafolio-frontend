@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   EventDetailModal,
+  EventHeroBanner,
   EventsCarousel,
 } from './events';
 import { hasActiveStoredSession } from '../../../../shared/utils/authStorage';
@@ -11,6 +12,7 @@ export default function HomeEventsSection({ eventsState }) {
     carousel,
     error,
     events,
+    highlighted,
     loading,
     notice,
     register,
@@ -22,7 +24,7 @@ export default function HomeEventsSection({ eventsState }) {
 
   if (!events.length && loading) return null;
   if (!events.length && !loading) return null;
-  if (!carousel.length && !notice && !error) return null;
+  if (!highlighted.length && !carousel.length && !notice && !error) return null;
 
   const redirectToLogin = () => {
     sessionStorage.setItem('auth:return-to', '/');
@@ -66,6 +68,13 @@ export default function HomeEventsSection({ eventsState }) {
               )}
             </div>
           )}
+
+          <EventHeroBanner
+            events={highlighted}
+            onRegister={handleRegister}
+            onViewDetails={handleViewDetails}
+            registeringId={registeringId}
+          />
 
           <EventsCarousel
             events={carousel}

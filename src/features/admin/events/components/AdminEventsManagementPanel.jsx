@@ -9,6 +9,9 @@ import {
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import {
+  formatAdminEventActiveDays,
+  formatAdminEventDateRange,
+  formatAdminEventTimeRange,
   getEventStatusMeta,
   getEventTypeMeta,
 } from '../services/eventsService';
@@ -44,7 +47,7 @@ export default function AdminEventsManagementPanel({
   events,
   onReviewEvent,
 }) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const {
     currentPage: safeCurrentPage,
@@ -80,6 +83,9 @@ export default function AdminEventsManagementPanel({
               const statusMeta = getEventStatusMeta(event.status);
               const typeMeta = getEventTypeMeta(event.type);
               const availableActions = getAvailableAdminActions(event.status);
+              const dateRange = formatAdminEventDateRange(event, language);
+              const timeRange = formatAdminEventTimeRange(event, language);
+              const activeDays = formatAdminEventActiveDays(event, language);
 
               return (
                 <article key={event.id || event.title} className="evt-admin-event-row">
@@ -94,7 +100,7 @@ export default function AdminEventsManagementPanel({
                     </div>
                     <strong>{event.title}</strong>
                     <p>{event.description}</p>
-                    <small>{event.date}{event.time ? ` · ${event.time}` : ''} · {event.location}</small>
+                    <small>{[dateRange, timeRange, activeDays, event.location].filter(Boolean).join(' · ')}</small>
                     <div className="evt-admin-publisher-card">
                       <span>
                         <BsPersonBadge />

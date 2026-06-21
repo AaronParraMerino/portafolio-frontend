@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../../../../core/i18n';
 import {
   liberarRepositorioProyecto,
   restaurarProyecto,
@@ -10,6 +11,7 @@ function projectIdOf(repo = {}) {
 }
 
 export default function ProjectRecoveryActions({ repo, onChanged, onNotice, onError, disabled = false }) {
+  const { t } = useLanguage();
   const recovery = repo?.recuperacion || {};
   const projectId = projectIdOf(repo);
   const repositoryId = Number(repo?.id_proyecto_repositorio) || null;
@@ -23,7 +25,7 @@ export default function ProjectRecoveryActions({ repo, onChanged, onNotice, onEr
       onNotice?.(successMessage);
       await onChanged?.();
     } catch (error) {
-      onError?.(error.message || 'No se pudo completar la accion.');
+      onError?.(error.message || t('projects.recovery.error'));
     } finally {
       setBusy('');
     }
@@ -40,9 +42,9 @@ export default function ProjectRecoveryActions({ repo, onChanged, onNotice, onEr
           type="button"
           className="prj-detected-add-btn"
           disabled={disabled || Boolean(busy)}
-          onClick={() => run('restore', () => restaurarProyecto(projectId), 'Proyecto restablecido correctamente.')}
+          onClick={() => run('restore', () => restaurarProyecto(projectId), t('projects.recovery.restored'))}
         >
-          {busy === 'restore' ? 'Restableciendo...' : 'Restablecer proyecto'}
+          {busy === 'restore' ? t('projects.recovery.restoring') : t('projects.recovery.restore')}
         </button>
       )}
 
@@ -51,16 +53,16 @@ export default function ProjectRecoveryActions({ repo, onChanged, onNotice, onEr
           type="button"
           className="prj-detected-add-btn"
           disabled={disabled || Boolean(busy) || requestDisabled}
-          title={recovery.solicitud_pendiente ? 'Ya existe una solicitud pendiente.' : ''}
-          onClick={() => run('request', () => solicitarRestauracionProyecto(projectId), 'Solicitud enviada a los propietarios.')}
+          title={recovery.solicitud_pendiente ? t('projects.recovery.pendingTitle') : ''}
+          onClick={() => run('request', () => solicitarRestauracionProyecto(projectId), t('projects.recovery.requestSent'))}
         >
           {busy === 'request'
-            ? 'Enviando...'
+            ? t('projects.recovery.sending')
             : recovery.solicitud_pendiente
-              ? 'Solicitud pendiente'
+              ? t('projects.recovery.pending')
               : recovery.requiere_unirse_para_solicitar
-                ? 'Unirme y solicitar restauracion'
-                : 'Solicitar restauracion'}
+                ? t('projects.recovery.joinAndRequest')
+                : t('projects.recovery.request')}
         </button>
       )}
 
@@ -75,21 +77,21 @@ export default function ProjectRecoveryActions({ repo, onChanged, onNotice, onEr
 
             if (last) {
               confirmationTitle = window.prompt(
-                `Este es el ultimo repositorio. El proyecto se eliminara permanentemente.\nEscribe "${repo.proyecto?.titulo || ''}" para confirmar.`
+                t('projects.recovery.lastRepositoryPrompt', { title: repo.proyecto?.titulo || '' })
               ) || '';
               if (!confirmationTitle) return;
-            } else if (!window.confirm('¿Liberar este repositorio del proyecto eliminado?')) {
+            } else if (!window.confirm(t('projects.recovery.releaseConfirm'))) {
               return;
             }
 
             run(
               'release',
               () => liberarRepositorioProyecto(projectId, repositoryId, confirmationTitle),
-              last ? 'Repositorio liberado y proyecto eliminado permanentemente.' : 'Repositorio liberado correctamente.'
+              last ? t('projects.recovery.releasedPermanent') : t('projects.recovery.released')
             );
           }}
         >
-          {busy === 'release' ? 'Liberando...' : 'Liberar repositorio'}
+          {busy === 'release' ? t('projects.recovery.releasing') : t('projects.recovery.release')}
         </button>
       )}
     </div>

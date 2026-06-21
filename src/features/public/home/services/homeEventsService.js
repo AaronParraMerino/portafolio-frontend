@@ -145,6 +145,9 @@ export function normalizeHomeEvent(item = {}) {
     status: item.estado || item.status || 'programado',
     startsAt: normalizeDate(item.fecha_inicio || item.startsAt || item.startDate),
     endsAt: normalizeDate(item.fecha_fin || item.endsAt || item.endDate),
+    activeDays: Array.isArray(item.dias_activos || item.activeDays)
+      ? (item.dias_activos || item.activeDays)
+      : [],
     scheduledFor: normalizeDate(item.programado_para || item.scheduledFor),
     location: item.ubicacion || item.location || item.lugar || '',
     capacity,
@@ -388,6 +391,7 @@ export function getEventsSignature(events = []) {
     event.status,
     event.startsAt,
     event.endsAt,
+    event.activeDays?.join(','),
     event.title,
     event.description,
     event.imageUrl,

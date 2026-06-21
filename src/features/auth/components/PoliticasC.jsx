@@ -21,16 +21,14 @@ export default function PoliticaCookies({ onClose }) {
   };
 
   // ✅ CAMBIO: ya no redirige, solo cierra el modal
-  const handleAccept = async () => {
-  try {
-    await aceptarCookiesYGuardarHardware();
-  } catch (error) {
-    console.error("No se pudo guardar hardware/consentimiento:", error);
-  } finally {
+  const handleAccept = () => {
     setVisible(false);
     if (onClose) onClose();
-  }
-};
+
+    aceptarCookiesYGuardarHardware().catch((error) => {
+      console.error("No se pudo guardar hardware/consentimiento:", error);
+    });
+  };
 
   if (!visible) return null;
 

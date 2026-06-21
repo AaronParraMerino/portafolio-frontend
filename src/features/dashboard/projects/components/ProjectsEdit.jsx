@@ -1734,7 +1734,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
                 <path d="M7 1L1 12h12L7 1z" />
                 <path d="M7 5.5v3M7 10v.5" />
               </svg>
-              Revisa los campos marcados antes de guardar.
+              {t('projects.modal.reviewErrors')}
             </div>
           )}
 
@@ -2034,7 +2034,7 @@ export default function ProjectsEdit({ proyecto, onGuardar, onCancelar, guardand
 
                                         <span className={`prj-detected-pill ${(enUso || proyectoEliminado) ? 'warn' : repo?.validacion?.validado ? 'ok' : 'warn'}`}>
                                           {proyectoEliminado
-                                            ? 'proyecto eliminado'
+                                            ? t('projects.github.deletedProject')
                                             : enUso
                                             ? t('projects.github.inUse')
                                             : repo?.validacion?.validado
