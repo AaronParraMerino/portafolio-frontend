@@ -245,12 +245,16 @@ export default function useCalendarEvents() {
         total: 0,
         personal: false,
         subscribed: false,
+        subscribedColors: [],
       };
 
       current.total += 1;
 
       if (isSubscribedEvent(event)) {
         current.subscribed = true;
+        if (event.colorClass && !current.subscribedColors.includes(event.colorClass)) {
+          current.subscribedColors.push(event.colorClass);
+        }
       } else {
         current.personal = true;
       }

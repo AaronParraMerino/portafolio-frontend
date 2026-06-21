@@ -58,6 +58,38 @@ function localeForLanguage(language) {
   return 'es-BO';
 }
 
+const WEEKDAY_LABELS = {
+  es: {
+    lunes: 'lunes',
+    martes: 'martes',
+    miercoles: 'miercoles',
+    jueves: 'jueves',
+    viernes: 'viernes',
+    sabado: 'sabado',
+    domingo: 'domingo',
+  },
+  en: {
+    lunes: 'Monday',
+    martes: 'Tuesday',
+    miercoles: 'Wednesday',
+    jueves: 'Thursday',
+    viernes: 'Friday',
+    sabado: 'Saturday',
+    domingo: 'Sunday',
+  },
+  pt: {
+    lunes: 'segunda',
+    martes: 'terca',
+    miercoles: 'quarta',
+    jueves: 'quinta',
+    viernes: 'sexta',
+    sabado: 'sabado',
+    domingo: 'domingo',
+  },
+};
+
+const ALL_WEEK_DAYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+
 export function getEventTypeLabel(event = {}, t = (key) => key) {
   const type = String(event.type || 'otro').toLowerCase();
   return EVENT_TYPE_KEYS.has(type) ? t(`home.events.type.${type}`) : event.typeLabel || t('home.events.type.otro');
@@ -82,6 +114,56 @@ export function formatEventDate(value, language = 'es', options = {}, t = (key) 
     hour: options.withTime === false ? undefined : '2-digit',
     minute: options.withTime === false ? undefined : '2-digit',
   }).format(date);
+}
+
+export function formatEventDateRange(startsAt, endsAt, language = 'es', t = (key) => key) {
+  const startDate = startsAt ? new Date(startsAt) : null;
+  const endDate = endsAt ? new Date(endsAt) : null;
+
+  if (startDate && Number.isNaN(startDate.getTime())) return t('home.events.datePending');
+  if (endDate && Number.isNaN(endDate.getTime())) return t('home.events.datePending');
+  if (!startDate && !endDate) return t('home.events.datePending');
+
+  const formatter = new Intl.DateTimeFormat(localeForLanguage(language), {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  if (!startDate) return formatter.format(endDate);
+  if (!endDate) return formatter.format(startDate);
+
+  const startLabel = formatter.format(startDate);
+  const endLabel = formatter.format(endDate);
+
+  return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`;
+}
+
+export function formatEventTimeRange(startsAt, endsAt, language = 'es') {
+  const startDate = startsAt ? new Date(startsAt) : null;
+  const endDate = endsAt ? new Date(endsAt) : null;
+
+  if (startDate && Number.isNaN(startDate.getTime())) return '';
+  if (endDate && Number.isNaN(endDate.getTime())) return '';
+  if (!startDate && !endDate) return '';
+
+  const formatter = new Intl.DateTimeFormat(localeForLanguage(language), {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (!startDate) return formatter.format(endDate);
+  if (!endDate) return formatter.format(startDate);
+
+  return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+}
+
+export function formatActiveDays(days = [], language = 'es') {
+  if (!Array.isArray(days) || !days.length) return '';
+  if (ALL_WEEK_DAYS.every((day) => days.includes(day))) return '';
+
+  const labels = WEEKDAY_LABELS[language] || WEEKDAY_LABELS.es;
+  return days.map((day) => labels[day] || day).join(', ');
 }
 
 export function getEventActionState(event = {}, registering = false, t = (key) => key) {
@@ -138,6 +220,7 @@ export function hasEventDetails(event = {}) {
     event.imageUrl ||
     event.authorName ||
     event.channels?.length ||
+    event.activeDays?.length ||
     event.startsAt ||
     event.endsAt,
   );

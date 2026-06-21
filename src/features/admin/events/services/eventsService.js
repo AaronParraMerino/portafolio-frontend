@@ -41,6 +41,46 @@ export const EVENT_TYPES = [
   { id: 'convocatoria', label: 'Convocatoria' },
 ];
 
+export const EVENT_WEEK_DAYS = [
+  'lunes',
+  'martes',
+  'miercoles',
+  'jueves',
+  'viernes',
+  'sabado',
+  'domingo',
+];
+
+const EVENT_WEEKDAY_LABELS = {
+  es: {
+    lunes: 'lunes',
+    martes: 'martes',
+    miercoles: 'miercoles',
+    jueves: 'jueves',
+    viernes: 'viernes',
+    sabado: 'sabado',
+    domingo: 'domingo',
+  },
+  en: {
+    lunes: 'Monday',
+    martes: 'Tuesday',
+    miercoles: 'Wednesday',
+    jueves: 'Thursday',
+    viernes: 'Friday',
+    sabado: 'Saturday',
+    domingo: 'Sunday',
+  },
+  pt: {
+    lunes: 'segunda',
+    martes: 'terca',
+    miercoles: 'quarta',
+    jueves: 'quinta',
+    viernes: 'sexta',
+    sabado: 'sabado',
+    domingo: 'domingo',
+  },
+};
+
 export const EVENT_COMMUNICATION_TYPES = [
   { id: 'todos', label: 'Todos' },
   { id: 'plataforma', label: 'Plataforma', tone: 'primary' },
@@ -318,6 +358,68 @@ function formatEventImageUrl(path) {
   return `${STORAGE_URL}/${value.replace(/^\/+/, '')}`;
 }
 
+function localeForLanguage(language) {
+  if (language === 'en') return 'en-US';
+  if (language === 'pt') return 'pt-BR';
+  return 'es-BO';
+}
+
+function parseEventDate(value) {
+  if (!value || value === '--') return null;
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function formatAdminEventDateRange(event = {}, language = 'es') {
+  const startsAt = parseEventDate(event.startsAt || event.date);
+  const endsAt = parseEventDate(event.endsAt);
+
+  if (!startsAt && !endsAt) return event.date || '--';
+
+  const formatter = new Intl.DateTimeFormat(localeForLanguage(language), {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  if (!startsAt) return formatter.format(endsAt);
+  if (!endsAt) return formatter.format(startsAt);
+
+  const startLabel = formatter.format(startsAt);
+  const endLabel = formatter.format(endsAt);
+
+  return startLabel === endLabel ? startLabel : `${startLabel} - ${endLabel}`;
+}
+
+export function formatAdminEventTimeRange(event = {}, language = 'es') {
+  const startsAt = parseEventDate(event.startsAt);
+  const endsAt = parseEventDate(event.endsAt);
+
+  if (!startsAt && !endsAt) return event.time || '';
+
+  const formatter = new Intl.DateTimeFormat(localeForLanguage(language), {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (!startsAt) return formatter.format(endsAt);
+  if (!endsAt) return formatter.format(startsAt);
+
+  return `${formatter.format(startsAt)} - ${formatter.format(endsAt)}`;
+}
+
+export function formatAdminEventActiveDays(event = {}, language = 'es') {
+  const activeDays = Array.isArray(event.activeDays) ? event.activeDays : [];
+
+  if (!activeDays.length || EVENT_WEEK_DAYS.every((day) => activeDays.includes(day))) {
+    return '';
+  }
+
+  const labels = EVENT_WEEKDAY_LABELS[language] || EVENT_WEEKDAY_LABELS.es;
+  return activeDays.map((day) => labels[day] || day).join(', ');
+}
+
 export async function fetchEventsWorkspace() {
   const response = await fetch(`${BASE_URL}/administrador/eventos/workspace`, {
     headers: getAdminRequestHeaders(),
@@ -568,6 +670,9 @@ export function normalizeEvent(item = {}) {
     status: item.status || item.estado || 'borrador',
     startsAt: item.startsAt || item.fecha_inicio || item.startDate || '',
     endsAt: item.endsAt || item.fecha_fin || item.endDate || '',
+    activeDays: Array.isArray(item.activeDays || item.dias_activos)
+      ? (item.activeDays || item.dias_activos)
+      : [],
     date: item.date || item.fecha || item.fecha_inicio || item.fechaEvento || '--',
     time: item.time || item.hora || item.hora_inicio || '',
     location: item.location || item.lugar || item.ubicacion || 'Sin lugar',

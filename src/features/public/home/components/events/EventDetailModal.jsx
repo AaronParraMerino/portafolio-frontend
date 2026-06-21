@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { BsCalendarEvent, BsGeoAlt, BsPeople, BsX, BsZoomIn } from 'react-icons/bs';
+import { BsCalendarEvent, BsClock, BsGeoAlt, BsPeople, BsX, BsZoomIn } from 'react-icons/bs';
 import { useLanguage } from '../../../../../core/i18n';
 import ImageZoomOverlay from '../ImageZoomOverlay';
 import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
-  formatEventDate,
+  formatActiveDays,
+  formatEventDateRange,
+  formatEventTimeRange,
   getCapacityLabel,
   getEventStatusLabel,
   getEventTypeLabel,
@@ -39,6 +41,10 @@ export default function EventDetailModal({
   useEffect(() => setZoomOpen(false), [event?.id]);
 
   if (!event || !hasEventDetails(event)) return null;
+
+  const dateRange = formatEventDateRange(event.startsAt, event.endsAt, language, t);
+  const timeRange = formatEventTimeRange(event.startsAt, event.endsAt, language);
+  const activeDays = formatActiveDays(event.activeDays, language);
 
   return (
     <div className="evh-modal-backdrop" role="presentation" onMouseDown={onClose}>
@@ -77,12 +83,18 @@ export default function EventDetailModal({
           <div className="evh-modal-facts">
             <span>
               <BsCalendarEvent />
-              {t('home.events.start', { date: formatEventDate(event.startsAt, language, {}, t) })}
+              {t('home.events.dateRange', { range: dateRange })}
             </span>
-            {event.endsAt && (
+            {timeRange && (
+              <span>
+                <BsClock />
+                {t('home.events.timeRange', { range: timeRange })}
+              </span>
+            )}
+            {activeDays && (
               <span>
                 <BsCalendarEvent />
-                {t('home.events.end', { date: formatEventDate(event.endsAt, language, {}, t) })}
+                {t('home.events.activeDays', { days: activeDays })}
               </span>
             )}
             {event.location && (

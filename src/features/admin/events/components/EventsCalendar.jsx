@@ -11,6 +11,10 @@ import {
 } from 'react-icons/bs';
 import { useLanguage } from '../../../../core/i18n';
 import {
+  EVENT_WEEK_DAYS,
+  formatAdminEventActiveDays,
+  formatAdminEventDateRange,
+  formatAdminEventTimeRange,
   getEventStatusMeta,
   getEventTypeMeta,
 } from '../services/eventsService';
@@ -58,6 +62,48 @@ function parseEventDate(event) {
   return Number.isNaN(normalized.getTime()) ? null : normalized;
 }
 
+function parseEventEndDate(event) {
+  const candidate = event.endsAt || event.raw?.fecha_fin || '';
+  if (!candidate || candidate === '--') return parseEventDate(event);
+
+  const parsed = new Date(candidate);
+  if (!Number.isNaN(parsed.getTime())) return parsed;
+
+  const normalized = new Date(`${candidate}T00:00:00`);
+  return Number.isNaN(normalized.getTime()) ? parseEventDate(event) : normalized;
+}
+
+function normalizeDay(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+const DAY_BY_INDEX = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+const EVENT_COLOR_CLASSES = ['mint', 'amber', 'sky', 'lavender', 'rose', 'lime', 'cyan'];
+
+function eventColorClass(event) {
+  const text = String(event.id || event.title || '');
+  let hash = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash + text.charCodeAt(index) * (index + 1)) % EVENT_COLOR_CLASSES.length;
+  }
+
+  return `evt-calendar-pill--pastel-${EVENT_COLOR_CLASSES[hash]}`;
+}
+
+function activeDaysForEvent(event) {
+  const activeDays = Array.isArray(event.activeDays || event.dias_activos)
+    ? (event.activeDays || event.dias_activos)
+    : [];
+  const normalized = activeDays.map(normalizeDay).filter((day) => EVENT_WEEK_DAYS.includes(day));
+
+  return normalized.length ? Array.from(new Set(normalized)) : EVENT_WEEK_DAYS;
+}
+
 function buildCalendarDays(monthDate) {
   const firstDay = startOfMonth(monthDate);
   const mondayOffset = (firstDay.getDay() + 6) % 7;
@@ -94,10 +140,6 @@ export default function EventsCalendar({
     month: 'long',
     year: 'numeric',
   }), [locale]);
-  const timeFormatter = useMemo(() => new Intl.DateTimeFormat(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  }), [locale]);
   const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState(null);
   const todayKey = toDateKey(new Date());
@@ -106,12 +148,31 @@ export default function EventsCalendar({
     const grouped = new Map();
 
     sortEventsByDate(events).forEach((event) => {
-      const parsedDate = parseEventDate(event);
-      if (!parsedDate) return;
+      const startDate = parseEventDate(event);
+      const endDate = parseEventEndDate(event);
+      if (!startDate || !endDate || endDate < startDate) return;
 
-      const key = toDateKey(parsedDate);
-      const current = grouped.get(key) || [];
-      grouped.set(key, [...current, { ...event, calendarDate: parsedDate }]);
+      const activeDays = activeDaysForEvent(event);
+      const cursor = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const limit = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      let iterations = 0;
+
+      while (cursor <= limit && iterations < 370) {
+        const dayName = DAY_BY_INDEX[cursor.getDay()];
+
+        if (activeDays.includes(dayName)) {
+          const key = toDateKey(cursor);
+          const current = grouped.get(key) || [];
+          grouped.set(key, [...current, {
+            ...event,
+            calendarDate: new Date(cursor),
+            calendarColorClass: eventColorClass(event),
+          }]);
+        }
+
+        cursor.setDate(cursor.getDate() + 1);
+        iterations += 1;
+      }
     });
 
     return grouped;
@@ -188,10 +249,8 @@ export default function EventsCalendar({
 
                 <span className="evt-calendar-day-events">
                   {visibleEvents.map((event) => {
-                    const statusMeta = getEventStatusMeta(event.status);
-
                     return (
-                      <span key={event.id || `${event.title}-${key}`} className={`evt-calendar-pill evt-calendar-pill--${statusMeta.tone}`}>
+                      <span key={`${event.id || event.title}-${key}`} className={`evt-calendar-pill ${event.calendarColorClass || eventColorClass(event)}`}>
                         {event.title}
                       </span>
                     );
@@ -226,7 +285,9 @@ export default function EventsCalendar({
               {selectedEvents.length ? selectedEvents.map((event) => {
                 const typeMeta = getEventTypeMeta(event.type);
                 const statusMeta = getEventStatusMeta(event.status);
-                const eventDate = parseEventDate(event);
+                const dateRange = formatAdminEventDateRange(event, language);
+                const timeRange = formatAdminEventTimeRange(event, language);
+                const activeDays = formatAdminEventActiveDays(event, language);
 
                 return (
                   <article key={event.id || event.title} className="evt-calendar-event-card">
@@ -245,9 +306,21 @@ export default function EventsCalendar({
                       <p className="evt-card-desc">{event.description}</p>
                       <div className="evt-mini-meta">
                         <span>
-                          <BsClock />
-                          {eventDate ? timeFormatter.format(eventDate) : t('adminEvents.common.noTime')}
+                          <BsCalendar3 />
+                          {dateRange}
                         </span>
+                        {timeRange ? (
+                        <span>
+                          <BsClock />
+                          {timeRange}
+                        </span>
+                        ) : null}
+                        {activeDays ? (
+                        <span>
+                          <BsCalendar3 />
+                          {activeDays}
+                        </span>
+                        ) : null}
                         <span>
                           <BsGeoAlt />
                           {event.location}

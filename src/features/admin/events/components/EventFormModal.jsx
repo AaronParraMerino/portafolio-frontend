@@ -25,6 +25,7 @@ import {
   EVENT_STATUS_FILTERS,
   EVENT_TARGET_MODES,
   EVENT_TYPES,
+  EVENT_WEEK_DAYS,
 } from '../services/eventsService';
 
 const DEFAULT_FORM = {
@@ -36,6 +37,7 @@ const DEFAULT_FORM = {
   imageUrl: '',
   startsAt: '',
   endsAt: '',
+  activeDays: [...EVENT_WEEK_DAYS],
   sendAt: '',
   sendMode: 'now',
   location: '',
@@ -216,6 +218,7 @@ export default function EventFormModal({
     }
 
     const event = modal.event || {};
+    const editing = modal.mode === 'edit';
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = '';
@@ -230,6 +233,9 @@ export default function EventFormModal({
       imageUrl: event.imageUrl || event.image_url || event.imagen_url || event.banner_url || '',
       startsAt: event.startsAt || event.fecha_inicio || '',
       endsAt: event.endsAt || event.fecha_fin || '',
+      activeDays: editing
+        ? toArray(event.activeDays || event.dias_activos)
+        : [...EVENT_WEEK_DAYS],
       sendAt: event.sendAt || event.fecha_envio || '',
       sendMode: event.sendAt || event.fecha_envio || event.status === 'programado' ? 'scheduled' : 'now',
       location: event.location || '',
@@ -272,6 +278,7 @@ export default function EventFormModal({
       };
     }));
   const minDateTime = getDateTimeLocalNow();
+  const allWeekDaysSelected = EVENT_WEEK_DAYS.every((day) => (form.activeDays || []).includes(day));
   const targetGroups = useMemo(() => EVENT_PROFILE_TARGET_GROUPS.map((group) => ({
     ...group,
     options: Array.isArray(profileTargets?.[group.id])
@@ -372,6 +379,22 @@ export default function EventFormModal({
     setMessage('');
   };
 
+  const handleToggleActiveDay = (day) => {
+    setForm((current) => ({
+      ...current,
+      activeDays: toggleValue(current.activeDays || [], day),
+    }));
+    setMessage('');
+  };
+
+  const handleToggleAllActiveDays = () => {
+    setForm((current) => ({
+      ...current,
+      activeDays: allWeekDaysSelected ? [] : [...EVENT_WEEK_DAYS],
+    }));
+    setMessage('');
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -435,6 +458,7 @@ export default function EventFormModal({
         status: form.sendMode === 'scheduled' ? 'programado' : (form.status === 'programado' ? 'activo' : form.status),
         startsAt: form.startsAt || null,
         endsAt: form.endsAt || null,
+        activeDays: form.activeDays,
         sendAt: form.sendMode === 'scheduled' ? form.sendAt : null,
         location: form.location,
         imageFile: form.imageFile,
@@ -518,7 +542,7 @@ export default function EventFormModal({
                 type="datetime-local"
                 className="evt-field-input"
                 value={form.startsAt}
-                min={minDateTime}
+                min={isEditing ? undefined : minDateTime}
                 onChange={(event) => handleStartsAtChange(event.target.value)}
               />
             </label>
@@ -529,10 +553,35 @@ export default function EventFormModal({
                 type="datetime-local"
                 className="evt-field-input"
                 value={form.endsAt}
-                min={form.startsAt || minDateTime}
+                min={form.startsAt || (isEditing ? undefined : minDateTime)}
                 onChange={(event) => handleEndsAtChange(event.target.value)}
               />
             </label>
+
+            <div className="evt-field evt-field--full">
+              <span>{t('adminEvents.form.activeDays')}</span>
+              <div className="evt-weekday-grid" aria-label={t('adminEvents.form.activeDays')}>
+                <label className="evt-weekday-option evt-weekday-option--all">
+                  <input
+                    type="checkbox"
+                    checked={allWeekDaysSelected}
+                    onChange={handleToggleAllActiveDays}
+                  />
+                  <span>{t('adminEvents.weekday.all')}</span>
+                </label>
+                {EVENT_WEEK_DAYS.map((day) => (
+                  <label key={day} className="evt-weekday-option">
+                    <input
+                      type="checkbox"
+                      checked={(form.activeDays || []).includes(day)}
+                      onChange={() => handleToggleActiveDay(day)}
+                    />
+                    <span>{t(`adminEvents.weekday.${day}`)}</span>
+                  </label>
+                ))}
+              </div>
+              <small className="evt-field-hint">{t('adminEvents.form.activeDaysHelper')}</small>
+            </div>
 
             <label className="evt-field">
               <span>{t('adminEvents.form.location')}</span>

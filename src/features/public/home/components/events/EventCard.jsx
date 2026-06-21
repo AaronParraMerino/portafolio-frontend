@@ -4,7 +4,9 @@ import EventActionButton from './EventActionButton';
 import EventMedia from './EventMedia';
 import {
   cx,
-  formatEventDate,
+  formatActiveDays,
+  formatEventDateRange,
+  formatEventTimeRange,
   getCapacityLabel,
   getEventStatusLabel,
   getEventTypeLabel,
@@ -21,6 +23,9 @@ export default function EventCard({
   className = '',
 }) {
   const { language, t } = useLanguage();
+  const dateRange = formatEventDateRange(event.startsAt, event.endsAt, language, t);
+  const timeRange = formatEventTimeRange(event.startsAt, event.endsAt, language);
+  const activeDays = formatActiveDays(event.activeDays, language);
 
   return (
     <article className={cx('evh-card', containImage && 'evh-card-contain-image', className)}>
@@ -46,7 +51,9 @@ export default function EventCard({
         <p className="evh-card-summary">{getShortDescription(event.description, 92)}</p>
 
         <div className="evh-card-meta">
-          <span>{formatEventDate(event.startsAt, language, { withYear: false }, t)}</span>
+          <span>{dateRange}</span>
+          {timeRange && <span>{timeRange}</span>}
+          {activeDays && <span>{activeDays}</span>}
           <span>{getCapacityLabel(event, t)}</span>
         </div>
 
