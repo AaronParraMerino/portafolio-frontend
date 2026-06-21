@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../../../../core/i18n';
 import {
   DEVELOPERS_PER_PAGE,
   getActiveDevelopers,
@@ -23,6 +24,7 @@ const pageFromParams = (value) => {
 };
 
 export default function useDevelopers() {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = cleanText(searchParams.get('q'));
   const initialPage = pageFromParams(searchParams.get('page'));
@@ -105,14 +107,14 @@ export default function useDevelopers() {
           setDevelopers([]);
           setMeta({ ...emptyMeta, current_page: page });
         }
-        setError(err?.message || 'No se pudieron cargar los desarrolladores.');
+        setError(err?.message || t('public.developers.loadError'));
         setLoading(false);
       });
 
     return () => {
       active = false;
     };
-  }, [page, submittedQuery, refreshKey]);
+  }, [page, submittedQuery, refreshKey, t]);
 
   const search = () => {
     const nextQuery = cleanText(query);

@@ -2,6 +2,7 @@
    ConfirmModal — v2  (azul · rojo · verde · amarillo · violeta)
 ══════════════════════════════════════════════════════════ */
 import { useEffect } from 'react';
+import { useLanguage } from '../../core/i18n';
 
 /* ── Mapa de variantes ─────────────────────────────────── */
 const VARIANT = {
@@ -246,11 +247,11 @@ const ICON_MAP = {
 /* ══ Componente ════════════════════════════════════════════ */
 export default function ConfirmModal({
   open         = false,
-  title        = '¿Confirmar acción?',
+  title,
   subtitle,                         /* opcional — si no se pasa usa el default */
-  message      = '¿Estás seguro de que deseas continuar?',
-  confirmLabel = 'Confirmar',
-  cancelLabel  = 'Cancelar',
+  message,
+  confirmLabel,
+  cancelLabel,
   variant      = 'blue',            /* 'blue' | 'red' | 'green' | 'yellow' | 'violet' */
   icon,                             /* 'check' | 'warning' | 'logout' | 'info' | 'star' */
   loading      = false,
@@ -258,6 +259,13 @@ export default function ConfirmModal({
   onConfirm,
   onClose,
 }) {
+  const { t } = useLanguage();
+  const resolvedTitle = title ?? t('confirm.defaultTitle');
+  const resolvedSubtitle = subtitle ?? t('confirm.defaultSubtitle');
+  const resolvedMessage = message ?? t('confirm.defaultMessage');
+  const resolvedConfirmLabel = confirmLabel ?? t('confirm.confirm');
+  const resolvedCancelLabel = cancelLabel ?? t('actions.cancel');
+
   /* Cerrar con Escape */
   useEffect(() => {
     if (!open) return;
@@ -312,13 +320,11 @@ export default function ConfirmModal({
                 <IconComp stroke={v.strokeColor} />
               </div>
               <div>
-                <div className="cm-title" id="cm-title">{title}</div>
-                <div className="cm-sub">
-                  {subtitle ?? 'Esta acción requiere confirmación.'}
-                </div>
+                <div className="cm-title" id="cm-title">{resolvedTitle}</div>
+                <div className="cm-sub">{resolvedSubtitle}</div>
               </div>
             </div>
-            <button className="cm-close" onClick={onClose} disabled={loading} title="Cerrar">
+            <button className="cm-close" onClick={onClose} disabled={loading} title={t('actions.close')}>
               <svg viewBox="0 0 12 12">
                 <path d="M1 1l10 10M11 1L1 11"/>
               </svg>
@@ -326,12 +332,12 @@ export default function ConfirmModal({
           </div>
 
           {/* ── Cuerpo ── */}
-          <div className="cm-body">{message}</div>
+          <div className="cm-body">{resolvedMessage}</div>
 
           {/* ── Pie ── */}
           <div className="cm-foot">
             <button className="cm-btn-cancel" onClick={onClose} disabled={loading}>
-              {cancelLabel}
+              {resolvedCancelLabel}
             </button>
             <button
               className="cm-btn-confirm"
@@ -342,11 +348,11 @@ export default function ConfirmModal({
               disabled={loading || confirmDisabled}
             >
               {loading ? (
-                <><span className="cm-spinner" /> Cargando...</>
+                <><span className="cm-spinner" /> {t('actions.loading')}</>
               ) : (
                 <>
                   <IconComp stroke={btnColor} />
-                  {confirmLabel}
+                  {resolvedConfirmLabel}
                 </>
               )}
             </button>

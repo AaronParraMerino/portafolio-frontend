@@ -23,22 +23,22 @@ export default function VincularCuenta() {
     () => ({
       google: {
         name: "Google",
-        description: "Escoge qué cuenta Google quieres vincular",
+        description: t("configurate.link.provider.google"),
       },
       discord: {
         name: "Discord",
-        description: "Conecta tu cuenta de Discord",
+        description: t("configurate.link.provider.discord"),
       },
       github: {
         name: "GitHub",
-        description: "Conecta o cambia la cuenta de GitHub",
+        description: t("configurate.link.provider.github"),
       },
       gitlab: {
         name: "GitLab",
-        description: "Conecta tus proyectos de GitLab",
+        description: t("configurate.link.provider.gitlab"),
       },
     }),
-    []
+    [t]
   );
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function VincularCuenta() {
 
       const token = localStorage.getItem("tokenPORT");
       if (!token) {
-        throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+        throw new Error(t("configurate.service.error.noSession"));
       }
 
       const res = await fetch(`${BASE_URL}/auth/oauth/linked-providers`, {
@@ -78,7 +78,7 @@ export default function VincularCuenta() {
 
       if (!res.ok) {
         throw new Error(
-          payload.message || "No se pudo cargar el estado de vinculación."
+          payload.message || t("configurate.link.error.load")
         );
       }
 
@@ -87,7 +87,7 @@ export default function VincularCuenta() {
       const merged = ["google", "discord", "github", "gitlab"].map((id) => {
         const row = rows.find((x) => x.provider === id) || {
           connected: false,
-          detail: "No vinculado",
+          detail: t("configurate.link.notLinked"),
         };
 
         return {
@@ -95,7 +95,7 @@ export default function VincularCuenta() {
           name: meta[id].name,
           description: meta[id].description,
           connected: !!row.connected,
-          detail: row.detail || "No vinculado",
+          detail: row.detail || t("configurate.link.notLinked"),
         };
       });
 
@@ -105,7 +105,7 @@ export default function VincularCuenta() {
     } finally {
       setLoading(false);
     }
-  }, [meta]);
+  }, [meta, t]);
 
   const loadProviderDetectedCount = useCallback(async (provider, refresh = false) => {
     try {
@@ -130,7 +130,7 @@ export default function VincularCuenta() {
         }
 
         throw new Error(
-          payload.message || "No se pudieron obtener los repositorios detectados."
+          payload.message || t("configurate.link.error.detectedRepos")
         );
       }
 
@@ -142,7 +142,7 @@ export default function VincularCuenta() {
     } catch (e) {
       setError(e.message);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadLinkedProviders();
@@ -170,11 +170,11 @@ export default function VincularCuenta() {
     if (!connectStatus || !provider) return;
 
     if (connectStatus === "success") {
-      setNotice(`Cuenta de ${provider} vinculada correctamente.`);
+      setNotice(t("configurate.link.success.linked", { provider }));
       setError("");
     } else {
       setNotice("");
-      setError(getConnectErrorMessage(connectError, provider));
+      setError(getConnectErrorMessage(connectError, provider, t));
     }
 
     params.delete("oauth_connect");
@@ -188,7 +188,7 @@ export default function VincularCuenta() {
       "",
       `${window.location.pathname}${next ? `?${next}` : ""}`
     );
-  }, []);
+  }, [t]);
 
   const handleVincular = async (id) => {
     try {
@@ -198,7 +198,7 @@ export default function VincularCuenta() {
 
       const token = localStorage.getItem("tokenPORT");
       if (!token) {
-        throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+        throw new Error(t("configurate.service.error.noSession"));
       }
 
       const res = await fetch(`${BASE_URL}/auth/${id}/connect-url`, {
@@ -213,7 +213,7 @@ export default function VincularCuenta() {
       const payload = await res.json().catch(() => ({}));
 
       if (!res.ok || !payload?.url) {
-        throw new Error(payload.message || "No se pudo iniciar la vinculación.");
+        throw new Error(payload.message || t("configurate.link.error.start"));
       }
 
       window.location.assign(payload.url);
@@ -227,7 +227,7 @@ export default function VincularCuenta() {
     const account = accounts.find((a) => a.id === id);
     const providerName = account?.name || id;
 
-    const ok = window.confirm(`¿Seguro que quieres desvincular ${providerName}?`);
+    const ok = window.confirm(t("configurate.link.confirmUnlink", { provider: providerName }));
     if (!ok) return;
 
     try {
@@ -237,7 +237,7 @@ export default function VincularCuenta() {
 
       const token = localStorage.getItem("tokenPORT");
       if (!token) {
-        throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+        throw new Error(t("configurate.service.error.noSession"));
       }
 
       const res = await fetch(`${BASE_URL}/auth/${id}/unlink`, {
@@ -251,10 +251,10 @@ export default function VincularCuenta() {
       const payload = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(payload.message || "No se pudo desvincular la cuenta.");
+        throw new Error(payload.message || t("configurate.link.error.unlink"));
       }
 
-      setNotice(payload.message || `Cuenta de ${providerName} desvinculada.`);
+      setNotice(payload.message || t("configurate.link.success.unlinked", { provider: providerName }));
       await loadLinkedProviders();
     } catch (e) {
       setError(e.message);
@@ -273,7 +273,7 @@ export default function VincularCuenta() {
 
       const token = localStorage.getItem("tokenPORT");
       if (!token) {
-        throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+        throw new Error(t("configurate.service.error.noSession"));
       }
 
       const syncRes = await fetch(`${BASE_URL}/auth/${provider}/repos/sync`, {
@@ -288,13 +288,13 @@ export default function VincularCuenta() {
 
       if (!syncRes.ok) {
         throw new Error(
-          syncPayload.message || `No se pudo sincronizar con ${providerName}.`
+          syncPayload.message || t("configurate.link.error.sync", { provider: providerName })
         );
       }
 
       await loadProviderDetectedCount(provider, false);
 
-      setNotice(formatGithubSyncNotice(syncPayload?.stats, providerName));
+      setNotice(formatGithubSyncNotice(syncPayload?.stats, providerName, t));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -312,7 +312,7 @@ export default function VincularCuenta() {
       >
         <button type="button" style={backButtonStyle} onClick={handleBack}>
           <span style={backIconStyle}>‹</span>
-          Volver
+          {t("actions.back")}
         </button>
 
         <section style={headerStyle}>
@@ -330,14 +330,13 @@ export default function VincularCuenta() {
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
-            Cuentas externas
+            {t("configurate.link.badge")}
           </div>
 
-          <h1 style={titleStyle}>Vincular cuenta</h1>
+          <h1 style={titleStyle}>{t("configurate.link.pageTitle")}</h1>
 
           <p style={subtitleStyle}>
-            Conecta tu perfil con plataformas externas para enriquecer tu
-            portafolio.
+            {t("configurate.link.subtitle")}
           </p>
         </section>
 
@@ -350,7 +349,7 @@ export default function VincularCuenta() {
             style={loadingBoxStyle}
           >
             <span className="dash-loading-spinner" />
-            <span>Cargando cuentas...</span>
+            <span>{t("configurate.link.loading")}</span>
           </div>
         ) : null}
 
@@ -393,12 +392,12 @@ export default function VincularCuenta() {
               >
                 {account.connected ? (
                   <>
-                    <span style={connectedBadgeStyle}>● Conectado</span>
+                    <span style={connectedBadgeStyle}>● {t("configurate.link.connected")}</span>
 
                     {["github", "gitlab"].includes(account.id) ? (
                       <>
                         <span style={miniInfoStyle}>
-                          Repos detectados: {detectedCounts[account.id] ?? 0}
+                          {t("configurate.link.detectedRepos", { count: detectedCounts[account.id] ?? 0 })}
                         </span>
 
                         <button
@@ -412,8 +411,8 @@ export default function VincularCuenta() {
                           type="button"
                         >
                           {repoSyncingProvider === account.id
-                            ? "Sincronizando..."
-                            : "Sincronizar repos"}
+                            ? t("configurate.link.syncing")
+                            : t("configurate.link.syncRepos")}
                         </button>
                       </>
                     ) : null}
@@ -428,8 +427,8 @@ export default function VincularCuenta() {
                       type="button"
                     >
                       {loadingProvider === account.id
-                        ? "Abriendo..."
-                        : "Cambiar cuenta"}
+                        ? t("configurate.link.opening")
+                        : t("configurate.link.changeAccount")}
                     </button>
 
                     <button
@@ -442,8 +441,8 @@ export default function VincularCuenta() {
                       type="button"
                     >
                       {unlinkingProvider === account.id
-                        ? "Desvinculando..."
-                        : "Desvincular"}
+                        ? t("configurate.link.unlinking")
+                        : t("configurate.link.unlink")}
                     </button>
                   </>
                 ) : (
@@ -456,7 +455,7 @@ export default function VincularCuenta() {
                     }
                     type="button"
                   >
-                    {loadingProvider === account.id ? "Abriendo..." : "Vincular"}
+                    {loadingProvider === account.id ? t("configurate.link.opening") : t("configurate.link.link")}
                   </button>
                 )}
               </div>
@@ -562,40 +561,40 @@ function iconWrapStyle(id) {
   };
 }
 
-function getConnectErrorMessage(code, provider) {
+function getConnectErrorMessage(code, provider, t) {
   if (code === "already_linked") {
-    return `La cuenta de ${provider} ya está vinculada a otro usuario.`;
+    return t("configurate.link.error.alreadyLinked", { provider });
   }
 
   if (code === "provider_conflict") {
-    return `Ya tienes una cuenta distinta de ${provider} vinculada.`;
+    return t("configurate.link.error.providerConflict", { provider });
   }
 
   if (code === "blocked") {
-    return "Tu usuario está bloqueado. No se pudo vincular la cuenta.";
+    return t("configurate.link.error.blocked");
   }
 
-  return `No se pudo vincular la cuenta de ${provider}. Inténtalo nuevamente.`;
+  return t("configurate.link.error.generic", { provider });
 }
 
-function formatGithubSyncNotice(stats = {}, providerName = "GitHub") {
+function formatGithubSyncNotice(stats = {}, providerName = "GitHub", t) {
   const creados = Number(stats?.creados ?? 0);
   const actualizados = Number(stats?.actualizados ?? 0);
   const detalles = Number(stats?.detalles_actualizados ?? 0);
   const pendientes = Number(stats?.detalles_omitidos_por_limite ?? 0);
 
   const parts = [
-    `Sincronización de ${providerName} lista.`,
-    `Repos nuevos: ${Number.isFinite(creados) ? creados : 0}.`,
-    `Repos actualizados: ${Number.isFinite(actualizados) ? actualizados : 0}.`,
+    t("configurate.link.sync.ready", { provider: providerName }),
+    t("configurate.link.sync.created", { count: Number.isFinite(creados) ? creados : 0 }),
+    t("configurate.link.sync.updated", { count: Number.isFinite(actualizados) ? actualizados : 0 }),
   ];
 
   if (Number.isFinite(detalles) && detalles > 0) {
-    parts.push(`Detalles completados: ${detalles}.`);
+    parts.push(t("configurate.link.sync.details", { count: detalles }));
   }
 
   if (Number.isFinite(pendientes) && pendientes > 0) {
-    parts.push(`Detalles pendientes por límite: ${pendientes}.`);
+    parts.push(t("configurate.link.sync.pending", { count: pendientes }));
   }
 
   return parts.join(" ");

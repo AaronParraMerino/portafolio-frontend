@@ -172,7 +172,7 @@ export default function ProjectsConfigModal({ proyecto, guardando = false, onGua
                   value={form.puede_administrar_proyecto}
                   onChange={(e) => setValue('puede_administrar_proyecto', e.target.value)}
                 >
-                  <option value="propietarios">Propietarios del proyecto</option>
+                  <option value="propietarios">{t('projects.config.owners')}</option>
                   <option value="autoridad_github">{t('projects.config.githubAuthority')}</option>
                 </select>
               </label>

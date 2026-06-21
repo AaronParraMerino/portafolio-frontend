@@ -160,7 +160,7 @@ export default function ProjectsPage() {
       const preview = await getProyectoDeletionPreview(id);
       setConfirmDel((current) => current ? { ...current, deletionPreview: preview } : current);
     } catch (error) {
-      setConfirmDelError(error.message || 'No se pudo comprobar el tipo de eliminacion.');
+      setConfirmDelError(error.message || t('projects.confirm.previewError'));
     } finally {
       setConfirmDelLoading(false);
     }
@@ -201,7 +201,7 @@ export default function ProjectsPage() {
       });
     } catch (error) {
       await refrescar({ silent: true }).catch(() => {});
-      window.alert(error.message || 'No se pudo cargar la configuración actual del proyecto.');
+      window.alert(error.message || t('projects.config.loadCurrentError'));
     } finally {
       setCargandoConfiguracionId(null);
     }
@@ -461,9 +461,9 @@ export default function ProjectsPage() {
         title={t('projects.confirm.deleteTitle')}
         message={confirmDel?.deletionPreview?.es_permanente ? (
           <div>
-            <p>Este proyecto no tiene repositorios vinculados. La eliminacion sera permanente.</p>
+            <p>{t('projects.confirm.permanentDeleteMessage')}</p>
             <label className="prj-label">
-              Escribe exactamente <strong>{confirmDel?.titulo}</strong> para confirmar:
+              {t('projects.confirm.typeExactPrefix')} <strong>{confirmDel?.titulo}</strong> {t('projects.confirm.typeExactSuffix')}
             </label>
             <input
               className="prj-input"
@@ -475,7 +475,7 @@ export default function ProjectsPage() {
             {confirmDelError && <div className="prj-detected-error">{confirmDelError}</div>}
           </div>
         ) : confirmDelLoading ? (
-          'Comprobando el tipo de eliminacion...'
+          t('projects.confirm.previewLoading')
         ) : (
           t('projects.confirm.deleteMessage', { title: confirmDel?.titulo || t('projects.card.defaultTitle') })
         )}
