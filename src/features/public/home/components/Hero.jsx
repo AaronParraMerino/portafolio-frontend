@@ -45,35 +45,35 @@ const HERO_SLIDES = [
   { id: 'intro', type: 'intro' },
   {
     id: 'profile',
-    image: '/img/bannerHeroPresentacion/perfilbanner.png',
+    image: '/img/bannerheroPresentacion/perfilbanner.png',
     titleKey: 'hero.carousel.profile.title',
     textKey: 'hero.carousel.profile.text',
     layout: 'image-right',
   },
   {
     id: 'portfolio',
-    image: '/img/bannerHeroPresentacion/protafoliosBanner.png',
+    image: '/img/bannerheroPresentacion/protafoliosBanner.png',
     titleKey: 'hero.carousel.portfolio.title',
     textKey: 'hero.carousel.portfolio.text',
     layout: 'image-left',
   },
   {
     id: 'projects',
-    image: '/img/bannerHeroPresentacion/pryectosHomeBanner.png',
+    image: '/img/bannerheroPresentacion/pryectosHomeBanner.png',
     titleKey: 'hero.carousel.projects.title',
     textKey: 'hero.carousel.projects.text',
     layout: 'image-right',
   },
   {
     id: 'projectEdit',
-    image: '/img/bannerHeroPresentacion/ProyectoEditBanner.png',
+    image: '/img/bannerheroPresentacion/ProyectoEditBanner.png',
     titleKey: 'hero.carousel.projectEdit.title',
     textKey: 'hero.carousel.projectEdit.text',
     layout: 'image-left',
   },
   {
     id: 'repositories',
-    image: '/img/bannerHeroPresentacion/importRepoBanner.png',
+    image: '/img/bannerheroPresentacion/importRepoBanner.png',
     titleKey: 'hero.carousel.repositories.title',
     textKey: 'hero.carousel.repositories.text',
     layout: 'image-right',
@@ -81,42 +81,42 @@ const HERO_SLIDES = [
   },
   {
     id: 'events',
-    image: '/img/bannerHeroPresentacion/eventos banner.png',
+    image: '/img/bannerheroPresentacion/eventos banner.png',
     titleKey: 'hero.carousel.events.title',
     textKey: 'hero.carousel.events.text',
     layout: 'image-left',
   },
   {
     id: 'chat',
-    image: '/img/bannerHeroPresentacion/chatBanner.png',
+    image: '/img/bannerheroPresentacion/chatBanner.png',
     titleKey: 'hero.carousel.chat.title',
     textKey: 'hero.carousel.chat.text',
     layout: 'image-right',
   },
   {
     id: 'search',
-    image: '/img/bannerHeroPresentacion/busquedasBanner.png',
+    image: '/img/bannerheroPresentacion/busquedasBanner.png',
     titleKey: 'hero.carousel.search.title',
     textKey: 'hero.carousel.search.text',
     layout: 'image-left',
   },
   {
     id: 'skills',
-    image: '/img/bannerHeroPresentacion/habilidadesBanner.png',
+    image: '/img/bannerheroPresentacion/habilidadesBanner.png',
     titleKey: 'hero.carousel.skills.title',
     textKey: 'hero.carousel.skills.text',
     layout: 'image-right',
   },
   {
     id: 'experience',
-    image: '/img/bannerHeroPresentacion/experienciasBanner.png',
+    image: '/img/bannerheroPresentacion/experienciasBanner.png',
     titleKey: 'hero.carousel.experience.title',
     textKey: 'hero.carousel.experience.text',
     layout: 'image-left',
   },
   {
     id: 'networks',
-    image: '/img/bannerHeroPresentacion/RedesBanner.png',
+    image: '/img/bannerheroPresentacion/RedesBanner.png',
     titleKey: 'hero.carousel.networks.title',
     textKey: 'hero.carousel.networks.text',
     layout: 'image-right',
@@ -823,8 +823,8 @@ export default function Hero() {
                   <img className="spk-feature-image" src={currentSlide.image} alt="" />
                   {currentSlide.logos ? (
                     <div className="spk-repo-logos">
-                      <img src="/img/bannerHeroPresentacion/logogit.png" alt="" />
-                      <img src="/img/bannerHeroPresentacion/gitlab.webp" alt="" />
+                      <img src="/img/bannerheroPresentacion/logogit.png" alt="" />
+                      <img src="/img/bannerheroPresentacion/gitlab.webp" alt="" />
                     </div>
                   ) : null}
                 </div>
