@@ -775,7 +775,9 @@ const styles = {
   messagingResizeButton: {
     alignItems: 'center',
     background: 'var(--azul-light, #e8f4fb)',
-    border: '1px solid var(--gris-borde, #d1d5db)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'var(--gris-borde, #d1d5db)',
     borderRadius: '6px',
     color: 'var(--azul-hover, #005f95)',
     cursor: 'pointer',

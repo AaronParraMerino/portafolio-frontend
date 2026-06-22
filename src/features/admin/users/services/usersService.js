@@ -450,6 +450,28 @@ export async function updateGlobalAdminNotice(noticeId, payload) {
   return parseAdminResponse(response, 'No se pudo actualizar el aviso global.');
 }
 
+export async function updateGlobalAdminNoticeStatus(noticeId, estado) {
+  const response = await fetch(`${BASE_URL}/admin/avisos/${noticeId}/estado`, {
+    method: 'PATCH',
+    headers: {
+      ...getAdminRequestHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ estado }),
+  });
+
+  return parseAdminResponse(response, 'No se pudo cambiar el estado del aviso global.');
+}
+
+export async function deleteGlobalAdminNotice(noticeId) {
+  const response = await fetch(`${BASE_URL}/admin/avisos/${noticeId}`, {
+    method: 'DELETE',
+    headers: getAdminRequestHeaders(),
+  });
+
+  return parseAdminResponse(response, 'No se pudo eliminar el aviso global.');
+}
+
 export async function createAdminNoticeTemplate(payload) {
   const response = await fetch(`${BASE_URL}/administrador/usuarios/plantillas`, {
     method: 'POST',

@@ -103,6 +103,8 @@ export default function UsersNoticeModal({
     ? (modal?.initialNotice
       ? t('admin.users.noticeModal.editTemplateTitle')
       : t('admin.users.noticeModal.templateTitle'))
+    : modal?.duplicateNotice
+      ? t('admin.users.noticeModal.duplicateTitle')
     : modal?.initialNotice
       ? t('admin.users.noticeModal.editTitle')
       : t('admin.users.noticeModal.newTitle');
@@ -164,8 +166,8 @@ export default function UsersNoticeModal({
 
     setMessage('');
     submitInBackground({
-        noticeId: !modal.fromTemplate
-          ? (modal.initialNotice?.id || modal.initialNotice?.id_aviso || modal.initialNotice?.id_comunicacion || null)
+        noticeId: !modal.fromTemplate && !modal.duplicateNotice
+          ? (modal.initialNotice?.id_aviso || modal.initialNotice?.id_comunicacion || modal.initialNotice?.id || null)
           : null,
         destinatarios,
         titulo: title.trim(),
@@ -176,7 +178,7 @@ export default function UsersNoticeModal({
         canales: ['inapp'],
         segmentos: segments,
         directUser: modal.directUser || null,
-        forceUserNotice: !!modal.fromTemplate,
+        forceUserNotice: !!modal.fromTemplate || !!modal.forceUserNotice || !!modal.duplicateNotice,
       });
   };
 

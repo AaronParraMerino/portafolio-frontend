@@ -63,6 +63,8 @@ export default function UsersPage() {
     onOpenDirectNoticeModal,
     onCloseNoticeModal,
     onSendNotice,
+    onToggleGlobalNoticeStatus,
+    onDeleteGlobalNotice,
     onQueryChange,
     onStatusFilterChange,
     onGoToPage,
@@ -101,6 +103,14 @@ export default function UsersPage() {
 
   const handleDeleteTemplateInBackground = (templateId) => (
     runUserChangeInBackground(() => onDeleteTemplate(templateId))
+  );
+
+  const handleToggleGlobalNoticeStatusInBackground = (notice) => (
+    runUserChangeInBackground(() => onToggleGlobalNoticeStatus(notice))
+  );
+
+  const handleDeleteGlobalNoticeInBackground = (notice) => (
+    runUserChangeInBackground(() => onDeleteGlobalNotice(notice))
   );
 
   return (
@@ -162,6 +172,15 @@ export default function UsersPage() {
               communications={communications}
               onCreateNotice={() => onOpenNoticeModal()}
               onEditNotice={(notice) => onOpenNoticeModal({ initialNotice: notice })}
+              onDuplicateNotice={(notice) => onOpenNoticeModal({
+                initialNotice: notice,
+                duplicateNotice: true,
+                forceUserNotice: true,
+                directUser: notice.directUser || notice.destinatario || notice.recipient || null,
+                initialSegments: notice.segmentos || notice.segments || ['todos'],
+              })}
+              onToggleGlobalNoticeStatus={handleToggleGlobalNoticeStatusInBackground}
+              onDeleteGlobalNotice={handleDeleteGlobalNoticeInBackground}
             />
           ) : null}
 
