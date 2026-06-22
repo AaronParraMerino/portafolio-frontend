@@ -41,6 +41,88 @@ const STATS = [
   { key: 'events', labelKey: 'hero.stats.events', red: true },
 ];
 
+const HERO_SLIDES = [
+  { id: 'intro', type: 'intro' },
+  {
+    id: 'profile',
+    image: '/img/bannerHeroPresentacion/perfilbanner.png',
+    titleKey: 'hero.carousel.profile.title',
+    textKey: 'hero.carousel.profile.text',
+    layout: 'image-right',
+  },
+  {
+    id: 'portfolio',
+    image: '/img/bannerHeroPresentacion/protafoliosBanner.png',
+    titleKey: 'hero.carousel.portfolio.title',
+    textKey: 'hero.carousel.portfolio.text',
+    layout: 'image-left',
+  },
+  {
+    id: 'projects',
+    image: '/img/bannerHeroPresentacion/pryectosHomeBanner.png',
+    titleKey: 'hero.carousel.projects.title',
+    textKey: 'hero.carousel.projects.text',
+    layout: 'image-right',
+  },
+  {
+    id: 'projectEdit',
+    image: '/img/bannerHeroPresentacion/ProyectoEditBanner.png',
+    titleKey: 'hero.carousel.projectEdit.title',
+    textKey: 'hero.carousel.projectEdit.text',
+    layout: 'image-left',
+  },
+  {
+    id: 'repositories',
+    image: '/img/bannerHeroPresentacion/importRepoBanner.png',
+    titleKey: 'hero.carousel.repositories.title',
+    textKey: 'hero.carousel.repositories.text',
+    layout: 'image-right',
+    logos: true,
+  },
+  {
+    id: 'events',
+    image: '/img/bannerHeroPresentacion/eventos banner.png',
+    titleKey: 'hero.carousel.events.title',
+    textKey: 'hero.carousel.events.text',
+    layout: 'image-left',
+  },
+  {
+    id: 'chat',
+    image: '/img/bannerHeroPresentacion/chatBanner.png',
+    titleKey: 'hero.carousel.chat.title',
+    textKey: 'hero.carousel.chat.text',
+    layout: 'image-right',
+  },
+  {
+    id: 'search',
+    image: '/img/bannerHeroPresentacion/busquedasBanner.png',
+    titleKey: 'hero.carousel.search.title',
+    textKey: 'hero.carousel.search.text',
+    layout: 'image-left',
+  },
+  {
+    id: 'skills',
+    image: '/img/bannerHeroPresentacion/habilidadesBanner.png',
+    titleKey: 'hero.carousel.skills.title',
+    textKey: 'hero.carousel.skills.text',
+    layout: 'image-right',
+  },
+  {
+    id: 'experience',
+    image: '/img/bannerHeroPresentacion/experienciasBanner.png',
+    titleKey: 'hero.carousel.experience.title',
+    textKey: 'hero.carousel.experience.text',
+    layout: 'image-left',
+  },
+  {
+    id: 'networks',
+    image: '/img/bannerHeroPresentacion/RedesBanner.png',
+    titleKey: 'hero.carousel.networks.title',
+    textKey: 'hero.carousel.networks.text',
+    layout: 'image-right',
+  },
+];
+
 function formatStatValue(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return '--';
@@ -61,6 +143,9 @@ export default function Hero() {
   const { t } = useLanguage();
   const heroRef = useRef(null);
   const [stats, setStats] = useState(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const currentSlide = HERO_SLIDES[activeSlide] ?? HERO_SLIDES[0];
 
   useEffect(() => {
     let active = true;
@@ -76,6 +161,14 @@ export default function Hero() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % HERO_SLIDES.length);
+    }, 7000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   return (
@@ -245,6 +338,143 @@ export default function Hero() {
           z-index: 1;
         }
 
+        .spk-feature-slide {
+          align-items: center;
+          display: grid;
+          gap: 34px;
+          grid-template-columns: minmax(0, .86fr) minmax(360px, 1.14fr);
+          min-height: clamp(500px, 62vh, 620px);
+          padding: 24px clamp(20px, 4vw, 56px);
+          position: relative;
+          z-index: 1;
+        }
+
+        .spk-feature-slide.image-left {
+          grid-template-columns: minmax(360px, 1.14fr) minmax(0, .86fr);
+        }
+
+        .spk-feature-slide.image-left .spk-feature-copy {
+          order: 2;
+        }
+
+        .spk-feature-slide.image-left .spk-feature-visual {
+          order: 1;
+        }
+
+        .spk-feature-copy {
+          align-items: flex-start;
+          animation: fadeUp .5s .22s ease both;
+          display: flex;
+          flex-direction: column;
+          text-align: left;
+        }
+
+        .spk-feature-copy .spk-badge {
+          margin-bottom: 18px;
+        }
+
+        .spk-feature-title {
+          color: var(--negro-texto);
+          font-size: clamp(34px, 4.8vw, 60px);
+          font-weight: 800;
+          line-height: .98;
+          margin: 0 0 18px;
+          max-width: 680px;
+        }
+
+        .spk-feature-title strong {
+          color: var(--azul);
+        }
+
+        .spk-feature-text {
+          color: var(--gris-texto);
+          font-size: 16px;
+          line-height: 1.75;
+          margin: 0;
+          max-width: 540px;
+        }
+
+        .spk-feature-accent {
+          background: linear-gradient(90deg, var(--azul), var(--azul-mid));
+          border-radius: 999px;
+          height: 3px;
+          margin: 0 0 20px;
+          width: 58px;
+        }
+
+        .spk-feature-visual {
+          animation: fadeUp .5s .3s ease both;
+          min-width: 0;
+          position: relative;
+        }
+
+        .spk-feature-image-wrap {
+          position: relative;
+        }
+
+        .spk-feature-image {
+          display: block;
+          filter: drop-shadow(0 18px 30px rgba(0, 51, 86, .14));
+          height: auto;
+          max-height: min(52vh, 470px);
+          object-fit: contain;
+          width: 100%;
+        }
+
+        .spk-repo-logos {
+          align-items: center;
+          background: rgba(255,255,255,.9);
+          border: 1px solid var(--gris-borde);
+          border-radius: 8px;
+          box-shadow: 0 10px 26px rgba(0,0,0,.1);
+          display: flex;
+          gap: 10px;
+          padding: 8px 10px;
+          position: absolute;
+          right: 14px;
+          top: 14px;
+        }
+
+        .spk-repo-logos img {
+          display: block;
+          height: 30px;
+          object-fit: contain;
+          width: 30px;
+        }
+
+        .spk-hero-dots {
+          align-items: center;
+          bottom: 52px;
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+          left: 50%;
+          position: absolute;
+          transform: translateX(-50%);
+          z-index: 4;
+        }
+
+        .spk-hero-dot {
+          background: rgba(0,119,183,.38);
+          border: 0;
+          border-radius: 999px;
+          cursor: pointer;
+          height: 9px;
+          padding: 0;
+          transition: background .2s ease, width .2s ease;
+          width: 9px;
+        }
+
+        .spk-hero-dot.active {
+          background: var(--azul);
+          width: 38px;
+        }
+
+        .spk-hero-dot:focus-visible {
+          outline: 3px solid rgba(0,119,183,.28);
+          outline-offset: 3px;
+        }
+
         .spk-badge {
           align-items: center;
           animation: fadeUp .5s .05s ease both;
@@ -394,6 +624,71 @@ export default function Hero() {
             padding: 20px 0 34px;
           }
 
+          .spk-feature-slide,
+          .spk-feature-slide.image-left {
+            background: rgba(255,255,255,.78);
+            border: 1px solid rgba(210,220,230,.8);
+            border-radius: 8px;
+            gap: 18px;
+            grid-template-columns: minmax(0, 1fr);
+            min-height: calc(100svh - var(--nav-height, 60px) - 92px);
+            padding: 16px 14px 50px;
+          }
+
+          .spk-feature-slide.image-left .spk-feature-copy,
+          .spk-feature-slide.image-left .spk-feature-visual {
+            order: initial;
+          }
+
+          .spk-feature-visual {
+            order: 1;
+          }
+
+          .spk-feature-copy {
+            align-items: center;
+            order: 2;
+            text-align: center;
+          }
+
+          .spk-feature-copy .spk-badge {
+            font-size: 9px;
+            margin-bottom: 12px;
+          }
+
+          .spk-feature-title {
+            font-size: clamp(30px, 10vw, 46px);
+            line-height: 1.04;
+            margin-bottom: 14px;
+          }
+
+          .spk-feature-accent {
+            margin-bottom: 14px;
+          }
+
+          .spk-feature-text {
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 94%;
+          }
+
+          .spk-feature-image {
+            max-height: 36svh;
+          }
+
+          .spk-repo-logos {
+            right: 10px;
+            top: 10px;
+          }
+
+          .spk-repo-logos img {
+            height: 24px;
+            width: 24px;
+          }
+
+          .spk-hero-dots {
+            bottom: 38px;
+          }
+
           .spk-hero-title {
             font-size: clamp(34px, 11vw, 52px);
             line-height: 1;
@@ -433,6 +728,16 @@ export default function Hero() {
             padding: 16px 0 26px;
           }
 
+          .spk-feature-slide,
+          .spk-feature-slide.image-left {
+            min-height: calc(100svh - var(--nav-height, 60px) - 76px);
+            padding: 14px 12px 48px;
+          }
+
+          .spk-feature-image {
+            max-height: 34svh;
+          }
+
           .spk-stats {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -470,36 +775,75 @@ export default function Hero() {
         </div>
 
         <div className="spk-hero-showcase">
-          <div className="spk-hero-institutional">
-            <div className="spk-hero-inner">
-              <div className="spk-badge">
-                <div className="spk-badge-dot" />
-                {t('hero.badge')}
-              </div>
+          {currentSlide.type === 'intro' ? (
+            <div className="spk-hero-institutional">
+              <div className="spk-hero-inner">
+                <div className="spk-badge">
+                  <div className="spk-badge-dot" />
+                  {t('hero.badge')}
+                </div>
 
-              <h1 className="spk-hero-title">
-                <span className="spk-title-blue">{t('hero.title.brand')}</span>{' '}
-                <span className="spk-title-dark">{t('hero.title.line1')}</span>
-                <br />
-                <span className="spk-title-dark">{t('hero.title.line2')}</span>
-              </h1>
+                <h1 className="spk-hero-title">
+                  <span className="spk-title-blue">{t('hero.title.brand')}</span>{' '}
+                  <span className="spk-title-dark">{t('hero.title.line1')}</span>
+                  <br />
+                  <span className="spk-title-dark">{t('hero.title.line2')}</span>
+                </h1>
 
-              <div className="spk-divider" />
+                <div className="spk-divider" />
 
-              <p className="spk-hero-desc">
-                <strong>{t('hero.description.prefix')}</strong> {t('hero.description.text')}
-              </p>
+                <p className="spk-hero-desc">
+                  <strong>{t('hero.description.prefix')}</strong> {t('hero.description.text')}
+                </p>
 
-              <div className="spk-stats">
-                {STATS.map(({ key, labelKey, red }) => (
-                  <div key={labelKey} className={`spk-stat${red ? ' stat-red' : ''}`}>
-                    <div className="spk-stat-num">{formatStatValue(stats?.[key])}</div>
-                    <div className="spk-stat-lbl">{t(labelKey)}</div>
-                  </div>
-                ))}
+                <div className="spk-stats">
+                  {STATS.map(({ key, labelKey, red }) => (
+                    <div key={labelKey} className={`spk-stat${red ? ' stat-red' : ''}`}>
+                      <div className="spk-stat-num">{formatStatValue(stats?.[key])}</div>
+                      <div className="spk-stat-lbl">{t(labelKey)}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className={`spk-feature-slide ${currentSlide.layout}`}>
+              <div className="spk-feature-copy">
+                <div className="spk-badge">
+                  <div className="spk-badge-dot" />
+                  {t('hero.badge')}
+                </div>
+                <h2 className="spk-feature-title">{t(currentSlide.titleKey)}</h2>
+                <div className="spk-feature-accent" />
+                <p className="spk-feature-text">{t(currentSlide.textKey)}</p>
+              </div>
+
+              <div className="spk-feature-visual" aria-hidden="true">
+                <div className="spk-feature-image-wrap">
+                  <img className="spk-feature-image" src={currentSlide.image} alt="" />
+                  {currentSlide.logos ? (
+                    <div className="spk-repo-logos">
+                      <img src="/img/bannerHeroPresentacion/logogit.png" alt="" />
+                      <img src="/img/bannerHeroPresentacion/gitlab.webp" alt="" />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="spk-hero-dots" aria-label={t('hero.carousel.navigation')}>
+          {HERO_SLIDES.map((slide, index) => (
+            <button
+              key={slide.id}
+              type="button"
+              className={`spk-hero-dot${index === activeSlide ? ' active' : ''}`}
+              aria-label={`${t('hero.carousel.slide')} ${index + 1}`}
+              aria-current={index === activeSlide ? 'true' : undefined}
+              onClick={() => setActiveSlide(index)}
+            />
+          ))}
         </div>
 
         <div className="spk-scroll-hint" aria-hidden="true">
