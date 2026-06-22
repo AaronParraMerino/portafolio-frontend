@@ -261,7 +261,7 @@ export function useUsersDirectory() {
     try {
       const actionPayload = {
         razon: messageContext || null,
-        ...(isPausing || isBlocking ? {} : { canales: channelsContext }),
+        canales: channelsContext,
       };
 
       const nextRole = isRoleAssign ? 'publicante' : 'usuario';

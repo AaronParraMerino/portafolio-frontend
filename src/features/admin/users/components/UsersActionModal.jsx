@@ -153,30 +153,24 @@ export default function UsersActionModal({
                           ? t('admin.users.actionModal.blockPlaceholder')
                           : t('admin.users.actionModal.genericPlaceholder'))}
                     />
-                    {isPausing || isBlocking ? (
-                      <p className="usr-action-confirm-copy">
-                        {t('admin.users.actionModal.restrictionNotice')}
-                      </p>
-                    ) : (
-                      <div className="usr-action-channels" aria-label={t('admin.users.noticeModal.channelsLabel')}>
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={actionChannels.includes('inapp')}
-                            onChange={() => onToggleActionChannel('inapp')}
-                          />
-                          <span>In-app</span>
-                        </label>
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={actionChannels.includes('email')}
-                            onChange={() => onToggleActionChannel('email')}
-                          />
-                          <span>{t('admin.users.channel.email')}</span>
-                        </label>
-                      </div>
-                    )}
+                    <div className="usr-action-channels" aria-label={t('admin.users.noticeModal.channelsLabel')}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={actionChannels.includes('inapp')}
+                          onChange={() => onToggleActionChannel('inapp')}
+                        />
+                        <span>In-app</span>
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={actionChannels.includes('email')}
+                          onChange={() => onToggleActionChannel('email')}
+                        />
+                        <span>{t('admin.users.channel.email')}</span>
+                      </label>
+                    </div>
                   </>
                 ) : (
                   <textarea
@@ -192,11 +186,7 @@ export default function UsersActionModal({
                 <div className="usr-reason-foot">
                   <p>
                     {canConfirmSelectedAction
-                      ? (isBlocking
-                        ? t('admin.users.actionModal.blockFoot')
-                        : (isPausing
-                          ? t('admin.users.actionModal.pauseFoot')
-                          : t('admin.users.actionModal.customMessageFoot', { messageType: isActivation ? t('admin.users.actionModal.customMessage') : t('admin.users.actionModal.customReason') })))
+                      ? t('admin.users.actionModal.customMessageFoot', { messageType: isActivation ? t('admin.users.actionModal.customMessage') : t('admin.users.actionModal.customReason') })
                       : t('admin.users.actionModal.roleReasonRequired')}
                   </p>
 
