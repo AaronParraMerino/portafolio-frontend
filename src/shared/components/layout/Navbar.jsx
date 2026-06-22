@@ -1005,7 +1005,7 @@ export default function Navbar() {
             />
           </div>
 
-          <button className="spk-search-close" type="button" onClick={closeNavSearch} aria-label="Cerrar busqueda">
+          <button className="spk-search-close" type="button" onClick={closeNavSearch} aria-label={t('nav.closeSearch')}>
             <svg viewBox="0 0 24 24">
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />

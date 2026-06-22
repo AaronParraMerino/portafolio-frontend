@@ -28,10 +28,10 @@ export default function DevelopersPage() {
 
   const hasDevelopers = developers.length > 0;
   const countLabel = loading
-    ? 'Cargando desarrolladores...'
+    ? t('public.developers.loading')
     : summary.total > 0
-      ? `Mostrando ${summary.from}-${summary.to} de ${summary.total}`
-      : 'Sin resultados';
+      ? t('public.developers.showing', { from: summary.from, to: summary.to, total: summary.total })
+      : t('public.developers.noResults');
 
   return (
     <main className="dev-page pubcat-page">
@@ -40,12 +40,10 @@ export default function DevelopersPage() {
           <div>
             <div className="dev-kicker pubcat-kicker">
               <FiUsers aria-hidden="true" />
-              Comunidad publica
+              {t('public.developers.kicker')}
             </div>
-            <h1>Desarrolladores activos</h1>
-            <p>
-              Perfiles ordenados por actividad reciente en sus portafolios.
-            </p>
+            <h1>{t('public.developers.title')}</h1>
+            <p>{t('public.developers.description')}</p>
           </div>
 
           <div className="pubcat-actions">
@@ -76,7 +74,7 @@ export default function DevelopersPage() {
 
           {submittedQuery && (
             <div className="dev-active-search">
-              Nombre: <strong>{submittedQuery}</strong>
+              {t('public.developers.activeSearch')} <strong>{submittedQuery}</strong>
             </div>
           )}
         </div>
@@ -85,7 +83,7 @@ export default function DevelopersPage() {
           <div className="dev-state dev-state-error pubcat-state is-error" role="alert">
             <FiRefreshCw aria-hidden="true" />
             <div>
-              <strong>No se pudo cargar la lista</strong>
+              <strong>{t('public.developers.errorTitle')}</strong>
               <span>{error}</span>
             </div>
           </div>
@@ -106,8 +104,8 @@ export default function DevelopersPage() {
           <div className="dev-state pubcat-state">
             <FiUsers aria-hidden="true" />
             <div>
-              <strong>No encontramos desarrolladores</strong>
-              <span>Prueba con otro nombre o limpia la busqueda.</span>
+              <strong>{t('public.developers.emptyTitle')}</strong>
+              <span>{t('public.developers.emptyText')}</span>
             </div>
           </div>
         )}

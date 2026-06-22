@@ -449,9 +449,15 @@ export default function ProjectsRepositoriesSyncBar({
                           <RepositoryProviderIcon provider={provider} />
                           {PROVIDER_NAMES[provider]}
                         </span>
-                        {repo.repo_github?.is_private && <span className="prj-detected-pill warn">privado</span>}
+                        {repo.repo_github?.is_private && <span className="prj-detected-pill warn">{t('projects.github.private')}</span>}
                         <span className={`prj-detected-pill ${(enUso || proyectoEliminado) ? 'warn' : repo.validacion?.validado ? 'ok' : 'warn'}`}>
-                          {proyectoEliminado ? 'proyecto eliminado' : enUso ? 'en uso' : repo.validacion?.validado ? 'validado' : 'sin validar'}
+                          {proyectoEliminado
+                            ? t('projects.github.deletedProject')
+                            : enUso
+                              ? t('projects.github.inUse')
+                              : repo.validacion?.validado
+                                ? t('projects.github.validated')
+                                : t('projects.github.unvalidated')}
                         </span>
                         {proyectoEliminado ? (
                           <ProjectRecoveryActions

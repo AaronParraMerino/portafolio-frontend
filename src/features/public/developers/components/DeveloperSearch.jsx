@@ -1,4 +1,5 @@
 import { FiSearch, FiX } from 'react-icons/fi';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function DeveloperSearch({
   value,
@@ -7,6 +8,8 @@ export default function DeveloperSearch({
   onSearch,
   onClear,
 }) {
+  const { t } = useLanguage();
+
   return (
     <form
       className="dev-search"
@@ -17,20 +20,20 @@ export default function DeveloperSearch({
     >
       <label className="dev-search-field">
         <FiSearch aria-hidden="true" />
-        <span className="dev-sr-only">Buscar desarrollador por nombre</span>
+        <span className="dev-sr-only">{t('public.developers.searchAria')}</span>
         <input
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Buscar por nombre..."
-          aria-label="Buscar desarrollador por nombre"
+          placeholder={t('public.developers.searchPlaceholder')}
+          aria-label={t('public.developers.searchAria')}
         />
         {value && (
           <button
             type="button"
             className="dev-search-clear"
             onClick={onClear}
-            aria-label="Limpiar busqueda"
+            aria-label={t('public.developers.clearSearch')}
             disabled={loading}
           >
             <FiX aria-hidden="true" />
@@ -39,7 +42,7 @@ export default function DeveloperSearch({
       </label>
 
       <button type="submit" className="dev-search-submit" disabled={loading}>
-        {loading ? 'Buscando...' : 'Buscar'}
+        {loading ? t('public.developers.searching') : t('public.developers.search')}
       </button>
     </form>
   );

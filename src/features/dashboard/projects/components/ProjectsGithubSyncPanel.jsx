@@ -539,9 +539,9 @@ export default function ProjectsGithubSyncPanel({
                 )}
 
                 {loadingRepos ? (
-                  <div className="prj-detected-muted">Cargando repositorios detectados...</div>
+                  <div className="prj-detected-muted">{t('projects.github.loadingDetected')}</div>
                 ) : detectedRepos.length === 0 ? (
-                  <div className="prj-detected-muted">No hay repositorios detectados. Ejecuta la sincronizacion para actualizar la lista.</div>
+                  <div className="prj-detected-muted">{t('projects.github.emptySyncHint')}</div>
                 ) : reposFiltrados.length === 0 ? (
                   <div className="prj-detected-muted">{t('projects.github.noResults', { query: busqueda })}</div>
                 ) : (

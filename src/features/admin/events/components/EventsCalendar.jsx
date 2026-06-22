@@ -344,8 +344,8 @@ export default function EventsCalendar({
               }) : (
                 <div className="evt-calendar-empty">
                   <BsCalendar3 />
-                  <strong>{t('adminEvents.calendar.empty')} para este dia</strong>
-                  <p>Selecciona otro dia o navega entre meses para revisar la agenda.</p>
+                  <strong>{t('adminEvents.calendar.emptyDay')}</strong>
+                  <p>{t('adminEvents.calendar.emptyDayHint')}</p>
                 </div>
               )}
             </div>

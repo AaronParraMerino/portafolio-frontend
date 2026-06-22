@@ -35,81 +35,48 @@ export default function PoliticaPrivacidad({ onClose }) {
           <p style={styles.date}>{t("auth.policy.effectiveDate")}</p>
 
           <h2 style={styles.sectionTitle}>{t("auth.privacy.firstTitle")}</h2>
-          <p style={styles.p}>
-            El objetivo del sistema es permitir a los usuarios crear y gestionar un portafolio digital de proyectos
-            de software, con el fin de organizar y presentar su experiencia, habilidades, logros y evidencia
-            profesional en un entorno web.
-          </p>
-          <p style={styles.p}>
-            La base de esta misión es nuestro compromiso de transparencia acerca de los datos que recopilamos sobre
-            ti, el modo en que se utilizan y con quién se comparten.
-          </p>
-          <p style={styles.p}>
-            Esta Política de privacidad se aplica cuando utilizas nuestro sistema (descrito anteriormente).
-            Ofrecemos a nuestros usuarios distintas opciones acerca de los datos que recopilamos, utilizamos y
-            compartimos, según se describe en esta Política de privacidad, así como en los ajustes disponibles
-            dentro del sistema.
-          </p>
+          <p style={styles.p}>{t("auth.privacy.purpose1")}</p>
+          <p style={styles.p}>{t("auth.privacy.purpose2")}</p>
+          <p style={styles.p}>{t("auth.privacy.purpose3")}</p>
 
-          <h2 style={styles.sectionTitle}>1. Introducción:</h2>
-          <p style={styles.p}>
-            Somos una plataforma en línea orientada a profesionales que permite crear y gestionar portafolios
-            digitales de proyectos de software. Los usuarios utilizan nuestros servicios para organizar y mostrar
-            su experiencia, habilidades, logros y trayectoria profesional, así como para acceder a información
-            relevante y fortalecer su perfil profesional.
-          </p>
-          <p style={styles.p}>
-            Nuestra Política de privacidad se aplica a cualquier usuario que acceda o utilice el sistema, ya sea
-            como usuario registrado («Miembro») o como visitante («Visitante»).
-          </p>
-          <p style={styles.p}>
-            Los usuarios registrados («Miembros») pueden crear su identidad profesional mediante la gestión de su
-            portafolio, donde integran proyectos, habilidades técnicas y blandas, experiencia académica y laboral,
-            así como enlaces a redes profesionales. Además, pueden publicar y compartir contenido relevante que
-            refleje su desarrollo y capacidades.
-          </p>
-          <p style={styles.p}>
-            Parte del contenido disponible en el sistema puede ser accesible para personas que no estén registradas
-            («Visitantes»), dependiendo de la configuración de visibilidad definida por cada usuario.
-          </p>
+          <h2 style={styles.sectionTitle}>{t("auth.privacy.introductionTitle")}</h2>
+          <p style={styles.p}>{t("auth.privacy.introduction1")}</p>
+          <p style={styles.p}>{t("auth.privacy.introduction2")}</p>
+          <p style={styles.p}>{t("auth.privacy.introduction3")}</p>
+          <p style={styles.p}>{t("auth.privacy.introduction4")}</p>
 
-          <h2 style={styles.sectionTitle}>2. Datos que recopilamos:</h2>
-          <p style={styles.p}>
-            Nos proporcionas datos para crear y gestionar tu cuenta dentro del sistema generador de portafolios digitales.
-          </p>
+          <h2 style={styles.sectionTitle}>{t("auth.privacy.dataTitle")}</h2>
+          <p style={styles.p}>{t("auth.privacy.dataIntro")}</p>
 
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}></span>
             <div>
-              <strong>Registro:</strong> Para crear una cuenta, debes proporcionarnos información básica como tu
-              nombre, correo electrónico y una contraseña. Estos datos permiten identificarte dentro del sistema y
-              garantizar el acceso seguro a tu portafolio.
+              <strong>{t("auth.privacy.registrationTitle")}</strong> {t("auth.privacy.registrationText")}
             </div>
           </div>
 
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}></span>
             <div>
-              <strong>Perfil Profesional:</strong> Puedes crear y completar tu perfil profesional dentro del sistema. Este perfil puede incluir información como:
+              <strong>{t("auth.privacy.profileTitle")}</strong> {t("auth.privacy.profileText")}
               <ul style={styles.ul}>
-                <li>Profesión y biografía</li>
-                <li>Experiencia académica y laboral</li>
-                <li>Habilidades técnicas y blandas (incluyendo nivel de dominio)</li>
-                <li>Logros y capacidades desarrolladas</li>
+                <li>{t("auth.privacy.profileItem1")}</li>
+                <li>{t("auth.privacy.profileItem2")}</li>
+                <li>{t("auth.privacy.profileItem3")}</li>
+                <li>{t("auth.privacy.profileItem4")}</li>
               </ul>
-              No es obligatorio completar todos los campos; sin embargo, un perfil más completo permite una mejor
-              organización y presentación de tu portafolio digital.
+              {t("auth.privacy.profileOptional")}
             </div>
           </div>
 
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}></span>
             <div>
-              <strong>Gestión de Proyectos:</strong> Recopilamos la información que proporcionas al gestionar tu portafolio, como:
+              <strong>{t("auth.privacy.projectsTitle")}</strong> {t("auth.privacy.projectsText")}
               <ul style={styles.ul}>
-                <li>Proyectos de software en los que has participado</li>
-                <li>Descripción de proyectos y evidencias digitales</li>
-                <li>Enlaces relacionados (por ejemplo, repositorios o demostraciones)</li>
+                <li>{t("auth.privacy.projectsItem1")}</li>
+                <li>{t("auth.privacy.projectsItem2")}</li>
+                <li>{t("auth.privacy.projectsItem3")}</li>
               </ul>
             </div>
           </div>
@@ -117,8 +84,7 @@ export default function PoliticaPrivacidad({ onClose }) {
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}></span>
             <div>
-              <strong>Integración con Redes Profesionales:</strong> Puedes agregar enlaces a perfiles externos,
-              como redes profesionales o repositorios de código.
+              <strong>{t("auth.privacy.networksTitle")}</strong> {t("auth.privacy.networksText")}
             </div>
           </div>
 
@@ -137,33 +103,26 @@ export default function PoliticaPrivacidad({ onClose }) {
           <div style={styles.itemBlock}>
             <span style={styles.itemIcon}></span>
             <div>
-              <strong>Publicación de Información:</strong> El sistema te permite seleccionar qué información deseas
-              publicar dentro de tu portafolio.
+              <strong>{t("auth.privacy.publicationTitle")}</strong> {t("auth.privacy.publicationText")}
             </div>
           </div>
 
-          <p style={styles.p}>
-            No es obligatorio proporcionar toda la información; sin embargo, la ausencia de ciertos datos puede
-            limitar la funcionalidad del sistema.
-          </p>
+          <p style={styles.p}>{t("auth.privacy.optionalData")}</p>
 
-          <h2 style={styles.sectionTitle}>3. Información de Contacto:</h2>
-          <p style={styles.p}>
-            Puedes contactarnos o utilizar las opciones disponibles dentro del sistema para resolver cualquier
-            duda, consulta o inconveniente relacionado con esta Política de privacidad.
-          </p>
+          <h2 style={styles.sectionTitle}>{t("auth.privacy.contactTitle")}</h2>
+          <p style={styles.p}>{t("auth.privacy.contactText")}</p>
 
           <div style={styles.contactBlock}>
             <div style={styles.contactItem}>
               <span></span>
               <a href="https://mail.google.com/mail/u/0/?view=cm&fs=1&tf=1&to=sparkyhub.team@gmail.com" target="_blank" rel="noopener noreferrer" style={styles.contactLink}>
-                Correo Electronico: sparkyhub.team@gmail.com
+                {t("auth.privacy.emailLabel")}: sparkyhub.team@gmail.com
               </a>
             </div>
             <div style={styles.contactItem}>
               <span></span>
               <a href="https://wa.me/59160726822" target="_blank" rel="noopener noreferrer" style={styles.contactLink}>
-                Número de teléfono: 60726822
+                {t("auth.privacy.phoneLabel")}: 60726822
               </a>
             </div>
           </div>

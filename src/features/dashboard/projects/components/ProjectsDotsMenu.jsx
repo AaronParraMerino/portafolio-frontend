@@ -85,7 +85,7 @@ export default function ProjectsDotsMenu({
         className="prj-dots-btn"
         type="button"
         title={t('projects.menu.options')}
-        aria-label={loading ? 'Validando permisos del proyecto' : t('projects.menu.optionsProject')}
+        aria-label={loading ? t('projects.menu.validatingPermissions') : t('projects.menu.optionsProject')}
         aria-haspopup="menu"
         aria-expanded={open}
         disabled={disabled}

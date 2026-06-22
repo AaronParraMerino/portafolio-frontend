@@ -674,7 +674,7 @@ export default function ProjectCard({
 
         {!detallesExpandidos && miAporte && (
           <div className="prj-card-contribution">
-            <span>Mi aporte</span>
+            <span>{t('projects.card.myContribution')}</span>
             <p>{miAporte}</p>
           </div>
         )}

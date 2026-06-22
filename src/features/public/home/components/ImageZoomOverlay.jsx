@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BsArrowsFullscreen, BsDash, BsPlus, BsX } from 'react-icons/bs';
+import { useLanguage } from '../../../../core/i18n';
 import './imageZoomOverlay.css';
 
 const MIN_SCALE = 1;
@@ -16,6 +17,7 @@ function touchDistance(touches) {
 }
 
 export default function ImageZoomOverlay({ src, alt = '', onClose }) {
+  const { t } = useLanguage();
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const dialogRef = useRef(null);
   const dragRef = useRef(null);
@@ -164,12 +166,12 @@ export default function ImageZoomOverlay({ src, alt = '', onClose }) {
         onDoubleClick={reset}
       >
         <div className="izo-controls">
-          <button type="button" onClick={() => setScale(transform.scale - SCALE_STEP)} aria-label="Alejar imagen"><BsDash /></button>
+          <button type="button" onClick={() => setScale(transform.scale - SCALE_STEP)} aria-label={t('imageZoom.zoomOut')}><BsDash /></button>
           <span>{Math.round(transform.scale * 100)}%</span>
-          <button type="button" onClick={() => setScale(transform.scale + SCALE_STEP)} aria-label="Acercar imagen"><BsPlus /></button>
-          <button type="button" onClick={reset} aria-label="Restablecer imagen"><BsArrowsFullscreen /></button>
+          <button type="button" onClick={() => setScale(transform.scale + SCALE_STEP)} aria-label={t('imageZoom.zoomIn')}><BsPlus /></button>
+          <button type="button" onClick={reset} aria-label={t('imageZoom.reset')}><BsArrowsFullscreen /></button>
         </div>
-        <button type="button" className="izo-close" onClick={onClose} aria-label="Cerrar imagen ampliada">
+        <button type="button" className="izo-close" onClick={onClose} aria-label={t('imageZoom.close')}>
           <BsX />
         </button>
         <img
