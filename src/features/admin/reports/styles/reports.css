@@ -101,17 +101,30 @@
   transition: background .15s, border-color .15s, color .15s;
 }
 
+.rpt-actions button.rpt-support {
+  gap: 8px;
+  background: #fff;
+  color: var(--adm-primary, #0f766e);
+}
+
+.rpt-actions button.rpt-support svg {
+  width: 15px;
+  height: 15px;
+}
+
 .rpt-actions button:hover:not(:disabled) {
   background: var(--adm-primary-hover, #0b5f59);
   border-color: var(--adm-primary-hover, #0b5f59);
 }
 
-.rpt-actions button.rpt-download {
+.rpt-actions button.rpt-download,
+.rpt-actions button.rpt-support {
   background: #fff;
   color: var(--adm-primary, #0f766e);
 }
 
-.rpt-actions button.rpt-download:hover:not(:disabled) {
+.rpt-actions button.rpt-download:hover:not(:disabled),
+.rpt-actions button.rpt-support:hover:not(:disabled) {
   background: #f0fdf9;
   border-color: rgba(15, 118, 110, .24);
   color: var(--adm-primary, #0f766e);

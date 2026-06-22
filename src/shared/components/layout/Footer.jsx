@@ -4,6 +4,7 @@ import { FaDiscord, FaLinkedin, FaGitlab, FaGithub } from 'react-icons/fa';
 import { useLanguage } from '../../../core/i18n';
 import PoliticaCookies from '../../../features/auth/components/PoliticasC';
 import PoliticaPrivacidad from '../../../features/auth/components/PoliticasP';
+import AdminContactModal from '../../../features/denuncias/components/AdminContactModal';
 import { getStoredUser, isAdminUser } from '../../utils/authStorage';
 
 const FOOTER_LINKS = [
@@ -13,6 +14,7 @@ const FOOTER_LINKS = [
       { labelKey: 'footer.platform.exploreDevelopers', href: '/desarrolladores' },
       { labelKey: 'footer.platform.exploreProjects', href: '/proyectos' },
       { labelKey: 'footer.platform.exploreEvents', href: '/eventos' },
+      { labelKey: 'footer.platform.contactAdmin', action: 'contact-admin' },
     ],
   },
   {
@@ -59,6 +61,7 @@ export default function Footer({ isBackendAvailable = true }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [legalModal, setLegalModal] = useState(null);
+  const [showAdminContact, setShowAdminContact] = useState(false);
   const user = getStoredUser();
   const isAdmin = isAdminUser(user);
 
@@ -103,6 +106,11 @@ export default function Footer({ isBackendAvailable = true }) {
 
     if (link.action === 'terms') {
       setLegalModal('terms');
+      return;
+    }
+
+    if (link.action === 'contact-admin') {
+      setShowAdminContact(true);
       return;
     }
 
@@ -380,7 +388,6 @@ export default function Footer({ isBackendAvailable = true }) {
           color: var(--azul-mid);
           transform: translateY(-2px);
         }
-
         /* LINK COLS */
         .spk-footer-link-col {
           min-width: 0;
@@ -680,6 +687,7 @@ export default function Footer({ isBackendAvailable = true }) {
                 </a>
               ))}
             </div>
+
           </div>
 
           {/* LINK COLUMNS */}
@@ -728,6 +736,10 @@ export default function Footer({ isBackendAvailable = true }) {
 
       {legalModal === 'terms' && (
         <PoliticaCookies onClose={() => setLegalModal(null)} />
+      )}
+
+      {showAdminContact && (
+        <AdminContactModal onClose={() => setShowAdminContact(false)} />
       )}
     </>
   );

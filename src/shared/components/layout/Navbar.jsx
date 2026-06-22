@@ -1,7 +1,7 @@
 // src/shared/components/layout/Navbar.jsx
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../ui/ConfirmModal';
 import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
 import LanguageSelector from '../language/LanguageSelector';
@@ -174,6 +174,7 @@ function UserAvatar({ src, initials, className }) {
 
 export default function Navbar() {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const BASE_URL = process.env.REACT_APP_API_URL;
   const hideNavSearch = pathname.replace(/\/+$/, '') === '/portafolios';
@@ -496,12 +497,26 @@ export default function Navbar() {
   };
 
   const handleNotificationRead = async (notification) => {
-    if (notification.leida_en || notification.leido_en) return;
+    const shouldOpenAdminDenuncias = isAdminUser(user)
+      && notification?.contexto_tipo === 'denuncia'
+      && notification?.tipo === 'denuncia_nueva';
+
+    if (notification.leida_en || notification.leido_en) {
+      if (shouldOpenAdminDenuncias) {
+        setNotifOpen(false);
+        navigate('/admin/denuncias');
+      }
+      return;
+    }
 
     try {
       const response = await markNotificationAsRead(notification.id_notificacion);
       setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
       await refreshCurrentNotificationPanel();
+      if (shouldOpenAdminDenuncias) {
+        setNotifOpen(false);
+        navigate('/admin/denuncias');
+      }
     } catch (err) {
       setNotificationsError(err.message || t('nav.notificationReadError'));
     }
