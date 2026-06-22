@@ -1,4 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  FiCheckCircle,
+  FiClock,
+  FiEye,
+  FiRefreshCw,
+  FiSearch,
+  FiX,
+  FiXCircle,
+} from 'react-icons/fi';
 import AdminHeader from '../../layout/AdminHeader';
 import AdminPagination, { buildAdminPaginationItems } from '../../shared/AdminPagination';
 import { useLanguage } from '../../../../core/i18n';
@@ -15,6 +24,13 @@ const INITIAL_META = {
   last_page: 1,
   per_page: 12,
   total: 0,
+};
+
+const STATUS_ICONS = {
+  pendiente: FiClock,
+  en_revision: FiSearch,
+  resuelta: FiCheckCircle,
+  descartada: FiXCircle,
 };
 
 function localeForLanguage(language) {
@@ -91,7 +107,7 @@ export default function DenunciasPage() {
     setError('');
 
     try {
-      const payload = await fetchAdminDenuncias(filters);
+      const payload = await fetchAdminDenuncias(filters, t('adminDenuncias.error.load'));
       setItems(payload?.data?.items || []);
       setMeta(payload?.data?.meta || INITIAL_META);
     } catch (requestError) {
@@ -128,10 +144,14 @@ export default function DenunciasPage() {
     setNotice('');
 
     try {
-      const payload = await updateAdminDenuncia(selected.id_denuncia, {
-        estado: nextStatus,
-        respuesta_admin: responseText,
-      });
+      const payload = await updateAdminDenuncia(
+        selected.id_denuncia,
+        {
+          estado: nextStatus,
+          respuesta_admin: responseText,
+        },
+        t('adminDenuncias.error.update'),
+      );
       const updated = payload?.data;
       setSelected(updated);
       setItems((current) => current.map((item) => (
@@ -160,13 +180,18 @@ export default function DenunciasPage() {
       />
 
       <div className="den-content">
-        <section className="den-stats-grid" aria-label={t('adminDenuncias.header.title')}>
+        <section className="den-stats-grid adm-stats-grid" aria-label={t('adminDenuncias.header.title')}>
           {['pendiente', 'en_revision', 'resuelta', 'descartada'].map((status) => {
             const statusMeta = getStatusMeta(status, t);
+            const Icon = STATUS_ICONS[status] || FiClock;
             return (
-              <article key={status} className={`den-stat den-stat--${statusMeta.tone}`}>
+              <article key={status} className="den-stat adm-stat-card">
+                <div className="den-stat-icon adm-module-icon">
+                  <Icon aria-hidden="true" />
+                </div>
+                <strong>{loading ? '--' : (stats[status] || 0)}</strong>
                 <span>{statusMeta.label}</span>
-                <strong>{stats[status] || 0}</strong>
+                <small>{t(`adminDenuncias.stats.${status}.helper`)}</small>
               </article>
             );
           })}
@@ -180,20 +205,26 @@ export default function DenunciasPage() {
               <span>{t('adminDenuncias.panel.eyebrow')}</span>
               <h3>{t('adminDenuncias.panel.title')}</h3>
             </div>
-            <button type="button" onClick={loadDenuncias} disabled={loading}>
+            <button className="den-icon-action" type="button" onClick={loadDenuncias} disabled={loading}>
+              <FiRefreshCw aria-hidden="true" />
               {t('adminDenuncias.actions.refresh')}
             </button>
           </div>
 
           <div className="den-filters">
-            <input
-              type="search"
-              value={filters.q}
-              placeholder={t('adminDenuncias.filters.search')}
-              onChange={(event) => updateFilter('q', event.target.value)}
-            />
+            <label className="den-search">
+              <FiSearch aria-hidden="true" />
+              <input
+                type="search"
+                value={filters.q}
+                placeholder={t('adminDenuncias.filters.search')}
+                aria-label={t('adminDenuncias.filters.search')}
+                onChange={(event) => updateFilter('q', event.target.value)}
+              />
+            </label>
             <select
               value={filters.estado}
+              aria-label={t('adminDenuncias.filters.status')}
               onChange={(event) => updateFilter('estado', event.target.value)}
             >
               {DENUNCIA_STATUS.map((status) => (
@@ -236,6 +267,7 @@ export default function DenunciasPage() {
                       <td>{formatDate(item.created_at, language, t)}</td>
                       <td>
                         <button type="button" className="den-row-action" onClick={() => openDetail(item)}>
+                          <FiEye aria-hidden="true" />
                           {t('adminDenuncias.actions.review')}
                         </button>
                       </td>
@@ -269,7 +301,9 @@ export default function DenunciasPage() {
                 <span>{t('adminDenuncias.detail.title', { id: selected.id_denuncia })}</span>
                 <h3>{selected.asunto}</h3>
               </div>
-              <button type="button" onClick={() => setSelected(null)} aria-label={t('adminDenuncias.actions.close')}>x</button>
+              <button type="button" onClick={() => setSelected(null)} aria-label={t('adminDenuncias.actions.close')}>
+                <FiX aria-hidden="true" />
+              </button>
             </header>
 
             <div className="den-detail-body">

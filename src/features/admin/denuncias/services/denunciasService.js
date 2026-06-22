@@ -34,7 +34,7 @@ async function parseAdminResponse(response, fallbackMessage) {
   return payload;
 }
 
-export async function fetchAdminDenuncias(filters = {}) {
+export async function fetchAdminDenuncias(filters = {}, fallbackMessage = 'No se pudieron cargar las denuncias.') {
   const query = new URLSearchParams();
 
   if (filters.estado && filters.estado !== 'todos') query.set('estado', filters.estado);
@@ -46,10 +46,14 @@ export async function fetchAdminDenuncias(filters = {}) {
     headers: getAdminRequestHeaders(),
   });
 
-  return parseAdminResponse(response, 'No se pudieron cargar las denuncias.');
+  return parseAdminResponse(response, fallbackMessage);
 }
 
-export async function updateAdminDenuncia(denunciaId, payload) {
+export async function updateAdminDenuncia(
+  denunciaId,
+  payload,
+  fallbackMessage = 'No se pudo actualizar la denuncia.',
+) {
   const response = await fetch(`${BASE_URL}/administrador/denuncias/${denunciaId}`, {
     method: 'PATCH',
     headers: {
@@ -59,5 +63,5 @@ export async function updateAdminDenuncia(denunciaId, payload) {
     body: JSON.stringify(payload),
   });
 
-  return parseAdminResponse(response, 'No se pudo actualizar la denuncia.');
+  return parseAdminResponse(response, fallbackMessage);
 }
