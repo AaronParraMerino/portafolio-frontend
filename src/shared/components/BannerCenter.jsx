@@ -383,7 +383,7 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   const hasItems = items.length > 0;
   const pendingCount = items.length;
-  const inboxLabel = t('nav.notificationCenter');
+  const inboxLabel = t('banner.center.tab');
   const activeItem = items[0] ?? null;
   const messagingEnabled = !adminUser && Boolean(
     localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT')

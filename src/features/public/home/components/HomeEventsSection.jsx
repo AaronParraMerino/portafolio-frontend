@@ -6,8 +6,10 @@ import {
   EventsCarousel,
 } from './events';
 import { hasActiveStoredSession } from '../../../../shared/utils/authStorage';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function HomeEventsSection({ eventsState }) {
+  const { t } = useLanguage();
   const {
     carousel,
     error,
@@ -62,12 +64,16 @@ export default function HomeEventsSection({ eventsState }) {
             <div className={`evh-section-message${error ? ' is-error' : ''}`} role="status">
               <span>{error || notice}</span>
               {notice && (
-                <button type="button" onClick={() => setNotice('')} aria-label="Cerrar mensaje">
-                  Cerrar
+                <button type="button" onClick={() => setNotice('')} aria-label={t('home.events.closeMessage')}>
+                  {t('home.events.close')}
                 </button>
               )}
             </div>
           )}
+
+          <div className="evh-featured-head">
+            <h2>{t('home.events.explore')}</h2>
+          </div>
 
           <EventHeroBanner
             events={highlighted}

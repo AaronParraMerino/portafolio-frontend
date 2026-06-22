@@ -10,8 +10,10 @@ import useHomeEvents from '../hooks/useHomeEvents';
 import useRecentProjects from '../hooks/useRecentProjects';
 import { getPublicProjectDetail } from '../services/homePortfolioService';
 import { hasActiveStoredSession } from '../../../../shared/utils/authStorage';
+import { useLanguage } from '../../../../core/i18n';
 
 export default function HomePage() {
+  const { t } = useLanguage();
   const eventsState = useHomeEvents();
   const navigate = useNavigate();
   const recentProjects = useRecentProjects();
@@ -34,7 +36,7 @@ export default function HomePage() {
       const detail = await getPublicProjectDetail(project.id || project.id_proyecto);
       setSelectedProject(detail);
     } catch (error) {
-      setProjectDetailError(error?.message || 'No se pudo cargar el detalle del proyecto.');
+      setProjectDetailError(error?.message || t('home.projects.detailError'));
     } finally {
       setProjectDetailLoading(false);
     }

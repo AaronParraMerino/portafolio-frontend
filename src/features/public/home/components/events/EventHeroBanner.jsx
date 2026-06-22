@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BsCalendarEvent, BsChevronLeft, BsChevronRight, BsClock, BsGeoAlt } from 'react-icons/bs';
-import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../../../core/i18n';
 import useHeroInputNavigation from '../../hooks/useHeroInputNavigation';
 import EventActionButton from './EventActionButton';
@@ -24,7 +23,6 @@ export default function EventHeroBanner({
   onRegister,
   onViewDetails,
   registeringId = null,
-  showMobileNavigation = true,
 }) {
   const { language, t } = useLanguage();
   const visibleEvents = useMemo(() => events.filter(Boolean).slice(0, 5), [events]);
@@ -109,26 +107,6 @@ export default function EventHeroBanner({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {showMobileNavigation && <div className="evh-mobile-navigation">
-          <button
-            type="button"
-            onClick={() => move(-1)}
-            disabled={visibleEvents.length <= 1}
-            aria-label={t('home.events.previous')}
-          >
-            <BsChevronLeft />
-          </button>
-          <Link to="/eventos">{t('home.events.all')}</Link>
-          <button
-            type="button"
-            onClick={() => move(1)}
-            disabled={visibleEvents.length <= 1}
-            aria-label={t('home.events.next')}
-          >
-            <BsChevronRight />
-          </button>
-      </div>}
-
       <EventMedia event={activeEvent} className="evh-hero-media" containImage>
         <button
           type="button"
@@ -208,33 +186,28 @@ export default function EventHeroBanner({
         </span>
         <span className="evh-hero-capacity">{getCapacityLabel(activeEvent, t)}</span>
 
-        {visibleEvents.length > 1 && (
-          <>
-            <button
-              type="button"
-              className="evh-hero-nav evh-hero-prev"
-              onClick={(event) => {
-                event.stopPropagation();
-                move(-1);
-              }}
-              aria-label={t('home.events.previous')}
-            >
-              <BsChevronLeft />
-            </button>
-            <button
-              type="button"
-              className="evh-hero-nav evh-hero-next"
-              onClick={(event) => {
-                event.stopPropagation();
-                move(1);
-              }}
-              aria-label={t('home.events.next')}
-            >
-              <BsChevronRight />
-            </button>
-          </>
-        )}
       </EventMedia>
+
+      {visibleEvents.length > 1 && (
+        <>
+          <button
+            type="button"
+            className="evh-hero-nav evh-hero-prev"
+            onClick={() => move(-1)}
+            aria-label={t('home.events.previous')}
+          >
+            <BsChevronLeft />
+          </button>
+          <button
+            type="button"
+            className="evh-hero-nav evh-hero-next"
+            onClick={() => move(1)}
+            aria-label={t('home.events.next')}
+          >
+            <BsChevronRight />
+          </button>
+        </>
+      )}
 
       {visibleEvents.length > 1 && (
         <div className="evh-hero-dots" aria-label={t('home.events.featuredAria')}>
