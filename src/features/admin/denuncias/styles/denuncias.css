@@ -16,6 +16,7 @@
 }
 
 .den-panel {
+  overflow: hidden;
   border: 1.5px solid var(--gris-borde, #d1d5db);
   border-radius: var(--adm-panel-radius, 14px);
   background: #fff;
@@ -51,10 +52,6 @@
   color: #be123c;
   padding: 12px 14px;
   font-weight: 800;
-}
-
-.den-panel {
-  overflow: hidden;
 }
 
 .den-panel-head {
@@ -158,6 +155,9 @@
   display: flex;
   gap: 9px;
   min-width: 0;
+  width: 100%;
+  cursor: text;
+  overflow: hidden;
 }
 
 .den-search svg {
@@ -166,24 +166,45 @@
   height: 16px;
   stroke-width: 1.7;
   width: 16px;
+  pointer-events: none;
 }
 
-.den-search input {
-  box-shadow: none;
+.den-search input,
+.den-search input[type="search"],
+.den-search .den-search-input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1 1 auto;
+  display: block;
   min-width: 0;
   width: 100%;
-  border: 0;
-  background: transparent;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
   color: #172033;
   font: inherit;
   font-size: 14px;
-  outline: none;
+  line-height: normal;
 }
 
-.den-search input:focus {
-  border: 0;
-  box-shadow: none;
-  outline: none;
+.den-search input:focus,
+.den-search input[type="search"]:focus,
+.den-search .den-search-input:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.den-search input[type="search"]::-webkit-search-decoration,
+.den-search input[type="search"]::-webkit-search-cancel-button,
+.den-search input[type="search"]::-webkit-search-results-button,
+.den-search input[type="search"]::-webkit-search-results-decoration {
+  display: none;
 }
 
 .den-search:focus-within,
@@ -250,10 +271,25 @@
   font-weight: 900;
 }
 
-.den-status--warning { background: #fffbeb; color: #b45309; }
-.den-status--primary { background: #e0f2fe; color: #0369a1; }
-.den-status--success { background: #f0fdf4; color: #15803d; }
-.den-status--muted { background: #f1f5f9; color: #64748b; }
+.den-status--warning {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.den-status--primary {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.den-status--success {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.den-status--muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
 
 .den-row-action {
   min-height: 32px;
