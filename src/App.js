@@ -7,6 +7,7 @@ import './shared/styles/global.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import AppRouter from './core/router/AppRouter';
+import { LanguageProvider } from './core/i18n';
 import BannerCenter from './shared/components/BannerCenter';
 import { initSesionBase } from './features/auth/services/sessionService';
 import { subscribeToApiActivity } from './services/http/Service';
@@ -94,7 +95,7 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <LanguageProvider>
       {sessionExpired && (
         <div
           style={{
@@ -115,6 +116,6 @@ export default function App() {
       )}
       <AppRouter isBackendAvailable={isBackendAvailable} />
       <BannerCenter />
-    </>
+    </LanguageProvider>
   );
 }

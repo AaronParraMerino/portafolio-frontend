@@ -38,7 +38,6 @@ import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 import PublicProjectsPage from '../../features/public/projects/pages/PublicProjectsPage';
 import { getStoredUser, isAdminUser } from '../../shared/utils/authStorage';
-import { LanguageProvider } from '../i18n';
 
 const SCROLLABLE_ROUTE_CONTAINERS = [
   '.dsh-main',
@@ -167,8 +166,7 @@ function RoleGate({ children, adminOnly = false, userOnly = false }) {
 
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
-    <LanguageProvider>
-      <BrowserRouter>
+    <BrowserRouter>
         <ScrollToTop />
         <Routes>
 
@@ -218,7 +216,6 @@ export default function AppRouter({ isBackendAvailable = true }) {
         <Route path="/auth/cambiar-contraseña" element={<CambiarContra />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         </Routes>
-      </BrowserRouter>
-    </LanguageProvider>
+    </BrowserRouter>
   );
 }

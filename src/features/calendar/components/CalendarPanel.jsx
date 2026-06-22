@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ConfirmModal from '../../../shared/ui/ConfirmModal';
 import { useLanguage } from '../../../core/i18n';
 import { EventDetailModal } from '../../public/home/components/events';
@@ -9,6 +9,7 @@ import CalendarMonth from './CalendarMonth';
 import CalendarToggle from './CalendarToggle';
 import useCalendarEvents from '../hooks/useCalendarEvents';
 import usePausedAccount from '../../../shared/hooks/usePausedAccount';
+import useFloatingLayer from '../../../shared/hooks/useFloatingLayer';
 import '../styles/calendar.css';
 
 export default function CalendarPanel({ enabled = true }) {
@@ -19,6 +20,7 @@ export default function CalendarPanel({ enabled = true }) {
   const [eventToUnsubscribe, setEventToUnsubscribe] = useState(null);
   const [eventToView, setEventToView] = useState(null);
   const [deleteDayRequest, setDeleteDayRequest] = useState(null);
+  const [hiddenByInbox, setHiddenByInbox] = useState(false);
 
   const {
     open,
@@ -45,6 +47,23 @@ export default function CalendarPanel({ enabled = true }) {
     deleteEventsByDate,
     unsubscribeEvent,
   } = useCalendarEvents();
+  const floatingLayer = useFloatingLayer('calendar', open);
+
+  useEffect(() => {
+    const closeCalendar = () => setOpen(false);
+    const handleInboxVisibility = (event) => {
+      const inboxVisible = Boolean(event.detail?.visible);
+      setHiddenByInbox(inboxVisible);
+      if (inboxVisible) setOpen(false);
+    };
+
+    window.addEventListener('folio:close-calendar', closeCalendar);
+    window.addEventListener('folio:inbox-visibility', handleInboxVisibility);
+    return () => {
+      window.removeEventListener('folio:close-calendar', closeCalendar);
+      window.removeEventListener('folio:inbox-visibility', handleInboxVisibility);
+    };
+  }, [setOpen]);
 
   if (!enabled) return null;
 
@@ -56,7 +75,12 @@ export default function CalendarPanel({ enabled = true }) {
     });
   };
 
-  const handleToggle = () => setOpen((value) => !value);
+  const handleToggle = () => {
+    if (!open) {
+      window.dispatchEvent(new CustomEvent('folio:close-inbox'));
+    }
+    setOpen((value) => !value);
+  };
 
   const handleNewEvent = () => {
     if (paused) return;
@@ -116,9 +140,19 @@ export default function CalendarPanel({ enabled = true }) {
 
   return (
     <>
-      <CalendarToggle open={open} onClick={handleToggle} />
+      {!hiddenByInbox && (
+        <CalendarToggle
+          open={open}
+          onClick={handleToggle}
+          zIndex={open ? floatingLayer.zIndex + 1 : undefined}
+        />
+      )}
 
-      <aside className={`cal-panel${open ? ' is-open' : ''}`} aria-hidden={!open}>
+      <aside
+        className={`cal-panel${open ? ' is-open' : ''}`}
+        style={{ zIndex: open ? floatingLayer.zIndex : undefined }}
+        aria-hidden={!open}
+      >
         <header className="cal-panel-header">
           <div>
             <div className="cal-panel-title">{t('calendar.panel.title')}</div>

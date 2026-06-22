@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FiMaximize, FiMaximize2, FiMinimize, FiMinimize2 } from 'react-icons/fi';
 import { useLanguage } from '../../core/i18n';
+import useFloatingLayer from '../hooks/useFloatingLayer';
 import PoliticaCookies from '../../features/auth/components/PoliticasC';
 import MessagingPanel from '../../features/messaging/components/MessagingPanel';
 import {
@@ -231,9 +233,11 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   const [items, setItems] = useState(queue);
   const [collapsed, setCollapsed] = useState(true);
+  const [messagingSize, setMessagingSize] = useState('medium');
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [closing, setClosing] = useState({});
   const [promotingPhase, setPromotingPhase] = useState({});
+  const floatingLayer = useFloatingLayer('inbox', !collapsed);
   const activeTimerRef = useRef(null);
   const panelRef = useRef(null);
   const previousVisibleIdsRef = useRef([]);
@@ -287,7 +291,9 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   useEffect(() => {
     const handleOpenMessagingCenter = () => {
+      window.dispatchEvent(new CustomEvent('folio:close-calendar'));
       setCollapsed(false);
+      setMessagingSize('medium');
     };
 
     window.addEventListener('folio:open-messaging-center', handleOpenMessagingCenter);
@@ -296,6 +302,26 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
       window.removeEventListener('folio:open-messaging-center', handleOpenMessagingCenter);
     };
   }, []);
+
+  useEffect(() => {
+    const closeInbox = () => setCollapsed(true);
+    window.addEventListener('folio:close-inbox', closeInbox);
+    return () => window.removeEventListener('folio:close-inbox', closeInbox);
+  }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('folio:inbox-visibility', {
+      detail: { visible: !collapsed },
+    }));
+
+    return () => {
+      if (!collapsed) {
+        window.dispatchEvent(new CustomEvent('folio:inbox-visibility', {
+          detail: { visible: false },
+        }));
+      }
+    };
+  }, [collapsed]);
 
   useEffect(() => {
     clearActiveTimer();
@@ -383,7 +409,7 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   const hasItems = items.length > 0;
   const pendingCount = items.length;
-  const inboxLabel = t('nav.notificationCenter');
+  const inboxLabel = t('banner.center.tab');
   const activeItem = items[0] ?? null;
   const messagingEnabled = !adminUser && Boolean(
     localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT')
@@ -452,6 +478,7 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
           ref={panelRef}
           style={{
             ...styles.rail,
+            zIndex: !collapsed ? floatingLayer.zIndex : styles.rail.zIndex,
             ...(!messagingEnabled ? styles.railPublic : null),
             ...(!railVisible ? styles.railCollapsed : null),
           }}
@@ -545,8 +572,38 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
                   style={{
                     ...styles.messagingSlot,
                     ...(hasItems ? styles.messagingSlotWithNotices : styles.messagingSlotFull),
+                    ...(messagingSize === 'compact' ? styles.messagingSlotCompact : null),
+                    ...(messagingSize === 'full' ? styles.messagingSlotFullHeight : null),
                   }}
                 >
+                  <div style={styles.messagingResizeBar}>
+                    <button
+                      type="button"
+                      style={{
+                        ...styles.messagingResizeButton,
+                        ...(messagingSize === 'full' ? styles.messagingResizeButtonActive : null),
+                      }}
+                      onClick={() => setMessagingSize((current) => (
+                        current === 'full' ? 'medium' : 'full'
+                      ))}
+                      aria-pressed={messagingSize === 'full'}
+                      aria-label={t(messagingSize === 'full' ? 'messaging.medium' : 'messaging.full')}
+                      title={t(messagingSize === 'full' ? 'messaging.medium' : 'messaging.full')}
+                    >
+                      {messagingSize === 'full' ? <FiMinimize /> : <FiMaximize />}
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.messagingResizeButton}
+                      onClick={() => setMessagingSize((current) => (
+                        current === 'medium' ? 'compact' : 'medium'
+                      ))}
+                      aria-label={t(messagingSize === 'medium' ? 'messaging.compact' : 'messaging.medium')}
+                      title={t(messagingSize === 'medium' ? 'messaging.compact' : 'messaging.medium')}
+                    >
+                      {messagingSize === 'compact' ? <FiMaximize2 /> : <FiMinimize2 />}
+                    </button>
+                  </div>
                   <MessagingPanel
                     controlledOpen={!collapsed}
                     embedded
@@ -567,9 +624,17 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
       {!adminUser && (hasItems || messagingEnabled) && (
         <button
           type="button"
-          style={styles.tab}
+          style={{
+            ...styles.tab,
+            zIndex: !collapsed ? floatingLayer.zIndex + 1 : styles.tab.zIndex,
+          }}
           onClick={() => {
-            setCollapsed((value) => !value);
+            setCollapsed((value) => {
+              if (value) {
+                window.dispatchEvent(new CustomEvent('folio:close-calendar'));
+              }
+              return !value;
+            });
           }}
           aria-label={collapsed ? t('banner.center.openInbox') : t('banner.center.closeInbox')}
           title={collapsed ? t('banner.center.showInbox') : t('banner.center.collapseInbox')}
@@ -678,15 +743,54 @@ const styles = {
     border: '1px solid var(--gris-borde, #d1d5db)',
     borderRadius: '8px',
     boxShadow: '0 10px 24px rgba(15,23,42,.08)',
+    display: 'flex',
+    flexDirection: 'column',
     minHeight: 0,
     overflow: 'hidden',
     padding: '10px',
+    transition: 'flex-basis .22s cubic-bezier(.4,0,.2,1), min-height .22s cubic-bezier(.4,0,.2,1)',
   },
   messagingSlotWithNotices: {
     flex: '2 1 0',
   },
   messagingSlotFull: {
     flex: '1 1 100%',
+  },
+  messagingSlotCompact: {
+    flex: '0 1 clamp(190px, 32dvh, 270px)',
+    minHeight: '190px',
+  },
+  messagingSlotFullHeight: {
+    flex: '999 1 100%',
+  },
+  messagingResizeBar: {
+    alignItems: 'center',
+    display: 'flex',
+    flex: '0 0 auto',
+    justifyContent: 'flex-end',
+    gap: '6px',
+    marginBottom: '7px',
+    minHeight: '26px',
+  },
+  messagingResizeButton: {
+    alignItems: 'center',
+    background: 'var(--azul-light, #e8f4fb)',
+    border: '1px solid var(--gris-borde, #d1d5db)',
+    borderRadius: '6px',
+    color: 'var(--azul-hover, #005f95)',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    flex: '0 0 auto',
+    height: '26px',
+    justifyContent: 'center',
+    padding: 0,
+    width: '28px',
+  },
+  messagingResizeButtonActive: {
+    background: 'var(--azul, #0077b7)',
+    borderColor: 'var(--azul, #0077b7)',
+    color: 'var(--blanco, #ffffff)',
+    cursor: 'default',
   },
   banner: {
     width: '100%',

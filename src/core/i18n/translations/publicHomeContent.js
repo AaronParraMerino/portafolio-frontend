@@ -2,6 +2,9 @@ export const publicHomeContentTranslations = {
   es: {
     'home.events.all': 'Ver todos',
     'home.events.more': 'Más eventos',
+    'home.events.explore': 'Explorar eventos',
+    'home.events.closeMessage': 'Cerrar mensaje',
+    'home.events.close': 'Cerrar',
     'home.events.previous': 'Evento anterior',
     'home.events.next': 'Siguiente evento',
     'home.events.previousList': 'Ver eventos anteriores',
@@ -171,6 +174,9 @@ export const publicHomeContentTranslations = {
   en: {
     'home.events.all': 'View all',
     'home.events.more': 'More events',
+    'home.events.explore': 'Explore events',
+    'home.events.closeMessage': 'Close message',
+    'home.events.close': 'Close',
     'home.events.previous': 'Previous event',
     'home.events.next': 'Next event',
     'home.events.previousList': 'View previous events',
@@ -340,6 +346,9 @@ export const publicHomeContentTranslations = {
   pt: {
     'home.events.all': 'Ver todos',
     'home.events.more': 'Mais eventos',
+    'home.events.explore': 'Explorar eventos',
+    'home.events.closeMessage': 'Fechar mensagem',
+    'home.events.close': 'Fechar',
     'home.events.previous': 'Evento anterior',
     'home.events.next': 'Próximo evento',
     'home.events.previousList': 'Ver eventos anteriores',

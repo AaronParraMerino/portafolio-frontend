@@ -27,7 +27,7 @@ const LANGUAGE_LABELS = {
   },
 };
 
-export default function LanguageSelector({ mobile = false }) {
+export default function LanguageSelector({ mobile = false, onOpenChange, zIndex }) {
   const { language, languages, setLanguage, t } = useLanguage();
   const [open, setOpen] = useState(false);
   const selectorRef = useRef(null);
@@ -64,6 +64,10 @@ export default function LanguageSelector({ mobile = false }) {
     };
   }, []);
 
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
   const handleSelect = (code) => {
     setLanguage(code);
     setOpen(false);
@@ -73,6 +77,7 @@ export default function LanguageSelector({ mobile = false }) {
     <div
       className={`spk-lang-selector${mobile ? " mobile" : ""}${open ? " open" : ""}`}
       ref={selectorRef}
+      style={{ zIndex }}
     >
       <style>{`
         .spk-lang-selector {

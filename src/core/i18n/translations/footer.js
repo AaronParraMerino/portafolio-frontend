@@ -9,7 +9,7 @@ export const footerTranslations = {
     "footer.platform.exploreDevelopers": "Explorar desarrolladores",
     "footer.platform.exploreProjects": "Explorar proyectos",
     "footer.platform.exploreEvents": "Explorar eventos",
-    "footer.platform.contactAdmin": "Contactar administraciÃ³n",
+    "footer.platform.contactAdmin": "Contactar administración", 
     "footer.developers.title": "Desarrolladores",
     "footer.developers.createPortfolio": "Crear portafolio",
     "footer.developers.myProfile": "Mi perfil",
