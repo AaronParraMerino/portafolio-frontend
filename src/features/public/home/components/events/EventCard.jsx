@@ -26,13 +26,17 @@ export default function EventCard({
   const dateRange = formatEventDateRange(event.startsAt, event.endsAt, language, t);
   const timeRange = formatEventTimeRange(event.startsAt, event.endsAt, language);
   const activeDays = formatActiveDays(event.activeDays, language);
+  const handleViewDetails = (clickEvent) => {
+    clickEvent.stopPropagation();
+    onViewDetails?.(event);
+  };
 
   return (
     <article className={cx('evh-card', containImage && 'evh-card-contain-image', className)}>
       <button
         type="button"
         className="evh-card-media-button"
-        onClick={() => onViewDetails?.(event)}
+        onClick={handleViewDetails}
         aria-label={t('home.events.detailsAria', { title: event.title })}
       >
         <EventMedia event={event} className="evh-card-media" containImage={containImage}>
@@ -61,7 +65,7 @@ export default function EventCard({
           <button
             type="button"
             className="evh-ghost-button"
-            onClick={() => onViewDetails?.(event)}
+            onClick={handleViewDetails}
           >
             <BsInfoCircle />
             {t('home.events.details')}

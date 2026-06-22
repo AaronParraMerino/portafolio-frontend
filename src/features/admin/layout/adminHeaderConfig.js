@@ -29,6 +29,10 @@ export const ADMIN_SECTIONS = {
     titleKey: 'admin.layout.section.audit.title',
     eyebrowKey: 'admin.layout.eyebrow.management',
   },
+  denuncias: {
+    title: 'Denuncias',
+    eyebrow: 'Gestion',
+  },
   backups: {
     title: 'Respaldos',
     eyebrow: 'Gestion',

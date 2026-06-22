@@ -1,0 +1,223 @@
+.adm-contact-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(8, 13, 24, 0.58);
+}
+
+.adm-contact-modal {
+  width: min(520px, 100%);
+  max-height: min(720px, calc(100vh - 36px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 22px 70px rgba(6, 13, 29, 0.28);
+  color: #182032;
+}
+
+.adm-contact-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px 15px;
+  border-bottom: 1px solid #e6edf4;
+}
+
+.adm-contact-modal__header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.adm-contact-modal__header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.adm-contact-modal__close {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid #d8e2ec;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: #536276;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.adm-contact-modal__close:hover {
+  border-color: #b7c6d6;
+  background: #eef5fb;
+  color: #0f172a;
+}
+
+.adm-contact-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  overflow: auto;
+}
+
+.adm-contact-modal__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+}
+
+.adm-contact-modal__form span {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.adm-contact-modal__form input,
+.adm-contact-modal__form textarea {
+  width: 100%;
+  border: 1px solid #d7e1eb;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adm-contact-modal__form input:not([type="file"]) {
+  height: 42px;
+  padding: 0 12px;
+}
+
+.adm-contact-modal__form input[type="file"] {
+  padding: 9px 10px;
+  cursor: pointer;
+}
+
+.adm-contact-modal__file {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.adm-contact-modal__form textarea {
+  min-height: 132px;
+  resize: vertical;
+  padding: 11px 12px;
+}
+
+.adm-contact-modal__form input:focus,
+.adm-contact-modal__form textarea:focus {
+  border-color: #0077b7;
+  box-shadow: 0 0 0 3px rgba(0, 119, 183, 0.12);
+}
+
+.adm-contact-modal__status {
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.adm-contact-modal__status.is-error {
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.adm-contact-modal__status.is-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.adm-contact-modal__session {
+  margin: 20px;
+  border: 1px solid #d7e1eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 18px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.adm-contact-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.adm-contact-modal__primary,
+.adm-contact-modal__secondary {
+  min-height: 38px;
+  border-radius: 7px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.adm-contact-modal__primary {
+  border: 1px solid #0077b7;
+  background: #0077b7;
+  color: #ffffff;
+}
+
+.adm-contact-modal__primary:hover:not(:disabled) {
+  background: #00669e;
+  transform: translateY(-1px);
+}
+
+.adm-contact-modal__primary:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.adm-contact-modal__secondary {
+  border: 1px solid #d7e1eb;
+  background: #ffffff;
+  color: #334155;
+}
+
+.adm-contact-modal__secondary:hover {
+  border-color: #b7c6d6;
+  background: #f8fafc;
+}
+
+@media (max-width: 520px) {
+  .adm-contact-modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .adm-contact-modal {
+    max-height: calc(100vh - 20px);
+  }
+
+  .adm-contact-modal__header,
+  .adm-contact-modal__form {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

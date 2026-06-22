@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BsActivity,
+  BsFlag,
   BsFolder2Open,
   BsPeople,
   BsPersonCheck,
@@ -75,6 +77,7 @@ function buildTextReport(report, t, language) {
 
 export default function ReportsPage() {
   const { language, t } = useLanguage();
+  const navigate = useNavigate();
   const headerConfig = getAdminSectionConfig('reports');
   const today = new Date();
   const monthAgo = new Date();
@@ -135,6 +138,14 @@ export default function ReportsPage() {
           </div>
 
           <div className="rpt-actions">
+            <button
+              type="button"
+              className="rpt-support"
+              onClick={() => navigate('/admin/denuncias')}
+            >
+              <BsFlag aria-hidden="true" />
+              Reportes de usuarios
+            </button>
             <label>
               {t('adminReports.filters.from')}
               <input

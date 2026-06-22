@@ -1,12 +1,13 @@
 // src/shared/components/layout/Navbar.jsx
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../../ui/ConfirmModal';
 import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
 import LanguageSelector from '../language/LanguageSelector';
 import NavCatalogSearch from './NavCatalogSearch';
 import NotificationCenterModal from '../notifications/NotificationCenterModal';
+import usePausedAccount from '../../hooks/usePausedAccount';
 import { useLanguage } from '../../../core/i18n';
 import { getCachedSearchCatalogs } from '../../../features/public/portfolio-search/services/portfolioSearchService';
 import { storeNavSearchSelection } from '../../../features/public/portfolio-search/services/navSearchTransfer';
@@ -134,6 +135,7 @@ function moduleFallbackTitle(modulo) {
     proyectos: 'Proyectos',
     eventos: 'Eventos',
     administracion: 'Administracion',
+    personales: 'Personales',
   }[modulo] || modulo || 'Notificaciones';
 }
 
@@ -173,6 +175,8 @@ function UserAvatar({ src, initials, className }) {
 
 export default function Navbar() {
   const { t, language } = useLanguage();
+  const paused = usePausedAccount();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const BASE_URL = process.env.REACT_APP_API_URL;
   const hideNavSearch = pathname.replace(/\/+$/, '') === '/portafolios';
@@ -495,19 +499,35 @@ export default function Navbar() {
   };
 
   const handleNotificationRead = async (notification) => {
-    if (notification.leida_en || notification.leido_en) return;
+    const shouldOpenAdminDenuncias = isAdminUser(user)
+      && notification?.contexto_tipo === 'denuncia'
+      && notification?.tipo === 'denuncia_nueva';
+
+    if (notification.leida_en || notification.leido_en) {
+      if (shouldOpenAdminDenuncias) {
+        setNotifOpen(false);
+        navigate('/admin/denuncias');
+      }
+      return;
+    }
+
+    if (paused) return;
 
     try {
       const response = await markNotificationAsRead(notification.id_notificacion);
       setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
       await refreshCurrentNotificationPanel();
+      if (shouldOpenAdminDenuncias) {
+        setNotifOpen(false);
+        navigate('/admin/denuncias');
+      }
     } catch (err) {
       setNotificationsError(err.message || t('nav.notificationReadError'));
     }
   };
 
   const handleModuleNotificationsRead = async () => {
-    if (!selectedNotificationModule) return;
+    if (!selectedNotificationModule || paused) return;
 
     try {
       const response = await markNotificationModuleAsRead(selectedNotificationModule.modulo);
@@ -524,7 +544,7 @@ export default function Navbar() {
   };
 
   const handleGroupNotificationsRead = async () => {
-    if (!selectedNotificationModule || !selectedNotificationGroup) return;
+    if (!selectedNotificationModule || !selectedNotificationGroup || paused) return;
 
     try {
       const response = await markNotificationGroupAsRead(
@@ -542,7 +562,7 @@ export default function Navbar() {
   };
 
   const handleAllNotificationsRead = async () => {
-    if (!unreadNotifications) return;
+    if (!unreadNotifications || paused) return;
 
     try {
       await markAllNotificationsAsRead();
@@ -1095,7 +1115,7 @@ export default function Navbar() {
                         <button
                           className="spk-notif-clear"
                           type="button"
-                          disabled={notificationsLoading || unreadNotifications === 0}
+                          disabled={paused || notificationsLoading || unreadNotifications === 0}
                           onClick={handleAllNotificationsRead}
                         >
                           {t('nav.markRead')}
@@ -1235,6 +1255,7 @@ export default function Navbar() {
                               <button
                                 className="spk-notif-clear"
                                 type="button"
+                                disabled={paused}
                                 onClick={handleModuleNotificationsRead}
                               >
                                 {t('nav.markModuleRead')}
@@ -1295,6 +1316,7 @@ export default function Navbar() {
                               <button
                                 className="spk-notif-clear"
                                 type="button"
+                                disabled={paused}
                                 onClick={handleGroupNotificationsRead}
                               >
                                 {t('nav.markGroupRead')}
@@ -1546,7 +1568,7 @@ export default function Navbar() {
         </div>
       )}
 
-      <CalendarPanel enabled={!!user} />
+      <CalendarPanel enabled={!!user && !adminUser} />
 
       <NotificationCenterModal
         open={notificationCenterOpen}

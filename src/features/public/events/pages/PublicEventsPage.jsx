@@ -9,6 +9,7 @@ import {
 import useEventsPage from '../hooks/useEventsPage';
 import EventsPagination from '../components/EventsPagination';
 import PublicCatalogSkeleton from '../../shared/PublicCatalogSkeleton';
+import { hasActiveStoredSession } from '../../../../shared/utils/authStorage';
 import '../styles/publicEvents.css';
 import '../../shared/publicCatalog.css';
 
@@ -44,9 +45,14 @@ export default function PublicEventsPage() {
       })
       : t('public.events.noneVisible');
 
+  const redirectToLogin = () => {
+    sessionStorage.setItem('auth:return-to', '/eventos');
+    navigate('/auth/login', { state: { from: '/eventos' } });
+  };
+
   const handleRegister = async (event) => {
-    if (event?.requiresLogin) {
-      navigate('/auth/login', { state: { from: '/eventos' } });
+    if (event?.requiresLogin || !hasActiveStoredSession()) {
+      redirectToLogin();
       return;
     }
 
@@ -56,6 +62,14 @@ export default function PublicEventsPage() {
       const updated = result.refreshed.events.find((item) => String(item.id) === String(selectedEvent.id));
       if (updated) setSelectedEvent(updated);
     }
+  };
+  const handleViewDetails = (event) => {
+    if (!hasActiveStoredSession()) {
+      redirectToLogin();
+      return;
+    }
+
+    setSelectedEvent(event);
   };
 
   return (
@@ -117,7 +131,7 @@ export default function PublicEventsPage() {
               key={event.id}
               event={event}
               onRegister={handleRegister}
-              onViewDetails={setSelectedEvent}
+              onViewDetails={handleViewDetails}
               registering={String(registeringId || '') === String(event.id)}
               containImage
             />
