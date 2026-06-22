@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../../../core/i18n';
+import usePausedAccount from '../../hooks/usePausedAccount';
 import {
   fetchNotificationGroupMessages,
   fetchNotificationModuleDetail,
@@ -458,6 +459,7 @@ export default function NotificationCenterModal({
   onChanged,
 }) {
   const { t, language } = useLanguage();
+  const paused = usePausedAccount();
   const [tab, setTab] = useState('new');
   const [modules, setModules] = useState([]);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -815,7 +817,7 @@ export default function NotificationCenterModal({
   };
 
   const handleReadOne = async (notification) => {
-    if (!notification) return;
+    if (!notification || paused) return;
 
     try {
       await markNotificationAsRead(notification.id_notificacion);
@@ -826,7 +828,7 @@ export default function NotificationCenterModal({
   };
 
   const handleUnreadOne = async (notification) => {
-    if (!notification) return;
+    if (!notification || paused) return;
 
     try {
       await markNotificationAsUnread(notification.id_notificacion);
@@ -837,7 +839,7 @@ export default function NotificationCenterModal({
   };
 
   const handleModuleRead = async () => {
-    if (!selectedModule) return;
+    if (!selectedModule || paused) return;
 
     try {
       await markNotificationModuleAsRead(selectedModule.modulo);
@@ -853,7 +855,7 @@ export default function NotificationCenterModal({
   };
 
   const handleGroupRead = async () => {
-    if (!selectedModule || !selectedGroup) return;
+    if (!selectedModule || !selectedGroup || paused) return;
 
     try {
       await markNotificationGroupAsRead(
@@ -870,6 +872,8 @@ export default function NotificationCenterModal({
   };
 
   const handleAllRead = async () => {
+    if (paused) return;
+
     try {
       await markAllNotificationsAsRead();
       await loadModules({ force: true });
@@ -884,6 +888,8 @@ export default function NotificationCenterModal({
   };
 
   const handleRestoreRequest = async (notification, decision) => {
+    if (paused) return;
+
     const projectId = Number(notification?.metadata?.id_proyecto)
       || Number(String(notification?.contexto_referencia || '').replace('proyecto_', ''));
     if (!projectId) return;
@@ -943,7 +949,7 @@ export default function NotificationCenterModal({
               <button
                 className="ncm-primary"
                 type="button"
-                disabled={Boolean(actionLoading)}
+                disabled={paused || Boolean(actionLoading)}
                 onClick={() => handleRestoreRequest(notification, 'aprobar')}
               >
                 {actionLoading === 'aprobar' ? 'Restableciendo...' : 'Aprobar y restablecer'}
@@ -951,7 +957,7 @@ export default function NotificationCenterModal({
               <button
                 className="ncm-secondary"
                 type="button"
-                disabled={Boolean(actionLoading)}
+                disabled={paused || Boolean(actionLoading)}
                 onClick={() => handleRestoreRequest(notification, 'rechazar')}
               >
                 {actionLoading === 'rechazar' ? 'Rechazando...' : 'Rechazar solicitud'}
@@ -962,6 +968,7 @@ export default function NotificationCenterModal({
             <button
               className="ncm-primary"
               type="button"
+              disabled={paused}
               onClick={() => handleUnreadOne(notification)}
             >
               {t('nav.markUnread')}
@@ -970,6 +977,7 @@ export default function NotificationCenterModal({
             <button
               className="ncm-primary"
               type="button"
+              disabled={paused}
               onClick={() => handleReadOne(notification)}
             >
               {t('nav.markReadSingle')}
@@ -1048,7 +1056,7 @@ export default function NotificationCenterModal({
                 <div className="ncm-col">
                   <div className="ncm-col-head">
                     <strong>{t('nav.modules')}</strong>
-                    <button type="button" onClick={handleAllRead} disabled={!modules.some((item) => Number(item.cantidad))}>
+                    <button type="button" onClick={handleAllRead} disabled={paused || !modules.some((item) => Number(item.cantidad))}>
                       {t('nav.markRead')}
                     </button>
                   </div>
@@ -1076,7 +1084,7 @@ export default function NotificationCenterModal({
                 <div className="ncm-col">
                   <div className="ncm-col-head">
                     <strong>{selectedModuleTitle}</strong>
-                    <button type="button" onClick={handleModuleRead} disabled={!selectedModule}>
+                    <button type="button" onClick={handleModuleRead} disabled={paused || !selectedModule}>
                       {t('nav.markModuleRead')}
                     </button>
                   </div>
@@ -1118,7 +1126,7 @@ export default function NotificationCenterModal({
                 <div className="ncm-col">
                   <div className="ncm-col-head">
                     <strong>{selectedGroup?.titulo || t('nav.messages')}</strong>
-                    <button type="button" onClick={handleGroupRead} disabled={!selectedGroup}>
+                    <button type="button" onClick={handleGroupRead} disabled={paused || !selectedGroup}>
                       {t('nav.markGroupRead')}
                     </button>
                   </div>

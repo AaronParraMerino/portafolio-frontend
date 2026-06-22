@@ -7,6 +7,7 @@ import CalendarPanel from '../../../features/calendar/components/CalendarPanel';
 import LanguageSelector from '../language/LanguageSelector';
 import NavCatalogSearch from './NavCatalogSearch';
 import NotificationCenterModal from '../notifications/NotificationCenterModal';
+import usePausedAccount from '../../hooks/usePausedAccount';
 import { useLanguage } from '../../../core/i18n';
 import { getCachedSearchCatalogs } from '../../../features/public/portfolio-search/services/portfolioSearchService';
 import { storeNavSearchSelection } from '../../../features/public/portfolio-search/services/navSearchTransfer';
@@ -174,6 +175,7 @@ function UserAvatar({ src, initials, className }) {
 
 export default function Navbar() {
   const { t, language } = useLanguage();
+  const paused = usePausedAccount();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const BASE_URL = process.env.REACT_APP_API_URL;
@@ -509,6 +511,8 @@ export default function Navbar() {
       return;
     }
 
+    if (paused) return;
+
     try {
       const response = await markNotificationAsRead(notification.id_notificacion);
       setUnreadNotifications(Number(response?.resumen?.pendientes) || 0);
@@ -523,7 +527,7 @@ export default function Navbar() {
   };
 
   const handleModuleNotificationsRead = async () => {
-    if (!selectedNotificationModule) return;
+    if (!selectedNotificationModule || paused) return;
 
     try {
       const response = await markNotificationModuleAsRead(selectedNotificationModule.modulo);
@@ -540,7 +544,7 @@ export default function Navbar() {
   };
 
   const handleGroupNotificationsRead = async () => {
-    if (!selectedNotificationModule || !selectedNotificationGroup) return;
+    if (!selectedNotificationModule || !selectedNotificationGroup || paused) return;
 
     try {
       const response = await markNotificationGroupAsRead(
@@ -558,7 +562,7 @@ export default function Navbar() {
   };
 
   const handleAllNotificationsRead = async () => {
-    if (!unreadNotifications) return;
+    if (!unreadNotifications || paused) return;
 
     try {
       await markAllNotificationsAsRead();
@@ -1111,7 +1115,7 @@ export default function Navbar() {
                         <button
                           className="spk-notif-clear"
                           type="button"
-                          disabled={notificationsLoading || unreadNotifications === 0}
+                          disabled={paused || notificationsLoading || unreadNotifications === 0}
                           onClick={handleAllNotificationsRead}
                         >
                           {t('nav.markRead')}
@@ -1251,6 +1255,7 @@ export default function Navbar() {
                               <button
                                 className="spk-notif-clear"
                                 type="button"
+                                disabled={paused}
                                 onClick={handleModuleNotificationsRead}
                               >
                                 {t('nav.markModuleRead')}
@@ -1311,6 +1316,7 @@ export default function Navbar() {
                               <button
                                 className="spk-notif-clear"
                                 type="button"
+                                disabled={paused}
                                 onClick={handleGroupNotificationsRead}
                               >
                                 {t('nav.markGroupRead')}

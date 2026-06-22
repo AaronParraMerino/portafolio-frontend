@@ -15,6 +15,7 @@ import {
   FiX,
 } from 'react-icons/fi';
 import { useEffect, useState } from 'react';
+import usePausedAccount from '../../../shared/hooks/usePausedAccount';
 import useMessagingPanel from '../hooks/useMessagingPanel';
 import '../styles/messaging.css';
 
@@ -83,6 +84,7 @@ function RequestList({
   invitaciones,
   onRespond,
   onRespondInvitation,
+  paused = false,
   solicitudes,
 }) {
   if (!solicitudes.length && !invitaciones.length) {
@@ -109,7 +111,7 @@ function RequestList({
             <button
               type="button"
               className="msg-btn msg-btn-primary"
-              disabled={actingId === `inv-${invitacion.id_chat_invitacion}`}
+              disabled={paused || actingId === `inv-${invitacion.id_chat_invitacion}`}
               onClick={() => onRespondInvitation(invitacion, 'accept')}
             >
               <FiCheck />
@@ -118,7 +120,7 @@ function RequestList({
             <button
               type="button"
               className="msg-btn msg-btn-ghost"
-              disabled={actingId === `inv-${invitacion.id_chat_invitacion}`}
+              disabled={paused || actingId === `inv-${invitacion.id_chat_invitacion}`}
               onClick={() => onRespondInvitation(invitacion, 'reject')}
             >
               <FiX />
@@ -149,7 +151,7 @@ function RequestList({
                 <button
                   type="button"
                   className="msg-btn msg-btn-primary"
-                  disabled={actingId === solicitud.id_chat_solicitud}
+                  disabled={paused || actingId === solicitud.id_chat_solicitud}
                   onClick={() => onRespond(solicitud, 'accept')}
                 >
                   <FiCheck />
@@ -158,7 +160,7 @@ function RequestList({
                 <button
                   type="button"
                   className="msg-btn msg-btn-ghost"
-                  disabled={actingId === solicitud.id_chat_solicitud}
+                  disabled={paused || actingId === solicitud.id_chat_solicitud}
                   onClick={() => onRespond(solicitud, 'reject')}
                 >
                   <FiX />
@@ -180,6 +182,7 @@ function GroupCreateForm({
   draft,
   onChange,
   onSubmit,
+  paused = false,
 }) {
   return (
     <form
@@ -194,10 +197,10 @@ function GroupCreateForm({
         value={draft}
         maxLength={150}
         placeholder="Nombre del grupo"
-        disabled={creating}
+        disabled={paused || creating}
         onChange={(event) => onChange(event.target.value)}
       />
-      <button type="submit" disabled={creating || !draft.trim()} title="Crear grupo">
+      <button type="submit" disabled={paused || creating || !draft.trim()} title="Crear grupo">
         <FiPlus />
       </button>
     </form>
@@ -251,6 +254,7 @@ function Conversation({
   invitingUser,
   loadingMessages,
   messages,
+  paused = false,
   sending,
   onArchive,
   onBlock,
@@ -275,6 +279,7 @@ function Conversation({
   }
 
   const blocked = activeChat.tipo === 'privado' && activeChat.bloqueado_por_mi;
+  const interactionsDisabled = paused || blocked;
   const groupMeta = activeChat.tipo === 'grupo'
     ? [
         activeChat.rol,
@@ -298,22 +303,22 @@ function Conversation({
 
         <div className="msg-conversation-actions">
           {activeChat.archivado ? (
-            <button type="button" title="Restaurar" disabled={actionBusy} onClick={onUnarchive}>
+            <button type="button" title="Restaurar" disabled={paused || actionBusy} onClick={onUnarchive}>
               <FiRefreshCcw />
             </button>
           ) : (
-            <button type="button" title="Archivar" disabled={actionBusy} onClick={onArchive}>
+            <button type="button" title="Archivar" disabled={paused || actionBusy} onClick={onArchive}>
               <FiArchive />
             </button>
           )}
 
           {activeChat.tipo === 'privado' && (
             blocked ? (
-              <button type="button" title="Restaurar interacciones" disabled={actionBusy} onClick={onUnblock}>
+              <button type="button" title="Restaurar interacciones" disabled={paused || actionBusy} onClick={onUnblock}>
                 <FiCheck />
               </button>
             ) : (
-              <button type="button" title="Bloquear" disabled={actionBusy} onClick={onBlock}>
+              <button type="button" title="Bloquear" disabled={paused || actionBusy} onClick={onBlock}>
                 <FiSlash />
               </button>
             )
@@ -324,12 +329,12 @@ function Conversation({
               <button
                 type="button"
                 title={showInvite ? 'Ocultar invitacion' : 'Invitar usuario'}
-                disabled={actionBusy}
+                disabled={paused || actionBusy}
                 onClick={() => setShowInvite((value) => !value)}
               >
                 <FiUserPlus />
               </button>
-              <button type="button" title="Salir del grupo" disabled={actionBusy} onClick={onLeave}>
+              <button type="button" title="Salir del grupo" disabled={paused || actionBusy} onClick={onLeave}>
                 <FiLogOut />
               </button>
             </>
@@ -351,7 +356,7 @@ function Conversation({
       {activeChat.tipo === 'grupo' && showInvite && (
         <GroupInviteForm
           candidates={inviteCandidates}
-          disabled={invitingUser}
+          disabled={paused || invitingUser}
           value={inviteUserId}
           onChange={onInviteDraft}
           onSubmit={onInvite}
@@ -393,12 +398,12 @@ function Conversation({
       >
         <textarea
           value={draft}
-          disabled={blocked || sending}
+          disabled={interactionsDisabled || sending}
           maxLength={4000}
-          placeholder={blocked ? 'Interacciones bloqueadas' : 'Escribe un mensaje'}
+          placeholder={paused ? 'Cuenta en pausa: solo lectura' : blocked ? 'Interacciones bloqueadas' : 'Escribe un mensaje'}
           onChange={(event) => onDraft(event.target.value)}
         />
-        <button type="submit" disabled={blocked || sending || !draft.trim()} title="Enviar">
+        <button type="submit" disabled={interactionsDisabled || sending || !draft.trim()} title="Enviar">
           <FiSend />
         </button>
       </form>
@@ -413,6 +418,7 @@ export default function MessagingPanel({
   hideToggle = false,
   onOpenChange,
 } = {}) {
+  const paused = usePausedAccount();
   const state = useMessagingPanel();
 
   const {
@@ -518,6 +524,11 @@ export default function MessagingPanel({
 
         {error && <div className="msg-feedback error">{error}</div>}
         {feedback && <div className="msg-feedback">{feedback}</div>}
+        {paused && (
+          <div className="msg-feedback msg-paused-notice">
+            Cuenta en pausa: puedes revisar tus mensajes, pero no responder ni cambiar chats.
+          </div>
+        )}
 
         {!showConversation && (
           <section className="msg-list-section is-full">
@@ -527,6 +538,7 @@ export default function MessagingPanel({
                 draft={groupNameDraft}
                 onChange={setGroupNameDraft}
                 onSubmit={createGroup}
+                paused={paused}
               />
             )}
 
@@ -539,6 +551,7 @@ export default function MessagingPanel({
                 invitaciones={invitaciones}
                 onRespond={respondRequest}
                 onRespondInvitation={respondInvitation}
+                paused={paused}
                 solicitudes={solicitudes}
               />
             ) : (
@@ -564,6 +577,7 @@ export default function MessagingPanel({
             invitingUser={invitingUser}
             loadingMessages={loadingMessages}
             messages={messages}
+            paused={paused}
             sending={sending}
             onArchive={() => updateChatState('archive')}
             onBlock={() => updateChatState('block')}
@@ -605,7 +619,7 @@ export default function MessagingPanel({
         </button>
       )}
 
-      <aside className={`msg-panel${panelOpen ? ' is-open' : ''}`} aria-hidden={!panelOpen}>
+      <aside className={`msg-panel${panelOpen ? ' is-open' : ''}${paused ? ' is-paused' : ''}`} aria-hidden={!panelOpen}>
         {content}
       </aside>
     </>

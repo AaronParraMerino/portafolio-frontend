@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import usePausedAccount from '../../../shared/hooks/usePausedAccount';
 import { hasActiveStoredSession } from '../../../shared/utils/authStorage';
 import { enviarDenunciaAdministracion } from '../services/denunciaService';
 import './adminContactModal.css';
@@ -23,6 +24,7 @@ function buildPageMetadata() {
 }
 
 export default function AdminContactModal({ onClose }) {
+  const paused = usePausedAccount();
   const [form, setForm] = useState(INITIAL_FORM);
   const [status, setStatus] = useState({ type: '', message: '' });
   const [isSending, setIsSending] = useState(false);
@@ -56,6 +58,8 @@ export default function AdminContactModal({ onClose }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (paused) return;
 
     const asunto = form.asunto.trim();
     const detalle = form.detalle.trim();
@@ -112,6 +116,10 @@ export default function AdminContactModal({ onClose }) {
         {!isLoggedIn ? (
           <div className="adm-contact-modal__session">
             Inicia sesion para enviar un reporte a administracion.
+          </div>
+        ) : paused ? (
+          <div className="adm-contact-modal__session">
+            Cuenta en pausa: solo puedes consultar la plataforma.
           </div>
         ) : (
           <form className="adm-contact-modal__form" onSubmit={handleSubmit}>

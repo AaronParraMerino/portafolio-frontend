@@ -21,6 +21,7 @@ import {
   unblockPrivateChat,
 } from '../../../messaging/services/messagingService';
 import { getStoredUser } from '../../../../shared/utils/authStorage';
+import usePausedAccount from '../../../../shared/hooks/usePausedAccount';
 
 function PublicPortfolioBackButton() {
   const { t } = useLanguage();
@@ -64,6 +65,7 @@ function getCurrentUserId() {
 }
 
 function PublicPortfolioContact({ ownerId }) {
+  const paused = usePausedAccount();
   const [contactState, setContactState] = useState(null);
   const [loading, setLoading] = useState(false);
   const [acting, setActing] = useState(false);
@@ -101,7 +103,7 @@ function PublicPortfolioContact({ ownerId }) {
   const canCreateRequest = estado === 'sin_relacion';
   const canOpenChat = estado === 'chat_activo' && contactState?.id_chat;
   const canUnblock = estado === 'bloqueado_por_mi' && contactState?.id_chat;
-  const disabled = loading || acting || estado === 'solicitud_enviada' || estado === 'cooldown';
+  const disabled = loading || acting || estado === 'solicitud_enviada' || estado === 'cooldown' || (paused && !canOpenChat);
 
   const handlePrimary = async () => {
     setFeedback('');
@@ -111,6 +113,8 @@ function PublicPortfolioContact({ ownerId }) {
       window.dispatchEvent(new CustomEvent('folio:open-messaging-center'));
       return;
     }
+
+    if (paused) return;
 
     if (canUnblock) {
       setActing(true);
@@ -133,6 +137,8 @@ function PublicPortfolioContact({ ownerId }) {
 
   const submitRequest = async (event) => {
     event.preventDefault();
+    if (paused) return;
+
     const cleanMessage = message.trim();
     if (!cleanMessage) {
       setError('Escribe un mensaje inicial.');
@@ -159,7 +165,7 @@ function PublicPortfolioContact({ ownerId }) {
     <section className="public-contact-card">
       <div>
         <strong>Contacto por la aplicacion</strong>
-        <span>{feedback || error || 'Inicia una conversacion privada desde CreaFolio.'}</span>
+        <span>{paused ? 'Cuenta en pausa: solo puedes consultar este portafolio.' : feedback || error || 'Inicia una conversacion privada desde CreaFolio.'}</span>
       </div>
 
       <button
@@ -189,6 +195,7 @@ function PublicPortfolioContact({ ownerId }) {
               value={message}
               maxLength={1000}
               placeholder="Escribe el motivo de contacto"
+              disabled={paused || acting}
               onChange={(event) => setMessage(event.target.value)}
             />
 
@@ -196,7 +203,7 @@ function PublicPortfolioContact({ ownerId }) {
               <button type="button" className="public-contact-secondary" disabled={acting} onClick={() => setModalOpen(false)}>
                 Cancelar
               </button>
-              <button type="submit" className="public-contact-btn" disabled={acting || !message.trim()}>
+              <button type="submit" className="public-contact-btn" disabled={paused || acting || !message.trim()}>
                 <FiSend />
                 Enviar
               </button>
