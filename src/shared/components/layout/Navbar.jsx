@@ -8,6 +8,7 @@ import LanguageSelector from '../language/LanguageSelector';
 import NavCatalogSearch from './NavCatalogSearch';
 import NotificationCenterModal from '../notifications/NotificationCenterModal';
 import usePausedAccount from '../../hooks/usePausedAccount';
+import useFloatingLayer from '../../hooks/useFloatingLayer';
 import { useLanguage } from '../../../core/i18n';
 import { getCachedSearchCatalogs } from '../../../features/public/portfolio-search/services/portfolioSearchService';
 import { storeNavSearchSelection } from '../../../features/public/portfolio-search/services/navSearchTransfer';
@@ -184,6 +185,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [user, setUser] = useState(() => getStoredUser());
@@ -202,6 +204,15 @@ export default function Navbar() {
   const [navSearchTerm, setNavSearchTerm] = useState('');
   const [navSearchOpen, setNavSearchOpen] = useState(false);
   const [navSearchCatalogs] = useState(() => getCachedSearchCatalogs() || {});
+
+  const notificationLayer = useFloatingLayer('navbar-notifications', notifOpen);
+  const languageLayer = useFloatingLayer('navbar-language', languageOpen);
+  const profileLayer = useFloatingLayer('navbar-profile', userMenuOpen);
+  const navbarZIndex = Math.max(
+    notifOpen ? notificationLayer.zIndex : 0,
+    languageOpen ? languageLayer.zIndex : 0,
+    userMenuOpen ? profileLayer.zIndex : 0,
+  );
 
   const notifRef = useRef(null);
   const userRef = useRef(null);
@@ -992,7 +1003,10 @@ export default function Navbar() {
         }
       `}</style>
 
-      <nav className={`spk-nav${scrolled ? ' scrolled' : ''}${navSearchOpen && !hideNavSearch ? ' search-open' : ''}${hideNavSearch ? ' search-hidden' : ''}`}>
+      <nav
+        className={`spk-nav${scrolled ? ' scrolled' : ''}${navSearchOpen && !hideNavSearch ? ' search-open' : ''}${hideNavSearch ? ' search-hidden' : ''}`}
+        style={{ zIndex: navbarZIndex || undefined }}
+      >
         {!hideNavSearch && <form className="spk-nav-search-expanded" onSubmit={handleNavSearchSubmit}>
           <div className="spk-nav-search-box">
             <svg className="spk-nav-search-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -1066,7 +1080,11 @@ export default function Navbar() {
         <div className="spk-nav-right">
           {user && (
             <>
-              <div className="spk-bell-wrap" ref={notifRef}>
+              <div
+                className="spk-bell-wrap"
+                ref={notifRef}
+                style={{ zIndex: notifOpen ? notificationLayer.zIndex : undefined }}
+              >
                 <button
                   className="spk-bell"
                   type="button"
@@ -1332,12 +1350,19 @@ export default function Navbar() {
             </>
           )}
 
-          <LanguageSelector />
+          <LanguageSelector
+            onOpenChange={setLanguageOpen}
+            zIndex={languageOpen ? languageLayer.zIndex : undefined}
+          />
 
           <div className="spk-nav-divider" />
 
           {user ? (
-            <div className={`spk-nav-user${userMenuOpen ? ' open' : ''}`} ref={userRef}>
+            <div
+              className={`spk-nav-user${userMenuOpen ? ' open' : ''}`}
+              ref={userRef}
+              style={{ zIndex: userMenuOpen ? profileLayer.zIndex : undefined }}
+            >
               <button
                 className="spk-user-toggle"
                 type="button"
@@ -1514,7 +1539,11 @@ export default function Navbar() {
           </div>
 
           <div style={{ marginBottom: '12px' }}>
-            <LanguageSelector mobile />
+            <LanguageSelector
+              mobile
+              onOpenChange={setLanguageOpen}
+              zIndex={languageOpen ? languageLayer.zIndex : undefined}
+            />
           </div>
 
           <div className="spk-mobile-actions">
