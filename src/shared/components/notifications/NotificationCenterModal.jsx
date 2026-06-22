@@ -21,10 +21,7 @@ const MODULE_TITLE_KEYS = {
   proyectos: 'nav.module.projects',
   eventos: 'nav.module.events',
   administracion: 'nav.module.administration',
-};
-
-const MODULE_TITLE_FALLBACKS = {
-  personales: 'Personales',
+  personales: 'nav.module.personal',
 };
 
 function formatRelativeTime(value, language = 'es') {
@@ -66,7 +63,6 @@ function moduleTitle(modulo, t) {
   const key = MODULE_TITLE_KEYS[modulo];
 
   if (key) return t(key);
-  if (MODULE_TITLE_FALLBACKS[modulo]) return MODULE_TITLE_FALLBACKS[modulo];
   return modulo || t('nav.module.default');
 }
 
@@ -436,19 +432,110 @@ const STYLES = `
   }
   .ncm-browser,
   .ncm-browser.read {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     overflow-y: auto;
   }
   .ncm-col {
-    min-height: 220px;
-    border-right: none;
+    min-height: 280px;
     border-bottom: 1px solid #d1d5db;
   }
-  .ncm-col:last-child {
-    border-bottom: none;
+  .ncm-col:nth-child(2n) {
+    border-right: none;
   }
   .ncm-detail {
     min-height: 260px;
+  }
+}
+@media (max-width: 700px) {
+  .ncm-overlay {
+    align-items: stretch;
+    padding: 0;
+  }
+  .ncm-modal {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  .ncm-head {
+    height: auto;
+    min-height: 104px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+  .ncm-title {
+    flex: 1 1 calc(100% - 44px);
+    padding-top: 3px;
+  }
+  .ncm-title span {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ncm-head-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 32px 32px;
+  }
+  .ncm-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+  .ncm-tab {
+    overflow: hidden;
+    padding-inline: 6px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ncm-browser,
+  .ncm-browser.read {
+    display: block;
+    height: 100%;
+    overflow: hidden;
+  }
+  .ncm-col {
+    display: none;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+  }
+  .ncm-col.is-mobile-active {
+    display: flex;
+  }
+  .ncm-col-head {
+    min-height: 44px;
+    height: auto;
+    padding-block: 6px;
+  }
+  .ncm-list,
+  .ncm-detail {
+    overscroll-behavior: contain;
+  }
+  .ncm-detail {
+    min-height: 0;
+    padding: 14px;
+  }
+  .ncm-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .ncm-detail-actions {
+    flex-direction: column;
+  }
+  .ncm-detail-actions button {
+    width: 100%;
+  }
+  .ncm-mobile-back.is-hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+@media (min-width: 701px) {
+  .ncm-mobile-back {
+    display: none;
   }
 }
 `;
@@ -896,7 +983,7 @@ export default function NotificationCenterModal({
 
     let response = '';
     if (decision === 'rechazar') {
-      response = window.prompt('Motivo del rechazo (opcional):') || '';
+      response = window.prompt(t('nav.restoreRejectReasonPrompt')) || '';
     }
 
     try {
@@ -910,7 +997,7 @@ export default function NotificationCenterModal({
       );
       await afterMutation();
     } catch (err) {
-      setError(err.message || 'No se pudo responder la solicitud.');
+      setError(err.message || t('nav.restoreRequestError'));
     } finally {
       setActionLoading('');
     }
@@ -939,8 +1026,8 @@ export default function NotificationCenterModal({
           <DetailField label={t('nav.actor')} value={actorName} />
           <DetailField label={t('nav.createdAt')} value={formatDateTime(notification.created_at, language)} />
           <DetailField label={t('nav.readAt')} value={formatDateTime(notification.leido_en, language)} />
-          <DetailField label="Estado de solicitud" value={notification.accion_estado} />
-          <DetailField label="Respuesta" value={notification.accion_respuesta} />
+          <DetailField label={t('nav.requestStatus')} value={notification.accion_estado} />
+          <DetailField label={t('nav.response')} value={notification.accion_respuesta} />
         </div>
 
         <div className="ncm-detail-actions">
@@ -952,7 +1039,7 @@ export default function NotificationCenterModal({
                 disabled={paused || Boolean(actionLoading)}
                 onClick={() => handleRestoreRequest(notification, 'aprobar')}
               >
-                {actionLoading === 'aprobar' ? 'Restableciendo...' : 'Aprobar y restablecer'}
+                {actionLoading === 'aprobar' ? t('nav.restoringProject') : t('nav.approveRestore')}
               </button>
               <button
                 className="ncm-secondary"
@@ -960,7 +1047,7 @@ export default function NotificationCenterModal({
                 disabled={paused || Boolean(actionLoading)}
                 onClick={() => handleRestoreRequest(notification, 'rechazar')}
               >
-                {actionLoading === 'rechazar' ? 'Rechazando...' : 'Rechazar solicitud'}
+                {actionLoading === 'rechazar' ? t('nav.rejectingRequest') : t('nav.rejectRequest')}
               </button>
             </>
           )}
@@ -988,6 +1075,38 @@ export default function NotificationCenterModal({
     );
   };
 
+  const mobileCanGoBack = tab === 'new'
+    ? Boolean(selectedModule || selectedGroup || selectedNotification)
+    : Boolean(selectedReadModule || selectedReadGroup || selectedNotification);
+
+  const handleMobileBack = () => {
+    if (selectedNotification) {
+      setSelectedNotification(null);
+      return;
+    }
+
+    if (tab === 'new') {
+      if (selectedGroup) {
+        setSelectedGroup(null);
+        setMessages([]);
+        return;
+      }
+
+      setSelectedModule(null);
+      setModuleDetail(null);
+      return;
+    }
+
+    if (selectedReadGroup) {
+      setSelectedReadGroup(null);
+      setReadMessages([]);
+      return;
+    }
+
+    setSelectedReadModule(null);
+    setReadModuleDetail(null);
+  };
+
   if (!open) return null;
 
   return (
@@ -1007,6 +1126,19 @@ export default function NotificationCenterModal({
             </div>
 
             <div className="ncm-head-actions">
+              <button
+                className={`ncm-icon-btn ncm-mobile-back${mobileCanGoBack ? '' : ' is-hidden'}`}
+                type="button"
+                onClick={handleMobileBack}
+                disabled={!mobileCanGoBack}
+                title={t('nav.back')}
+                aria-label={t('nav.back')}
+              >
+                <svg viewBox="0 0 24 24">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+
               <div className="ncm-tabs" role="tablist">
                 <button
                   className={`ncm-tab${tab === 'new' ? ' active' : ''}`}
@@ -1053,7 +1185,7 @@ export default function NotificationCenterModal({
 
             {tab === 'new' ? (
               <div className="ncm-browser">
-                <div className="ncm-col">
+                <div className={`ncm-col${!selectedModule ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{t('nav.modules')}</strong>
                     <button type="button" onClick={handleAllRead} disabled={paused || !modules.some((item) => Number(item.cantidad))}>
@@ -1081,7 +1213,7 @@ export default function NotificationCenterModal({
                   </div>
                 </div>
 
-                <div className="ncm-col">
+                <div className={`ncm-col${selectedModule && !selectedGroup && !selectedNotification ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{selectedModuleTitle}</strong>
                     <button type="button" onClick={handleModuleRead} disabled={paused || !selectedModule}>
@@ -1123,7 +1255,7 @@ export default function NotificationCenterModal({
                   </div>
                 </div>
 
-                <div className="ncm-col">
+                <div className={`ncm-col${selectedGroup && !selectedNotification ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{selectedGroup?.titulo || t('nav.messages')}</strong>
                     <button type="button" onClick={handleGroupRead} disabled={paused || !selectedGroup}>
@@ -1153,7 +1285,7 @@ export default function NotificationCenterModal({
                   </div>
                 </div>
 
-                <div className="ncm-col">
+                <div className={`ncm-col${selectedNotification ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{t('nav.detail')}</strong>
                   </div>
@@ -1162,7 +1294,7 @@ export default function NotificationCenterModal({
               </div>
             ) : (
               <div className="ncm-browser read">
-                <div className="ncm-col">
+                <div className={`ncm-col${!selectedReadModule ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{t('nav.modules')}</strong>
                   </div>
@@ -1187,7 +1319,7 @@ export default function NotificationCenterModal({
                   </div>
                 </div>
 
-                <div className="ncm-col">
+                <div className={`ncm-col${selectedReadModule && !selectedReadGroup && !selectedNotification ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{selectedReadModuleTitle}</strong>
                   </div>
@@ -1239,7 +1371,7 @@ export default function NotificationCenterModal({
                   )}
                 </div>
 
-                <div className="ncm-col">
+                <div className={`ncm-col${selectedReadGroup && !selectedNotification ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{selectedReadGroup?.titulo || t('nav.messages')}</strong>
                   </div>
@@ -1278,7 +1410,7 @@ export default function NotificationCenterModal({
                   )}
                 </div>
 
-                <div className="ncm-col">
+                <div className={`ncm-col${selectedNotification ? ' is-mobile-active' : ''}`}>
                   <div className="ncm-col-head">
                     <strong>{t('nav.detail')}</strong>
                   </div>
