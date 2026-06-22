@@ -7,6 +7,7 @@ import {
   createUsersDirectoryShell,
   createGlobalAdminNotice,
   createAdminNoticeTemplate,
+  deleteGlobalAdminNotice,
   deleteAdminNoticeTemplate,
   fetchUsersDirectory,
   inactivateUserAccount,
@@ -18,6 +19,7 @@ import {
   USER_GLOBAL_NOTICE_TYPES,
   updateAdminNoticeTemplate,
   updateGlobalAdminNotice,
+  updateGlobalAdminNoticeStatus,
   updateUserRole,
 } from '../services/usersService';
 import { useLanguage } from '../../../../core/i18n';
@@ -327,6 +329,9 @@ export function useUsersDirectory() {
       initialSegments: options.initialSegments || ['todos'],
       directUser: options.directUser || null,
       initialNotice: options.initialNotice || null,
+      duplicateNotice: !!options.duplicateNotice,
+      forceUserNotice: !!options.forceUserNotice,
+      fromTemplate: !!options.fromTemplate,
     });
   };
 
@@ -438,9 +443,17 @@ export function useUsersDirectory() {
     const notice = response?.data || {};
     const createdAt = notice.created_at || new Date().toISOString();
     const noticeId = notice.id_aviso || notice.id_envio || payload.noticeId;
+    const isIndividualNotice = !isGlobalNotice && (payload.directUser || (notice.destinatarios || payload.destinatarios?.length) === 1);
+    const canDuplicateNotice = !isGlobalNotice
+      && !isIndividualNotice
+      && Array.isArray(payload.segmentos)
+      && payload.segmentos.length > 0;
     const nextCommunication = {
-      id: noticeId,
+      id: isGlobalNotice ? `global_${noticeId}` : noticeId,
       id_aviso: notice.id_aviso || payload.noticeId || undefined,
+      source: isGlobalNotice ? 'global_aviso' : 'admin_notification',
+      audience_kind: isGlobalNotice ? 'global' : (isIndividualNotice ? 'individual' : 'segmentada'),
+      id_notificacion: notice.id_notificacion || undefined,
       titulo: notice.titulo || payload.titulo,
       cuerpo: notice.mensaje || notice.contenido || payload.contenido,
       tipo: notice.tipo || payload.tipo,
@@ -450,14 +463,21 @@ export function useUsersDirectory() {
       destinatarios: notice.destinatarios || 0,
       creado: new Date(createdAt).toLocaleString('es-BO'),
       estado: notice.estado || (isGlobalNotice ? 'activo' : 'enviado'),
+      estado_aviso: isGlobalNotice ? (notice.estado || 'activo') : undefined,
       segmentos: notice.segmentos || payload.segmentos || [],
+      editable: isGlobalNotice,
+      deletable: isGlobalNotice,
+      actions: isGlobalNotice
+        ? ['edit', 'toggle_status', 'delete']
+        : (canDuplicateNotice ? ['view', 'duplicate'] : ['view']),
     };
 
     setDirectory((current) => ({
       ...current,
       communications: payload.noticeId
         ? current.communications.map((item) => (
-          String(item.id || item.id_aviso || item.id_comunicacion) === String(payload.noticeId)
+          String(item.id_aviso || item.id_comunicacion || item.id) === String(payload.noticeId)
+            || String(item.id) === `global_${payload.noticeId}`
             ? {
               ...item,
               ...nextCommunication,
@@ -485,6 +505,79 @@ export function useUsersDirectory() {
         },
         ...current.history,
       ].slice(0, 20),
+    }));
+
+    return response;
+  };
+
+  const normalizeGlobalNoticeForDirectory = (notice = {}, fallbackNoticeId = null) => {
+    const noticeId = notice.id_aviso || fallbackNoticeId;
+    const createdAt = notice.created_at || new Date().toISOString();
+
+    return {
+      id: `global_${noticeId}`,
+      source: 'global_aviso',
+      id_aviso: noticeId,
+      titulo: notice.titulo || '',
+      cuerpo: notice.mensaje || notice.contenido || '',
+      tipo: notice.tipo || USER_GLOBAL_NOTICE_TYPES[0]?.id,
+      estado: notice.estado === 'activo' ? 'enviado' : 'archivado',
+      estado_aviso: notice.estado || 'activo',
+      urgencia: notice.urgencia || notice.prioridad || 'baja',
+      prioridad: notice.prioridad || toAdminNoticePriority(notice.urgencia),
+      canales: notice.canales || ['inapp'],
+      destinatarios: users.length,
+      creado: new Date(createdAt).toLocaleString('es-BO'),
+      created_at: createdAt,
+      segmentos: ['todos'],
+      editable: true,
+      deletable: true,
+      actions: ['edit', 'toggle_status', 'delete'],
+    };
+  };
+
+  const handleToggleGlobalNoticeStatus = async (notice) => {
+    const noticeId = notice?.id_aviso;
+    if (!noticeId) return null;
+
+    const nextEstado = notice.status === 'archivado' || notice.estado === 'archivado'
+      ? 'activo'
+      : 'inactivo';
+    const response = await updateGlobalAdminNoticeStatus(noticeId, nextEstado);
+    const updatedNotice = normalizeGlobalNoticeForDirectory(response?.data || {}, noticeId);
+
+    setDirectory((current) => ({
+      ...current,
+      communications: current.communications.map((item) => (
+        String(item.id_aviso || item.id) === String(noticeId) || String(item.id) === `global_${noticeId}`
+          ? {
+            ...item,
+            ...updatedNotice,
+            destinatarios: item.destinatarios || current.items.length,
+          }
+          : item
+      )),
+    }));
+
+    return response;
+  };
+
+  const handleDeleteGlobalNotice = async (notice) => {
+    const noticeId = notice?.id_aviso;
+    if (!noticeId) return null;
+
+    const response = await deleteGlobalAdminNotice(noticeId);
+
+    setDirectory((current) => ({
+      ...current,
+      communications: current.communications.filter((item) => (
+        String(item.id_aviso || item.id) !== String(noticeId)
+        && String(item.id) !== `global_${noticeId}`
+      )),
+      history: current.history.filter((item) => (
+        String(item.id_aviso || item.id) !== String(noticeId)
+        && String(item.id) !== `global_${noticeId}`
+      )),
     }));
 
     return response;
@@ -534,6 +627,8 @@ export function useUsersDirectory() {
     onOpenDirectNoticeModal: handleOpenDirectNoticeModal,
     onCloseNoticeModal: handleCloseNoticeModal,
     onSendNotice: handleSendNotice,
+    onToggleGlobalNoticeStatus: handleToggleGlobalNoticeStatus,
+    onDeleteGlobalNotice: handleDeleteGlobalNotice,
     onQueryChange: handleQueryChange,
     onStatusFilterChange: handleStatusFilterChange,
     onGoToPage: handleGoToPage,

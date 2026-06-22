@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  BsArchive,
   BsBell,
   BsClock,
   BsEnvelope,
+  BsEye,
+  BsFiles,
   BsMegaphone,
+  BsPencil,
   BsPeople,
   BsPlusLg,
   BsSearch,
   BsSend,
   BsThreeDots,
+  BsTrash,
 } from 'react-icons/bs';
 import {
   USER_ALL_NOTICE_TYPES,
@@ -30,20 +35,35 @@ const COMMUNICATIONS_PAGE_SIZE = 6;
 function normalizeNotice(item = {}) {
   const channels = item.channels || item.canales || [];
   const rawStatus = item.status || item.estado || 'borrador';
-  const status = rawStatus === 'activo' ? 'enviado' : rawStatus;
+  const status = rawStatus === 'activo'
+    ? 'enviado'
+    : rawStatus === 'inactivo'
+      ? 'archivado'
+      : rawStatus;
+  const globalNoticeId = item.id_aviso
+    || (typeof item.id === 'string' && item.id.startsWith('global_') ? item.id.replace('global_', '') : null);
 
   return {
     id: item.id || item.id_aviso || item.id_comunicacion,
+    source: item.source || item.origen || (globalNoticeId ? 'global_aviso' : 'admin_notification'),
+    audienceKind: item.audience_kind || item.audienceKind || null,
+    recipient: item.destinatario || item.recipient || null,
+    id_aviso: globalNoticeId,
+    id_notificacion: item.id_notificacion || item.id_comunicacion || null,
     title: item.title || item.titulo || '',
     body: item.body || item.preview || item.cuerpo || item.descripcion || '',
     type: item.type || item.tipo || 'sistema',
     status,
+    backendStatus: item.estado_aviso || rawStatus,
     urgency: normalizeNoticeUrgency(item.urgency || item.urgencia || item.prioridad),
     audience: item.audience || item.dest || item.destinatarios || 0,
     date: item.scheduledAt || item.fecha || item.createdAt || item.creado || '--',
     segments: item.segments || item.segmentos || [],
     channels: Array.isArray(channels) ? channels : [],
     pinned: !!item.pinned,
+    editable: item.editable !== false && !!globalNoticeId,
+    deletable: item.deletable !== false && !!globalNoticeId,
+    actions: Array.isArray(item.actions) ? item.actions : [],
     raw: item,
   };
 }
@@ -70,12 +90,17 @@ export default function UsersCommunicationsPanel({
   communications,
   onCreateNotice,
   onEditNotice,
+  onDuplicateNotice,
+  onToggleGlobalNoticeStatus,
+  onDeleteGlobalNotice,
 }) {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [detailNotice, setDetailNotice] = useState(null);
 
   const notices = useMemo(
     () => communications.map(normalizeNotice),
@@ -102,7 +127,47 @@ export default function UsersCommunicationsPanel({
 
   useEffect(() => {
     setCurrentPage(1);
+    setOpenMenuId(null);
   }, [query, statusFilter, typeFilter]);
+
+  const handleDeleteGlobalNotice = (notice) => {
+    const confirmed = window.confirm(t('admin.users.communications.deleteConfirm'));
+
+    if (!confirmed) return;
+
+    setOpenMenuId(null);
+    onDeleteGlobalNotice?.({
+      ...notice.raw,
+      id_aviso: notice.id_aviso,
+    });
+  };
+
+  const handleToggleGlobalNoticeStatus = (notice) => {
+    setOpenMenuId(null);
+    onToggleGlobalNoticeStatus?.({
+      ...notice.raw,
+      id_aviso: notice.id_aviso,
+      status: notice.status,
+    });
+  };
+
+  const handleViewNotification = (notice) => {
+    setOpenMenuId(null);
+    setDetailNotice(notice);
+  };
+
+  const handleDuplicateNotification = (notice) => {
+    setOpenMenuId(null);
+    onDuplicateNotice?.({
+      ...notice.raw,
+      titulo: notice.title,
+      cuerpo: notice.body,
+      tipo: notice.type,
+      urgencia: notice.urgency,
+      segmentos: notice.segments.length ? notice.segments : ['todos'],
+      directUser: notice.recipient || null,
+    });
+  };
 
   return (
     <div className="usr-view-body">
@@ -168,6 +233,15 @@ export default function UsersCommunicationsPanel({
             {pagedNotices.map((notice) => {
               const typeMeta = getUserNoticeTypeMeta(notice.type);
               const statusMeta = getUserNoticeStatusMeta(notice.status);
+              const isGlobalNotice = notice.source === 'global_aviso' && notice.id_aviso;
+              const isAdminNotification = notice.source === 'admin_notification';
+              const canDuplicateNotification = isAdminNotification
+                && notice.actions.includes('duplicate')
+                && (
+                  !!notice.recipient
+                  || (notice.segments.length > 0 && notice.audienceKind !== 'individual')
+                );
+              const isArchived = notice.status === 'archivado';
 
               return (
                 <article key={notice.id || notice.title} className={`usr-notice-card${notice.pinned ? ' pinned' : ''}`}>
@@ -186,9 +260,56 @@ export default function UsersCommunicationsPanel({
                         </span>
                       </div>
 
-                      <button type="button" className="usr-icon-tool usr-icon-tool--sm" title={t('admin.users.communications.moreOptions')} aria-label={t('admin.users.communications.moreOptions')}>
-                        <BsThreeDots />
-                      </button>
+                      {isGlobalNotice || isAdminNotification ? (
+                        <div className="usr-notice-menu-wrap">
+                          <button
+                            type="button"
+                            className="usr-icon-tool usr-icon-tool--sm"
+                            title={t('admin.users.communications.moreOptions')}
+                            aria-label={t('admin.users.communications.moreOptions')}
+                            aria-expanded={openMenuId === notice.id}
+                            onClick={() => setOpenMenuId((current) => (current === notice.id ? null : notice.id))}
+                          >
+                            <BsThreeDots />
+                          </button>
+
+                          {openMenuId === notice.id ? (
+                            <div className="usr-notice-menu">
+                              {isGlobalNotice ? (
+                                <>
+                                  <button type="button" onClick={() => onEditNotice(notice.raw)}>
+                                    <BsPencil />
+                                    {t('admin.users.communications.edit')}
+                                  </button>
+                                  <button type="button" onClick={() => handleToggleGlobalNoticeStatus(notice)}>
+                                    <BsArchive />
+                                    {isArchived
+                                      ? t('admin.users.communications.activate')
+                                      : t('admin.users.communications.archive')}
+                                  </button>
+                                  <button type="button" className="danger" onClick={() => handleDeleteGlobalNotice(notice)}>
+                                    <BsTrash />
+                                    {t('admin.users.communications.delete')}
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button type="button" onClick={() => handleViewNotification(notice)}>
+                                    <BsEye />
+                                    {t('admin.users.communications.viewDetail')}
+                                  </button>
+                                  {canDuplicateNotification ? (
+                                    <button type="button" onClick={() => handleDuplicateNotification(notice)}>
+                                      <BsFiles />
+                                      {t('admin.users.communications.duplicate')}
+                                    </button>
+                                  ) : null}
+                                </>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
 
                     <h3 className="usr-notice-title">{notice.title || t('admin.users.communications.defaultTitle')}</h3>
@@ -227,13 +348,17 @@ export default function UsersCommunicationsPanel({
                       {!notice.channels.length ? <span>{t('admin.users.communications.noChannel')}</span> : null}
                     </div>
 
-                    <button
-                      type="button"
-                      className="usr-mini-action"
-                      onClick={() => onEditNotice(notice.raw)}
-                    >
-                      {t('admin.users.communications.edit')}
-                    </button>
+                    {notice.editable ? (
+                      <button
+                        type="button"
+                        className="usr-mini-action"
+                        onClick={() => onEditNotice(notice.raw)}
+                      >
+                        {t('admin.users.communications.edit')}
+                      </button>
+                    ) : (
+                      <span className="usr-notice-source">{t('admin.users.communications.sentNotice')}</span>
+                    )}
                   </div>
                 </article>
               );
@@ -263,6 +388,85 @@ export default function UsersCommunicationsPanel({
           onPageChange={setCurrentPage}
         />
       </section>
+
+      {detailNotice ? (
+        <div className="usr-notice-detail-backdrop" role="presentation" onClick={() => setDetailNotice(null)}>
+          <section
+            className="usr-notice-detail"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('admin.users.communications.detailTitle')}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="usr-notice-detail-head">
+              <span>{t('admin.users.communications.detailTitle')}</span>
+              <button
+                type="button"
+                className="usr-icon-tool usr-icon-tool--sm"
+                aria-label={t('admin.users.noticeModal.cancel')}
+                onClick={() => setDetailNotice(null)}
+              >
+                x
+              </button>
+            </div>
+            <h3>{detailNotice.title || t('admin.users.communications.defaultTitle')}</h3>
+            <p>{detailNotice.body || t('admin.users.communications.defaultBody')}</p>
+            <dl>
+              <div>
+                <dt>{t('admin.users.noticeModal.typeLabel')}</dt>
+                <dd>{t(`admin.users.noticeType.${detailNotice.type}`)}</dd>
+              </div>
+              <div>
+                <dt>{t('admin.users.noticeModal.urgencyLabel')}</dt>
+                <dd>{detailNotice.urgency}</dd>
+              </div>
+              <div>
+                <dt>{t('admin.users.noticeModal.audienceLabel')}</dt>
+                <dd>
+                  {detailNotice.recipient
+                    ? (detailNotice.recipient.nombre || detailNotice.recipient.email || t('admin.users.table.unknownUser'))
+                    : t('admin.users.communications.usersCount', { count: detailNotice.audience })}
+                </dd>
+              </div>
+              {detailNotice.recipient?.email ? (
+                <div>
+                  <dt>{t('admin.users.communications.recipientEmail')}</dt>
+                  <dd>{detailNotice.recipient.email}</dd>
+                </div>
+              ) : null}
+              {detailNotice.recipient?.estado ? (
+                <div>
+                  <dt>{t('admin.users.communications.recipientStatus')}</dt>
+                  <dd>{t(`admin.users.status.${detailNotice.recipient.estado}.label`)}</dd>
+                </div>
+              ) : null}
+              <div>
+                <dt>{t('admin.users.communications.audienceKind')}</dt>
+                <dd>
+                  {detailNotice.audienceKind === 'individual'
+                    ? t('admin.users.communications.individualNotice')
+                    : t('admin.users.communications.segmentedNotice')}
+                </dd>
+              </div>
+              <div>
+                <dt>{t('admin.users.noticeModal.segmentationLabel')}</dt>
+                <dd>
+                  {detailNotice.segments.length
+                    ? detailNotice.segments.map((segment) => t(`admin.users.segment.${segment}`)).join(', ')
+                    : t('admin.users.communications.noSegment')}
+                </dd>
+              </div>
+            </dl>
+            <div className="usr-notice-detail-actions">
+              {detailNotice.actions.includes('duplicate') && (detailNotice.recipient || detailNotice.segments.length > 0) ? (
+                <button type="button" className="usr-mini-action" onClick={() => handleDuplicateNotification(detailNotice)}>
+                  {t('admin.users.communications.duplicate')}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
