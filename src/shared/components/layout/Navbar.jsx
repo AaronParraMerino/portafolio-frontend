@@ -1568,7 +1568,7 @@ export default function Navbar() {
         </div>
       )}
 
-      <CalendarPanel enabled={!!user} />
+      <CalendarPanel enabled={!!user && !adminUser} />
 
       <NotificationCenterModal
         open={notificationCenterOpen}

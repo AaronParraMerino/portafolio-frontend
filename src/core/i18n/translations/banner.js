@@ -17,7 +17,11 @@ export const bannerTranslations = {
     "banner.action.dismiss": "Cerrar",
     "banner.action.open": "Abrir",
     "banner.action.ok": "Entendido",
-    "banner.action.close": "Cerrar"
+    "banner.action.close": "Cerrar",
+    "banner.center.openInbox": "Abrir buzon de avisos y mensajeria",
+    "banner.center.closeInbox": "Cerrar buzon de avisos y mensajeria",
+    "banner.center.showInbox": "Mostrar avisos y mensajeria",
+    "banner.center.collapseInbox": "Contraer avisos y mensajeria"
   },
   "en": {
     "banner.openAria": "Open notice center",
@@ -37,7 +41,11 @@ export const bannerTranslations = {
     "banner.action.dismiss": "Close",
     "banner.action.open": "Open",
     "banner.action.ok": "Got it",
-    "banner.action.close": "Close"
+    "banner.action.close": "Close",
+    "banner.center.openInbox": "Open notices and messaging inbox",
+    "banner.center.closeInbox": "Close notices and messaging inbox",
+    "banner.center.showInbox": "Show notices and messaging",
+    "banner.center.collapseInbox": "Collapse notices and messaging"
   },
   "pt": {
     "banner.openAria": "Abrir centro de avisos",
@@ -57,6 +65,10 @@ export const bannerTranslations = {
     "banner.action.dismiss": "Fechar",
     "banner.action.open": "Abrir",
     "banner.action.ok": "Entendido",
-    "banner.action.close": "Fechar"
+    "banner.action.close": "Fechar",
+    "banner.center.openInbox": "Abrir caixa de avisos e mensagens",
+    "banner.center.closeInbox": "Fechar caixa de avisos e mensagens",
+    "banner.center.showInbox": "Mostrar avisos e mensagens",
+    "banner.center.collapseInbox": "Recolher avisos e mensagens"
   }
 };

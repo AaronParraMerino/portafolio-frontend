@@ -8,6 +8,11 @@ import {
   wasCookieAccepted,
   wasCookieDismissed,
 } from '../../features/auth/services/sessionService';
+import {
+  getStoredUser,
+  isAdminUser,
+  onStoredUserUpdated,
+} from '../utils/authStorage';
 import BASE_URL from '../../services/http/const';
 
 const ORDER_KEY = 'banner_center_order_v1';
@@ -163,7 +168,13 @@ function getNoticeToneStyles(item = {}) {
 
 export default function BannerCenter({ notices = EMPTY_NOTICES }) {
   const { t } = useLanguage();
+  const [user, setUser] = useState(() => getStoredUser());
   const [globalNotices, setGlobalNotices] = useState([]);
+  const adminUser = isAdminUser(user);
+
+  useEffect(() => onStoredUserUpdated((event) => {
+    setUser(event?.detail || getStoredUser());
+  }), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -372,8 +383,9 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   const hasItems = items.length > 0;
   const pendingCount = items.length;
+  const inboxLabel = t('nav.notificationCenter');
   const activeItem = items[0] ?? null;
-  const messagingEnabled = Boolean(
+  const messagingEnabled = !adminUser && Boolean(
     localStorage.getItem('tokenPORT') || sessionStorage.getItem('tokenPORT')
   );
   const titleItems = messagingEnabled
@@ -435,7 +447,7 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
 
   return (
     <>
-      {(hasItems || messagingEnabled) && (
+      {!adminUser && (hasItems || messagingEnabled) && (
         <div
           ref={panelRef}
           style={{
@@ -552,17 +564,17 @@ export default function BannerCenter({ notices = EMPTY_NOTICES }) {
         </div>
       )}
 
-      {(hasItems || messagingEnabled) && (
+      {!adminUser && (hasItems || messagingEnabled) && (
         <button
           type="button"
           style={styles.tab}
           onClick={() => {
             setCollapsed((value) => !value);
           }}
-          aria-label={collapsed ? 'Abrir centro de avisos y mensajeria' : 'Cerrar centro de avisos y mensajeria'}
-          title={collapsed ? 'Mostrar avisos y mensajeria' : 'Contraer avisos y mensajeria'}
+          aria-label={collapsed ? t('banner.center.openInbox') : t('banner.center.closeInbox')}
+          title={collapsed ? t('banner.center.showInbox') : t('banner.center.collapseInbox')}
         >
-          <span style={styles.tabLabel}>Centro</span>
+          <span style={styles.tabLabel}>{inboxLabel}</span>
           {pendingCount > 0 && <span style={styles.tabBadge}>{pendingCount}</span>}
         </button>
       )}

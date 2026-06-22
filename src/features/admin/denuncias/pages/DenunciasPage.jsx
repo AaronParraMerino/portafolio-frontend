@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminHeader from '../../layout/AdminHeader';
 import AdminPagination, { buildAdminPaginationItems } from '../../shared/AdminPagination';
+import { useLanguage } from '../../../../core/i18n';
 import {
   DENUNCIA_STATUS,
   DENUNCIA_STATUS_META,
@@ -16,12 +17,18 @@ const INITIAL_META = {
   total: 0,
 };
 
-function formatDate(value) {
-  if (!value) return 'Sin fecha';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Sin fecha';
+function localeForLanguage(language) {
+  if (language === 'en') return 'en-US';
+  if (language === 'pt') return 'pt-BR';
+  return 'es-BO';
+}
 
-  return new Intl.DateTimeFormat('es-BO', {
+function formatDate(value, language, t) {
+  if (!value) return t('adminDenuncias.empty.noDate');
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return t('adminDenuncias.empty.noDate');
+
+  return new Intl.DateTimeFormat(localeForLanguage(language), {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -29,12 +36,27 @@ function formatDate(value) {
   }).format(date);
 }
 
-function getStatusMeta(status) {
-  return DENUNCIA_STATUS_META[status] || DENUNCIA_STATUS_META.pendiente;
+function getStatusLabel(status, t, plural = false) {
+  const keys = {
+    todos: 'adminDenuncias.status.all',
+    pendiente: plural ? 'adminDenuncias.status.pendingPlural' : 'adminDenuncias.stats.pending',
+    en_revision: plural ? 'adminDenuncias.status.reviewPlural' : 'adminDenuncias.stats.review',
+    resuelta: plural ? 'adminDenuncias.status.resolvedPlural' : 'adminDenuncias.stats.resolved',
+    descartada: plural ? 'adminDenuncias.status.dismissedPlural' : 'adminDenuncias.stats.dismissed',
+  };
+  return t(keys[status] || keys.pendiente);
 }
 
-function getUserLabel(user) {
-  return user?.nombre || user?.correo || 'Usuario';
+function getStatusMeta(status, t) {
+  const meta = DENUNCIA_STATUS_META[status] || DENUNCIA_STATUS_META.pendiente;
+  return {
+    ...meta,
+    label: getStatusLabel(status, t),
+  };
+}
+
+function getUserLabel(user, t) {
+  return user?.nombre || user?.correo || t('adminDenuncias.empty.user');
 }
 
 function getEvidenceImages(evidencia) {
@@ -44,6 +66,7 @@ function getEvidenceImages(evidencia) {
 }
 
 export default function DenunciasPage() {
+  const { t, language } = useLanguage();
   const [filters, setFilters] = useState({ estado: 'todos', q: '', page: 1, per_page: 12 });
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState(INITIAL_META);
@@ -72,7 +95,7 @@ export default function DenunciasPage() {
       setItems(payload?.data?.items || []);
       setMeta(payload?.data?.meta || INITIAL_META);
     } catch (requestError) {
-      setError(requestError.message || 'No se pudieron cargar las denuncias.');
+      setError(requestError.message || t('adminDenuncias.error.load'));
     } finally {
       setLoading(false);
     }
@@ -114,9 +137,9 @@ export default function DenunciasPage() {
       setItems((current) => current.map((item) => (
         item.id_denuncia === updated.id_denuncia ? updated : item
       )));
-      setNotice(payload?.message || 'Denuncia actualizada.');
+      setNotice(payload?.message || t('adminDenuncias.feedback.updated'));
     } catch (requestError) {
-      setNotice(requestError.message || 'No se pudo actualizar la denuncia.');
+      setNotice(requestError.message || t('adminDenuncias.error.update'));
     } finally {
       setSaving(false);
     }
@@ -125,21 +148,21 @@ export default function DenunciasPage() {
   const totalPages = meta.last_page || 1;
   const currentPage = meta.current_page || filters.page || 1;
   const paginationSummary = meta.total
-    ? `${meta.total} denuncias registradas`
-    : (loading ? 'Cargando denuncias...' : 'Sin denuncias registradas');
+    ? t('adminDenuncias.summary.count', { count: meta.total })
+    : (loading ? t('adminDenuncias.summary.loading') : t('adminDenuncias.summary.empty'));
 
   return (
     <div className="den-page adm-page-shell">
       <AdminHeader
-        eyebrow="Soporte"
-        title="Reportes de usuarios"
-        subtitle="Bandeja administrativa de solicitudes, reportes y evidencias enviadas desde la plataforma."
+        eyebrow={t('adminDenuncias.header.eyebrow')}
+        title={t('adminDenuncias.header.title')}
+        subtitle={t('adminDenuncias.header.subtitle')}
       />
 
       <div className="den-content">
-        <section className="den-stats-grid" aria-label="Resumen de denuncias">
+        <section className="den-stats-grid" aria-label={t('adminDenuncias.header.title')}>
           {['pendiente', 'en_revision', 'resuelta', 'descartada'].map((status) => {
-            const statusMeta = getStatusMeta(status);
+            const statusMeta = getStatusMeta(status, t);
             return (
               <article key={status} className={`den-stat den-stat--${statusMeta.tone}`}>
                 <span>{statusMeta.label}</span>
@@ -154,11 +177,11 @@ export default function DenunciasPage() {
         <section className="den-panel">
           <div className="den-panel-head">
             <div>
-              <span>Revision administrativa</span>
-              <h3>Reportes recibidos</h3>
+              <span>{t('adminDenuncias.panel.eyebrow')}</span>
+              <h3>{t('adminDenuncias.panel.title')}</h3>
             </div>
             <button type="button" onClick={loadDenuncias} disabled={loading}>
-              Actualizar
+              {t('adminDenuncias.actions.refresh')}
             </button>
           </div>
 
@@ -166,7 +189,7 @@ export default function DenunciasPage() {
             <input
               type="search"
               value={filters.q}
-              placeholder="Buscar por asunto, detalle o usuario"
+              placeholder={t('adminDenuncias.filters.search')}
               onChange={(event) => updateFilter('q', event.target.value)}
             />
             <select
@@ -174,7 +197,7 @@ export default function DenunciasPage() {
               onChange={(event) => updateFilter('estado', event.target.value)}
             >
               {DENUNCIA_STATUS.map((status) => (
-                <option key={status.id} value={status.id}>{status.label}</option>
+                <option key={status.id} value={status.id}>{getStatusLabel(status.id, t, status.id !== 'todos')}</option>
               ))}
             </select>
           </div>
@@ -183,43 +206,43 @@ export default function DenunciasPage() {
             <table className="den-table">
               <thead>
                 <tr>
-                  <th>Asunto</th>
-                  <th>Usuario</th>
-                  <th>Estado</th>
-                  <th>Fecha</th>
-                  <th>Accion</th>
+                  <th>{t('adminDenuncias.table.subject')}</th>
+                  <th>{t('adminDenuncias.table.user')}</th>
+                  <th>{t('adminDenuncias.table.status')}</th>
+                  <th>{t('adminDenuncias.table.date')}</th>
+                  <th>{t('adminDenuncias.table.action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan="5" className="den-empty">Cargando denuncias...</td></tr>
+                  <tr><td colSpan="5" className="den-empty">{t('adminDenuncias.empty.loading')}</td></tr>
                 ) : items.length ? items.map((item) => {
-                  const statusMeta = getStatusMeta(item.estado);
+                  const statusMeta = getStatusMeta(item.estado, t);
                   return (
                     <tr key={item.id_denuncia}>
                       <td>
                         <strong>{item.asunto}</strong>
-                        <small>{item.detalle || 'Sin detalle'}</small>
+                        <small>{item.detalle || t('adminDenuncias.empty.noDetail')}</small>
                       </td>
                       <td>
-                        <strong>{getUserLabel(item.denunciante)}</strong>
-                        <small>{item.denunciante?.correo || 'Sin correo'}</small>
+                        <strong>{getUserLabel(item.denunciante, t)}</strong>
+                        <small>{item.denunciante?.correo || t('adminDenuncias.empty.noEmail')}</small>
                       </td>
                       <td>
                         <span className={`den-status den-status--${statusMeta.tone}`}>
                           {statusMeta.label}
                         </span>
                       </td>
-                      <td>{formatDate(item.created_at)}</td>
+                      <td>{formatDate(item.created_at, language, t)}</td>
                       <td>
                         <button type="button" className="den-row-action" onClick={() => openDetail(item)}>
-                          Revisar
+                          {t('adminDenuncias.actions.review')}
                         </button>
                       </td>
                     </tr>
                   );
                 }) : (
-                  <tr><td colSpan="5" className="den-empty">No hay denuncias para este filtro.</td></tr>
+                  <tr><td colSpan="5" className="den-empty">{t('adminDenuncias.empty.noItems')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -230,8 +253,8 @@ export default function DenunciasPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             paginationItems={buildAdminPaginationItems(currentPage, totalPages)}
-            previousLabel="Anterior"
-            nextLabel="Siguiente"
+            previousLabel={t('adminDenuncias.pagination.previous')}
+            nextLabel={t('adminDenuncias.pagination.next')}
             disabled={loading}
             onPageChange={(page) => updateFilter('page', page)}
           />
@@ -243,26 +266,26 @@ export default function DenunciasPage() {
           <aside className="den-detail" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <header>
               <div>
-                <span>Denuncia #{selected.id_denuncia}</span>
+                <span>{t('adminDenuncias.detail.title', { id: selected.id_denuncia })}</span>
                 <h3>{selected.asunto}</h3>
               </div>
-              <button type="button" onClick={() => setSelected(null)} aria-label="Cerrar">x</button>
+              <button type="button" onClick={() => setSelected(null)} aria-label={t('adminDenuncias.actions.close')}>x</button>
             </header>
 
             <div className="den-detail-body">
               <section>
-                <h4>Detalle</h4>
-                <p>{selected.detalle || 'Sin detalle.'}</p>
+                <h4>{t('adminDenuncias.detail.detail')}</h4>
+                <p>{selected.detalle || t('adminDenuncias.empty.noDetailSentence')}</p>
               </section>
 
               <section>
-                <h4>Denunciante</h4>
-                <p>{getUserLabel(selected.denunciante)}<br />{selected.denunciante?.correo || 'Sin correo'}</p>
+                <h4>{t('adminDenuncias.detail.reporter')}</h4>
+                <p>{getUserLabel(selected.denunciante, t)}<br />{selected.denunciante?.correo || t('adminDenuncias.empty.noEmail')}</p>
               </section>
 
               {selected.metadata?.url ? (
                 <section>
-                  <h4>Contexto</h4>
+                  <h4>{t('adminDenuncias.detail.context')}</h4>
                   <a href={selected.metadata.url} target="_blank" rel="noreferrer">
                     {selected.metadata.ruta || selected.metadata.url}
                   </a>
@@ -271,7 +294,7 @@ export default function DenunciasPage() {
 
               {getEvidenceImages(selected.evidencia).length ? (
                 <section>
-                  <h4>Evidencia</h4>
+                  <h4>{t('adminDenuncias.detail.evidence')}</h4>
                   <div className="den-evidence-grid">
                     {getEvidenceImages(selected.evidencia).map((item, index) => (
                       <a
@@ -281,8 +304,8 @@ export default function DenunciasPage() {
                         rel="noreferrer"
                         className="den-evidence"
                       >
-                        <img src={item.url} alt={item.nombre || `Evidencia ${index + 1}`} />
-                        <span>{item.nombre || 'Imagen adjunta'}</span>
+                        <img src={item.url} alt={item.nombre || t('adminDenuncias.detail.image', { number: index + 1 })} />
+                        <span>{item.nombre || t('adminDenuncias.detail.attachedImage')}</span>
                       </a>
                     ))}
                   </div>
@@ -290,22 +313,22 @@ export default function DenunciasPage() {
               ) : null}
 
               <label>
-                <span>Estado</span>
+                <span>{t('adminDenuncias.table.status')}</span>
                 <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value)}>
                   {DENUNCIA_STATUS.filter((status) => status.id !== 'todos').map((status) => (
-                    <option key={status.id} value={status.id}>{status.label}</option>
+                    <option key={status.id} value={status.id}>{getStatusLabel(status.id, t)}</option>
                   ))}
                 </select>
               </label>
 
               <label>
-                <span>Respuesta para el usuario</span>
+                <span>{t('adminDenuncias.detail.response')}</span>
                 <textarea
                   value={responseText}
                   onChange={(event) => setResponseText(event.target.value)}
                   rows={6}
                   maxLength={4000}
-                  placeholder="Escribe una respuesta si se notificara al usuario."
+                  placeholder={t('adminDenuncias.detail.responsePlaceholder')}
                 />
               </label>
 
@@ -313,9 +336,9 @@ export default function DenunciasPage() {
             </div>
 
             <footer>
-              <button type="button" className="den-secondary" onClick={() => setSelected(null)}>Cerrar</button>
+              <button type="button" className="den-secondary" onClick={() => setSelected(null)}>{t('adminDenuncias.actions.close')}</button>
               <button type="button" className="den-primary" onClick={saveDetail} disabled={saving}>
-                {saving ? 'Guardando...' : 'Guardar'}
+                {saving ? t('adminDenuncias.actions.saving') : t('adminDenuncias.actions.save')}
               </button>
             </footer>
           </aside>

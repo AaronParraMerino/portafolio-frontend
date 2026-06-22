@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { useLanguage } from '../../../core/i18n';
 import usePausedAccount from '../../../shared/hooks/usePausedAccount';
 import { hasActiveStoredSession } from '../../../shared/utils/authStorage';
 import { enviarDenunciaAdministracion } from '../services/denunciaService';
@@ -24,6 +25,7 @@ function buildPageMetadata() {
 }
 
 export default function AdminContactModal({ onClose }) {
+  const { t } = useLanguage();
   const paused = usePausedAccount();
   const [form, setForm] = useState(INITIAL_FORM);
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -44,12 +46,12 @@ export default function AdminContactModal({ onClose }) {
     }
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setStatus({ type: 'error', message: 'La evidencia debe ser JPG, PNG o WebP.' });
+      setStatus({ type: 'error', message: t('adminContact.validation.fileType') });
       return;
     }
 
     if (file.size > 4 * 1024 * 1024) {
-      setStatus({ type: 'error', message: 'La imagen no puede superar 4 MB.' });
+      setStatus({ type: 'error', message: t('adminContact.validation.fileSize') });
       return;
     }
 
@@ -65,7 +67,7 @@ export default function AdminContactModal({ onClose }) {
     const detalle = form.detalle.trim();
 
     if (!asunto || !detalle) {
-      setStatus({ type: 'error', message: 'Completa el asunto y el detalle.' });
+      setStatus({ type: 'error', message: t('adminContact.validation.required') });
       return;
     }
 
@@ -79,10 +81,10 @@ export default function AdminContactModal({ onClose }) {
         imagen: form.imagen,
         metadata: buildPageMetadata(),
       });
-      setStatus({ type: 'success', message: 'Reporte enviado a administracion.' });
+      setStatus({ type: 'success', message: t('adminContact.feedback.sent') });
       setForm(INITIAL_FORM);
     } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'No se pudo enviar el reporte.' });
+      setStatus({ type: 'error', message: error.message || t('adminContact.error.send') });
     } finally {
       setIsSending(false);
     }
@@ -99,15 +101,15 @@ export default function AdminContactModal({ onClose }) {
       >
         <header className="adm-contact-modal__header">
           <div>
-            <h2 id="adm-contact-modal-title">Contactar administracion</h2>
-            <p>Reporta cualquier asunto de la plataforma.</p>
+            <h2 id="adm-contact-modal-title">{t('adminContact.title')}</h2>
+            <p>{t('adminContact.description')}</p>
           </div>
           <button
             type="button"
             className="adm-contact-modal__close"
             onClick={onClose}
-            aria-label="Cerrar"
-            title="Cerrar"
+            aria-label={t('adminContact.actions.close')}
+            title={t('adminContact.actions.close')}
           >
             <FaTimes />
           </button>
@@ -115,38 +117,38 @@ export default function AdminContactModal({ onClose }) {
 
         {!isLoggedIn ? (
           <div className="adm-contact-modal__session">
-            Inicia sesion para enviar un reporte a administracion.
+            {t('adminContact.loginRequired')}
           </div>
         ) : paused ? (
           <div className="adm-contact-modal__session">
-            Cuenta en pausa: solo puedes consultar la plataforma.
+            {t('adminContact.paused')}
           </div>
         ) : (
           <form className="adm-contact-modal__form" onSubmit={handleSubmit}>
             <label>
-              <span>Asunto</span>
+              <span>{t('adminContact.fields.subject')}</span>
               <input
                 type="text"
                 value={form.asunto}
                 onChange={(event) => updateField('asunto', event.target.value)}
                 maxLength={180}
-                placeholder="Ej. Problema con una publicacion"
+                placeholder={t('adminContact.placeholders.subject')}
               />
             </label>
 
             <label>
-              <span>Detalle</span>
+              <span>{t('adminContact.fields.detail')}</span>
               <textarea
                 value={form.detalle}
                 onChange={(event) => updateField('detalle', event.target.value)}
                 maxLength={4000}
                 rows={6}
-                placeholder="Describe que paso y que deberia revisar administracion."
+                placeholder={t('adminContact.placeholders.detail')}
               />
             </label>
 
             <label>
-              <span>Evidencia</span>
+              <span>{t('adminContact.fields.evidence')}</span>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
@@ -167,10 +169,10 @@ export default function AdminContactModal({ onClose }) {
 
             <footer className="adm-contact-modal__footer">
               <button type="button" className="adm-contact-modal__secondary" onClick={onClose}>
-                Cerrar
+                {t('adminContact.actions.close')}
               </button>
               <button type="submit" className="adm-contact-modal__primary" disabled={isSending}>
-                {isSending ? 'Enviando...' : 'Enviar'}
+                {isSending ? t('adminContact.actions.sending') : t('adminContact.actions.send')}
               </button>
             </footer>
           </form>

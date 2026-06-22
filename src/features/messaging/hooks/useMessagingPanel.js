@@ -64,17 +64,17 @@ function normalizePanel(data) {
   };
 }
 
-function actionFeedback(action) {
+function actionFeedback(action, t) {
   return {
-    archive: 'Chat archivado.',
-    unarchive: 'Chat restaurado.',
-    block: 'Interacciones bloqueadas.',
-    leave: 'Saliste del grupo.',
-    unblock: 'Interacciones restauradas.',
-  }[action] || 'Chat actualizado.';
+    archive: t('messaging.feedback.archived'),
+    unarchive: t('messaging.feedback.unarchived'),
+    block: t('messaging.feedback.blocked'),
+    leave: t('messaging.feedback.left'),
+    unblock: t('messaging.feedback.unblocked'),
+  }[action] || t('messaging.feedback.updated');
 }
 
-export default function useMessagingPanel() {
+export default function useMessagingPanel(t = (key) => key) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('privados');
   const [panel, setPanel] = useState(EMPTY_PANEL);
@@ -105,11 +105,11 @@ export default function useMessagingPanel() {
       const data = await fetchMessagingPanel();
       setPanel(normalizePanel(data));
     } catch (err) {
-      setError(err.message || 'No se pudo cargar la mensajeria.');
+      setError(err.message || t('messaging.error.loadPanel'));
     } finally {
       if (!silent) setLoadingPanel(false);
     }
-  }, []);
+  }, [t]);
 
   const loadMessages = useCallback(async (chat, { beforeId, mergeWithCurrent = false, prepend = false } = {}) => {
     if (!chat?.id_chat) return;
@@ -128,11 +128,11 @@ export default function useMessagingPanel() {
       });
       setHasMoreMessages(Boolean(data?.has_more));
     } catch (err) {
-      setError(err.message || 'No se pudieron cargar los mensajes.');
+      setError(err.message || t('messaging.error.loadMessages'));
     } finally {
       setLoadingMessages(false);
     }
-  }, [currentUserId]);
+  }, [currentUserId, t]);
 
   const openChat = useCallback((chat) => {
     const cachedMessages = readCachedChatMessages(currentUserId, chat?.id_chat);
@@ -179,11 +179,11 @@ export default function useMessagingPanel() {
       setDraft('');
       await loadPanel({ silent: true });
     } catch (err) {
-      setError(err.message || 'No se pudo enviar el mensaje.');
+      setError(err.message || t('messaging.error.sendMessage'));
     } finally {
       setSending(false);
     }
-  }, [activeChat, currentUserId, draft, loadPanel, sending]);
+  }, [activeChat, currentUserId, draft, loadPanel, sending, t]);
 
   const respondRequest = useCallback(async (solicitud, action) => {
     if (!solicitud?.id_chat_solicitud || actingId) return;
@@ -196,24 +196,24 @@ export default function useMessagingPanel() {
         ? await acceptChatRequest(solicitud.id_chat_solicitud)
         : await rejectChatRequest(solicitud.id_chat_solicitud);
 
-      setFeedback(action === 'accept' ? 'Solicitud aceptada.' : 'Solicitud rechazada.');
+      setFeedback(action === 'accept' ? t('messaging.feedback.requestAccepted') : t('messaging.feedback.requestRejected'));
       await loadPanel({ silent: true });
 
       if (action === 'accept' && data?.chat?.id_chat) {
         const chat = {
           id_chat: data.chat.id_chat,
           tipo: data.chat.tipo || 'privado',
-          nombre: data.chat.nombre || 'Chat privado',
+          nombre: data.chat.nombre || t('messaging.conversation.private'),
         };
         setTab(chat.tipo === 'grupo' ? 'grupos' : 'privados');
         openChat(chat);
       }
     } catch (err) {
-      setError(err.message || 'No se pudo responder la solicitud.');
+      setError(err.message || t('messaging.error.respondRequest'));
     } finally {
       setActingId(null);
     }
-  }, [actingId, loadPanel, openChat]);
+  }, [actingId, loadPanel, openChat, t]);
 
   const respondInvitation = useCallback(async (invitacion, action) => {
     if (!invitacion?.id_chat_invitacion || actingId) return;
@@ -229,7 +229,7 @@ export default function useMessagingPanel() {
       const nextPanelData = await fetchMessagingPanel();
       const nextPanel = normalizePanel(nextPanelData);
       setPanel(nextPanel);
-      setFeedback(action === 'accept' ? 'Invitacion aceptada.' : 'Invitacion rechazada.');
+      setFeedback(action === 'accept' ? t('messaging.feedback.invitationAccepted') : t('messaging.feedback.invitationRejected'));
 
       if (action === 'accept') {
         const group = nextPanel.grupos.find((chat) => Number(chat.id_chat) === Number(invitacion.id_chat));
@@ -239,11 +239,11 @@ export default function useMessagingPanel() {
         }
       }
     } catch (err) {
-      setError(err.message || 'No se pudo responder la invitacion.');
+      setError(err.message || t('messaging.error.respondInvitation'));
     } finally {
       setActingId(null);
     }
-  }, [actingId, openChat]);
+  }, [actingId, openChat, t]);
 
   const createGroup = useCallback(async () => {
     const nombre = groupNameDraft.trim();
@@ -259,7 +259,7 @@ export default function useMessagingPanel() {
       const nextPanel = normalizePanel(nextPanelData);
       setPanel(nextPanel);
       setGroupNameDraft('');
-      setFeedback('Grupo creado.');
+      setFeedback(t('messaging.feedback.groupCreated'));
       setTab('grupos');
 
       const createdChat = data?.chat?.id_chat
@@ -273,11 +273,11 @@ export default function useMessagingPanel() {
         });
       }
     } catch (err) {
-      setError(err.message || 'No se pudo crear el grupo.');
+      setError(err.message || t('messaging.error.createGroup'));
     } finally {
       setCreatingGroup(false);
     }
-  }, [creatingGroup, groupNameDraft, openChat]);
+  }, [creatingGroup, groupNameDraft, openChat, t]);
 
   const inviteToActiveGroup = useCallback(async () => {
     const idInvitado = Number(inviteUserId);
@@ -290,13 +290,13 @@ export default function useMessagingPanel() {
     try {
       await inviteGroupMember(activeChat.id_chat, idInvitado);
       setInviteUserId('');
-      setFeedback('Invitacion enviada.');
+      setFeedback(t('messaging.feedback.invitationSent'));
     } catch (err) {
-      setError(err.message || 'No se pudo enviar la invitacion.');
+      setError(err.message || t('messaging.error.invite'));
     } finally {
       setInvitingUser(false);
     }
-  }, [activeChat, inviteUserId, invitingUser]);
+  }, [activeChat, inviteUserId, invitingUser, t]);
 
   const updateChatState = useCallback(async (action) => {
     if (!activeChat?.id_chat || actingId) return;
@@ -325,13 +325,13 @@ export default function useMessagingPanel() {
         setInviteUserId('');
         setTab('grupos');
       }
-      setFeedback(actionFeedback(action));
+      setFeedback(actionFeedback(action, t));
     } catch (err) {
-      setError(err.message || 'No se pudo actualizar el chat.');
+      setError(err.message || t('messaging.error.updateChat'));
     } finally {
       setActingId(null);
     }
-  }, [actingId, activeChat]);
+  }, [actingId, activeChat, t]);
 
   useEffect(() => {
     if (open) loadPanel();

@@ -6,6 +6,7 @@ import { bannerTranslations } from './banner';
 import { authTranslations } from './auth';
 import { dashboardTranslations } from './dashboard';
 import { calendarTranslations } from './calendar';
+import { messagingTranslations } from './messaging';
 import { skillsTranslations } from './skills';
 import { portfolioSearchTranslations } from './portfolioSearch';
 import { profileTranslations } from './profile';
@@ -18,6 +19,7 @@ import { adminEventsTranslations } from './adminEvents';
 import { adminUsersTranslations } from './adminUsers';
 import { adminAuditTranslations } from './adminAudit';
 import { adminReportsTranslations } from './adminReports';
+import { adminDenunciasTranslations } from './adminDenuncias';
 import { adminBackupsTranslations } from './adminBackups';
 import { publicHomeContentTranslations } from './publicHomeContent';
 import { cookiesTranslations } from './cookies';
@@ -39,6 +41,7 @@ const translationModules = [
   authTranslations,
   dashboardTranslations,
   calendarTranslations,
+  messagingTranslations,
   skillsTranslations,
   portfolioSearchTranslations,
   profileTranslations,
@@ -51,6 +54,7 @@ const translationModules = [
   adminUsersTranslations,
   adminAuditTranslations,
   adminReportsTranslations,
+  adminDenunciasTranslations,
   adminBackupsTranslations,
   publicHomeContentTranslations,
   cookiesTranslations,

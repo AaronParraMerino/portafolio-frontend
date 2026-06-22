@@ -15,23 +15,30 @@ import {
   FiX,
 } from 'react-icons/fi';
 import { useEffect, useState } from 'react';
+import { useLanguage } from '../../../core/i18n';
 import usePausedAccount from '../../../shared/hooks/usePausedAccount';
 import useMessagingPanel from '../hooks/useMessagingPanel';
 import '../styles/messaging.css';
 
 const TAB_CONFIG = [
-  { id: 'privados', label: 'Privados', icon: FiMessageSquare },
-  { id: 'grupos', label: 'Grupos', icon: FiUsers },
-  { id: 'solicitudes', label: 'Solicitudes', icon: FiInbox },
+  { id: 'privados', labelKey: 'messaging.tabs.private', icon: FiMessageSquare },
+  { id: 'grupos', labelKey: 'messaging.tabs.groups', icon: FiUsers },
+  { id: 'solicitudes', labelKey: 'messaging.tabs.requests', icon: FiInbox },
 ];
 
-function formatTime(value) {
+function localeForLanguage(language) {
+  if (language === 'en') return 'en-US';
+  if (language === 'pt') return 'pt-BR';
+  return 'es-BO';
+}
+
+function formatTime(value, language = 'es') {
   if (!value) return '';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  return new Intl.DateTimeFormat('es-BO', {
+  return new Intl.DateTimeFormat(localeForLanguage(language), {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -39,16 +46,23 @@ function formatTime(value) {
   }).format(date);
 }
 
-function chatPreview(chat) {
-  if (chat?.bloqueado_por_mi) return 'Interacciones bloqueadas';
-  if (chat?.archivado) return 'Archivado';
-  if (chat?.tipo === 'grupo' && !chat?.ultimo_mensaje) {
-    return `${Number(chat.miembros_activos || 0)} miembro${Number(chat.miembros_activos || 0) === 1 ? '' : 's'}`;
-  }
-  return chat?.ultimo_mensaje?.contenido || 'Sin mensajes todavia';
+function memberLabel(count, t) {
+  return t('messaging.members', {
+    count,
+    suffix: Number(count) === 1 ? '' : 's',
+  });
 }
 
-function ChatList({ chats, emptyText, activeChatId, onOpenChat }) {
+function chatPreview(chat, t) {
+  if (chat?.bloqueado_por_mi) return t('messaging.preview.blocked');
+  if (chat?.archivado) return t('messaging.preview.archived');
+  if (chat?.tipo === 'grupo' && !chat?.ultimo_mensaje) {
+    return memberLabel(Number(chat.miembros_activos || 0), t);
+  }
+  return chat?.ultimo_mensaje?.contenido || t('messaging.preview.noMessages');
+}
+
+function ChatList({ chats, emptyText, activeChatId, language, onOpenChat, t }) {
   if (!chats.length) {
     return <div className="msg-empty">{emptyText}</div>;
   }
@@ -66,11 +80,11 @@ function ChatList({ chats, emptyText, activeChatId, onOpenChat }) {
             {chat.tipo === 'grupo' ? <FiUsers /> : <FiMessageSquare />}
           </span>
           <span className="msg-chat-main">
-            <span className="msg-chat-title">{chat.nombre || 'Conversacion'}</span>
-            <span className="msg-chat-preview">{chatPreview(chat)}</span>
+            <span className="msg-chat-title">{chat.nombre || t('messaging.conversation.default')}</span>
+            <span className="msg-chat-preview">{chatPreview(chat, t)}</span>
           </span>
           {chat.ultimo_mensaje?.created_at && (
-            <span className="msg-chat-time">{formatTime(chat.ultimo_mensaje.created_at)}</span>
+            <span className="msg-chat-time">{formatTime(chat.ultimo_mensaje.created_at, language)}</span>
           )}
         </button>
       ))}
@@ -86,9 +100,11 @@ function RequestList({
   onRespondInvitation,
   paused = false,
   solicitudes,
+  t,
+  language,
 }) {
   if (!solicitudes.length && !invitaciones.length) {
-    return <div className="msg-empty">No hay solicitudes pendientes.</div>;
+    return <div className="msg-empty">{t('messaging.empty.requests')}</div>;
   }
 
   return (
@@ -97,14 +113,17 @@ function RequestList({
         <article className="msg-request-row" key={`inv-${invitacion.id_chat_invitacion}`}>
           <div className="msg-request-head">
             <div>
-              <strong>Invitacion a grupo</strong>
-              <span>{formatTime(invitacion.expires_at) ? `Vence ${formatTime(invitacion.expires_at)}` : 'Pendiente'}</span>
+              <strong>{t('messaging.request.groupInvitation')}</strong>
+              <span>{formatTime(invitacion.expires_at, language) ? t('messaging.request.expires', { time: formatTime(invitacion.expires_at, language) }) : t('messaging.request.pending')}</span>
             </div>
             <FiUsers />
           </div>
 
           <p>
-            {invitacion.invitador_nombre || 'Un usuario'} te invito a {invitacion.grupo_nombre || 'un grupo'}.
+            {t('messaging.request.invited', {
+              user: invitacion.invitador_nombre || t('messaging.request.unknownUser'),
+              group: invitacion.grupo_nombre || t('messaging.request.unknownGroup'),
+            })}
           </p>
 
           <div className="msg-request-actions">
@@ -115,7 +134,7 @@ function RequestList({
               onClick={() => onRespondInvitation(invitacion, 'accept')}
             >
               <FiCheck />
-              Aceptar
+              {t('messaging.actions.accept')}
             </button>
             <button
               type="button"
@@ -124,7 +143,7 @@ function RequestList({
               onClick={() => onRespondInvitation(invitacion, 'reject')}
             >
               <FiX />
-              Rechazar
+              {t('messaging.actions.reject')}
             </button>
           </div>
         </article>
@@ -132,19 +151,19 @@ function RequestList({
 
       {solicitudes.map((solicitud) => {
         const incoming = Number(solicitud.id_destinatario) === Number(currentUserId);
-        const title = incoming ? 'Solicitud recibida' : 'Solicitud enviada';
+        const title = incoming ? t('messaging.request.received') : t('messaging.request.sent');
 
         return (
           <article className="msg-request-row" key={solicitud.id_chat_solicitud}>
             <div className="msg-request-head">
               <div>
                 <strong>{title}</strong>
-                <span>{formatTime(solicitud.expires_at) ? `Vence ${formatTime(solicitud.expires_at)}` : 'Pendiente'}</span>
+                <span>{formatTime(solicitud.expires_at, language) ? t('messaging.request.expires', { time: formatTime(solicitud.expires_at, language) }) : t('messaging.request.pending')}</span>
               </div>
               <FiClock />
             </div>
 
-            <p>{solicitud.mensaje_inicial || 'Sin mensaje inicial.'}</p>
+            <p>{solicitud.mensaje_inicial || t('messaging.request.noInitialMessage')}</p>
 
             {incoming ? (
               <div className="msg-request-actions">
@@ -155,7 +174,7 @@ function RequestList({
                   onClick={() => onRespond(solicitud, 'accept')}
                 >
                   <FiCheck />
-                  Aceptar
+                  {t('messaging.actions.accept')}
                 </button>
                 <button
                   type="button"
@@ -164,11 +183,11 @@ function RequestList({
                   onClick={() => onRespond(solicitud, 'reject')}
                 >
                   <FiX />
-                  Rechazar
+                  {t('messaging.actions.reject')}
                 </button>
               </div>
             ) : (
-              <span className="msg-request-state">Esperando respuesta</span>
+              <span className="msg-request-state">{t('messaging.request.waiting')}</span>
             )}
           </article>
         );
@@ -183,6 +202,7 @@ function GroupCreateForm({
   onChange,
   onSubmit,
   paused = false,
+  t,
 }) {
   return (
     <form
@@ -196,11 +216,11 @@ function GroupCreateForm({
         type="text"
         value={draft}
         maxLength={150}
-        placeholder="Nombre del grupo"
+        placeholder={t('messaging.form.groupName')}
         disabled={paused || creating}
         onChange={(event) => onChange(event.target.value)}
       />
-      <button type="submit" disabled={paused || creating || !draft.trim()} title="Crear grupo">
+      <button type="submit" disabled={paused || creating || !draft.trim()} title={t('messaging.actions.createGroup')}>
         <FiPlus />
       </button>
     </form>
@@ -212,6 +232,7 @@ function GroupInviteForm({
   disabled,
   onChange,
   onSubmit,
+  t,
   value,
 }) {
   if (!candidates.length) return null;
@@ -229,14 +250,14 @@ function GroupInviteForm({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value="">Invitar usuario</option>
+        <option value="">{t('messaging.form.inviteUser')}</option>
         {candidates.map((candidate) => (
           <option key={candidate.id_usuario} value={candidate.id_usuario}>
             {candidate.nombre}
           </option>
         ))}
       </select>
-      <button type="submit" disabled={disabled || !value} title="Enviar invitacion">
+      <button type="submit" disabled={disabled || !value} title={t('messaging.actions.invite')}>
         <FiPlus />
       </button>
     </form>
@@ -252,6 +273,7 @@ function Conversation({
   inviteCandidates,
   inviteUserId,
   invitingUser,
+  language,
   loadingMessages,
   messages,
   paused = false,
@@ -266,6 +288,7 @@ function Conversation({
   onSend,
   onUnarchive,
   onUnblock,
+  t,
 }) {
   const [showInvite, setShowInvite] = useState(false);
 
@@ -273,7 +296,7 @@ function Conversation({
     return (
       <div className="msg-conversation-empty">
         <FiMessageSquare />
-        <span>Selecciona una conversacion.</span>
+        <span>{t('messaging.empty.selectConversation')}</span>
       </div>
     );
   }
@@ -283,42 +306,42 @@ function Conversation({
   const groupMeta = activeChat.tipo === 'grupo'
     ? [
         activeChat.rol,
-        `${Number(activeChat.miembros_activos || 0)} miembro${Number(activeChat.miembros_activos || 0) === 1 ? '' : 's'}`,
+        memberLabel(Number(activeChat.miembros_activos || 0), t),
       ].filter(Boolean).join(' - ')
     : '';
   const statusLabel = blocked
-    ? 'Interacciones bloqueadas'
+    ? t('messaging.preview.blocked')
     : activeChat.archivado
-      ? 'Archivado'
+      ? t('messaging.preview.archived')
       : '';
 
   return (
     <section className="msg-conversation">
       <div className="msg-conversation-head">
         <div>
-          <strong>{activeChat.nombre || 'Conversacion'}</strong>
-          <span>{activeChat.tipo === 'grupo' ? `Chat grupal${groupMeta ? ` - ${groupMeta}` : ''}` : 'Chat privado'}</span>
+          <strong>{activeChat.nombre || t('messaging.conversation.default')}</strong>
+          <span>{activeChat.tipo === 'grupo' ? `${t('messaging.conversation.group')}${groupMeta ? ` - ${groupMeta}` : ''}` : t('messaging.conversation.private')}</span>
           {statusLabel && <em>{statusLabel}</em>}
         </div>
 
         <div className="msg-conversation-actions">
           {activeChat.archivado ? (
-            <button type="button" title="Restaurar" disabled={paused || actionBusy} onClick={onUnarchive}>
+            <button type="button" title={t('messaging.actions.restore')} disabled={paused || actionBusy} onClick={onUnarchive}>
               <FiRefreshCcw />
             </button>
           ) : (
-            <button type="button" title="Archivar" disabled={paused || actionBusy} onClick={onArchive}>
+            <button type="button" title={t('messaging.actions.archive')} disabled={paused || actionBusy} onClick={onArchive}>
               <FiArchive />
             </button>
           )}
 
           {activeChat.tipo === 'privado' && (
             blocked ? (
-              <button type="button" title="Restaurar interacciones" disabled={paused || actionBusy} onClick={onUnblock}>
+              <button type="button" title={t('messaging.actions.restoreInteractions')} disabled={paused || actionBusy} onClick={onUnblock}>
                 <FiCheck />
               </button>
             ) : (
-              <button type="button" title="Bloquear" disabled={paused || actionBusy} onClick={onBlock}>
+              <button type="button" title={t('messaging.actions.block')} disabled={paused || actionBusy} onClick={onBlock}>
                 <FiSlash />
               </button>
             )
@@ -328,13 +351,13 @@ function Conversation({
             <>
               <button
                 type="button"
-                title={showInvite ? 'Ocultar invitacion' : 'Invitar usuario'}
+                title={showInvite ? t('messaging.actions.hideInvite') : t('messaging.actions.inviteUser')}
                 disabled={paused || actionBusy}
                 onClick={() => setShowInvite((value) => !value)}
               >
                 <FiUserPlus />
               </button>
-              <button type="button" title="Salir del grupo" disabled={paused || actionBusy} onClick={onLeave}>
+              <button type="button" title={t('messaging.actions.leaveGroup')} disabled={paused || actionBusy} onClick={onLeave}>
                 <FiLogOut />
               </button>
             </>
@@ -346,10 +369,10 @@ function Conversation({
         {hasMoreMessages ? (
           <button type="button" onClick={onHistory} disabled={loadingMessages}>
             <FiChevronLeft />
-            Ver historial
+            {t('messaging.actions.history')}
           </button>
         ) : (
-          <span>{messages.length ? 'Inicio visible del historial' : 'Sin mensajes'}</span>
+          <span>{messages.length ? t('messaging.empty.historyStart') : t('messaging.empty.noMessages')}</span>
         )}
       </div>
 
@@ -360,17 +383,18 @@ function Conversation({
           value={inviteUserId}
           onChange={onInviteDraft}
           onSubmit={onInvite}
+          t={t}
         />
       )}
 
       <div className="msg-message-list">
         {loadingMessages && !messages.length && (
-          <div className="msg-empty">Cargando mensajes...</div>
+          <div className="msg-empty">{t('messaging.empty.loadingMessages')}</div>
         )}
 
         {messages.map((message) => {
           const mine = Number(message.id_usuario_emisor) === Number(currentUserId);
-          const senderName = mine ? 'Tu' : (message.emisor_nombre || 'Usuario');
+          const senderName = mine ? t('messaging.sender.you') : (message.emisor_nombre || t('messaging.sender.user'));
 
           return (
             <div
@@ -382,7 +406,7 @@ function Conversation({
                   <strong className="msg-bubble-sender">{senderName}</strong>
                 )}
                 <p>{message.contenido}</p>
-                <span>{formatTime(message.created_at)}</span>
+                <span>{formatTime(message.created_at, language)}</span>
               </div>
             </div>
           );
@@ -400,10 +424,10 @@ function Conversation({
           value={draft}
           disabled={interactionsDisabled || sending}
           maxLength={4000}
-          placeholder={paused ? 'Cuenta en pausa: solo lectura' : blocked ? 'Interacciones bloqueadas' : 'Escribe un mensaje'}
+          placeholder={paused ? t('messaging.form.paused') : blocked ? t('messaging.preview.blocked') : t('messaging.form.message')}
           onChange={(event) => onDraft(event.target.value)}
         />
-        <button type="submit" disabled={interactionsDisabled || sending || !draft.trim()} title="Enviar">
+        <button type="submit" disabled={interactionsDisabled || sending || !draft.trim()} title={t('messaging.actions.send')}>
           <FiSend />
         </button>
       </form>
@@ -418,8 +442,9 @@ export default function MessagingPanel({
   hideToggle = false,
   onOpenChange,
 } = {}) {
+  const { t, language } = useLanguage();
   const paused = usePausedAccount();
-  const state = useMessagingPanel();
+  const state = useMessagingPanel(t);
 
   const {
     actingId,
@@ -466,7 +491,7 @@ export default function MessagingPanel({
     .filter((chat) => chat.id_otro_usuario && !chat.bloqueado_por_mi)
     .map((chat) => ({
       id_usuario: chat.id_otro_usuario,
-      nombre: chat.nombre || 'Usuario',
+      nombre: chat.nombre || t('messaging.sender.user'),
     }));
   const setPanelOpen = (nextOpen) => {
     setOpen(nextOpen);
@@ -496,17 +521,17 @@ export default function MessagingPanel({
     <>
       <header className="msg-panel-header">
         <div>
-          <div className="msg-panel-title">Mensajeria</div>
-          <div className="msg-panel-subtitle">Chats, grupos y solicitudes</div>
+          <div className="msg-panel-title">{t('messaging.title')}</div>
+          <div className="msg-panel-subtitle">{t('messaging.subtitle')}</div>
         </div>
-        <button type="button" className="msg-panel-close" onClick={() => setPanelOpen(false)} aria-label="Cerrar">
+        <button type="button" className="msg-panel-close" onClick={() => setPanelOpen(false)} aria-label={t('messaging.close')}>
           <FiX />
         </button>
       </header>
 
       <div className="msg-panel-body">
-        <nav className="msg-tabs" aria-label="Categorias de mensajeria">
-          {TAB_CONFIG.map(({ id, label, icon: Icon }) => (
+        <nav className="msg-tabs" aria-label={t('messaging.categories')}>
+          {TAB_CONFIG.map(({ id, labelKey, icon: Icon }) => (
             <button
               key={id}
               type="button"
@@ -514,7 +539,7 @@ export default function MessagingPanel({
               onClick={() => handleTabClick(id)}
             >
               <Icon />
-              {label}
+              {t(labelKey)}
               {id === 'solicitudes' && solicitudes.length + invitaciones.length > 0 && (
                 <span>{solicitudes.length + invitaciones.length}</span>
               )}
@@ -526,7 +551,7 @@ export default function MessagingPanel({
         {feedback && <div className="msg-feedback">{feedback}</div>}
         {paused && (
           <div className="msg-feedback msg-paused-notice">
-            Cuenta en pausa: puedes revisar tus mensajes, pero no responder ni cambiar chats.
+            {t('messaging.paused.notice')}
           </div>
         )}
 
@@ -539,27 +564,32 @@ export default function MessagingPanel({
                 onChange={setGroupNameDraft}
                 onSubmit={createGroup}
                 paused={paused}
+                t={t}
               />
             )}
 
             {loadingPanel ? (
-              <div className="msg-empty">Cargando mensajeria...</div>
+              <div className="msg-empty">{t('messaging.empty.loadingPanel')}</div>
             ) : tab === 'solicitudes' ? (
               <RequestList
                 actingId={actingId}
                 currentUserId={currentUserId}
                 invitaciones={invitaciones}
+                language={language}
                 onRespond={respondRequest}
                 onRespondInvitation={respondInvitation}
                 paused={paused}
                 solicitudes={solicitudes}
+                t={t}
               />
             ) : (
               <ChatList
                 chats={currentChats}
-                emptyText={tab === 'grupos' ? 'No hay grupos activos.' : 'No hay chats privados activos.'}
+                emptyText={tab === 'grupos' ? t('messaging.empty.groups') : t('messaging.empty.private')}
                 activeChatId={activeChat?.id_chat}
+                language={language}
                 onOpenChat={openChat}
+                t={t}
               />
             )}
           </section>
@@ -575,6 +605,7 @@ export default function MessagingPanel({
             inviteCandidates={inviteCandidates}
             inviteUserId={inviteUserId}
             invitingUser={invitingUser}
+            language={language}
             loadingMessages={loadingMessages}
             messages={messages}
             paused={paused}
@@ -589,6 +620,7 @@ export default function MessagingPanel({
             onSend={sendMessage}
             onUnarchive={() => updateChatState('unarchive')}
             onUnblock={() => updateChatState('unblock')}
+            t={t}
           />
         )}
       </div>
@@ -612,9 +644,9 @@ export default function MessagingPanel({
           type="button"
           className={`msg-side-toggle${panelOpen ? ' is-open' : ''}`}
           onClick={() => setPanelOpen(!panelOpen)}
-          aria-label="Abrir mensajeria"
+          aria-label={t('messaging.open')}
         >
-          <span className="msg-side-toggle-label">Mensajeria</span>
+          <span className="msg-side-toggle-label">{t('messaging.title')}</span>
           {novedades > 0 && <span className="msg-side-badge">{novedades > 9 ? '9+' : novedades}</span>}
         </button>
       )}
