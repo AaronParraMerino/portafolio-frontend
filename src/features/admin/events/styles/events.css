@@ -2554,7 +2554,8 @@
   width: 14px;
 }
 
-.evt-segment-card.active .evt-segment-check {
+.evt-segment-card.active .evt-segment-check,
+.evt-target-mode-card.active .evt-segment-check {
   background: var(--adm-primary, #0f766e);
   border-color: var(--adm-primary, #0f766e);
 }

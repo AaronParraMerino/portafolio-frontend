@@ -674,6 +674,15 @@
   color: #fff;
 }
 
+.dbe-page .evt-target-mode-card.active strong,
+.dbe-page .evt-segment-card.active strong,
+.dbe-page .evt-target-mode-card.active small,
+.dbe-page .evt-segment-card.active small,
+.dbe-page .evt-target-mode-card.active .evt-segment-check,
+.dbe-page .evt-segment-card.active .evt-segment-check {
+  color: #fff;
+}
+
 .dbe-page .evt-calendar-day.is-today .evt-calendar-day-number {
   background: var(--azul, #0077b7);
   box-shadow: none;
