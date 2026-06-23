@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getStoredUser } from '../../../shared/utils/authStorage';
 import {
   acceptChatRequest,
@@ -29,6 +29,7 @@ const EMPTY_PANEL = {
   solicitudes: [],
   contador_novedades: 0,
 };
+const ACTIVE_CHAT_REFRESH_MS = 5000;
 
 function getCurrentUserId() {
   const user = getStoredUser();
@@ -92,6 +93,7 @@ export default function useMessagingPanel(t = (key) => key) {
   const [actingId, setActingId] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
+  const pollingMessagesRef = useRef(false);
 
   const currentUserId = useMemo(getCurrentUserId, []);
 
@@ -111,11 +113,18 @@ export default function useMessagingPanel(t = (key) => key) {
     }
   }, [t]);
 
-  const loadMessages = useCallback(async (chat, { beforeId, mergeWithCurrent = false, prepend = false } = {}) => {
+  const loadMessages = useCallback(async (chat, {
+    beforeId,
+    mergeWithCurrent = false,
+    prepend = false,
+    silent = false,
+  } = {}) => {
     if (!chat?.id_chat) return;
 
-    setLoadingMessages(true);
-    setError('');
+    if (!silent) {
+      setLoadingMessages(true);
+      setError('');
+    }
 
     try {
       const data = await fetchChatMessages(chat.id_chat, { beforeId });
@@ -128,9 +137,9 @@ export default function useMessagingPanel(t = (key) => key) {
       });
       setHasMoreMessages(Boolean(data?.has_more));
     } catch (err) {
-      setError(err.message || t('messaging.error.loadMessages'));
+      if (!silent) setError(err.message || t('messaging.error.loadMessages'));
     } finally {
-      setLoadingMessages(false);
+      if (!silent) setLoadingMessages(false);
     }
   }, [currentUserId, t]);
 
@@ -336,6 +345,31 @@ export default function useMessagingPanel(t = (key) => key) {
   useEffect(() => {
     if (open) loadPanel();
   }, [loadPanel, open]);
+
+  useEffect(() => {
+    if (!open || !activeChat?.id_chat) return undefined;
+
+    const refreshActiveChat = async () => {
+      if (pollingMessagesRef.current) return;
+      pollingMessagesRef.current = true;
+
+      try {
+        await loadMessages(activeChat, {
+          mergeWithCurrent: true,
+          silent: true,
+        });
+      } finally {
+        pollingMessagesRef.current = false;
+      }
+    };
+
+    const intervalId = window.setInterval(refreshActiveChat, ACTIVE_CHAT_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+      pollingMessagesRef.current = false;
+    };
+  }, [activeChat, loadMessages, open]);
 
   return {
     actingId,
