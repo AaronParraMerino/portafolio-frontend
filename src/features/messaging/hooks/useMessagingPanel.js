@@ -29,7 +29,7 @@ const EMPTY_PANEL = {
   solicitudes: [],
   contador_novedades: 0,
 };
-const ACTIVE_CHAT_REFRESH_MS = 5000;
+const ACTIVE_CHAT_REFRESH_MS = 7500;
 
 function getCurrentUserId() {
   const user = getStoredUser();
