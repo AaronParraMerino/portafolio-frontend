@@ -64,7 +64,20 @@ function getCurrentUserId() {
   return Number(user?.id_usuario || user?.id || user?.idUsuario || 0);
 }
 
+function getContactButtonLabel(t, estado, fallbackLabel) {
+  const keyByState = {
+    sin_relacion: 'publicPortfolio.contact.button.start',
+    chat_activo: 'publicPortfolio.contact.button.open',
+    solicitud_enviada: 'publicPortfolio.contact.button.sent',
+    cooldown: 'publicPortfolio.contact.button.cooldown',
+    bloqueado_por_mi: 'publicPortfolio.contact.button.unblock',
+  };
+  const key = keyByState[estado];
+  return key ? t(key) : (fallbackLabel || t('publicPortfolio.contact.button.start'));
+}
+
 function PublicPortfolioContact({ ownerId }) {
+  const { t } = useLanguage();
   const paused = usePausedAccount();
   const [contactState, setContactState] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -84,12 +97,12 @@ function PublicPortfolioContact({ ownerId }) {
 
     try {
       setContactState(await fetchProfileContactState(ownerId));
-    } catch (err) {
-      setError(err.message || 'No se pudo cargar el estado de contacto.');
+    } catch {
+      setError(t('publicPortfolio.contact.error.loadState'));
     } finally {
       setLoading(false);
     }
-  }, [canLoad, ownerId]);
+  }, [canLoad, ownerId, t]);
 
   useEffect(() => {
     loadContactState();
@@ -99,7 +112,7 @@ function PublicPortfolioContact({ ownerId }) {
   if (contactState?.estado === 'propio_perfil' || contactState?.estado === 'bloqueado_por_otro') return null;
 
   const estado = contactState?.estado;
-  const buttonLabel = contactState?.boton || 'Contactarme por la aplicacion';
+  const buttonLabel = getContactButtonLabel(t, estado, contactState?.boton);
   const canCreateRequest = estado === 'sin_relacion';
   const canOpenChat = estado === 'chat_activo' && contactState?.id_chat;
   const canUnblock = estado === 'bloqueado_por_mi' && contactState?.id_chat;
@@ -120,10 +133,10 @@ function PublicPortfolioContact({ ownerId }) {
       setActing(true);
       try {
         await unblockPrivateChat(contactState.id_chat);
-        setFeedback('Interacciones restauradas.');
+        setFeedback(t('publicPortfolio.contact.feedback.unblocked'));
         await loadContactState();
-      } catch (err) {
-        setError(err.message || 'No se pudo restaurar la interaccion.');
+      } catch {
+        setError(t('publicPortfolio.contact.error.unblock'));
       } finally {
         setActing(false);
       }
@@ -141,7 +154,7 @@ function PublicPortfolioContact({ ownerId }) {
 
     const cleanMessage = message.trim();
     if (!cleanMessage) {
-      setError('Escribe un mensaje inicial.');
+      setError(t('publicPortfolio.contact.validation.message'));
       return;
     }
 
@@ -150,12 +163,12 @@ function PublicPortfolioContact({ ownerId }) {
 
     try {
       await createPrivateChatRequest(ownerId, cleanMessage);
-      setFeedback('Solicitud enviada.');
+      setFeedback(t('publicPortfolio.contact.feedback.sent'));
       setMessage('');
       setModalOpen(false);
       await loadContactState();
-    } catch (err) {
-      setError(err.message || 'No se pudo enviar la solicitud.');
+    } catch {
+      setError(t('publicPortfolio.contact.error.send'));
     } finally {
       setActing(false);
     }
@@ -164,8 +177,8 @@ function PublicPortfolioContact({ ownerId }) {
   return (
     <section className="public-contact-card">
       <div>
-        <strong>Contacto por la aplicacion</strong>
-        <span>{paused ? 'Cuenta en pausa: solo puedes consultar este portafolio.' : feedback || error || 'Inicia una conversacion privada desde CreaFolio.'}</span>
+        <strong>{t('publicPortfolio.contact.title')}</strong>
+        <span>{paused ? t('publicPortfolio.contact.paused') : feedback || error || t('publicPortfolio.contact.description')}</span>
       </div>
 
       <button
@@ -175,7 +188,7 @@ function PublicPortfolioContact({ ownerId }) {
         onClick={handlePrimary}
       >
         {canUnblock ? <FiCheck /> : <FiMessageSquare />}
-        {loading ? 'Cargando...' : buttonLabel}
+        {loading ? t('publicPortfolio.contact.loading') : buttonLabel}
       </button>
 
       {modalOpen && (
@@ -183,10 +196,10 @@ function PublicPortfolioContact({ ownerId }) {
           <form className="public-contact-modal" onSubmit={submitRequest} onClick={(event) => event.stopPropagation()}>
             <div className="public-contact-modal-head">
               <div>
-                <strong>Enviar solicitud de chat</strong>
-                <span>Este mensaje llegara como solicitud personal.</span>
+                <strong>{t('publicPortfolio.contact.modal.title')}</strong>
+                <span>{t('publicPortfolio.contact.modal.description')}</span>
               </div>
-              <button type="button" onClick={() => !acting && setModalOpen(false)} aria-label="Cerrar">
+              <button type="button" onClick={() => !acting && setModalOpen(false)} aria-label={t('publicPortfolio.contact.modal.close')}>
                 <FiX />
               </button>
             </div>
@@ -194,18 +207,18 @@ function PublicPortfolioContact({ ownerId }) {
             <textarea
               value={message}
               maxLength={1000}
-              placeholder="Escribe el motivo de contacto"
+              placeholder={t('publicPortfolio.contact.modal.placeholder')}
               disabled={paused || acting}
               onChange={(event) => setMessage(event.target.value)}
             />
 
             <div className="public-contact-modal-actions">
               <button type="button" className="public-contact-secondary" disabled={acting} onClick={() => setModalOpen(false)}>
-                Cancelar
+                {t('publicPortfolio.contact.actions.cancel')}
               </button>
               <button type="submit" className="public-contact-btn" disabled={paused || acting || !message.trim()}>
                 <FiSend />
-                Enviar
+                {acting ? t('publicPortfolio.contact.actions.sending') : t('publicPortfolio.contact.actions.send')}
               </button>
             </div>
           </form>
