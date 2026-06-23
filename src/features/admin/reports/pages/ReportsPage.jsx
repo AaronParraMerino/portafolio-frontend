@@ -144,7 +144,7 @@ export default function ReportsPage() {
               onClick={() => navigate('/admin/denuncias')}
             >
               <BsFlag aria-hidden="true" />
-              Reportes de usuarios
+              {t('adminDenuncias.header.title')}
             </button>
             <label>
               {t('adminReports.filters.from')}

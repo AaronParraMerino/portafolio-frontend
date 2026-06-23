@@ -1,3 +1,5 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Disallow:
+
+Sitemap: http://sparky.tis.cs.umss.edu.bo/sitemap.xml

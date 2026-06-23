@@ -37,6 +37,7 @@ import ProjectsPage from '../../features/dashboard/projects/pages/ProjectsPage';
 import ViewPage from '../../features/dashboard/view/pages/ViewPage';
 import PortfolioPage from '../../features/public/portfolio/pages/PortfolioPage';
 import PublicProjectsPage from '../../features/public/projects/pages/PublicProjectsPage';
+import SeoHead from '../../shared/components/SeoHead';
 import { getStoredUser, isAdminUser } from '../../shared/utils/authStorage';
 
 const SCROLLABLE_ROUTE_CONTAINERS = [
@@ -167,6 +168,7 @@ function RoleGate({ children, adminOnly = false, userOnly = false }) {
 export default function AppRouter({ isBackendAvailable = true }) {
   return (
     <BrowserRouter>
+        <SeoHead />
         <ScrollToTop />
         <Routes>
 
@@ -177,7 +179,7 @@ export default function AppRouter({ isBackendAvailable = true }) {
           <Route path="desarrolladores" element={<DevelopersPage />} />
           <Route path="eventos" element={<PublicEventsPage />} />
           <Route path="proyectos" element={<PublicProjectsPage />} />
-          <Route path="portafolio/:userId" element={<RoleGate><PortfolioPage /></RoleGate>} />
+          <Route path="portafolio/:userId" element={<PortfolioPage />} />
           <Route path="dashboard" element={<RoleGate userOnly><DashboardLayout /></RoleGate>}>
             <Route index element={<DashboardPage />} />
             <Route path="profile" element={<ProfilePage />} />
