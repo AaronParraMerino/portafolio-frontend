@@ -9,6 +9,7 @@ import { useLanguage } from '../../../../core/i18n';
 import AdminHeader from '../../layout/AdminHeader';
 import { getAdminSectionConfig } from '../../layout/adminHeaderConfig';
 import { fetchBackupMetadata, generateBackup } from '../services/backupsService';
+import { downloadBackupBlob } from '../utils/downloadBackup';
 import '../styles/backups.css';
 
 const LOCALES = { es: 'es-BO', en: 'en-US', pt: 'pt-BR' };
@@ -73,7 +74,6 @@ export default function BackupsPage() {
   });
   const filePickerSupported = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
   const canGenerate = metadata?.ready
-    && filePickerSupported
     && !generating
     && (mode === 'full' || selectedTables.length > 0);
 
@@ -91,20 +91,24 @@ export default function BackupsPage() {
   const saveBackup = async () => {
     if (!canGenerate) return;
 
-    let fileHandle;
-    try {
-      fileHandle = await window.showSaveFilePicker({
-        suggestedName: backupFilename(mode),
-        types: [{
-          description: t('adminBackups.file.description'),
-          accept: { 'application/json': ['.json'] },
-        }],
-      });
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        setMessage({ type: 'error', text: t('adminBackups.error.picker') });
+    const filename = backupFilename(mode);
+    let fileHandle = null;
+
+    if (filePickerSupported) {
+      try {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: t('adminBackups.file.description'),
+            accept: { 'application/json': ['.json'] },
+          }],
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          setMessage({ type: 'error', text: t('adminBackups.error.picker') });
+        }
+        return;
       }
-      return;
     }
 
     setGenerating(true);
@@ -114,10 +118,19 @@ export default function BackupsPage() {
       const blob = await generateBackup(mode === 'tables'
         ? { mode, tables: selectedTables }
         : { mode });
-      const writable = await fileHandle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      setMessage({ type: 'success', text: t('adminBackups.success.saved', { name: fileHandle.name }) });
+
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } else {
+        downloadBackupBlob(blob, filename);
+      }
+
+      setMessage({
+        type: 'success',
+        text: t('adminBackups.success.saved', { name: fileHandle?.name || filename }),
+      });
     } catch (error) {
       setMessage({ type: 'error', text: error.translationKey ? t(error.translationKey) : error.message });
     } finally {
@@ -148,7 +161,7 @@ export default function BackupsPage() {
         {message ? <div className={`bkp-message ${message.type}`} role="alert">{message.text}</div> : null}
 
         {!filePickerSupported ? (
-          <div className="bkp-message warning">{t('adminBackups.compatibility.filePicker')}</div>
+          <div className="bkp-message warning">{t('adminBackups.compatibility.downloadFallback')}</div>
         ) : null}
 
         <div className="bkp-stats">
@@ -234,11 +247,13 @@ export default function BackupsPage() {
 
           <div className="bkp-footer">
             <div>
-              <strong>{t('adminBackups.save.title')}</strong>
-              <span>{t('adminBackups.save.description')}</span>
+              <strong>{t(filePickerSupported ? 'adminBackups.save.title' : 'adminBackups.save.downloadTitle')}</strong>
+              <span>{t(filePickerSupported ? 'adminBackups.save.description' : 'adminBackups.save.downloadDescription')}</span>
             </div>
             <button type="button" className="bkp-save" disabled={!canGenerate} onClick={saveBackup}>
-              {generating ? t('adminBackups.actions.generating') : t('adminBackups.actions.chooseLocation')}
+              {generating
+                ? t('adminBackups.actions.generating')
+                : t(filePickerSupported ? 'adminBackups.actions.chooseLocation' : 'adminBackups.actions.download')}
             </button>
           </div>
         </section>

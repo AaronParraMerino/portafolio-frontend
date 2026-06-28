@@ -131,19 +131,23 @@ function notificationTime(value, language = 'es') {
   return formatter.format(Math.round(hours / 24), 'day');
 }
 
-function moduleFallbackTitle(modulo) {
-  return {
-    proyectos: 'Proyectos',
-    eventos: 'Eventos',
-    administracion: 'Administracion',
-    personales: 'Personales',
-  }[modulo] || modulo || 'Notificaciones';
+const MODULE_TITLE_KEYS = {
+  proyectos: 'nav.module.projects',
+  eventos: 'nav.module.events',
+  administracion: 'nav.module.administration',
+  personales: 'nav.module.personal',
+};
+
+function moduleFallbackTitle(modulo, t = (key) => key) {
+  const key = MODULE_TITLE_KEYS[modulo];
+  if (key) return t(key);
+  return modulo || t('nav.module.default');
 }
 
-function getNotificationTitle(notification) {
+function getNotificationTitle(notification, t) {
   return notification?.grupo_titulo
     || notification?.titulo
-    || moduleFallbackTitle(notification?.modulo);
+    || moduleFallbackTitle(notification?.modulo, t);
 }
 
 function resolveProfileImageUrl(path) {
@@ -670,7 +674,7 @@ export default function Navbar() {
   const notificationPanelTitle = notifLevel === 'messages'
     ? (selectedNotificationGroup?.titulo || t('nav.notifications'))
     : notifLevel === 'detail'
-      ? (selectedNotificationModule?.titulo || moduleFallbackTitle(selectedNotificationModule?.modulo))
+      ? moduleFallbackTitle(selectedNotificationModule?.modulo, t)
       : t('nav.notifications');
 
   return (
@@ -1177,7 +1181,7 @@ export default function Navbar() {
                                 >
                                   <div className="spk-notif-row-main">
                                     <div className="spk-notif-row-title">
-                                      {moduleItem.titulo || moduleFallbackTitle(moduleItem.modulo)}
+                                      {moduleFallbackTitle(moduleItem.modulo, t)}
                                     </div>
                                     <div className="spk-notif-row-meta">
                                       {Number(moduleItem.cantidad || 0)} {t('nav.pendingNotifications')}
@@ -1223,7 +1227,7 @@ export default function Navbar() {
 
                                   <div>
                                     <div className="spk-notif-title">
-                                      {getNotificationTitle(notification)}
+                                      {getNotificationTitle(notification, t)}
                                     </div>
 
                                     {notification.contenido && (
@@ -1268,7 +1272,7 @@ export default function Navbar() {
                           {selectedNotificationModule && Number(selectedNotificationModule.cantidad || 0) > 0 && (
                             <div className="spk-notif-footer">
                               <span className="spk-notif-footnote">
-                                {selectedNotificationModule.titulo || moduleFallbackTitle(selectedNotificationModule.modulo)}
+                                {moduleFallbackTitle(selectedNotificationModule.modulo, t)}
                               </span>
                               <button
                                 className="spk-notif-clear"
@@ -1308,7 +1312,7 @@ export default function Navbar() {
 
                                   <div>
                                     <div className="spk-notif-title">
-                                      {getNotificationTitle(notification)}
+                                      {getNotificationTitle(notification, t)}
                                     </div>
 
                                     {notification.contenido && (
